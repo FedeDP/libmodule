@@ -33,17 +33,17 @@ enum module_states { IDLE, DISABLED, STARTED, PAUSED, DESTROYED };
 
 /* Struct that holds self module informations, static to each module */
 typedef struct {
-    const char *name;                     // module's name
-    int id;                               // module's ID
+    const char *name;                           // module's name
+    int id;                                     // module's ID
 } self_t;
 
 /* Struct that holds user defined callbacks */
 typedef struct {
-    int (*init)(void);                    // module's init function (should return a FD)
-    int (*check)(void);                   // module's check-before-init 
-    int (*stateChange)(void);             // module's state changed function
-    void (*pollCb)(int fd);               // module's poll callback
-    void (*destroy)(void);                // module's destroy function
+    int (*const init)(void);                    // module's init function (should return a FD)
+    int (*const check)(void);                   // module's check-before-init 
+    int (*const stateChange)(void);             // module's state changed function
+    void (*pollCb)(int fd);                     // module's poll callback
+    void (*const destroy)(void);                // module's destroy function
 } userhook;
 
 /** Interface functions */

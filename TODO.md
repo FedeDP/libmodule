@@ -4,7 +4,7 @@
 - [ ] constify some pointers (eg self_t *self)?
 - [ ] add a modules_on_error() callback
 - [x] actually start modules
-- [ ] add examples for both easy and less-easy API
+- [x] add meaningful example
 - [ ] Write README
 - [ ] Rename some callbacks (eg: stateChange and check are not very meaningful names)
 
