@@ -22,8 +22,8 @@
 
 /* Defines for exposed module state getters/setters */
 #define m_is(x)         module_is(self, x)
-#define m_pause()        module_pause(self)
-#define m_resume()       module_resume(self)
+#define m_pause()       module_pause(self)
+#define m_resume()      module_resume(self)
 #define m_get_hook()    module_get_hook(self)
 
 /** Structs types **/
