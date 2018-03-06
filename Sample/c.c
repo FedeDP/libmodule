@@ -1,4 +1,4 @@
-#include <modules.h>
+#include <module.h>
 
 MODULE(C);
 
@@ -23,5 +23,5 @@ void callback(void) {
 }
 
 void test_C() {
-    printf("%s: %d\n", self->name, self->id);
+    module_log("started.\n");
 }
