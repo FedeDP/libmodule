@@ -10,10 +10,10 @@
     } while(0)
 
 #define MODULE(name) \
-    static void init(); \
+    static int init(); \
     static int check(); \
     static int state_change(); \
-    static void callback(); \
+    static void callback(int fd); \
     static void destroy(); \
     static const self_t *self; \
     void __attribute__((constructor)) name() { \
@@ -39,18 +39,19 @@ typedef struct {
 
 /* Struct that holds user defined callbacks */
 typedef struct {
-    void (*init)(void);                   // module's init function
+    int (*init)(void);                    // module's init function (should return a FD)
     int (*check)(void);                   // module's check-before-init 
     int (*stateChange)(void);             // module's state changed function
+    void (*pollCb)(int fd);               // module's poll callback
     void (*destroy)(void);                // module's destroy function
-    void (*pollCb)(void);                 // module's poll callback
 } userhook;
 
 /** Interface functions */
 const self_t *module_set_self(const char *name, userhook *hook);
 void modules_loop(void);
+void modules_quit(void);
 
 int module_is(const self_t *self, const enum module_states s);
-void module_pause(const self_t *self);
-void module_resume(const self_t *self);
+int module_pause(const self_t *self);
+int module_resume(const self_t *self);
 userhook *const module_get_hook(const self_t *self);

@@ -1,9 +1,21 @@
 #include <module.h>
+#include <sys/timerfd.h>
+#include <unistd.h>
+#include <stdint.h>
 
 MODULE(A);
 
-void init(void) {
+int init(void) {
+    int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
+    struct itimerspec timerValue = {{0}};
+    
+    timerValue.it_value.tv_sec = 1;
+    timerValue.it_interval.tv_sec = 1;
+    timerfd_settime(fd, 0, &timerValue, NULL);
+    // FIXME: this macro will crash here
+//     module_log("starting on fd: %d.\n", fd);
+    return fd;
 }
 
 int check(void) {
@@ -11,17 +23,15 @@ int check(void) {
 }
 
 int state_change(void) {
-    return 0;
+    return 1;
 }
 
 void destroy(void) {
     
 }
 
-void callback(void) {
-    
-}
-
-void test_A() {
-    module_log("started.\n");
+void callback(int fd) {
+    uint64_t t;
+    read(fd, &t, sizeof(uint64_t));
+    module_log("callback!\n");
 }
