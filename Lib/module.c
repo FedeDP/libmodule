@@ -12,17 +12,9 @@
 #define MODULE_DEBUG (void)
 #endif
 
-/* Struct that holds user defined callbacks */
-typedef struct {
-    init_cb init;                           // module's init function (should return a FD)
-    evaluate_cb evaluate;                   // module's state changed function
-    recv_cb recv;                           // module's recv function
-    destroy_cb destroy;                     // module's destroy function
-} userhook;
-
 /* Struct that holds data for each module */
 typedef struct {
-    userhook hook;
+    userhook *hook;
     const void *userdata;
     enum module_states state;             // module's state
     self_t self;                          // module's info available to external world
@@ -60,8 +52,7 @@ static _dtor0_ void modules_destroy(void) {
     close(ctx.epollfd);
 }
 
-void module_register(const char *name, const self_t **self, init_cb i, 
-                     evaluate_cb e, recv_cb r, destroy_cb d) {
+void module_register(const char *name, const self_t **self, userhook *hook) {
     assert(name);
 
     MODULE_DEBUG("Registering module %s.\n", name);
@@ -72,7 +63,7 @@ void module_register(const char *name, const self_t **self, init_cb i,
     assert(tmp);
     
     ctx.modules = tmp;
-    ctx.modules[idx].hook = (userhook) { i, e, r, d };
+    ctx.modules[idx].hook = hook;
     ctx.modules[idx].state = IDLE;
     ctx.modules[idx].self.name = strdup(name);
     ctx.modules[idx].self.id = idx;
@@ -87,7 +78,7 @@ void module_deregister(const self_t *self) {
         MODULE_DEBUG("Deregistering module %s.\n", self->name);
         // FIXME: when using linked list / hashmap, remove this node from modules
         module_stop(self);
-        ctx.modules[self->id].hook.destroy();
+        ctx.modules[self->id].hook->destroy();
         ctx.modules[self->id].state = DESTROYED;
         free((void *)self->name);
     }
@@ -106,7 +97,7 @@ void modules_loop(void) {
                 if (pevents[i].events & EPOLLIN) {
                     self_t *self = (self_t *) pevents[i].data.ptr;
                     message_t msg = { ctx.modules[self->id].fd, NULL, NULL };
-                    ctx.modules[self->id].hook.recv(&msg, ctx.modules[self->id].userdata);
+                    ctx.modules[self->id].hook->recv(&msg, ctx.modules[self->id].userdata);
                 }
             }
             evaluate_new_state();
@@ -131,9 +122,9 @@ static void evaluate_new_state(void) {
 
 static void evaluate_module(int idx) {
     if (module_is(&ctx.modules[idx].self, IDLE) 
-        && ctx.modules[idx].hook.evaluate()) {
+        && ctx.modules[idx].hook->evaluate()) {
         
-        int fd = ctx.modules[idx].hook.init();
+        int fd = ctx.modules[idx].hook->init();
         module_start(&ctx.modules[idx].self, fd);
     }
 }
@@ -141,7 +132,7 @@ static void evaluate_module(int idx) {
 void module_become(const self_t *self,  recv_cb new_recv) {
     assert(self);
     
-    ctx.modules[self->id].hook.recv = new_recv;
+    ctx.modules[self->id].hook->recv = new_recv;
 }
 
 void module_log(const self_t *self, const char *fmt, ...) {

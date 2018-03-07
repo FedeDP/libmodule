@@ -20,7 +20,12 @@
     static void recv(message_t *msg, const void *userdata); \
     static void destroy(void); \
     static const self_t *self; \
-    void _ctor1_ name() { if (!check()) module_register(#name, &self, init, evaluate, recv, destroy); } \
+    void _ctor1_ name() { \
+        if (!check()) { \
+            static userhook hook = { init, evaluate, recv, destroy }; \
+            module_register(#name, &self, &hook); \
+        } \
+    } \
     void _dtor1_ destroy_##name() { module_deregister(self); }
 
 /* Defines for exposed module state getters/setters */
@@ -57,9 +62,16 @@ typedef int(*evaluate_cb)(void);
 typedef void(*recv_cb)(message_t *msg, const void *userdata);
 typedef void(*destroy_cb)(void);
 
+/* Struct that holds user defined callbacks */
+typedef struct {
+    init_cb init;                           // module's init function (should return a FD)
+    evaluate_cb evaluate;                   // module's state changed function
+    recv_cb recv;                           // module's recv function
+    destroy_cb destroy;                     // module's destroy function
+} userhook;
+
 /* Module interface functions */
-_public_ void module_register(const char *name, const self_t **self, init_cb i, 
-                              evaluate_cb e, recv_cb r, destroy_cb d);
+_public_ void module_register(const char *name, const self_t **self, userhook *hook);
 _public_ void module_deregister(const self_t *self);
 _public_ void module_log(const self_t *self, const char *fmt, ...);
 
