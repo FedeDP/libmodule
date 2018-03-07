@@ -5,7 +5,7 @@
 
 MODULE(A);
 
-static void callback2(int fd);
+static void recv_ready(message_t *msg, const void *userdata);
 
 static int init(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
@@ -15,8 +15,7 @@ static int init(void) {
     timerValue.it_value.tv_sec = 1;
     timerValue.it_interval.tv_sec = 1;
     timerfd_settime(fd, 0, &timerValue, NULL);
-    // FIXME: this macro will crash here
-//     module_log("starting on fd: %d.\n", fd);
+    m_log("starting on fd: %d.\n", fd);
     return fd;
 }
 
@@ -24,7 +23,7 @@ static int check(void) {
     return 0;
 }
 
-static int state_change(void) {
+static int evaluate(void) {
     return 1;
 }
 
@@ -32,30 +31,33 @@ static void destroy(void) {
     
 }
 
-void callback(int fd) {
-    uint64_t t;
-    read(fd, &t, sizeof(uint64_t));
+static void recv(message_t *msg, const void *userdata) {
+    if (!msg->message) {
+        uint64_t t;
+        read(msg->fd, &t, sizeof(uint64_t));
     
-    static int counter = 0;
-    module_log("callback!\n");
-    counter++;
+        static int counter = 0;
+        m_log("recv!\n");
+        counter++;
     
-    if (counter % 5 == 0) {
-        userhook *hook = m_get_hook();
-        hook->pollCb = callback2;
+        if (counter % 3 == 0) {
+            m_become(ready);
+            m_set_userdata(&counter);
+        }
     }
 }
 
-static void callback2(int fd) {
-    uint64_t t;
-    read(fd, &t, sizeof(uint64_t));
+static void recv_ready(message_t *msg, const void *userdata) {
+    if (!msg->message) {
+        uint64_t t;
+        read(msg->fd, &t, sizeof(uint64_t));
     
-    static int counter = 0;
-    module_log("callback2!\n");
-    counter++;
+        int *counter = (int *)userdata;
+        m_log("recv2!\n");
+        (*counter)++;
     
-    if (counter % 3 == 0) {
-        userhook *hook = m_get_hook();
-        hook->pollCb = callback;
+        if (*counter % 3 == 0) {
+            m_unbecome();
+        }
     }
 }

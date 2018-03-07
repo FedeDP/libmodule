@@ -5,7 +5,7 @@
 
 MODULE(B);
 
-int init(void) {
+static int init(void) {
     sigset_t mask;
     
     sigemptyset(&mask);
@@ -14,29 +14,30 @@ int init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    // FIXME: this macro will crash here
-//     module_log("starting on fd: %d.\n", fd);
+    m_log("starting on fd: %d.\n", fd);
     return fd;
 }
 
-int check(void) {
+static int check(void) {
     return 0;
 }
 
-int state_change(void) {
+static int evaluate(void) {
     return 1;
 }
 
-void destroy(void) {
+static void destroy(void) {
     
 }
 
-void callback(int fd) {
-    struct signalfd_siginfo fdsi;    
-    ssize_t s = read(fd, &fdsi, sizeof(struct signalfd_siginfo));
-    if (s != sizeof(struct signalfd_siginfo)) {
-        module_log("an error occurred while getting signalfd data.\n");
+static void recv(message_t *msg, const void *userdata) {
+    if (!msg->message) {
+        struct signalfd_siginfo fdsi;    
+        ssize_t s = read(msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
+        if (s != sizeof(struct signalfd_siginfo)) {
+            m_log("an error occurred while getting signalfd data.\n");
+        }
+        m_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
+        modules_quit();
     }
-    module_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
-    modules_quit();
 }

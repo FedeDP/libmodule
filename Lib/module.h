@@ -2,56 +2,76 @@
 
 #include <stdio.h>
 
+/* Convenience macros */
+
+#define _public_    __attribute__ ((visibility("default")))
+#define _ctor0_      __attribute__((constructor (101)))
+#define _ctor1_      __attribute__((constructor (102)))
+#define _dtor0_      __attribute__((destructor (101)))
+#define _dtor1_      __attribute__((destructor (102)))
+
 /* Interface Macros */
-#define module_log(fmt, ...); \
-    do { \
-        printf("%s: ", self->name); \
-        printf(fmt, ##__VA_ARGS__); \
-    } while(0)
+#define m_log(fmt, ...) module_log(self, fmt, ##__VA_ARGS__)
 
 #define MODULE(name) \
-    static int init(); \
-    static int check(); \
-    static int state_change(); \
-    static void callback(int fd); \
-    static void destroy(); \
+    static int init(void); \
+    static int check(void); \
+    static int evaluate(void); \
+    static void recv(message_t *msg, const void *userdata); \
+    static void destroy(void); \
     static const self_t *self; \
-    void __attribute__((constructor)) name() { \
-        static userhook hook = { init, check, state_change, callback, destroy }; \
-        self = module_set_self(#name, &hook); }
+    void _ctor1_ name() { if (!check()) module_register(#name, &self, init, evaluate, recv, destroy); } \
+    void _dtor1_ destroy_##name() { module_deregister(self); }
 
 /* Defines for exposed module state getters/setters */
-#define m_is(x)         module_is(self, x)
-#define m_pause()       module_pause(self)
-#define m_resume()      module_resume(self)
-#define m_get_hook()    module_get_hook(self)
+#define m_is(x)             module_is(self, x)
+#define m_start(fd)         module_start(self, fd)
+#define m_pause()           module_pause(self)
+#define m_resume()          module_resume(self)
+#define m_stop()            module_stop(self)
+#define m_become(x)         module_become(self, recv_##x)
+#define m_unbecome()        module_become(self, recv)
+#define m_set_userdata(x)   module_set_userdata(self, x)
 
 /** Structs types **/
 
 /* Modules states */
-enum module_states { IDLE, DISABLED, STARTED, PAUSED, DESTROYED };
+enum module_states { IDLE, STARTED, PAUSED, DESTROYED };
 
 /* Struct that holds self module informations, static to each module */
 typedef struct {
-    const char *name;                           // module's name
-    int id;                                     // module's ID
+    const char *name;                       // module's name
+    int id;                                 // module's ID
 } self_t;
 
-/* Struct that holds user defined callbacks */
 typedef struct {
-    int (*const init)(void);                    // module's init function (should return a FD)
-    int (*const check)(void);                   // module's check-before-init 
-    int (*const stateChange)(void);             // module's state changed function
-    void (*pollCb)(int fd);                     // module's poll callback
-    void (*const destroy)(void);                // module's destroy function
-} userhook;
+    int fd;
+    const char *message;
+    const char *from;
+} message_t;
 
-/** Interface functions */
-const self_t *module_set_self(const char *name, userhook *hook);
-void modules_loop(void);
-void modules_quit(void);
+/* Callbacks typedefs */
+typedef void(*error_cb)(const char *error_msg);
+typedef int(*init_cb)(void);
+typedef int(*evaluate_cb)(void);
+typedef void(*recv_cb)(message_t *msg, const void *userdata);
+typedef void(*destroy_cb)(void);
 
-int module_is(const self_t *self, const enum module_states s);
-int module_pause(const self_t *self);
-int module_resume(const self_t *self);
-userhook *const module_get_hook(const self_t *self);
+/* Module interface functions */
+_public_ void module_register(const char *name, const self_t **self, init_cb i, 
+                              evaluate_cb e, recv_cb r, destroy_cb d);
+_public_ void module_deregister(const self_t *self);
+_public_ void module_log(const self_t *self, const char *fmt, ...);
+
+_public_ void module_set_userdata(const self_t *self, const void *userdata);
+_public_ int module_is(const self_t *self, const enum module_states s);
+_public_ int module_start(const self_t *self, int fd);
+_public_ int module_pause(const self_t *self);
+_public_ int module_resume(const self_t *self);
+_public_ int module_stop(const self_t *self);
+_public_ void module_become(const self_t *self,  recv_cb new_recv);
+
+/* Modules interface functions */
+_public_ void modules_on_error(error_cb on_error);
+_public_ void modules_loop(void);
+_public_ void modules_quit(void);

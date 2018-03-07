@@ -4,16 +4,26 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #ifdef DEBUG
-#define MODULE_DEBUG printf
+#define MODULE_DEBUG printf("Libmodule: "); printf
 #else
 #define MODULE_DEBUG (void)
 #endif
 
+/* Struct that holds user defined callbacks */
+typedef struct {
+    init_cb init;                           // module's init function (should return a FD)
+    evaluate_cb evaluate;                   // module's state changed function
+    recv_cb recv;                           // module's recv function
+    destroy_cb destroy;                     // module's destroy function
+} userhook;
+
 /* Struct that holds data for each module */
 typedef struct {
-    userhook *hook;
+    userhook hook;
+    const void *userdata;
     enum module_states state;             // module's state
     self_t self;                          // module's info available to external world
     int fd;                               // file descriptor to be polled
@@ -23,71 +33,80 @@ typedef struct {
 typedef struct {
     int quit;
     int epollfd;
+    error_cb on_error;
     int num_modules;
     module *modules;
-} state_t;
+} m_context;
 
 static void evaluate_new_state(void);
 static void evaluate_module(int idx);
-static int module_start(const self_t *self, int fd);
+static void default_error(const char *error_msg);
 
-static state_t st;
+static m_context ctx;
 
-static __attribute__((constructor)) void modules_init(void) {
-    MODULE_DEBUG("Initializing libmodules library.\n");
-    memset(&st, 0, sizeof(state_t));
+static _ctor0_ void modules_init(void) {
+    MODULE_DEBUG("Initializing library.\n");
+    memset(&ctx, 0, sizeof(m_context));
     
-    st.epollfd = epoll_create1(EPOLL_CLOEXEC); 
-    assert(st.epollfd >= 0);
+    ctx.epollfd = epoll_create1(EPOLL_CLOEXEC); 
+    assert(ctx.epollfd >= 0);
+    
+    ctx.on_error = default_error;
 }
 
-static __attribute__((destructor)) void modules_destroy(void) {
-    MODULE_DEBUG("Destroying libmodules library.\n");
-    for (int i = 0; i < st.num_modules; i++) {
-        close(st.modules[i].fd); // will implicitly call EPOLL_CTL_DEL
-        st.modules[i].hook->destroy();
-        free((void *)st.modules[i].self.name);
-    }
-    free(st.modules);
-    close(st.epollfd);
+static _dtor0_ void modules_destroy(void) {
+    MODULE_DEBUG("Destroying library.\n");
+    free(ctx.modules);
+    close(ctx.epollfd);
 }
 
-const self_t *module_set_self(const char *name, userhook *hook) {
+void module_register(const char *name, const self_t **self, init_cb i, 
+                     evaluate_cb e, recv_cb r, destroy_cb d) {
     assert(name);
-    assert(hook);
+
+    MODULE_DEBUG("Registering module %s.\n", name);
     
-    int idx = st.num_modules;
-    st.modules = realloc(st.modules, (idx + 1) * sizeof(module));
-    st.modules[idx].hook = hook;
-    st.modules[idx].state = IDLE;
-    st.modules[idx].self.name = strdup(name);
-    st.modules[idx].self.id = idx;
-    st.num_modules++;
+    int idx = ctx.num_modules;
     
-    /* Check if module must be started and eventually start it */
-    if (!st.modules[idx].hook->check()) {
-        evaluate_module(idx);
-    }
+    module *tmp = realloc(ctx.modules, (idx + 1) * sizeof(module));
+    assert(tmp);
     
-    return &st.modules[idx].self;
+    ctx.modules = tmp;
+    ctx.modules[idx].hook = (userhook) { i, e, r, d };
+    ctx.modules[idx].state = IDLE;
+    ctx.modules[idx].self.name = strdup(name);
+    ctx.modules[idx].self.id = idx;
+    ctx.num_modules++;
+    
+    *self = &ctx.modules[idx].self;
+    evaluate_module(idx);
 }
 
-// use epoll: https://www.ulduzsoft.com/2014/01/select-poll-epoll-practical-difference-for-system-architects/
-// https://github.com/millken/c-example/blob/master/epoll-example.c
-// https://www.safaribooksonline.com/library/view/linux-system-programming/0596009585/ch04s02.html
+void module_deregister(const self_t *self) {
+    if (self) {
+        MODULE_DEBUG("Deregistering module %s.\n", self->name);
+        // FIXME: when using linked list / hashmap, remove this node from modules
+        module_stop(self);
+        ctx.modules[self->id].hook.destroy();
+        ctx.modules[self->id].state = DESTROYED;
+        free((void *)self->name);
+    }
+}
+
 void modules_loop(void) {
-    struct epoll_event *pevents = calloc(st.num_modules, sizeof(struct epoll_event));
+    struct epoll_event *pevents = calloc(ctx.num_modules, sizeof(struct epoll_event));
     assert(pevents);
         
-    while (!st.quit) {
-        int nfds = epoll_wait(st.epollfd, pevents, st.num_modules, -1);
-        if (nfds <= 0) {
-            fprintf(stderr, "epoll failed.\n");
+    while (!ctx.quit) {
+        int nfds = epoll_wait(ctx.epollfd, pevents, ctx.num_modules, -1);
+        if (nfds < 0) {
+            ctx.on_error("epoll failed.");
         } else {
             for (int i = 0; i < nfds; i++) {
                 if (pevents[i].events & EPOLLIN) {
-                    self_t *self = pevents[i].data.ptr;
-                    st.modules[self->id].hook->pollCb(st.modules[self->id].fd);
+                    self_t *self = (self_t *) pevents[i].data.ptr;
+                    message_t msg = { ctx.modules[self->id].fd, NULL, NULL };
+                    ctx.modules[self->id].hook.recv(&msg, ctx.modules[self->id].userdata);
                 }
             }
             evaluate_new_state();
@@ -97,65 +116,98 @@ void modules_loop(void) {
 }
 
 void modules_quit(void) {
-    st.quit = 1;
+    ctx.quit = 1;
+}
+
+void modules_on_error(error_cb on_error) {
+    ctx.on_error = on_error;
 }
 
 static void evaluate_new_state(void) {
-    for (int i = 0; i < st.num_modules; i++) {
+    for (int i = 0; i < ctx.num_modules; i++) {
         evaluate_module(i);
     }
 }
 
 static void evaluate_module(int idx) {
-    if (module_is(&st.modules[idx].self, IDLE) 
-        && st.modules[idx].hook->stateChange()) {
+    if (module_is(&ctx.modules[idx].self, IDLE) 
+        && ctx.modules[idx].hook.evaluate()) {
         
-        int fd = st.modules[idx].hook->init();
-        module_start(&st.modules[idx].self, fd);
+        int fd = ctx.modules[idx].hook.init();
+        module_start(&ctx.modules[idx].self, fd);
     }
 }
 
-static int module_start(const self_t *self, int fd) {
-    st.modules[self->id].fd = fd;
-    MODULE_DEBUG("Starting module %s on fd %d.\n", self->name, st.modules[self->id].fd);
-    return module_resume(self);
+void module_become(const self_t *self,  recv_cb new_recv) {
+    assert(self);
+    
+    ctx.modules[self->id].hook.recv = new_recv;
 }
 
-userhook *const module_get_hook(const self_t *self) {
-    return st.modules[self->id].hook;
+void module_log(const self_t *self, const char *fmt, ...) {
+    assert(self);
+    
+    va_list args;
+    va_start(args, fmt);
+    printf("%s: ", self->name);
+    vprintf(fmt, args);
+    va_end(args);
+}
+
+void module_set_userdata(const self_t *self, const void *userdata) {
+    assert(self);
+    
+    ctx.modules[self->id].userdata = userdata;
+}
+
+static void default_error(const char *error_msg) {
+    fprintf(stderr, "Libmodule error: %s\n", error_msg);
 }
 
 /** Module state getter **/
 
 int module_is(const self_t *self, const enum module_states s) {
-    return st.modules[self->id].state == s;
+    assert(self);
+    
+    return ctx.modules[self->id].state == s;
 }
 
 /** Module state setters **/
 
+int module_start(const self_t *self, int fd) {
+    assert(self);
+    
+    ctx.modules[self->id].fd = fd;
+    MODULE_DEBUG("Starting module %s.\n", self->name);
+    return module_resume(self);
+}
+
 int module_pause(const self_t *self) {
-    st.modules[self->id].state = PAUSED;
-    int ret = epoll_ctl(st.epollfd, EPOLL_CTL_DEL, st.modules[self->id].fd, NULL);
+    assert(self);
+    
+    int ret = epoll_ctl(ctx.epollfd, EPOLL_CTL_DEL, ctx.modules[self->id].fd, NULL);
     if (!ret) {
-        st.modules[self->id].state = PAUSED;
-    } else {
-        // module_disable here
-        st.modules[self->id].state = DISABLED;
+        ctx.modules[self->id].state = PAUSED;
     }
     return ret;
 }
 
 int module_resume(const self_t *self) {
-    st.modules[self->id].ev.data.ptr = (void *)self;
-    st.modules[self->id].ev.events = EPOLLIN;
-    int ret = epoll_ctl(st.epollfd, EPOLL_CTL_ADD, st.modules[self->id].fd, &st.modules[self->id].ev);
+    assert(self);
+    
+    ctx.modules[self->id].ev.data.ptr = (void *)self;
+    ctx.modules[self->id].ev.events = EPOLLIN;
+    int ret = epoll_ctl(ctx.epollfd, EPOLL_CTL_ADD, ctx.modules[self->id].fd, &ctx.modules[self->id].ev);
     if (!ret) {
-        st.modules[self->id].state = STARTED;
-    } else {
-        // module_disable here
-        st.modules[self->id].state = DISABLED;
+        ctx.modules[self->id].state = STARTED;
     }
     return ret;
 }
 
-// int module_disable/module_destroy()
+int module_stop(const self_t *self) {
+    assert(self);
+    
+    MODULE_DEBUG("Stopping module %s.\n", self->name);
+    ctx.modules[self->id].state = IDLE;
+    return close(ctx.modules[self->id].fd); // implicitly calls EPOLL_CTL_DEL
+}
