@@ -9,8 +9,9 @@ You will write less code, focusing on what you really need.
 ## Is this an event loop or an actor lib?
 
 Well, it is both, someway.  
-It stands somewhere in the middle: it does not provide any faciliting to build an event loop; it does provide its own event loop though.  
-You may find some/lots of similarities between a libmodule MODULE and an Actor.  
+It stands somewhere in the middle, trying to mix the 2 concepts.  
+It does not provide any faciliting to build an event loop; it does provide its own event loop though.  
+You may find some/lots of similarities between a libmodule's MODULE and an Actor.  
 Indeed, libmodule was heavily inspired by my own actor library experience with [akka](https://akka.io/).  
 It can probably be expanded to an actor library with some work. I may even work on that at a certain point.
 
