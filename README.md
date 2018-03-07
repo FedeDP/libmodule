@@ -1,5 +1,7 @@
 # Libmodule
 
+[![Build Status](https://travis-ci.org/FedeDP/libmodule.svg?branch=master)](https://travis-ci.org/FedeDP/libmodule)
+
 Libmodule aims at let developers easily create modular C projects in a way that is both simple and elegant.  
 You will write less code, focusing on what you really need.  
 
@@ -16,7 +18,7 @@ It can probably be expanded to an actor library with some work. I may even work 
 No, it is not.  
 It uses epoll, that is linux specific.  
 Moreover it heavily relies upon gcc attributes that may or may not be available for your compiler.  
-It is tested with both gcc and clang with travis.
+It is tested with both gcc and clang with [travis](https://travis-ci.org/FedeDP/libmodule).
 
 ## Is there any documentation?
 
