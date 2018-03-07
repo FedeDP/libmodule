@@ -1,6 +1,7 @@
 # Libmodule
 
 [![Build Status](https://travis-ci.org/FedeDP/libmodule.svg?branch=master)](https://travis-ci.org/FedeDP/libmodule)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3526dd92b6d84370b072bfadfc7da632)](https://www.codacy.com/app/FedeDP/libmodule?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FedeDP/libmodule&amp;utm_campaign=Badge_Grade)
 
 Libmodule aims at let developers easily create modular C projects in a way that is both simple and elegant.  
 You will write less code, focusing on what you really need.  
