@@ -1,20 +1,5 @@
 # TODO
 
-## Make it work
-
-- [x] fix valgrind issues (they're all from invalid read, caused by realloc; fixable with a linked list or switching to hashmap)
-- [x] switch to hashmap for modules
-- [x] self_t completely opaque to clients (void *)
-
-- [ ] use a jmp_buf quit_buf (longjmp) instead of ctx.quit?
-
-- [x] Write README
-- [x] codacy
-- [x] travis
-- [x] use cmake (generate pkg-config script?)
-- [x] add pkg-config script
-- [x] add a Sample folder readme and makefile
-
 ## Make it context aware
 
 - [x] add concept of module_ctx; one can define a module with _MODULE(test, test_ctx) to create a new ctx. A default ctx is created by default ("default")
