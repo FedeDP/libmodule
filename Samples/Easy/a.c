@@ -3,6 +3,10 @@
 #include <unistd.h>
 #include <stdint.h>
 
+/* 
+ * Declare and automagically initialize 
+ * this module as soon as program starts 
+ */
 MODULE(A);
 
 static void recv_ready(message_t *msg, const void *userdata);
@@ -54,8 +58,7 @@ static void destroy(void) {
 
 /*
  * Our default poll callback.
- * This function can be called from poll or because another MODULE
- * sent a message to this module through m_tell().
+ * Note that message_t->msg/sender are unused for now.
  */
 static void recv(message_t *msg, const void *userdata) {
     if (!msg->message) {
