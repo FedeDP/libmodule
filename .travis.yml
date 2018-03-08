@@ -13,9 +13,16 @@ compiler:
   - clang
 
 arch:
+    packages:
+        - cmake
+
     script:
         - "echo $CC"
-        - make debug
+        - mkdir build
+        - cd build
+        - cmake -DCMAKE_BUILD_TYPE=Debug ../
+        - make
+        - rm -rf build/
 
 script:
     - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"

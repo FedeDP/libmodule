@@ -5,200 +5,284 @@
 #include <unistd.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <hashmap.h>
 
-#ifdef DEBUG
+#ifndef NDEBUG
 #define MODULE_DEBUG printf("Libmodule: "); printf
 #else
 #define MODULE_DEBUG (void)
 #endif
 
+#define GET_CTX(name) \
+    m_context *c = NULL; \
+    hashmap_get(ctx, (char *)name, (void **)&c); \
+    assert(c);
+
+#define GET_MOD(self) \
+    self_t *s = (self_t *)self; \
+    m_context *context = NULL; \
+    module *mod = NULL; \
+    do { \
+        hashmap_get(ctx, (char *)s->ctx, (void **)&context); \
+        assert(context); \
+        hashmap_get(context->modules, (char *)s->name, (void **)&mod); \
+        if (!mod) context->on_error("Module not found.", (char *)s->ctx); \
+    } while(0)
+
+/* Struct that holds self module informations, static to each module */
+typedef struct {
+    const char *name;                     // module's name
+    const char *ctx;                      // module's ctx 
+} self_t;
+    
 /* Struct that holds data for each module */
 typedef struct {
-    userhook *hook;
-    const void *userdata;
+    userhook *hook;                       // module's user defined callbacks
+    const void *userdata;                 // module's user defined data
     enum module_states state;             // module's state
     self_t self;                          // module's info available to external world
     int fd;                               // file descriptor to be polled
-    struct epoll_event ev;
+    struct epoll_event ev;                // module's epoll event struct
 } module;
 
 typedef struct {
     int quit;
     int epollfd;
     error_cb on_error;
-    int num_modules;
-    module *modules;
+    map_t modules;
 } m_context;
 
-static void evaluate_new_state(void);
-static void evaluate_module(int idx);
-static void default_error(const char *error_msg);
+static _ctor0_ void modules_init(void);
+static _dtor0_ void modules_destroy(void);
+static void init_ctx(const char *ctx_name, m_context **context);
+static void destroy_ctx(const char *ctx_name, m_context *context);
+static m_context *check_ctx(const char *ctx_name);
+static void evaluate_new_state(m_context *context);
+static int evaluate_module(void *data, void *m);
+static void default_error(const char *error_msg, const char *ctx_name);
 
-static m_context ctx;
+static map_t ctx;
 
-static _ctor0_ void modules_init(void) {
+static void modules_init(void) {
     MODULE_DEBUG("Initializing library.\n");
-    memset(&ctx, 0, sizeof(m_context));
-    
-    ctx.epollfd = epoll_create1(EPOLL_CLOEXEC); 
-    assert(ctx.epollfd >= 0);
-    
-    ctx.on_error = default_error;
+    ctx = hashmap_new();
 }
 
-static _dtor0_ void modules_destroy(void) {
+static void modules_destroy(void) {
     MODULE_DEBUG("Destroying library.\n");
-    free(ctx.modules);
-    close(ctx.epollfd);
+    hashmap_free(ctx);
 }
 
-void module_register(const char *name, const self_t **self, userhook *hook) {
+static void init_ctx(const char *ctx_name, m_context **context) {
+    MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
+    
+    *context = malloc(sizeof(m_context));
+    assert(*context);
+    
+    memset(*context, 0, sizeof(m_context));
+     
+    (*context)->epollfd = epoll_create1(EPOLL_CLOEXEC); 
+    assert((*context)->epollfd >= 0);
+     
+    (*context)->on_error = default_error;
+    (*context)->modules = hashmap_new();
+    hashmap_put(ctx, (char *)ctx_name, *context);
+}
+
+static void destroy_ctx(const char *ctx_name, m_context *context) {
+    MODULE_DEBUG("Destroying context '%s'.\n", ctx_name);
+    hashmap_free(context->modules);
+    close(context->epollfd);
+    free(context);
+    hashmap_remove(ctx, (char *)ctx_name);
+}
+
+static m_context *check_ctx(const char *ctx_name) {
+    m_context *context = NULL;
+    hashmap_get(ctx, (char *)ctx_name, (void **)&context); \
+    if (!context) {
+        init_ctx(ctx_name, &context);
+    }
+    return context;
+}
+
+void module_register(const char *name, const char *ctx_name, const void **self, userhook *hook) {
     assert(name);
+    assert(ctx_name);
+    
+    m_context *context = check_ctx(ctx_name);
 
     MODULE_DEBUG("Registering module %s.\n", name);
-    
-    int idx = ctx.num_modules;
-    
-    module *tmp = realloc(ctx.modules, (idx + 1) * sizeof(module));
+
+    module *tmp = malloc(sizeof(module));
     assert(tmp);
     
-    ctx.modules = tmp;
-    ctx.modules[idx].hook = hook;
-    ctx.modules[idx].state = IDLE;
-    ctx.modules[idx].self.name = strdup(name);
-    ctx.modules[idx].self.id = idx;
-    ctx.num_modules++;
+    memset(tmp, 0, sizeof(module));
     
-    *self = &ctx.modules[idx].self;
-    evaluate_module(idx);
+    tmp->hook = hook;
+    tmp->state = IDLE;
+    tmp->self.name = strdup(name);
+    tmp->self.ctx = strdup(ctx_name);
+    hashmap_put(context->modules, (char *)name, tmp);
+    
+    *self = &tmp->self;
+    evaluate_module(NULL, tmp);
 }
 
-void module_deregister(const self_t *self) {
-    if (self) {
-        MODULE_DEBUG("Deregistering module %s.\n", self->name);
-        // FIXME: when using linked list / hashmap, remove this node from modules
-        module_stop(self);
-        ctx.modules[self->id].hook->destroy();
-        ctx.modules[self->id].state = DESTROYED;
-        free((void *)self->name);
+void module_deregister(const void **self) {
+    self_t *tmp = (self_t *) *self;
+    if (tmp) {
+        MODULE_DEBUG("Deregistering module %s.\n", tmp->name);
+        
+        module_stop(tmp);        
+        GET_MOD(tmp);
+        
+        mod->hook->destroy();
+        hashmap_remove(context->modules, (char *)tmp->name);
+        /* Remove context without modules */
+        if (hashmap_length(context->modules) == 0) {
+            destroy_ctx(tmp->ctx, context);
+        }
+        free((void *)tmp->name);
+        free((void *)tmp->ctx);
+        tmp = NULL;
+        free(mod);
     }
 }
 
-void modules_loop(void) {
-    struct epoll_event *pevents = calloc(ctx.num_modules, sizeof(struct epoll_event));
+void modules_ctx_loop(const char *ctx_name) {
+    GET_CTX(ctx_name);
+    
+    int size = hashmap_length(c->modules);
+    struct epoll_event *pevents = calloc(size, sizeof(struct epoll_event));
     assert(pevents);
         
-    while (!ctx.quit) {
-        int nfds = epoll_wait(ctx.epollfd, pevents, ctx.num_modules, -1);
+    while (!c->quit) {
+        int nfds = epoll_wait(c->epollfd, pevents, size, -1);
         if (nfds < 0) {
-            ctx.on_error("epoll failed.");
+            c->on_error("epoll failed.", ctx_name);
         } else {
             for (int i = 0; i < nfds; i++) {
                 if (pevents[i].events & EPOLLIN) {
-                    self_t *self = (self_t *) pevents[i].data.ptr;
-                    message_t msg = { ctx.modules[self->id].fd, NULL, NULL };
-                    ctx.modules[self->id].hook->recv(&msg, ctx.modules[self->id].userdata);
+                    void *self = pevents[i].data.ptr;
+                    
+                    GET_MOD(self);
+                    
+                    message_t msg = { mod->fd, NULL, NULL };
+                    mod->hook->recv(&msg, mod->userdata);
                 }
             }
-            evaluate_new_state();
+            evaluate_new_state(c);
         }
     }
     free(pevents);
 }
 
-void modules_quit(void) {
-    ctx.quit = 1;
+void modules_ctx_quit(const char *ctx_name) {
+    GET_CTX(ctx_name);
+    
+    c->quit = 1;
 }
 
-void modules_on_error(error_cb on_error) {
-    ctx.on_error = on_error;
+void modules_ctx_on_error(const char *ctx_name, error_cb on_error) {
+    GET_CTX(ctx_name);
+    
+    c->on_error = on_error;
 }
 
-static void evaluate_new_state(void) {
-    for (int i = 0; i < ctx.num_modules; i++) {
-        evaluate_module(i);
-    }
+static void evaluate_new_state(m_context *context) {
+    hashmap_iterate(context->modules, evaluate_module, NULL);
 }
 
-static void evaluate_module(int idx) {
-    if (module_is(&ctx.modules[idx].self, IDLE) 
-        && ctx.modules[idx].hook->evaluate()) {
+static int evaluate_module(void *data, void *m) {
+    module *mod = (module *)m;
+    if (module_is(&mod->self, IDLE) 
+        && mod->hook->evaluate()) {
         
-        int fd = ctx.modules[idx].hook->init();
-        module_start(&ctx.modules[idx].self, fd);
+        int fd = mod->hook->init();
+        module_start(&mod->self, fd);
     }
+    return MAP_OK;
 }
 
-void module_become(const self_t *self,  recv_cb new_recv) {
+void module_become(const void *self,  recv_cb new_recv) {
     assert(self);
     
-    ctx.modules[self->id].hook->recv = new_recv;
+    GET_MOD(self);
+    mod->hook->recv = new_recv;
 }
 
-void module_log(const self_t *self, const char *fmt, ...) {
+void module_log(const void *self, const char *fmt, ...) {
     assert(self);
     
     va_list args;
     va_start(args, fmt);
-    printf("%s: ", self->name);
+    printf("%s: ", ((self_t *)self)->name);
     vprintf(fmt, args);
     va_end(args);
 }
 
-void module_set_userdata(const self_t *self, const void *userdata) {
+void module_set_userdata(const void *self, const void *userdata) {
     assert(self);
     
-    ctx.modules[self->id].userdata = userdata;
+    GET_MOD(self);
+    mod->userdata = userdata;
 }
 
-static void default_error(const char *error_msg) {
-    fprintf(stderr, "Libmodule error: %s\n", error_msg);
+static void default_error(const char *error_msg, const char *ctx_name) {
+    fprintf(stderr, "[%s] Libmodule error: %s\n", ctx_name, error_msg);
+    modules_ctx_quit(ctx_name);
 }
 
 /** Module state getter **/
 
-int module_is(const self_t *self, const enum module_states s) {
+int module_is(const void *self, const enum module_states st) {
     assert(self);
     
-    return ctx.modules[self->id].state == s;
+    GET_MOD(self);
+    return mod->state == st;
 }
 
 /** Module state setters **/
 
-int module_start(const self_t *self, int fd) {
+int module_start(const void *self, int fd) {
     assert(self);
     
-    ctx.modules[self->id].fd = fd;
-    MODULE_DEBUG("Starting module %s.\n", self->name);
+    GET_MOD(self);
+    mod->fd = fd;
+    MODULE_DEBUG("Starting module %s.\n", ((self_t *)self)->name);
     return module_resume(self);
 }
 
-int module_pause(const self_t *self) {
+int module_pause(const void *self) {
     assert(self);
     
-    int ret = epoll_ctl(ctx.epollfd, EPOLL_CTL_DEL, ctx.modules[self->id].fd, NULL);
+    GET_MOD(self);
+    int ret = epoll_ctl(context->epollfd, EPOLL_CTL_DEL, mod->fd, NULL);
     if (!ret) {
-        ctx.modules[self->id].state = PAUSED;
+        mod->state = PAUSED;
     }
     return ret;
 }
 
-int module_resume(const self_t *self) {
+int module_resume(const void *self) {
     assert(self);
     
-    ctx.modules[self->id].ev.data.ptr = (void *)self;
-    ctx.modules[self->id].ev.events = EPOLLIN;
-    int ret = epoll_ctl(ctx.epollfd, EPOLL_CTL_ADD, ctx.modules[self->id].fd, &ctx.modules[self->id].ev);
+    GET_MOD(self);
+    mod->ev.data.ptr = (void *)self;
+    mod->ev.events = EPOLLIN;
+    int ret = epoll_ctl(context->epollfd, EPOLL_CTL_ADD, mod->fd, &mod->ev);
     if (!ret) {
-        ctx.modules[self->id].state = STARTED;
+        mod->state = RUNNING;
     }
     return ret;
 }
 
-int module_stop(const self_t *self) {
+int module_stop(const void *self) {
     assert(self);
     
-    MODULE_DEBUG("Stopping module %s.\n", self->name);
-    ctx.modules[self->id].state = IDLE;
-    return close(ctx.modules[self->id].fd); // implicitly calls EPOLL_CTL_DEL
+    GET_MOD(self);
+    MODULE_DEBUG("Stopping module %s.\n", ((self_t *)self)->name);
+    mod->state = IDLE;
+    return close(mod->fd); // implicitly calls EPOLL_CTL_DEL
 }
