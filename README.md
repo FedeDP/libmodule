@@ -27,13 +27,13 @@ It is tested with both gcc and clang with [travis](https://travis-ci.org/FedeDP/
 Right now no. I'm sorry.  
 I'm focusing about providing as much features as possible, and the project is under heavy development.  
 I promise that as soon as it is stable enough, documentation will be top priority (and provided asap).  
-For now you have to rely on my [sample](https://github.com/FedeDP/libmodule/tree/master/Sample).
+For now you have to rely on my [samples](https://github.com/FedeDP/libmodule/tree/master/Samples).
 
 ## Build dep and how to build
 
 You only need cmake to build libmodule.  
 It does not depend upon external software.  
-Libmodule includes an [hashmap](https://github.com/petewarden/c_hashmap) implementation provided by Pete Warden.
+Libmodule includes an [hashmap](https://github.com/petewarden/c_hashmap) implementation provided by Pete Warden (thank you!).
 To build, you only need to issue:
 
     $ mkdir build
