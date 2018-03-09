@@ -8,7 +8,13 @@
 - [x] add a multi-context example
 - [x] add a multi module in same source file example
 - [ ] SUBMODULE concept? (eg: SUBMODULE(B, A) where B is a submodule of A). When A starts, B is automatically started. When A is stopped, B is automatically stopped. IE: their status is binded
-- [ ] Destroy context as soon as modules_ctx_quit() is called?
+- [ ] Destroy context as soon as modules_ctx_quit() is called -> PRO: free some memory; CONS: you cannot restart looping on this context. (it may happen that one receives an error, leave the loop and then later retries to loop.). One can forcefully destroy a context by deregistering all modules inside it though.
+
+## Generic
+
+- [x] AUR pkgbuild
+- [x] modules_pre_start() function that will be run right before modules' constructors?
+- [ ] let developers not implement some functions (eg: check/destroy can be useless in some cases)? It should be enough to declare these functions as "weak" and check if pointer is NULL in module.c
 
 ## Document it
 

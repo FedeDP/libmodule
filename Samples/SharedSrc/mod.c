@@ -80,7 +80,8 @@ static int evaluate(void) {
 }
 
 /*
- * Destroyer function, called by module_deregister for each module
+ * Destroyer function, called by module_deregister for each module.
+ * Note that each module's FD is automatically closed for you.
  */
 static void destroy(void) {
     

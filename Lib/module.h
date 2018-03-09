@@ -5,10 +5,12 @@
 /* Convenience macros */
 
 #define _public_    __attribute__ ((visibility("default")))
-#define _ctor0_      __attribute__((constructor (101)))
-#define _ctor1_      __attribute__((constructor (102)))
-#define _dtor0_      __attribute__((destructor (101)))
-#define _dtor1_      __attribute__((destructor (102)))
+#define _ctor0_     __attribute__((constructor (101)))
+#define _ctor1_     __attribute__((constructor (102)))
+#define _dtor0_     __attribute__((destructor (101)))
+#define _dtor1_     __attribute__((destructor (102)))
+
+#define _weak_      __attribute__((weak))
 
 #define DEFAULT_CTX "default"
 
@@ -55,7 +57,7 @@ enum module_states { IDLE, RUNNING, PAUSED };
 typedef struct {
     int fd;
     const char *message;
-    const char *from;
+    const char *sender;
 } message_t;
 
 /* Callbacks typedefs */
@@ -87,6 +89,7 @@ _public_ int module_stop(const void *self);
 _public_ void module_become(const void *self,  recv_cb new_recv);
 
 /* Modules interface functions */
+_public_ void _ctor0_ _weak_ modules_pre_start(void);
 _public_ void modules_ctx_on_error(const char *ctx_name, error_cb on_error);
 _public_ void modules_ctx_loop(const char *ctx_name);
 _public_ void modules_ctx_quit(const char *ctx_name);

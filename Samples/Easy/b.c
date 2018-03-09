@@ -5,7 +5,8 @@
 
 /* 
  * Declare and automagically initialize 
- * this module as soon as program starts 
+ * this module as soon as program starts.
+ * Note that module's name is not passed as string here.
  */
 MODULE(B);
 
@@ -50,6 +51,7 @@ static int evaluate(void) {
 
 /*
  * Destroyer function, called at module unload (at end of program).
+ * Note that module's FD is automatically closed for you.
  */
 static void destroy(void) {
     

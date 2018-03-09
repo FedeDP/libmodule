@@ -2,6 +2,16 @@
 
 static void on_error(const char *msg, const char *ctx_name);
 
+/*
+ * This function is automatically called before initing any module.
+ * Is this function to eg: parse config needed to decide
+ * whether to start some module.
+ * There is no need to explicitly call it.
+ */
+void modules_pre_start() {
+    printf("Prestart!\n");
+}
+
 int main() {
     /* Set an error callback */
     modules_on_error(on_error);

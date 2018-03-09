@@ -2,7 +2,7 @@
 
 This folder contains some libmodule's examples.  
 For now, they are the only API documentation available too.  
-As you can see, API is quite straightforward though.
+As you can see, API is quite straightforward though, as being clean and simple has been one of the library's focus.
 
 To build these samples, use 
 
@@ -17,14 +17,11 @@ This is the simplest libmodule usage example, and it is self-explanatory.
 
 ## Shared source example
 
-[SharedSrc](https://github.com/FedeDP/libmodule/tree/master/Samples/SharedSrc) example shows how to use "more complicated" libmodule API to  
-create 2 modules inside same source file, that can shared some callbacks too.  
+[SharedSrc](https://github.com/FedeDP/libmodule/tree/master/Samples/SharedSrc) example shows how to use "more complicated" libmodule API to create 2 modules inside same source file that share some callbacks.  
 This is highly discouraged though, as main libmodule aim is to create simple and modular C projects.  
-There can be some cases, though, were eg: 2 modules share a huge callback that you may not desire to be copied in 2 different files.
+There can be some cases, though, were 2 modules share a huge callback that you may not desire to have copied in 2 different source files.
 
 ## Multi context example
 
 [MultiCtx](https://github.com/FedeDP/libmodule/tree/master/Samples/MultiCtx) example shows how to use "most complicated" libmodule API.  
 This example fully introduces context's concept, already seen in previous example.  
-A context is a way to create subnets of modules. You can call modules_loop on each context, and each context behaves independently from others.  
-This can be particularly useful when dealing with 2+ threads; ideally, each thread has its own module's context.

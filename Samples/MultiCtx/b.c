@@ -6,7 +6,8 @@
 static const char *myCtx = "SecondCtx";
 /* 
  * Declare and automagically initialize 
- * this module and its context as soon as program starts 
+ * this module and its context as soon as program starts.
+ * Note that both module and context names are not passed as string here.
  */
 CTX_MODULE(B, SecondCtx);
 
@@ -51,6 +52,7 @@ static int evaluate(void) {
 
 /*
  * Destroyer function, called at module unload (at end of program).
+ * Note that module's FD is automatically closed for you.
  */
 static void destroy(void) {
     

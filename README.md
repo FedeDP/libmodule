@@ -8,7 +8,6 @@ You will write less code, focusing on what you really need.
 
 ## Is this an event loop or an actor lib?
 
-Well, it is both, someway.  
 It stands somewhere in the middle, trying to mix the 2 concepts.  
 It does not provide any faciliting to build an event loop; it does provide its own event loop though.  
 You may find some/lots of similarities between a libmodule's MODULE and an Actor.  
@@ -20,7 +19,7 @@ It can probably be expanded to an actor library with some work. I may even work 
 No, it is not.  
 It uses epoll, that is linux specific.  
 Moreover it heavily relies upon gcc attributes that may or may not be available for your compiler.  
-It is tested with both gcc and clang with [travis](https://travis-ci.org/FedeDP/libmodule).
+It is tested with both gcc and clang through [travis](https://travis-ci.org/FedeDP/libmodule).
 
 ## Is there any documentation?
 
@@ -51,4 +50,11 @@ It can be somewhat seen as a class, and shares lots of concepts with an Actor.
 It helps you to write standard and clean projects with small units, so called modules, whose job should be self-contained.  
 In fact, as you may have noticed, libmodule API does not provide any kind of messaging mechanism between modules.  
 This is a design choice that strongly differentiates libmodule from an actor library.  
+You may notice that recv method takes a message_t as parameter, that has "message" and "sender" fields.  
+These fields are unused right now, but they can be used to build a module's messaging system (with PubSub mechanism too) in the future, if any interest rises.
+
+## I see there is a multi-context API. What is a context?
+
+A context is a way to create subnets of modules. You can then loop on events from each context, and each context behaves independently from others.  
+This can be particularly useful when dealing with 2+ threads; ideally, each thread has its own module's context and thus its own events to be polled.  
 

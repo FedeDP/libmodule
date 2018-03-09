@@ -6,7 +6,8 @@
 static const char *myCtx = "FirstCtx";
 /* 
  * Declare and automagically initialize 
- * this module and its context as soon as program starts 
+ * this module and its context as soon as program starts.
+ * Note that both module and context names are not passed as string here.
  */
 CTX_MODULE(A, FirstCtx);
 
@@ -52,6 +53,7 @@ static int evaluate(void) {
 
 /*
  * Destroyer function, called at module unload (at end of program).
+ * Note that module's FD is automatically closed for you.
  */
 static void destroy(void) {
     
@@ -74,10 +76,6 @@ static void recv(message_t *msg, const void *userdata) {
             m_become(ready);
             m_set_userdata(&counter);
         }
-        
-        if (counter == 10) {
-            modules_ctx_quit(myCtx);
-        }
     }
 }
 
@@ -96,6 +94,9 @@ static void recv_ready(message_t *msg, const void *userdata) {
     
         if (*counter % 3 == 0) {
             m_unbecome();
+        }
+        if (counter == 10) {
+            modules_ctx_quit(myCtx);
         }
     }
 }
