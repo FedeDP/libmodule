@@ -78,6 +78,7 @@ typedef struct {
 /* Module interface functions */
 _public_ void module_register(const char *name, const char *ctx_name, const void **self, userhook *hook);
 _public_ void module_deregister(const void **self);
+_public_ void module_binds_to(const void *self, const char *parent);
 _public_ void module_log(const void *self, const char *fmt, ...);
 
 _public_ void module_set_userdata(const void *self, const void *userdata);

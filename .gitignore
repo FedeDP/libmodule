@@ -54,3 +54,6 @@ dkms.conf
 # Cmake build dir
 build/
 Build/
+
+# Kdevelop
+*.kdev4

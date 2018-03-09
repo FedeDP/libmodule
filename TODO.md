@@ -7,13 +7,11 @@
 - [x] don't allow 2 modules with same name in same context -> easily achievable renaming "name()" function to "ctx_name()" func. THis way, different ctx can have same module, but same ctx cannot.
 - [x] add a multi-context example
 - [x] add a multi module in same source file example
+
+## Submodules
+
 - [ ] SUBMODULE concept? (eg: SUBMODULE(B, A) where B is a submodule of A). When A starts, B is automatically started. When A is stopped, B is automatically stopped. IE: their status is binded
-- [ ] Destroy context as soon as modules_ctx_quit() is called -> PRO: free some memory; CONS: you cannot restart looping on this context. (it may happen that one receives an error, leave the loop and then later retries to loop.). One can forcefully destroy a context by deregistering all modules inside it though.
-
-## Generic
-
-- [x] AUR pkgbuild
-- [x] modules_pre_start() function that will be run right before modules' constructors?
+- [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);
 
 ## Document it
 

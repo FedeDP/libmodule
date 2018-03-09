@@ -28,13 +28,25 @@
         hashmap_get(context->modules, (char *)s->name, (void **)&mod); \
         if (!mod) context->on_error("Module not found.", (char *)s->ctx); \
     } while(0)
+    
+#define CHILDREN_LOOP(f) \
+    child_t *tmp = m->children; \
+    while (tmp) { \
+        GET_MOD(tmp->self); \
+        f; \
+    }
 
 /* Struct that holds self module informations, static to each module */
 typedef struct {
     const char *name;                     // module's name
     const char *ctx;                      // module's ctx 
 } self_t;
-    
+
+typedef struct child {
+    const self_t *self;                   // module's name
+    struct child *next;                  // module's ctx 
+} child_t;
+
 /* Struct that holds data for each module */
 typedef struct {
     userhook *hook;                       // module's user defined callbacks
@@ -43,6 +55,7 @@ typedef struct {
     self_t self;                          // module's info available to external world
     int fd;                               // file descriptor to be polled
     struct epoll_event ev;                // module's epoll event struct
+    child_t *children;                    // list of children modules
 } module;
 
 typedef struct {
@@ -57,9 +70,12 @@ static _dtor0_ void modules_destroy(void);
 static void init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
 static m_context *check_ctx(const char *ctx_name);
+static void add_children(module *mod, const void *self);
 static void evaluate_new_state(m_context *context);
 static int evaluate_module(void *data, void *m);
 static void default_error(const char *error_msg, const char *ctx_name);
+static void start_children(module *m);
+static void stop_children(module *m);
 
 static map_t ctx;
 
@@ -148,6 +164,27 @@ void module_deregister(const void **self) {
         tmp = NULL;
         free(mod);
     }
+}
+
+static void add_children(module *mod, const void *self) {
+    child_t **tmp = &mod->children;
+    while (*tmp) {
+        tmp = &(*tmp)->next;
+    }
+    *tmp = malloc(sizeof(child_t));
+    (*tmp)->self = self;
+    (*tmp)->next = NULL;
+}
+
+void module_binds_to(const void *self, const char *parent) {
+    self_t *tmp = (self_t *) self;
+    GET_CTX(tmp->ctx);
+    
+    module *mod = NULL;
+    hashmap_get(c->modules, (char *)parent, (void **)&mod);
+    assert(mod);
+    
+    add_children(mod, self);
 }
 
 void modules_ctx_loop(const char *ctx_name) {
@@ -261,6 +298,7 @@ int module_pause(const void *self) {
     int ret = epoll_ctl(context->epollfd, EPOLL_CTL_DEL, mod->fd, NULL);
     if (!ret) {
         mod->state = PAUSED;
+        stop_children(mod);
     }
     return ret;
 }
@@ -274,6 +312,8 @@ int module_resume(const void *self) {
     int ret = epoll_ctl(context->epollfd, EPOLL_CTL_ADD, mod->fd, &mod->ev);
     if (!ret) {
         mod->state = RUNNING;
+        start_children(mod);
+
     }
     return ret;
 }
@@ -285,4 +325,17 @@ int module_stop(const void *self) {
     MODULE_DEBUG("Stopping module %s.\n", ((self_t *)self)->name);
     mod->state = IDLE;
     return close(mod->fd); // implicitly calls EPOLL_CTL_DEL
+}
+
+static void start_children(module *m) {
+    CHILDREN_LOOP({
+        int fd = mod->hook->init();
+        module_start(&mod->self, fd);
+    });
+}
+
+static void stop_children(module *m) {
+    CHILDREN_LOOP({
+        module_stop(&mod->self);
+    });
 }
