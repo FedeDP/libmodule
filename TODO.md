@@ -14,7 +14,6 @@
 
 - [x] AUR pkgbuild
 - [x] modules_pre_start() function that will be run right before modules' constructors?
-- [ ] let developers not implement some functions (eg: check/destroy can be useless in some cases)? It should be enough to declare these functions as "weak" and check if pointer is NULL in module.c
 
 ## Document it
 

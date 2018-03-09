@@ -134,7 +134,7 @@ void module_deregister(const void **self) {
     if (tmp) {
         MODULE_DEBUG("Deregistering module %s.\n", tmp->name);
         
-        module_stop(tmp);        
+        module_stop(tmp);
         GET_MOD(tmp);
         
         mod->hook->destroy();
