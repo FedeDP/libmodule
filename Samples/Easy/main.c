@@ -4,7 +4,7 @@ static void on_error(const char *msg, const char *ctx_name);
 
 /*
  * This function is automatically called before initing any module.
- * Is this function to eg: parse config needed to decide
+ * Use this function to eg: parse config needed to decide
  * whether to start some module.
  * There is no need to explicitly call it.
  */
