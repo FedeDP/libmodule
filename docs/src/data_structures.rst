@@ -1,5 +1,5 @@
-Module Data Structures
-======================
+Libmodule Data Structures
+=========================
 
 .. code::
     
