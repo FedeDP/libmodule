@@ -34,6 +34,7 @@
     while (tmp) { \
         GET_MOD(tmp->self); \
         f; \
+        tmp = tmp->next; \
     }
 
 /* Struct that holds self module informations, static to each module */
@@ -95,8 +96,8 @@ static void init_ctx(const char *ctx_name, m_context **context) {
     *context = malloc(sizeof(m_context));
     assert(*context);
     
-    memset(*context, 0, sizeof(m_context));
-     
+    **context = (m_context) {0};
+         
     (*context)->epollfd = epoll_create1(EPOLL_CLOEXEC); 
     assert((*context)->epollfd >= 0);
      
@@ -133,8 +134,8 @@ void module_register(const char *name, const char *ctx_name, const void **self, 
     module *tmp = malloc(sizeof(module));
     assert(tmp);
     
-    memset(tmp, 0, sizeof(module));
-    
+    *tmp = (module) {0};
+
     tmp->hook = hook;
     tmp->state = IDLE;
     tmp->self.name = strdup(name);
@@ -298,7 +299,6 @@ int module_pause(const void *self) {
     int ret = epoll_ctl(context->epollfd, EPOLL_CTL_DEL, mod->fd, NULL);
     if (!ret) {
         mod->state = PAUSED;
-        stop_children(mod);
     }
     return ret;
 }
@@ -312,7 +312,6 @@ int module_resume(const void *self) {
     int ret = epoll_ctl(context->epollfd, EPOLL_CTL_ADD, mod->fd, &mod->ev);
     if (!ret) {
         mod->state = RUNNING;
-        start_children(mod);
 
     }
     return ret;

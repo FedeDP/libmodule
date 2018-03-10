@@ -15,8 +15,6 @@
 #define DEFAULT_CTX "default"
 
 /* Interface Macros */
-#define m_log(fmt, ...) module_log(self, fmt, ##__VA_ARGS__)
-
 #define CTX_MODULE(name, ctx) \
     static int init(void); \
     static int check(void); \
@@ -34,7 +32,7 @@
 
 #define MODULE(name) CTX_MODULE(name, default)
    
-/* Defines for exposed module state getters/setters */
+/* Defines for easy API (with no need bothering with self and ctx) */
 #define m_is(x)                     module_is(self, x)
 #define m_start(fd)                 module_start(self, fd)
 #define m_pause()                   module_pause(self)
@@ -43,8 +41,8 @@
 #define m_become(x)                 module_become(self, recv_##x)
 #define m_unbecome()                module_become(self, recv)
 #define m_set_userdata(x)           module_set_userdata(self, x)
+#define m_log(fmt, ...)             module_log(self, fmt, ##__VA_ARGS__)
 
-/* Defines for simple api (without ctx) */
 #define modules_on_error(on_error)  modules_ctx_on_error(DEFAULT_CTX, on_error)
 #define modules_loop()              modules_ctx_loop(DEFAULT_CTX)
 #define modules_quit()              modules_ctx_quit(DEFAULT_CTX)
@@ -78,7 +76,8 @@ typedef struct {
 /* Module interface functions */
 _public_ void module_register(const char *name, const char *ctx_name, const void **self, userhook *hook);
 _public_ void module_deregister(const void **self);
-_public_ void module_binds_to(const void *self, const char *parent);
+/* FIXME: do not export this for now as its support is not complete */
+void module_binds_to(const void *self, const char *parent);
 _public_ void module_log(const void *self, const char *fmt, ...);
 
 _public_ void module_set_userdata(const void *self, const void *userdata);
