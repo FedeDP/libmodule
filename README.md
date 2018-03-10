@@ -26,7 +26,6 @@ It is tested with both gcc and clang through [travis](https://travis-ci.org/Fede
 
 Yes, it is availabe at http://libmodule.readthedocs.io/en/latest/.  
 Please note that I'm currently focusing about providing as much features as possible and the project is under heavy development, so documentation can be out of date.  
-I promise that as soon as it is stable enough, documentation will be top priority (and provided asap).  
 You have some nice examples too, check [samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.
 
 ## Build dep and how to build
