@@ -57,3 +57,6 @@ Build/
 
 # Kdevelop
 *.kdev4
+
+# Readthedocs doc build folder
+docs/_build

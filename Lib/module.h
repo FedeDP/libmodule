@@ -78,15 +78,14 @@ _public_ void module_register(const char *name, const char *ctx_name, const void
 _public_ void module_deregister(const void **self);
 /* FIXME: do not export this for now as its support is not complete */
 void module_binds_to(const void *self, const char *parent);
-_public_ void module_log(const void *self, const char *fmt, ...);
-
-_public_ void module_set_userdata(const void *self, const void *userdata);
 _public_ int module_is(const void *self, const enum module_states st);
 _public_ int module_start(const void *self, int fd);
 _public_ int module_pause(const void *self);
 _public_ int module_resume(const void *self);
 _public_ int module_stop(const void *self);
 _public_ void module_become(const void *self,  recv_cb new_recv);
+_public_ void module_log(const void *self, const char *fmt, ...);
+_public_ void module_set_userdata(const void *self, const void *userdata);
 
 /* Modules interface functions */
 _public_ void _ctor0_ _weak_ modules_pre_start(void);
