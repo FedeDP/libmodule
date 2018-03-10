@@ -9,7 +9,7 @@ static const char *myCtx = "FirstCtx";
  * this module and its context as soon as program starts.
  * Note that both module and context names are not passed as string here.
  */
-CTX_MODULE(A, FirstCtx);
+MODULE_CTX(A, FirstCtx);
 
 static void recv_ready(message_t *msg, const void *userdata);
 
@@ -95,7 +95,7 @@ static void recv_ready(message_t *msg, const void *userdata) {
         if (*counter % 3 == 0) {
             m_unbecome();
         }
-        if (counter == 10) {
+        if (*counter == 10) {
             modules_ctx_quit(myCtx);
         }
     }

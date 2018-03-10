@@ -6,7 +6,7 @@ Easy:
 	cd Easy; $(CC) *.c -L../../build -lmodule -I../../Lib -o sample.out -Wl,-rpath=../../build
 
 SharedSrc:
-	cd SharedSrc; $(CC) *.c -L../../build -lmodule -I../../Lib -o sample.out -Wl,-rpath=../../build
+	cd SharedSrc; $(CC) *.c -L../../build -lmodule -I../../Lib -o sample.out -Wl,-rpath=../../build 
 
 MultiCtx:
-	cd MultiCtx; $(CC) *.c -L../../build -lmodule -lpthread -I../../Lib -o sample.out -Wl,-rpath=../../build
+	cd MultiCtx; $(CC) *.c -L../../build -lmodule -lpthread -I../../Lib -o sample.out -Wl,-rpath=../../build 

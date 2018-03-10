@@ -9,7 +9,7 @@ static const char *myCtx = "SecondCtx";
  * this module and its context as soon as program starts.
  * Note that both module and context names are not passed as string here.
  */
-CTX_MODULE(B, SecondCtx);
+MODULE_CTX(B, SecondCtx);
 
 /*
  * Initializes this module's state;

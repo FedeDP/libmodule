@@ -4,7 +4,7 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3526dd92b6d84370b072bfadfc7da632)](https://www.codacy.com/app/FedeDP/libmodule?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FedeDP/libmodule&amp;utm_campaign=Badge_Grade)
 [![Documentation Status](https://readthedocs.org/projects/libmodule/badge/?version=latest)](http://libmodule.readthedocs.io/en/latest/?badge=latest)
 
-Libmodule aims at let developers easily create modular C projects in a way that is both simple and elegant.  
+Libmodule aims to let developers easily create modular C projects in a way that is both simple and elegant.  
 You will write less code, focusing on what you really need.  
 
 ## Is this an event loop or an actor lib?
@@ -54,9 +54,4 @@ In fact, as you may have noticed, libmodule API does not provide any kind of mes
 This is a design choice that strongly differentiates libmodule from an actor library.  
 You may notice that recv method takes a message_t as parameter, that has "message" and "sender" fields.  
 These fields are unused right now, but they can be used to build a module's messaging system (with PubSub mechanism too) in the future, if any interest rises.
-
-## I see there is a multi-context API. What is a context?
-
-A context is a way to create subnets of modules. You can then loop on events from each context, and each context behaves independently from others.  
-This can be particularly useful when dealing with 2+ threads; ideally, each thread has its own module's context and thus its own events to be polled.  
 

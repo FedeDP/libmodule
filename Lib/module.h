@@ -15,7 +15,7 @@
 #define DEFAULT_CTX "default"
 
 /* Interface Macros */
-#define CTX_MODULE(name, ctx) \
+#define MODULE_CTX(name, ctx) \
     static int init(void); \
     static int check(void); \
     static int evaluate(void); \
@@ -30,7 +30,7 @@
     } \
     void _dtor1_ ctx##_destroy_##name() { module_deregister(&self); }
 
-#define MODULE(name) CTX_MODULE(name, default)
+#define MODULE(name) MODULE_CTX(name, default)
    
 /* Defines for easy API (with no need bothering with self and ctx) */
 #define m_is(x)                     module_is(self, x)

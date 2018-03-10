@@ -2,6 +2,7 @@
 #include <sys/timerfd.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <string.h>
 
 static int A_init(void);
 static int B_init(void);
