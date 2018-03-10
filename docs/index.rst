@@ -10,11 +10,12 @@ Welcome to libmodule's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   src/concepts
    src/data_structures
-   src/module_callbacks
+   src/callbacks
    src/module
    src/modules
-   src/module_context
+   src/context
 
 Indices and tables
 ==================

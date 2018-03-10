@@ -5,7 +5,7 @@
 Module callbacks
 ================
 
-Every module needs 5 callbacks that must defined by developer. |br|
+Every module needs 5 callbacks that be must defined by developer. |br|
 They are automatically declared by MODULE macro:
 
 .. code::

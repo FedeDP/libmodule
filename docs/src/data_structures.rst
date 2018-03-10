@@ -9,8 +9,8 @@ Libmodule Data Structures
     /* Message received in poll callback */
     typedef struct {
         int fd;
-        const char *message; // field unused for now
-        const char *sender; // field unused for now
+        const char *message;                    // field unused for now
+        const char *sender;                     // field unused for now
     } message_t;
 
     /* Callbacks typedefs */
