@@ -1,8 +1,7 @@
 # Libmodule Samples
 
 This folder contains some libmodule's examples.  
-For now, they are the only API documentation available too.  
-As you can see, API is quite straightforward though, as being clean and simple has been one of the library's focus.
+As you can see, API is quite straightforward as being clean and simple has been one of the library's focus.
 
 To build these samples, use 
 
