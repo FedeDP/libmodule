@@ -8,11 +8,9 @@
 
 ## Generic
 
-- [x] Properly zeroing malloc'd memory
 - [ ] avoid assert() and better errors handling
 
 ## Document it
 
-- [x] expand README
-- [ ] write DOC (readthedocs?)
+- [x] write DOC (readthedocs?)
 - [ ] write some tests (cmocka?)
