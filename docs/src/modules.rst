@@ -22,6 +22,8 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
 .. c:macro:: modules_on_error(on_error)
 
   Set libmodule error's callback
+  
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
     
   :param on_error: user error callback.
   :type on_error: :c:type:`error_cb` 
@@ -34,6 +36,8 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
 .. c:macro:: modules_quit(void)
 
   Leave libmodule's events loop
+  
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
 Modules multi-context API
 -------------------------
@@ -48,6 +52,7 @@ It exposes very similar functions to single-context API (again, single-context i
   :param on_error: user error callback.
   :type ctx_name: :c:type:`const char *`
   :type on_error: :c:type:`error_cb`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: modules_ctx_loop(ctx_name)
 
@@ -63,3 +68,4 @@ It exposes very similar functions to single-context API (again, single-context i
   
   :param ctx_name: context name.
   :type ctx_name: :c:type:`const char *`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.

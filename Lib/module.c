@@ -77,8 +77,8 @@ static int add_children(module *mod, const void *self);
 static void evaluate_new_state(m_context *context);
 static int evaluate_module(void *data, void *m);
 static void default_error(const char *error_msg, const char *ctx_name);
-static void start_children(module *m);
-static void stop_children(module *m);
+static int start_children(module *m);
+static int stop_children(module *m);
 
 static map_t ctx;
 
@@ -101,7 +101,7 @@ static int init_ctx(const char *ctx_name, m_context **context) {
     **context = (m_context) {0};
          
     (*context)->epollfd = epoll_create1(EPOLL_CLOEXEC); 
-    MOD_ASSERT((*context)->epollfd >= 0, "Failed to create epollfd.");
+    MOD_ASSERT(((*context)->epollfd >= 0), "Failed to create epollfd.");
      
     (*context)->on_error = default_error;
     (*context)->modules = hashmap_new();
@@ -237,16 +237,18 @@ int modules_ctx_loop(const char *ctx_name) {
     return MOD_OK;
 }
 
-void modules_ctx_quit(const char *ctx_name) {
+int modules_ctx_quit(const char *ctx_name) {
     GET_CTX(ctx_name);
     
     c->quit = 1;
+    return MOD_OK;
 }
 
-void modules_ctx_on_error(const char *ctx_name, error_cb on_error) {
+int modules_ctx_on_error(const char *ctx_name, error_cb on_error) {
     GET_CTX(ctx_name);
     
     c->on_error = on_error;
+    return MOD_OK;
 }
 
 static void evaluate_new_state(m_context *context) {
@@ -340,15 +342,17 @@ int module_stop(const void *self) {
     return MOD_ERR;
 }
 
-static void start_children(module *m) {
+static int start_children(module *m) {
     CHILDREN_LOOP({
         int fd = mod->hook->init();
         module_start(&mod->self, fd);
     });
+    return MOD_OK;
 }
 
-static void stop_children(module *m) {
+static int stop_children(module *m) {
     CHILDREN_LOOP({
         module_stop(&mod->self);
     });
+    return MOD_OK;
 }

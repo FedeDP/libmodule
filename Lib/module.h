@@ -92,6 +92,6 @@ _public_ int module_set_userdata(const void *self, const void *userdata);
 
 /* Modules interface functions */
 _public_ void _ctor0_ _weak_ modules_pre_start(void);
-_public_ void modules_ctx_on_error(const char *ctx_name, error_cb on_error);
+_public_ int modules_ctx_on_error(const char *ctx_name, error_cb on_error);
 _public_ int modules_ctx_loop(const char *ctx_name);
-_public_ void modules_ctx_quit(const char *ctx_name);
+_public_ int modules_ctx_quit(const char *ctx_name);
