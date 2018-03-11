@@ -35,7 +35,7 @@ static int init(void) {
  * you may desire that a module is not started in certain conditions.
  */
 static int check(void) {
-    return 0;
+    return 1;
 }
 
 /* 

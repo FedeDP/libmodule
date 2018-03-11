@@ -22,7 +22,8 @@ arch:
         - cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug ../
         - make
-        - rm -rf build/
+        - cd ../Samples
+        - make
 
 script:
     - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"

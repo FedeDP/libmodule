@@ -18,56 +18,67 @@ It enforces correct modularity too: each module must have its own source file.
 
   Check current module's state
     
-  :param: :c:type:`enum module_states` state: state we are interested in.
-  :returns: false (0) if module'state is not 'state', true (1) if it is.
+  :param state: state we are interested in.
+  :type state: :c:type:`enum module_states` 
+  :returns: false (0) if module'state is not 'state', true (1) if it is and MOD_ERR on error.
   
 .. c:macro:: m_start(fd)
 
   Start a module by polling on fd
     
-  :param: :c:type:`int` fd: fd to be polled.
-  :returns: 0 if no error happened, < 0 if any error happened.
+  :param fd: fd to be polled.
+  :type fd: :c:type:`int` 
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:macro:: m_pause(void)
 
   Pause module's polling
     
-  :returns: 0 if no error happened, < 0 if any error happened.
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:macro:: m_resume(void)
 
   Resume module's polling
     
-  :returns: 0 if no error happened, < 0 if any error happened.
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:macro:: m_stop(void)
 
   Stop module's polling by closing its fd
     
-  :returns: 0 if no error happened, < 0 if any error happened.
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:macro:: m_become(new_recv)
 
   Change recv callback to recv_new_recv
     
-  :param: new_recv: new module's recv; the function has suffix \recv_ concatenated with new_recv.
+  :param new_recv: new module's recv; the function has suffix \recv_ concatenated with new_recv.
+  :type new_recv: untyped
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
 .. c:macro:: m_unbecome(void)
 
   Reset to default recv poll callback
   
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
+  
 .. c:macro:: m_set_userdata(userdata)
 
   Set userdata for this module; userdata will be passed as parameter to recv callback.
     
-  :param: :c:type:`const void *` userdata: module's new userdata.
+  :param userdata: module's new userdata.
+  :type userdata: :c:type:`const void *`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
-.. c:macro:: m_log(fmt, ...)
+.. c:macro:: m_log(fmt, args)
 
   Logger for this module. Call it the same way you'd call printf
     
-  :param: :c:type:`const char *` fmt: log's format.
-  :param ...: variadic argument.
+  :param fmt: log's format.
+  :param args: variadic argument.
+  :type fmt: :c:type:`const char *` 
+  :type args: :c:type:`variadic`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
 Module less-easy API
 --------------------
@@ -79,70 +90,97 @@ Sometime you may avoid using easy API; eg: if you wish to use same source file f
 
   Register a new module
     
-  :param: :c:type:`const char *` name: module's name.
-  :param: :c:type:`const char *` ctx_name: module's context name. A new context will be created if it cannot be found.
-  :param: :c:type:`const void **` self: handler for this module that will be created by this call.
-  :param: :c:type:`const userhook *` hook: struct that holds this module's callbacks.
+  :param name: module's name.
+  :param ctx_name: module's context name. A new context will be created if it cannot be found.
+  :param self: handler for this module that will be created by this call.
+  :param hook: struct that holds this module's callbacks.
+  :type name: :c:type:`const char *`
+  :type ctx_name: :c:type:`const char *`
+  :type self: :c:type:`const void **`
+  :type hook: :c:type:`const userhook *`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_deregister(self)
 
   Deregister module
     
-  :param: :c:type:`const void **` self: pointer to module's handler. It is set to NULL after this call.
+  :param self: pointer to module's handler. It is set to NULL after this call.
+  :type self: :c:type:`const void **`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_is(self, state)
 
   Check current module's state
     
-  :param: :c:type:`const void *` self: pointer to module's handler.
-  :param: :c:type:`enum module_states` state: state we are interested in.
-  :returns: false (0) if module'state is not 'state', true (1) if it is.
+  :param self: pointer to module's handler.
+  :param state: state we are interested in.
+  :type self: :c:type:`const void *`
+  :type state: :c:type:`enum module_states`
+  :returns: false (0) if module'state is not 'state', true (1) if it is and MOD_ERR on error.
   
 .. c:function:: module_start(self, fd)
 
   Start a module by polling on fd
     
-  :param: :c:type:`const void *` self: pointer to module's handler.
-  :param: :c:type:`int` fd: fd to be polled.
-  :returns: 0 if no error happened, < 0 if any error happened.
+  :param self: pointer to module's handler
+  :param fd: fd to be polled.
+  :type self: :c:type:`const void *`
+  :type fd: :c:type:`int` 
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_pause(self)
 
   Pause module's polling
     
-  :param: :c:type:`const void *` self: pointer to module's handler.
+  :param self: pointer to module's handler
+  :type self: :c:type:`const void *`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_resume(self)
 
   Resume module's polling
     
-  :param: :c:type:`const void *` self: pointer to module's handler.
+  :param self: pointer to module's handler
+  :type self: :c:type:`const void *`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_stop(self)
 
   Stop module's polling by closing its fd
     
-  :param: :c:type:`const void *` self: pointer to module's handler.
+  :param self: pointer to module's handler
+  :type self: :c:type:`const void *`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:macro:: module_become(self, new_recv)
 
   Change recv callback to new_recv
     
-  :param: :c:type:`const void *` self: pointer to module's handler.
-  :param: :c:type:`recv_cb` new_recv: new module's recv.
+  :param self: pointer to module's handler
+  :param new_recv: new module's recv.
+  :type self: :c:type:`const void *`
+  :type new_recv: :c:type:`recv_cb`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
 .. c:function:: module_set_userdata(self, userdata)
 
   Set userdata for this module; userdata will be passed as parameter to recv callback.
     
-  :param: :c:type:`const void *` self: pointer to module's handler.
-  :param: :c:type:`const void *` userdata: module's new userdata.
+  :param self: pointer to module's handler
+  :param userdata: module's new userdata.
+  :type self: :c:type:`const void *`
+  :type userdata: :c:type:`const void *`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
-.. c:function:: module_log(self, fmt, ...)
+.. c:function:: module_log(self, fmt, args)
 
   Module's logger
     
-  :param: :c:type:`const void *` self: pointer to module's handler.
-  :param: :c:type:`const char *` fmt: log's format.
-  :param ...: variadic argument.
+  :param self: pointer to module's handler
+  :param fmt: log's format.
+  :param args: variadic argument.
+  :type self: :c:type:`const void *`
+  :type fmt: :c:type:`const char *`
+  :type args: :c:type:`variadic`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   

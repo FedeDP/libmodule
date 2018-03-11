@@ -26,7 +26,7 @@ They are automatically declared by MODULE macro:
 
   Startup filter to check whether this module should be created and managed by libmodule
   
-  :returns: 0 if the module should be created, not-0 otherwise.
+  :returns: true (not-0) if the module should be created, 0 otherwise.
 
 .. c:function:: evaluate(void)
 

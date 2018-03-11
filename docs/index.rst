@@ -15,7 +15,6 @@ Welcome to libmodule's documentation!
    src/callbacks
    src/module
    src/modules
-   src/context
 
 Indices and tables
 ==================

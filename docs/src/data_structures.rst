@@ -27,5 +27,3 @@ Libmodule Data Structures
         recv_cb recv;                           // module's recv function
         destroy_cb destroy;                     // module's destroy function
     } userhook;
-
-    

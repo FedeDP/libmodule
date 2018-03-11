@@ -8,7 +8,7 @@
 
 ## Generic
 
-- [ ] avoid assert() and better errors handling
+- [x] avoid assert() and better errors handling
 
 ## Document it
 
