@@ -20,13 +20,13 @@ It can probably be expanded to an actor library with some work. I may even work 
 No, it is not.  
 It uses epoll, that is linux specific.  
 Moreover it heavily relies upon gcc attributes that may or may not be available for your compiler.  
-It is tested with both gcc and clang through [travis](https://travis-ci.org/FedeDP/libmodule).
+It is tested with both gcc and clang through [travis](https://travis-ci.org/FedeDP/libmodule).  
+I may consider and welcome any patch to support other platforms though.  
 
 ## Is there any documentation?
 
 Yes, it is availabe at http://libmodule.readthedocs.io/en/latest/.  
-Please note that I'm currently focusing about providing as much features as possible and the project is under heavy development, so documentation can be out of date.  
-You have some nice examples too, check [samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.
+You have some nice examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.
 
 ## Build dep and how to build
 
@@ -39,9 +39,13 @@ To build, you only need to issue:
     $ cd build
     $ cmake ../
     $ make
+
+If you wish to install, then you only need:
+
     # make install
 
-Libmodule will install a pkg-config file too. Use this to link libmodule in your projects, or use "-lmodule" flag.
+Libmodule will install a pkg-config file too. Use this to link libmodule in your projects, or use "-lmodule" flag.  
+Please note that in order to test examples, there is no need to install the library.
 
 ## What is a module, anyway?
 
