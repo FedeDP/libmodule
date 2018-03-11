@@ -23,7 +23,7 @@ set_target_properties(module PROPERTIES
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wl,--no-undefined -Wshadow -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security") 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_GNU_SOURCE -fvisibility=hidden") 
 
-configure_file(libmodule.pc.in libmodule.pc @ONLY)
+configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
 
 target_include_directories(module PRIVATE Lib/)
 

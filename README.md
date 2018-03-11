@@ -47,6 +47,8 @@ If you wish to install, then you only need:
 Libmodule will install a pkg-config file too. Use this to link libmodule in your projects, or use "-lmodule" flag.  
 Please note that in order to test examples, there is no need to install the library.
 
+For Archlinux users, a PKGBUILD can be found in [Extra/Arch](https://github.com/FedeDP/libmodule/tree/master/Extra/Arch) folder.
+
 ## What is a module, anyway?
 
 Unsurprisingly, module is the core concept of libmodule architecture.  
