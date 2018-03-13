@@ -332,10 +332,10 @@ int module_resume(const void *self) {
     return MOD_ERR;
 }
 
-int module_stop(const void *self) {    
+int module_stop(const void *self) {
     GET_MOD(self);
     MODULE_DEBUG("Stopping module %s.\n", ((self_t *)self)->name);
-    mod->state = IDLE;
+    mod->state = STOPPED;
     if (close(mod->fd) == 0) { // implicitly calls EPOLL_CTL_DEL
         return MOD_OK;
     }

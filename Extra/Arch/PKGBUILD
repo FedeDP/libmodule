@@ -2,7 +2,7 @@
 
 pkgname=libmodule-git
 _gitname=libmodule
-pkgver=r36.5372354
+pkgver=r37.d453079
 pkgrel=1
 pkgdesc="C linux library to build simple and modular projects"
 arch=(x86_64)

@@ -53,7 +53,7 @@
 /** Structs types **/
 
 /* Modules states */
-enum module_states { IDLE, RUNNING, PAUSED };
+enum module_states { IDLE, RUNNING, PAUSED, STOPPED };
 
 typedef struct {
     int fd;

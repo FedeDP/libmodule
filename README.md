@@ -32,7 +32,7 @@ You have some nice examples too, check [Samples](https://github.com/FedeDP/libmo
 
 You only need cmake to build libmodule.  
 It does not depend upon external software.  
-Libmodule includes an [hashmap](https://github.com/petewarden/c_hashmap) implementation provided by Pete Warden (thank you!).
+Libmodule includes an [hashmap](https://github.com/petewarden/c_hashmap) implementation provided by Pete Warden (thank you!).  
 To build, you only need to issue:
 
     $ mkdir build
