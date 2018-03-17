@@ -9,15 +9,15 @@ static const char *myCtx = "FirstCtx";
  * this module and its context as soon as program starts.
  * Note that both module and context names are not passed as string here.
  */
-MODULE_CTX(A, FirstCtx);
+MODULE_CTX("A", myCtx);
 
-static void recv_ready(message_t *msg, const void *userdata);
+static void recv_ready(msg_t *msg, const void *userdata);
 
 /*
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int init(void) {
+static int get_fd(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};
@@ -63,7 +63,7 @@ static void destroy(void) {
  * Our default poll callback.
  * Note that message_t->msg/sender are unused for now.
  */
-static void recv(message_t *msg, const void *userdata) {
+static void recv(msg_t *msg, const void *userdata) {
     if (!msg->message) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
@@ -83,7 +83,7 @@ static void recv(message_t *msg, const void *userdata) {
  * Secondary poll callback.
  * Use m_become(ready) to start using this second poll callback.
  */
-static void recv_ready(message_t *msg, const void *userdata) {
+static void recv_ready(msg_t *msg, const void *userdata) {
     if (!msg->message) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));

@@ -28,6 +28,20 @@ I may consider and welcome any patch to support other platforms though.
 Yes, it is availabe at http://libmodule.readthedocs.io/en/latest/.  
 You have some nice examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.
 
+## What is a module, anyway?
+
+Unsurprisingly, module is the core concept of libmodule architecture.  
+It can be somewhat seen as a class, and shares lots of concepts with an Actor.  
+It helps you to write standard and clean projects with small units, so called modules, whose job should be self-contained.  
+You may notice though that recv method takes a message_t as parameter.  
+This parameter can be used as module's messaging system (with PubSub mechanism too).
+
+## But.. why?
+
+We all know OOP is not a solution to everything and C is still a beautiful and much used language.  
+Still, I admit to love code modularity that OOP enforces; moreover, I realized I was using same code/abstraction over and over in my C projects (both side projects and at my job).  
+So I thought that writing a library to achieve those same abstractions in a cleaner and simpler way was the right thing to do.
+
 ## Build dep and how to build
 
 You only need cmake to build libmodule.  
@@ -48,14 +62,4 @@ Libmodule will install a pkg-config file too. Use this to link libmodule in your
 Please note that in order to test examples, there is no need to install the library.
 
 For Archlinux users, a PKGBUILD can be found in [Extra/Arch](https://github.com/FedeDP/libmodule/tree/master/Extra/Arch) folder.
-
-## What is a module, anyway?
-
-Unsurprisingly, module is the core concept of libmodule architecture.  
-It can be somewhat seen as a class, and shares lots of concepts with an Actor.  
-It helps you to write standard and clean projects with small units, so called modules, whose job should be self-contained.  
-In fact, as you may have noticed, libmodule API does not provide any kind of messaging mechanism between modules.  
-This is a design choice that strongly differentiates libmodule from an actor library.  
-You may notice that recv method takes a message_t as parameter, that has "message" and "sender" fields.  
-These fields are unused right now, but they can be used to build a module's messaging system (with PubSub mechanism too) in the future, if any interest rises.
 

@@ -4,12 +4,12 @@
 #include <stdint.h>
 #include <string.h>
 
-static int A_init(void);
-static int B_init(void);
+static int A_get_fd(void);
+static int B_get_fd(void);
 static int evaluate(void);
 static void destroy(void);
-static void A_recv(message_t *msg, const void *userdata);
-static void B_recv(message_t *msg, const void *userdata);
+static void A_recv(msg_t *msg, const void *userdata);
+static void B_recv(msg_t *msg, const void *userdata);
 
 static const void *selfA, *selfB;
 static userhook hookA, hookB;
@@ -21,14 +21,14 @@ static int counter = 0;
  * These modules can share some callbacks.
  */
 void create_modules(const char *ctx_name) {
-    hookA = (userhook) { A_init, evaluate, A_recv, destroy };
-    hookB = (userhook) { B_init, evaluate, B_recv, destroy };
+    hookA = (userhook) { A_get_fd, evaluate, A_recv, destroy };
+    hookB = (userhook) { B_get_fd, evaluate, B_recv, destroy };
     
     module_register("A", ctx_name, &selfA, &hookA);
     module_register("B", ctx_name, &selfB, &hookB);
     
-    module_set_userdata(selfA, strdup(ctx_name));
-    module_set_userdata(selfB, strdup(ctx_name));
+    module_set_userdata(selfA, ctx_name);
+    module_set_userdata(selfB, ctx_name);
 }
 
 /*
@@ -43,7 +43,7 @@ void destroy_modules(void) {
  * Initializes A module's state;
  * returns a valid fd to be polled.
  */
-static int A_init(void) {
+static int A_get_fd(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};
@@ -58,7 +58,7 @@ static int A_init(void) {
  * Initializes B module's state;
  * returns a valid fd to be polled.
  */
-static int B_init(void) {
+static int B_get_fd(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};
@@ -91,7 +91,7 @@ static void destroy(void) {
 /*
  * Our A module's poll callback.
  */
-static void A_recv(message_t *msg, const void *userdata) {
+static void A_recv(msg_t *msg, const void *userdata) {
     if (!msg->message) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
@@ -107,7 +107,7 @@ static void A_recv(message_t *msg, const void *userdata) {
 /*
  * Our B module's poll callback.
  */
-static void B_recv(message_t *msg, const void *userdata) {
+static void B_recv(msg_t *msg, const void *userdata) {
     if (!msg->message) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));

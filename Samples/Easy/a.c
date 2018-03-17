@@ -6,17 +6,16 @@
 /* 
  * Declare and automagically initialize 
  * this module as soon as program starts.
- * Note that module's name is not passed as string here.
  */
-MODULE(A);
+MODULE("A");
 
-static void recv_ready(message_t *msg, const void *userdata);
+static void recv_ready(msg_t *msg, const void *userdata);
 
 /*
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int init(void) {
+static int get_fd(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};
@@ -62,7 +61,7 @@ static void destroy(void) {
  * Our default poll callback.
  * Note that message_t->msg/sender are unused for now.
  */
-static void recv(message_t *msg, const void *userdata) {
+static void recv(msg_t *msg, const void *userdata) {
     if (!msg->message) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
@@ -74,6 +73,7 @@ static void recv(message_t *msg, const void *userdata) {
         if (counter % 3 == 0) {
             m_become(ready);
             m_set_userdata(&counter);
+            m_publish("test", "changing recv");
         }
     }
 }
@@ -82,7 +82,7 @@ static void recv(message_t *msg, const void *userdata) {
  * Secondary poll callback.
  * Use m_become(ready) to start using this second poll callback.
  */
-static void recv_ready(message_t *msg, const void *userdata) {
+static void recv_ready(msg_t *msg, const void *userdata) {
     if (!msg->message) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
@@ -92,7 +92,11 @@ static void recv_ready(message_t *msg, const void *userdata) {
         (*counter)++;
     
         if (*counter % 3 == 0) {
+            /* B module won't receive this message as it is not subscribed to topic */
+            m_publish("test2", "changing recv");
             m_unbecome();
         }
+    } else {
+        printf("Received message %s from %s.\n", msg->message->message, msg->message->sender);
     }
 }

@@ -9,13 +9,13 @@ static const char *myCtx = "SecondCtx";
  * this module and its context as soon as program starts.
  * Note that both module and context names are not passed as string here.
  */
-MODULE_CTX(B, SecondCtx);
+MODULE_CTX("B", myCtx);
 
 /*
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int init(void) {
+static int get_fd(void) {
     sigset_t mask;
     
     sigemptyset(&mask);
@@ -62,7 +62,7 @@ static void destroy(void) {
  * Our default poll callback.
  * Note that message_t->msg/sender are unused for now.
  */
-static void recv(message_t *msg, const void *userdata) {
+static void recv(msg_t *msg, const void *userdata) {
     if (!msg->message) {
         struct signalfd_siginfo fdsi;    
         ssize_t s = read(msg->fd, &fdsi, sizeof(struct signalfd_siginfo));

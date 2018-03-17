@@ -1,7 +1,6 @@
 #include <module.h>
 #include <pthread.h>
 
-static void on_error(const char *msg, const char *ctx_name);
 static void *loop(void *param);
 
 int main() {
@@ -20,17 +19,10 @@ int main() {
     return 0;
 }
 
-/* Quit context on which error happened */
-static void on_error(const char *msg, const char *ctx_name) {
-    fprintf(stderr, "[%s] Error: %s\n", ctx_name, msg);
-    modules_ctx_quit(ctx_name);
-}
-
 static void *loop(void *param) {
     char *myCtx = (char *)param;
-    
-    /* Set an error callback for this context */
-    modules_ctx_on_error(myCtx, on_error);
+
     /* Loop on our modules' events */
     modules_ctx_loop(myCtx);
+    return NULL;
 }

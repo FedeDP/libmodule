@@ -12,7 +12,7 @@ Module easy API
 
 Module easy API consists of a single-context multi-modules set of macros. |br|
 These macros make it easy and transparent to developer all of the module's internal mechanisms, providing a very simple way to use libmodule. |br|
-It enforces correct modularity too: each module must have its own source file.
+It enforces correct modularity too: each module must have its own source file. |br|
 
 .. c:macro:: m_is(state)
 
@@ -68,6 +68,16 @@ It enforces correct modularity too: each module must have its own source file.
     
   :param userdata: module's new userdata.
   :type userdata: :c:type:`const void *`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
+
+.. c:macro:: m_update_fd(fd, close_old)
+
+  Set userdata for this module; userdata will be passed as parameter to recv callback.
+    
+  :param fd: module's new fd.
+  :param close_old: whether to close old module fd.
+  :type fd: :c:type:`int`
+  :type close_old: :c:type:`int`
   :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
 .. c:macro:: m_log(fmt, args)
@@ -146,13 +156,13 @@ Sometime you may avoid using easy API; eg: if you wish to use same source file f
   
 .. c:function:: module_stop(self)
 
-  Stop module's polling by closing its fd
+  Stop module's polling by closing its fd. Note that module is not destroyed: you can call module_start with a new fd.
     
   :param self: pointer to module's handler
   :type self: :c:type:`const void *`
   :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
-.. c:macro:: module_become(self, new_recv)
+.. c:function:: module_become(self, new_recv)
 
   Change recv callback to new_recv
     
@@ -170,6 +180,18 @@ Sometime you may avoid using easy API; eg: if you wish to use same source file f
   :param userdata: module's new userdata.
   :type self: :c:type:`const void *`
   :type userdata: :c:type:`const void *`
+  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
+  
+.. c:function:: module_update_fd(self, fd, close_old)
+
+  Set userdata for this module; userdata will be passed as parameter to recv callback.
+    
+  :param self: pointer to module's handler
+  :param fd: module's new fd.
+  :param close_old: whether to close old module fd.
+  :type self: :c:type:`const void *`
+  :type fd: :c:type:`int`
+  :type close_old: :c:type:`int`
   :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_log(self, fmt, args)
