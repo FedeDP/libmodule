@@ -33,7 +33,7 @@
     
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
-    if (!module_is(mod, state)) { return MOD_WRONG_STATE; }
+    if (!module_is(s, state)) { return MOD_WRONG_STATE; }
     
 #define CHILDREN_LOOP(f) \
     child_t *tmp = m->children; \
@@ -151,19 +151,19 @@ int module_register(const char *name, const char *ctx_name, const void **self, u
     }
     
     MODULE_DEBUG("Registering module %s.\n", name);
-
+    
     mod = malloc(sizeof(module));
     MOD_ASSERT(mod, "Failed to malloc.", MOD_ERR);
     
     *mod = (module) {0};
-    if (hashmap_put(context->modules, (char *)name, mod) == MAP_OK) {
+    if (hashmap_put(context->modules, (char *)name, mod) == MAP_OK) {        
         mod->hook = hook;
         mod->state = IDLE;
         mod->self.name = strdup(name);
         mod->self.ctx = strdup(ctx_name);
         mod->subscriptions = hashmap_new();
-        *self = &mod->self;
-        evaluate_module(NULL, mod);
+        *self = &mod->self;        
+        evaluate_module(NULL, mod);        
         return MOD_OK;
     }
     free(mod);
@@ -266,7 +266,7 @@ static int evaluate_module(void *data, void *m) {
     module *mod = (module *)m;
     if (module_is(&mod->self, IDLE) 
         && mod->hook->evaluate()) {
-        
+            
         int fd = mod->hook->get_fd();
         module_start(&mod->self, fd);
     }
@@ -401,7 +401,7 @@ int module_is(const void *self, const enum module_states st) {
 
 /** Module state setters **/
 
-int module_start(const void *self, int fd) {    
+int module_start(const void *self, int fd) {        
     GET_MOD_IN_STATE(self, IDLE);
     
     mod->fd = fd;

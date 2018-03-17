@@ -97,6 +97,6 @@ static void recv_ready(msg_t *msg, const void *userdata) {
             m_unbecome();
         }
     } else {
-        printf("Received message %s from %s.\n", msg->message->message, msg->message->sender);
+        m_log("Received message %s from %s.\n", msg->message->message, msg->message->sender);
     }
 }

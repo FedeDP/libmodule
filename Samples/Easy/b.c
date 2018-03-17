@@ -73,7 +73,7 @@ static void recv(msg_t *msg, const void *userdata) {
         m_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
         modules_quit();
     } else {
-        printf("Received message '%s' from %s on topic '%s'.\n", msg->message->message, msg->message->sender, msg->message->topic);
+        m_log("Received message '%s' from %s on topic '%s'.\n", msg->message->message, msg->message->sender, msg->message->topic);
         m_tell("Nice!", msg->message->sender);
     }
 }
