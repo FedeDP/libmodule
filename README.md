@@ -32,8 +32,6 @@ You have some nice examples too, check [Samples](https://github.com/FedeDP/libmo
 Unsurprisingly, module is the core concept of libmodule architecture.  
 It can be somewhat seen as a class, and shares lots of concepts with an Actor.  
 It helps you to write standard and clean projects with small units, so called modules, whose job should be self-contained.  
-You may notice though that recv method takes a message_t as parameter.  
-This parameter can be used as module's messaging system (with PubSub mechanism too).
 
 ## But...why?
 
