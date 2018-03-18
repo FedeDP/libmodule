@@ -72,8 +72,8 @@ static void destroy(void) {
  * Our default poll callback.
  * Note that message_t->msg/sender are unused for now.
  */
-static void recv(msg_t *msg, const void *userdata) {
-    if (!msg->message) {
+static void recv(const msg_t *msg, const void *userdata) {
+    if (!msg->msg) {
         struct signalfd_siginfo fdsi;    
         ssize_t s = read(msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
         if (s != sizeof(struct signalfd_siginfo)) {
@@ -82,8 +82,8 @@ static void recv(msg_t *msg, const void *userdata) {
         m_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
         modules_quit();
     } else {
-        m_log("Received message '%s' from %s on topic '%s'.\n", msg->message->message, msg->message->sender, msg->message->topic);
+        m_log("Received message '%s' from %s on topic '%s'.\n", msg->msg->message, msg->msg->sender, msg->msg->topic);
         /* Answer back to sender with a message */
-        m_tell("Nice!", msg->message->sender);
+        m_tell("Nice!", msg->msg->sender);
     }
 }

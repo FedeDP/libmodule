@@ -62,8 +62,8 @@ static void destroy(void) {
  * Our default poll callback.
  * Note that message_t->msg/sender are unused for now.
  */
-static void recv(msg_t *msg, const void *userdata) {
-    if (!msg->message) {
+static void recv(const msg_t *msg, const void *userdata) {
+    if (!msg->msg) {
         struct signalfd_siginfo fdsi;    
         ssize_t s = read(msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
         if (s != sizeof(struct signalfd_siginfo)) {

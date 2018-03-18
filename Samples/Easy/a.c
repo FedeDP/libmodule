@@ -9,7 +9,7 @@
  */
 MODULE("A");
 
-static void recv_ready(msg_t *msg, const void *userdata);
+static void recv_ready(const msg_t *msg, const void *userdata);
 
 /*
  * This macro will create a function that is automatically 
@@ -70,8 +70,8 @@ static void destroy(void) {
  * Our default poll callback.
  * Note that message_t->msg/sender are unused for now.
  */
-static void recv(msg_t *msg, const void *userdata) {
-    if (!msg->message) {
+static void recv(const msg_t *msg, const void *userdata) {
+    if (!msg->msg) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
     
@@ -95,8 +95,8 @@ static void recv(msg_t *msg, const void *userdata) {
  * Secondary poll callback.
  * Use m_become(ready) to start using this second poll callback.
  */
-static void recv_ready(msg_t *msg, const void *userdata) {
-    if (!msg->message) {
+static void recv_ready(const msg_t *msg, const void *userdata) {
+    if (!msg->msg) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
     
@@ -110,6 +110,6 @@ static void recv_ready(msg_t *msg, const void *userdata) {
             m_unbecome();
         }
     } else {
-        m_log("Received message %s from %s.\n", msg->message->message, msg->message->sender);
+        m_log("Received message %s from %s.\n", msg->msg->message, msg->msg->sender);
     }
 }

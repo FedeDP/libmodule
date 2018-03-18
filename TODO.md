@@ -9,10 +9,12 @@
 - [x] rename get_fd function (as same function should be used to eg: set module's initial subscriptions and initial state)
 - [x] Let users implement "non-pollable" modules, ie: modules that are not bound to a FD (but only receives pubsub message) -> ie: set RUNNING state anyway if certain FD is passed
 - [x] Update doc
+- [x] msg_t all const
+- [ ] split in module.h and modules.h (module/module{s}.h)
 
 - [ ] Release 1.0
 
-## 1.1
+## Later
 
 ### Submodules
 
@@ -25,6 +27,10 @@
 
 - [ ] modules_set_logger() function to set a logger?
 - [ ] Logger will be called in module_log/m_log
+
+### Dep system
+
+- [ ] REQUIRE and AFTER macros
 
 ### Generic
 

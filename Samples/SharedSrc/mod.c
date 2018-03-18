@@ -8,8 +8,8 @@ static int A_init(void);
 static int B_init(void);
 static int evaluate(void);
 static void destroy(void);
-static void A_recv(msg_t *msg, const void *userdata);
-static void B_recv(msg_t *msg, const void *userdata);
+static void A_recv(const msg_t *msg, const void *userdata);
+static void B_recv(const msg_t *msg, const void *userdata);
 
 static const self_t *selfA, *selfB;
 static userhook hookA, hookB;
@@ -91,8 +91,8 @@ static void destroy(void) {
 /*
  * Our A module's poll callback.
  */
-static void A_recv(msg_t *msg, const void *userdata) {
-    if (!msg->message) {
+static void A_recv(const msg_t *msg, const void *userdata) {
+    if (!msg->msg) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
         module_log(selfA, "recv!\n");
@@ -107,8 +107,8 @@ static void A_recv(msg_t *msg, const void *userdata) {
 /*
  * Our B module's poll callback.
  */
-static void B_recv(msg_t *msg, const void *userdata) {
-    if (!msg->message) {
+static void B_recv(const msg_t *msg, const void *userdata) {
+    if (!msg->msg) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
         module_log(selfB, "recv!\n");

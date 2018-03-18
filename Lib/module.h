@@ -30,7 +30,7 @@
     static int init(void); \
     static int check(void); \
     static int evaluate(void); \
-    static void recv(msg_t *msg, const void *userdata); \
+    static void recv(const msg_t *msg, const void *userdata); \
     static void destroy(void); \
     static const self_t *self = NULL; \
     static void _ctor2_ constructor(void) { \
@@ -89,14 +89,14 @@ typedef struct {
 } pubsub_msg_t;
 
 typedef struct {
-    int fd;
-    pubsub_msg_t *message;
+    const int fd;
+    const pubsub_msg_t *msg;
 } msg_t;
 
 /* Callbacks typedefs */
 typedef int(*init_cb)(void);
 typedef int(*evaluate_cb)(void);
-typedef void(*recv_cb)(msg_t *msg, const void *userdata);
+typedef void(*recv_cb)(const msg_t *msg, const void *userdata);
 typedef void(*destroy_cb)(void);
 
 /* Struct that holds user defined callbacks */

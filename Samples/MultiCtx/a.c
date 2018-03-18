@@ -11,7 +11,7 @@ static const char *myCtx = "FirstCtx";
  */
 MODULE_CTX("A", myCtx);
 
-static void recv_ready(msg_t *msg, const void *userdata);
+static void recv_ready(const msg_t *msg, const void *userdata);
 
 /*
  * Initializes this module's state;
@@ -63,8 +63,8 @@ static void destroy(void) {
  * Our default poll callback.
  * Note that message_t->msg/sender are unused for now.
  */
-static void recv(msg_t *msg, const void *userdata) {
-    if (!msg->message) {
+static void recv(const msg_t *msg, const void *userdata) {
+    if (!msg->msg) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
     
@@ -83,8 +83,8 @@ static void recv(msg_t *msg, const void *userdata) {
  * Secondary poll callback.
  * Use m_become(ready) to start using this second poll callback.
  */
-static void recv_ready(msg_t *msg, const void *userdata) {
-    if (!msg->message) {
+static void recv_ready(const msg_t *msg, const void *userdata) {
+    if (!msg->msg) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
     

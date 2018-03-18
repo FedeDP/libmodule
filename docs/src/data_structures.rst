@@ -19,8 +19,8 @@ Types
     } pubsub_msg_t;
 
     typedef struct {
-        int fd;
-        pubsub_msg_t *message;
+        const int fd;
+        const pubsub_msg_t *msg;
     } msg_t;
 
     /* Callbacks typedefs */

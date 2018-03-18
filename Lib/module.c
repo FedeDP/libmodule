@@ -345,8 +345,8 @@ static int tell_if(void *data, void *m) {
      * Only if mod is actually running and 
      * if topic is null or this module is subscribed to topic 
      */
-    if (module_is(&mod->self, RUNNING) && (!msg->message->topic || 
-        hashmap_get(mod->subscriptions, (char *)msg->message->topic, (void **)&tmp) == MAP_OK)) {
+    if (module_is(&mod->self, RUNNING) && (!msg->msg->topic || 
+        hashmap_get(mod->subscriptions, (char *)msg->msg->topic, (void **)&tmp) == MAP_OK)) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->self.name);
         mod->hook->recv(msg, mod->userdata);
@@ -359,17 +359,16 @@ module_ret_code module_tell(const self_t *self, const char *message, const char 
     GET_CTX(s->ctx);
     CTX_GET_MOD(recipient, c);
     
-    msg_t msg = { 0 };
-    
-    msg.fd = -1;
-    msg.message = malloc(sizeof(pubsub_msg_t));
-    msg.message->message = message;
-    msg.message->sender = s->name;
-    msg.message->topic = NULL;
+    msg_t msg = { .fd = -1 };
+    pubsub_msg_t *tmp = malloc(sizeof(pubsub_msg_t));
+    tmp->message = message;
+    tmp->sender = s->name;
+    tmp->topic = NULL;
+    msg.msg = tmp;
     
     tell_if(&msg, mod);
     
-    free(msg.message);
+    free(tmp);
     return MOD_OK;
 }
 
@@ -377,16 +376,16 @@ module_ret_code module_publish(const self_t *self, const char *topic, const char
     self_t *s = (self_t *)self;
     GET_CTX(s->ctx);
     
-    msg_t msg = { 0 };
-    msg.fd = -1;
-    msg.message = malloc(sizeof(pubsub_msg_t));
-    msg.message->message = message;
-    msg.message->sender = s->name;
-    msg.message->topic = topic;
+    msg_t msg = { .fd = -1 };
+    pubsub_msg_t *tmp = malloc(sizeof(pubsub_msg_t));
+    tmp->message = message;
+    tmp->sender = s->name;
+    tmp->topic = topic;
+    msg.msg = tmp;
     
     hashmap_iterate(c->modules, tell_if, &msg);
     
-    free(msg.message);
+    free(tmp);
     return MOD_OK;
 }
 

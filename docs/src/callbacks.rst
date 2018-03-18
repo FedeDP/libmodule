@@ -13,7 +13,7 @@ They are automatically declared by MODULE macro:
     static int init(void);
     static int check(void);
     static int evaluate(void);
-    static void recv(message_t *msg, const void *userdata);
+    static void recv(const msg_t *msg, const void *userdata);
     static void destroy(void);
 
 .. c:function:: init(void)

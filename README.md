@@ -20,7 +20,7 @@ No, it is not.
 It uses epoll, which is linux specific.  
 Moreover it heavily relies upon gcc attributes that may or may not be available for your compiler.  
 It is tested with both gcc and clang through [travis](https://travis-ci.org/FedeDP/libmodule).  
-I may consider and welcome any patch to support other platforms though.  
+Any patch to support other platforms is warmly welcomed though.  
 
 ## Is there any documentation?
 
