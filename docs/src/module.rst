@@ -10,9 +10,16 @@ Module
 Module easy API
 ---------------
 
-Module easy API consists of a single-context multi-modules set of macros. |br|
+Module easy API consists of a single-context-multi-modules set of macros. |br|
 These macros make it easy and transparent to developer all of the module's internal mechanisms, providing a very simple way to use libmodule. |br|
 It enforces correct modularity too: each module must have its own source file. |br|
+Where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.
+
+.. c:macro:: MODULE_PRE_START()
+
+  This macro can be used to create a function that will be automatically called before any module is registered.
+  It is the per-module version of :ref:`modules_pre_start <modules_pre_start>` function.
+  It does not return anything.
 
 .. c:macro:: m_is(state)
 
@@ -28,25 +35,18 @@ It enforces correct modularity too: each module must have its own source file. |
     
   :param fd: fd to be polled.
   :type fd: :c:type:`int` 
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:macro:: m_pause(void)
 
   Pause module's polling
-    
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
-  
+
 .. c:macro:: m_resume(void)
 
   Resume module's polling
-    
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:macro:: m_stop(void)
 
   Stop module's polling by closing its fd
-    
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:macro:: m_become(new_recv)
 
@@ -54,31 +54,26 @@ It enforces correct modularity too: each module must have its own source file. |
     
   :param new_recv: new module's recv; the function has suffix \recv_ concatenated with new_recv.
   :type new_recv: untyped
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
 .. c:macro:: m_unbecome(void)
 
   Reset to default recv poll callback
-  
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
-  
+
 .. c:macro:: m_set_userdata(userdata)
 
   Set userdata for this module; userdata will be passed as parameter to recv callback.
     
   :param userdata: module's new userdata.
   :type userdata: :c:type:`const void *`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
 .. c:macro:: m_update_fd(fd, close_old)
 
-  Set userdata for this module; userdata will be passed as parameter to recv callback.
+  Update fd for this module.
     
   :param fd: module's new fd.
   :param close_old: whether to close old module fd.
   :type fd: :c:type:`int`
   :type close_old: :c:type:`int`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
 .. c:macro:: m_log(fmt, args)
 
@@ -88,13 +83,46 @@ It enforces correct modularity too: each module must have its own source file. |
   :param args: variadic argument.
   :type fmt: :c:type:`const char *` 
   :type args: :c:type:`variadic`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
+  
+.. c:macro:: m_subscribe(topic)
+
+  Subscribes the module to a topic.
+    
+  :param topic: topic to which subscribe.
+  :type topic: :c:type:`const char *`
+  
+.. c:macro:: m_tell(msg, recipient)
+
+  Tell a message to another module.
+    
+  :param msg: actual message to be sent.
+  :param recipient: module to whom deliver the message.
+  :type msg: :c:type:`const char *`
+  :type recipient: :c:type:`const char *`
+  
+.. c:macro:: m_publish(topic, msg)
+
+  Publish a message on a topic.
+    
+  :param topic: topic on which publish message.
+  :param msg: actual message to be sent.
+  :type topic: :c:type:`const char *`
+  :type msg: :c:type:`const char *`
+  
+.. c:macro:: m_broadcast(msg)
+
+  Broadcast a message in module's context
+    
+  :param msg: message to be delivered to all modules in a context.
+  :type msg: :c:type:`const char *`
 
 Module less-easy API
 --------------------
 
 Less-easy API consists of `Module easy API`_ internal functions. |br|
-Sometime you may avoid using easy API; eg: if you wish to use same source file for different modules.
+Sometime you may avoid using easy API; eg: if you wish to use same source file for different modules. |br|
+This behaviour is discouraged though. |br|
+Again, where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.
 
 .. c:function:: module_register(name, ctx_name, self, hook)
 
@@ -106,17 +134,15 @@ Sometime you may avoid using easy API; eg: if you wish to use same source file f
   :param hook: struct that holds this module's callbacks.
   :type name: :c:type:`const char *`
   :type ctx_name: :c:type:`const char *`
-  :type self: :c:type:`const void **`
+  :type self: :c:type:`const self_t **`
   :type hook: :c:type:`const userhook *`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_deregister(self)
 
   Deregister module
     
   :param self: pointer to module's handler. It is set to NULL after this call.
-  :type self: :c:type:`const void **`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
+  :type self: :c:type:`const self_t **`
   
 .. c:function:: module_is(self, state)
 
@@ -124,7 +150,7 @@ Sometime you may avoid using easy API; eg: if you wish to use same source file f
     
   :param self: pointer to module's handler.
   :param state: state we are interested in.
-  :type self: :c:type:`const void *`
+  :type self: :c:type:`const self_t *`
   :type state: :c:type:`enum module_states`
   :returns: false (0) if module'state is not 'state', true (1) if it is and MOD_ERR on error.
   
@@ -134,33 +160,29 @@ Sometime you may avoid using easy API; eg: if you wish to use same source file f
     
   :param self: pointer to module's handler
   :param fd: fd to be polled.
-  :type self: :c:type:`const void *`
+  :type self: :c:type:`const self_t *`
   :type fd: :c:type:`int` 
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_pause(self)
 
   Pause module's polling
     
   :param self: pointer to module's handler
-  :type self: :c:type:`const void *`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
+  :type self: :c:type:`const self_t *`
   
 .. c:function:: module_resume(self)
 
   Resume module's polling
     
   :param self: pointer to module's handler
-  :type self: :c:type:`const void *`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
+  :type self: :c:type:`const self_t *`
   
 .. c:function:: module_stop(self)
 
   Stop module's polling by closing its fd. Note that module is not destroyed: you can call module_start with a new fd.
     
   :param self: pointer to module's handler
-  :type self: :c:type:`const void *`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
+  :type self: :c:type:`const self_t *`
   
 .. c:function:: module_become(self, new_recv)
 
@@ -168,9 +190,8 @@ Sometime you may avoid using easy API; eg: if you wish to use same source file f
     
   :param self: pointer to module's handler
   :param new_recv: new module's recv.
-  :type self: :c:type:`const void *`
+  :type self: :c:type:`const self_t *`
   :type new_recv: :c:type:`recv_cb`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
 
 .. c:function:: module_set_userdata(self, userdata)
 
@@ -178,21 +199,19 @@ Sometime you may avoid using easy API; eg: if you wish to use same source file f
     
   :param self: pointer to module's handler
   :param userdata: module's new userdata.
-  :type self: :c:type:`const void *`
+  :type self: :c:type:`const self_t *`
   :type userdata: :c:type:`const void *`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_update_fd(self, fd, close_old)
 
-  Set userdata for this module; userdata will be passed as parameter to recv callback.
+  Update fd for this module.
     
   :param self: pointer to module's handler
   :param fd: module's new fd.
   :param close_old: whether to close old module fd.
-  :type self: :c:type:`const void *`
+  :type self: :c:type:`const self_t *`
   :type fd: :c:type:`int`
   :type close_old: :c:type:`int`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: module_log(self, fmt, args)
 
@@ -201,8 +220,37 @@ Sometime you may avoid using easy API; eg: if you wish to use same source file f
   :param self: pointer to module's handler
   :param fmt: log's format.
   :param args: variadic argument.
-  :type self: :c:type:`const void *`
+  :type self: :c:type:`const self_t *`
   :type fmt: :c:type:`const char *`
   :type args: :c:type:`variadic`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
+
+.. c:macro:: module_subscribe(self, topic)
+
+  Subscribes the module to a topic.
+
+  :param self: pointer to module's handler
+  :param topic: topic to which subscribe.
+  :type self: :c:type:`const self_t *`
+  :type topic: :c:type:`const char *`
   
+.. c:macro:: module_tell(self, msg, recipient)
+
+  Tell a message to another module.
+    
+  :param self: pointer to module's handler
+  :param msg: actual message to be sent.
+  :param recipient: module to whom deliver the message.
+  :type self: :c:type:`const self_t *`
+  :type msg: :c:type:`const char *`
+  :type recipient: :c:type:`const char *`
+  
+.. c:macro:: module_publish(self, topic, msg)
+
+  Publish a message on a topic.
+
+  :param self: pointer to module's handler
+  :param topic: topic on which publish message.
+  :param msg: actual message to be sent.
+  :type self: :c:type:`const self_t *`
+  :type topic: :c:type:`const char *`
+  :type msg: :c:type:`const char *`

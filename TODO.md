@@ -8,9 +8,9 @@
 - [x] find a better alternative to $ctx_$name_pre_start for each module pre_start function
 - [x] rename get_fd function (as same function should be used to eg: set module's initial subscriptions and initial state)
 - [x] Let users implement "non-pollable" modules, ie: modules that are not bound to a FD (but only receives pubsub message) -> ie: set RUNNING state anyway if certain FD is passed
-- [ ] Update doc
+- [x] Update doc
 
-**UPDATE DOC with changes until there (where to mention ctx##_##name_pre_start() function?) + RELEASE 1.0**
+- [ ] Release 1.0
 
 ## 1.1
 
@@ -20,6 +20,11 @@
 - [ ] SUBMODULE SHOULD BE STARTED later (after all MODULES) -> ctor3
 - [ ] destroy children of modules at module deregister
 - [ ] bind children to parent states (ie: parent paused -> children paused; parent resumed -> children resumed...)
+
+### Logger
+
+- [ ] modules_set_logger() function to set a logger?
+- [ ] Logger will be called in module_log/m_log
 
 ### Generic
 

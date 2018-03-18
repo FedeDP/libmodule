@@ -8,7 +8,7 @@ Libmodule Concepts
 Module concept
 --------------
 
-A module is key entity of libmodule: it is a single and indipendent logical unit that reacts to certain events by polling on a fd. |br|
+A module is core entity of libmodule: it is a single and indipendent logical unit that reacts to certain events by polling on a fd. |br|
 It offers some callbacks that are used by libmodule to manage its life. |br|
 It is initialized through MODULE macro:
    

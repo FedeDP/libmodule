@@ -6,12 +6,15 @@ Modules
 ===========
 
 Modules API denotes all of libmodule interface functions whose name starts with \modules_. |br|
-Like Module API, it has an easy, single-context API. Moreover, it has an equivalent multi-context API.
+Like Module API, it has an easy, single-context API. Moreover, it has an equivalent multi-context API. |br|
+All these functions but modules_pre_start() return a :ref:`module_ret_code <module_ret_code>`.
 
 Modules easy API
 ----------------
 Modules easy API should be used in conjunction with :ref:`module_easy`. |br|
 It abstracts all of libmodule internals mechanisms to provide an easy-to-use and simple API.
+
+.. _modules_pre_start:
 
 .. c:function:: modules_pre_start(void)
 
@@ -22,14 +25,11 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
 .. c:macro:: modules_loop(void)
 
   Start looping on events from modules
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:macro:: modules_quit(void)
 
   Leave libmodule's events loop
   
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
-
 Modules multi-context API
 -------------------------
 Modules multi-context API let you manage your contexts in a very simple way. |br|
@@ -41,7 +41,6 @@ It exposes very similar functions to single-context API (again, single-context i
   
   :param ctx_name: context name.
   :type ctx_name: :c:type:`const char *`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.
   
 .. c:function:: modules_ctx_quit(ctx_name)
 
@@ -49,4 +48,3 @@ It exposes very similar functions to single-context API (again, single-context i
   
   :param ctx_name: context name.
   :type ctx_name: :c:type:`const char *`
-  :returns: MOD_OK if no error happened, MOD_ERR if any error happened.

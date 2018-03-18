@@ -72,7 +72,7 @@ typedef struct _self self_t;
 /* Modules states */
 enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
-enum module_return_codes {
+typedef enum {
     MOD_WRONG_STATE = -6,
     MOD_NO_PARENT,
     MOD_NO_CTX,
@@ -80,7 +80,7 @@ enum module_return_codes {
     MOD_NO_SELF,
     MOD_ERR,
     MOD_OK
-};
+} module_ret_code;
 
 typedef struct {
     const char *topic;
@@ -108,24 +108,24 @@ typedef struct {
 } userhook;
 
 /* Module interface functions */
-_public_ int module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook);
-_public_ int module_deregister(const self_t **self);
+_public_ module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook);
+_public_ module_ret_code module_deregister(const self_t **self);
 /* FIXME: do not export this for now as its support is not complete */
-int module_binds_to(const self_t *self, const char *parent);
+module_ret_code module_binds_to(const self_t *self, const char *parent);
 _public_ int module_is(const self_t *self, const enum module_states st);
-_public_ int module_start(const self_t *self, int fd);
-_public_ int module_pause(const self_t *self);
-_public_ int module_resume(const self_t *self);
-_public_ int module_stop(const self_t *self);
-_public_ int module_become(const self_t *self,  recv_cb new_recv);
-_public_ int module_log(const self_t *self, const char *fmt, ...);
-_public_ int module_set_userdata(const self_t *self, const void *userdata);
-_public_ int module_update_fd(const self_t *self, int new_fd, int close_old);
-_public_ int module_subscribe(const self_t *self, const char *topic);
-_public_ int module_tell(const self_t *self, const char *message, const char *recipient);
-_public_ int module_publish(const self_t *self, const char *topic, const char *message);
+_public_ module_ret_code module_start(const self_t *self, int fd);
+_public_ module_ret_code module_pause(const self_t *self);
+_public_ module_ret_code module_resume(const self_t *self);
+_public_ module_ret_code module_stop(const self_t *self);
+_public_ module_ret_code module_become(const self_t *self,  recv_cb new_recv);
+_public_ module_ret_code module_log(const self_t *self, const char *fmt, ...);
+_public_ module_ret_code module_set_userdata(const self_t *self, const void *userdata);
+_public_ module_ret_code module_update_fd(const self_t *self, int new_fd, int close_old);
+_public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
+_public_ module_ret_code module_tell(const self_t *self, const char *message, const char *recipient);
+_public_ module_ret_code module_publish(const self_t *self, const char *topic, const char *message);
 
 /* Modules interface functions */
 _public_ void _ctor0_ _weak_ modules_pre_start(void);
-_public_ int modules_ctx_loop(const char *ctx_name);
-_public_ int modules_ctx_quit(const char *ctx_name);
+_public_ module_ret_code modules_ctx_loop(const char *ctx_name);
+_public_ module_ret_code modules_ctx_quit(const char *ctx_name);

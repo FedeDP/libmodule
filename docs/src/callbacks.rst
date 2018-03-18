@@ -18,7 +18,7 @@ They are automatically declared by MODULE macro:
 
 .. c:function:: init(void)
 
-  Initialize module
+  Initializes module state
   
   :returns: FD to be polled for this module.
 
@@ -44,4 +44,4 @@ They are automatically declared by MODULE macro:
 
 .. c:function:: destroy(void)
 
-  Destroy module, called automatically at module deregistration. Please note that module's fd is automatically closed.
+  Destroys module, called automatically at module deregistration. Please note that module's fd is automatically closed.

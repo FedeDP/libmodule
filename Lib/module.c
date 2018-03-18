@@ -73,16 +73,16 @@ typedef struct {
 
 static _ctor0_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
-static int init_ctx(const char *ctx_name, m_context **context);
+static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
 static m_context *check_ctx(const char *ctx_name);
-static int add_children(module *mod, const void *self);
+static module_ret_code add_children(module *mod, const void *self);
 static void evaluate_new_state(m_context *context);
 static int evaluate_module(void *data, void *m);
 static int add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
-static int start_children(module *m);
-static int stop_children(module *m);
+static module_ret_code start_children(module *m);
+static module_ret_code stop_children(module *m);
 
 static map_t ctx;
 
@@ -96,7 +96,7 @@ static void modules_destroy(void) {
     hashmap_free(ctx);
 }
 
-static int init_ctx(const char *ctx_name, m_context **context) {
+static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
     *context = malloc(sizeof(m_context));
@@ -134,7 +134,7 @@ static m_context *check_ctx(const char *ctx_name) {
     return context;
 }
 
-int module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook) {
+module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook) {
     MOD_ASSERT(name, "NULL module name.", MOD_ERR);
     MOD_ASSERT(ctx_name, "NULL context name.", MOD_ERR);
     
@@ -169,7 +169,7 @@ int module_register(const char *name, const char *ctx_name, const self_t **self,
     return MOD_ERR;
 }
 
-int module_deregister(const self_t **self) {
+module_ret_code module_deregister(const self_t **self) {
     self_t *tmp = (self_t *) *self;
     
     GET_MOD(tmp);
@@ -194,7 +194,7 @@ int module_deregister(const self_t **self) {
     return MOD_OK;
 }
 
-static int add_children(module *mod, const void *self) {
+static module_ret_code add_children(module *mod, const void *self) {
     child_t **tmp = &mod->children;
     while (*tmp) {
         tmp = &(*tmp)->next;
@@ -208,7 +208,7 @@ static int add_children(module *mod, const void *self) {
     return MOD_ERR;
 }
 
-int module_binds_to(const self_t *self, const char *parent) {
+module_ret_code module_binds_to(const self_t *self, const char *parent) {
     self_t *tmp = (self_t *) self;
     GET_CTX(tmp->ctx);
     
@@ -219,7 +219,7 @@ int module_binds_to(const self_t *self, const char *parent) {
     return add_children(mod, self);
 }
 
-int modules_ctx_loop(const char *ctx_name) {
+module_ret_code modules_ctx_loop(const char *ctx_name) {
     GET_CTX(ctx_name);
     
     int size = hashmap_length(c->modules);
@@ -250,7 +250,7 @@ int modules_ctx_loop(const char *ctx_name) {
     return ret;
 }
 
-int modules_ctx_quit(const char *ctx_name) {
+module_ret_code modules_ctx_quit(const char *ctx_name) {
     GET_CTX(ctx_name);
     
     c->quit = 1;
@@ -272,14 +272,14 @@ static int evaluate_module(void *data, void *m) {
     return MAP_OK;
 }
 
-int module_become(const self_t *self,  recv_cb new_recv) {    
+module_ret_code module_become(const self_t *self,  recv_cb new_recv) {    
     GET_MOD_IN_STATE(self, RUNNING);
     
     mod->hook->recv = new_recv;
     return MOD_OK;
 }
 
-int module_log(const self_t *self, const char *fmt, ...) {
+module_ret_code module_log(const self_t *self, const char *fmt, ...) {
     MOD_ASSERT(self, "Module not found.", MOD_NO_MOD);
     
     va_list args;
@@ -290,14 +290,14 @@ int module_log(const self_t *self, const char *fmt, ...) {
     return MOD_OK;
 }
 
-int module_set_userdata(const self_t *self, const void *userdata) {    
+module_ret_code module_set_userdata(const self_t *self, const void *userdata) {    
     GET_MOD(self);
     
     mod->userdata = userdata;
     return MOD_OK;
 }
 
-int module_update_fd(const self_t *self, int new_fd, int close_old) {
+module_ret_code module_update_fd(const self_t *self, int new_fd, int close_old) {
     GET_MOD_IN_STATE(self, RUNNING);
     
     /* De-register this fd from epoll */
@@ -319,7 +319,7 @@ int module_update_fd(const self_t *self, int new_fd, int close_old) {
 
 /** Actor-like interface **/
 
-static int add_subscription(module *mod, const char *topic) {
+static module_ret_code add_subscription(module *mod, const char *topic) {
     void *tmp = NULL;
     if (hashmap_get(mod->subscriptions, (char *)topic, (void **)&tmp) == MAP_MISSING) {
         /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
@@ -330,7 +330,7 @@ static int add_subscription(module *mod, const char *topic) {
     return MOD_ERR;
 }
 
-int module_subscribe(const self_t *self, const char *topic) {
+module_ret_code module_subscribe(const self_t *self, const char *topic) {
     GET_MOD(self);
     
     return add_subscription(mod, topic);
@@ -354,7 +354,7 @@ static int tell_if(void *data, void *m) {
     return MAP_OK;
 }
 
-int module_tell(const self_t *self, const char *message, const char *recipient) {
+module_ret_code module_tell(const self_t *self, const char *message, const char *recipient) {
     self_t *s = (self_t *)self;
     GET_CTX(s->ctx);
     CTX_GET_MOD(recipient, c);
@@ -373,7 +373,7 @@ int module_tell(const self_t *self, const char *message, const char *recipient) 
     return MOD_OK;
 }
 
-int module_publish(const self_t *self, const char *topic, const char *message) {
+module_ret_code module_publish(const self_t *self, const char *topic, const char *message) {
     self_t *s = (self_t *)self;
     GET_CTX(s->ctx);
     
@@ -400,7 +400,7 @@ int module_is(const self_t *self, const enum module_states st) {
 
 /** Module state setters **/
 
-int module_start(const self_t *self, int fd) {        
+module_ret_code module_start(const self_t *self, int fd) {        
     GET_MOD_IN_STATE(self, IDLE);
     
     mod->fd = fd;
@@ -408,7 +408,7 @@ int module_start(const self_t *self, int fd) {
     return module_resume(self);
 }
 
-int module_pause(const self_t *self) {
+module_ret_code module_pause(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
     int ret = 0;
@@ -422,7 +422,7 @@ int module_pause(const self_t *self) {
     return MOD_ERR;
 }
 
-int module_resume(const self_t *self) {
+module_ret_code module_resume(const self_t *self) {
     GET_MOD_IN_STATE(self, IDLE | PAUSED);
     
     int ret = 0;
@@ -438,7 +438,7 @@ int module_resume(const self_t *self) {
     return MOD_ERR;
 }
 
-int module_stop(const self_t *self) {
+module_ret_code module_stop(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
     MODULE_DEBUG("Stopping module %s.\n", ((self_t *)self)->name);
@@ -449,7 +449,7 @@ int module_stop(const self_t *self) {
     return MOD_ERR;
 }
 
-static int start_children(module *m) {
+static module_ret_code start_children(module *m) {
     CHILDREN_LOOP({
         int fd = mod->hook->init();
         module_start(&mod->self, fd);
@@ -457,7 +457,7 @@ static int start_children(module *m) {
     return MOD_OK;
 }
 
-static int stop_children(module *m) {
+static module_ret_code stop_children(module *m) {
     CHILDREN_LOOP({
         module_stop(&mod->self);
     });
