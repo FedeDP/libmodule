@@ -10,7 +10,16 @@
 - [x] Let users implement "non-pollable" modules, ie: modules that are not bound to a FD (but only receives pubsub message) -> ie: set RUNNING state anyway if certain FD is passed
 - [x] Update doc
 - [x] msg_t all const
+- [ ] add an hashmap_exists() function
+- [ ] properly use an hashset for module subscriptions
 - [ ] split in module.h and modules.h (module/module{s}.h)
+
+### Logger
+
+- [ ] modules_set_logger() function to set a logger?
+- [ ] Logger will be called in module_log/m_log
+
+### Finally
 
 - [ ] Release 1.0
 
@@ -23,21 +32,14 @@
 - [ ] destroy children of modules at module deregister
 - [ ] bind children to parent states (ie: parent paused -> children paused; parent resumed -> children resumed...)
 
-### Logger
+- [ ] new release
 
-- [ ] modules_set_logger() function to set a logger?
-- [ ] Logger will be called in module_log/m_log
 
 ### Dep system
 
 - [ ] REQUIRE and AFTER macros
 
-### Generic
-
-- [ ] add an hashmap_exists() function
-- [ ] properly use an hashset for module subscriptions
-
-**UPDATE DOC with SUBMODULE interface + release 1.1**
+- [ ] new release
 
 ## Test it
 
