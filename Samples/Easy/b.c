@@ -14,7 +14,7 @@ MODULE("B");
  * called before registering the module. Use this to set some 
  * global state needed eg: in check() function
  */
-MODULE_PRE_START() {
+static void module_pre_start(void) {
     printf("B: Not yet inited!\n");
 }
 

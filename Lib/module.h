@@ -27,6 +27,7 @@
 
 /* Interface Macros */
 #define MODULE_CTX(name, ctx) \
+    static void _ctor1_ module_pre_start(void); \
     static int init(void); \
     static int check(void); \
     static int evaluate(void); \
@@ -42,8 +43,6 @@
     static void _dtor1_ destructor(void) { module_deregister(&self); }
 
 #define MODULE(name) MODULE_CTX(name, DEFAULT_CTX)
-
-#define MODULE_PRE_START() static void _ctor1_ module_pre_start(void)
    
 /* Defines for easy API (with no need bothering with both self and ctx) */
 #define m_is(x)                     module_is(self, x)

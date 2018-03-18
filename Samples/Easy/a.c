@@ -16,7 +16,7 @@ static void recv_ready(const msg_t *msg, const void *userdata);
  * called before registering the module. Use this to set some 
  * global state needed eg: in check() function 
  */
-MODULE_PRE_START() {
+static void module_pre_start(void) {
     printf("A: Not yet inited!\n");
 }
 

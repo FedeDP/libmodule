@@ -5,16 +5,22 @@
 Module callbacks
 ================
 
-Every module needs 5 callbacks that be must defined by developer. |br|
-They are automatically declared by MODULE macro:
+Every module needs 5 functions that be must defined by developer. |br|
+They are automatically declared by MODULE macro. |br|
+Moreover, a module_pre_start function is declared too, but it is not needed by libmodule interface, ie: it can be left undefined.
 
 .. code::
-    
+    static void module_pre_start(void);
     static int init(void);
     static int check(void);
     static int evaluate(void);
     static void recv(const msg_t *msg, const void *userdata);
     static void destroy(void);
+
+.. c:function:: module_pre_start(void)
+
+  It can be used to create a function that will be called before any module is registered. |br|
+  It is the per-module version of :ref:`modules_pre_start <modules_pre_start>` function. |br|
 
 .. c:function:: init(void)
 

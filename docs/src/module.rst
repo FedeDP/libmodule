@@ -15,12 +15,6 @@ These macros make it easy and transparent to developer all of the module's inter
 It enforces correct modularity too: each module must have its own source file. |br|
 Where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.
 
-.. c:macro:: MODULE_PRE_START()
-
-  This macro can be used to create a function that will be automatically called before any module is registered.
-  It is the per-module version of :ref:`modules_pre_start <modules_pre_start>` function.
-  It does not return anything.
-
 .. c:macro:: m_is(state)
 
   Check current module's state
