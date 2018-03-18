@@ -4,14 +4,14 @@
 #include <stdint.h>
 #include <string.h>
 
-static int A_get_fd(void);
-static int B_get_fd(void);
+static int A_init(void);
+static int B_init(void);
 static int evaluate(void);
 static void destroy(void);
 static void A_recv(msg_t *msg, const void *userdata);
 static void B_recv(msg_t *msg, const void *userdata);
 
-static const void *selfA, *selfB;
+static const self_t *selfA, *selfB;
 static userhook hookA, hookB;
 
 static int counter = 0;
@@ -21,8 +21,8 @@ static int counter = 0;
  * These modules can share some callbacks.
  */
 void create_modules(const char *ctx_name) {
-    hookA = (userhook) { A_get_fd, evaluate, A_recv, destroy };
-    hookB = (userhook) { B_get_fd, evaluate, B_recv, destroy };
+    hookA = (userhook) { A_init, evaluate, A_recv, destroy };
+    hookB = (userhook) { B_init, evaluate, B_recv, destroy };
     
     module_register("A", ctx_name, &selfA, &hookA);
     module_register("B", ctx_name, &selfB, &hookB);
@@ -43,7 +43,7 @@ void destroy_modules(void) {
  * Initializes A module's state;
  * returns a valid fd to be polled.
  */
-static int A_get_fd(void) {
+static int A_init(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};
@@ -58,7 +58,7 @@ static int A_get_fd(void) {
  * Initializes B module's state;
  * returns a valid fd to be polled.
  */
-static int B_get_fd(void) {
+static int B_init(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};

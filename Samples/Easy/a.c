@@ -12,10 +12,19 @@ MODULE("A");
 static void recv_ready(msg_t *msg, const void *userdata);
 
 /*
+ * This macro will create a function that is automatically 
+ * called before registering the module. Use this to set some 
+ * global state needed eg: in check() function 
+ */
+MODULE_PRE_START() {
+    printf("A: Not yet inited!\n");
+}
+
+/*
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int get_fd(void) {
+static int init(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};
@@ -73,6 +82,10 @@ static void recv(msg_t *msg, const void *userdata) {
         if (counter % 3 == 0) {
             m_become(ready);
             m_set_userdata(&counter);
+            /* 
+             * Publish a message on "test" topic to let 
+             * other module know we're changing state.
+             */
             m_publish("test", "changing recv");
         }
     }

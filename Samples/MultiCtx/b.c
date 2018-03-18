@@ -15,7 +15,7 @@ MODULE_CTX("B", myCtx);
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int get_fd(void) {
+static int init(void) {
     sigset_t mask;
     
     sigemptyset(&mask);

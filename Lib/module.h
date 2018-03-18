@@ -1,18 +1,14 @@
 #pragma once
 
 #include <stdio.h>
+#include <limits.h>
 
 /* Convenience macros */
 
-#define MOD_OK              0
-#define MOD_ERR             -1
-#define MOD_NO_SELF         -2
-#define MOD_NO_MOD          -3
-#define MOD_NO_CTX          -4
-#define MOD_NO_PARENT       -5
-#define MOD_WRONG_STATE     -6
+#define MODULE_DONT_POLL INT_MIN
 
 #define _public_    __attribute__ ((visibility("default")))
+
 /* 
  * ctors order: 
  * 1) modules_pre_start() + modules_init();
@@ -31,22 +27,23 @@
 
 /* Interface Macros */
 #define MODULE_CTX(name, ctx) \
-    static int get_fd(void); \
+    static int init(void); \
     static int check(void); \
     static int evaluate(void); \
     static void recv(msg_t *msg, const void *userdata); \
     static void destroy(void); \
-    static const void *self = NULL; \
-    void _weak_ _ctor1_ ctx##_##name_pre_start(void); \
-    static void _ctor2_ init(void) { \
+    static const self_t *self = NULL; \
+    static void _ctor2_ constructor(void) { \
         if (check()) { \
-            static userhook hook = { get_fd, evaluate, recv, destroy }; \
+            static userhook hook = { init, evaluate, recv, destroy }; \
             module_register(name, ctx, &self, &hook); \
         } \
     } \
-    static void _dtor1_ deinit(void) { module_deregister(&self); }
+    static void _dtor1_ destructor(void) { module_deregister(&self); }
 
 #define MODULE(name) MODULE_CTX(name, DEFAULT_CTX)
+
+#define MODULE_PRE_START() static void _ctor1_ module_pre_start(void)
    
 /* Defines for easy API (with no need bothering with both self and ctx) */
 #define m_is(x)                     module_is(self, x)
@@ -69,8 +66,21 @@
 
 /** Structs types **/
 
+/* Incomplete structure declaration to self handler */
+typedef struct _self self_t;
+
 /* Modules states */
-enum module_states { IDLE = 1, RUNNING = 2, PAUSED = 4, STOPPED = 8 };
+enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
+
+enum module_return_codes {
+    MOD_WRONG_STATE = -6,
+    MOD_NO_PARENT,
+    MOD_NO_CTX,
+    MOD_NO_MOD,
+    MOD_NO_SELF,
+    MOD_ERR,
+    MOD_OK
+};
 
 typedef struct {
     const char *topic;
@@ -84,36 +94,36 @@ typedef struct {
 } msg_t;
 
 /* Callbacks typedefs */
-typedef int(*get_fd_cb)(void);
+typedef int(*init_cb)(void);
 typedef int(*evaluate_cb)(void);
 typedef void(*recv_cb)(msg_t *msg, const void *userdata);
 typedef void(*destroy_cb)(void);
 
 /* Struct that holds user defined callbacks */
 typedef struct {
-    get_fd_cb get_fd;                       // module's get_fd function (should return a FD)
+    init_cb init;                           // module's init function (should return a FD)
     evaluate_cb evaluate;                   // module's state changed function
     recv_cb recv;                           // module's recv function
     destroy_cb destroy;                     // module's destroy function
 } userhook;
 
 /* Module interface functions */
-_public_ int module_register(const char *name, const char *ctx_name, const void **self, userhook *hook);
-_public_ int module_deregister(const void **self);
+_public_ int module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook);
+_public_ int module_deregister(const self_t **self);
 /* FIXME: do not export this for now as its support is not complete */
-int module_binds_to(const void *self, const char *parent);
-_public_ int module_is(const void *self, const enum module_states st);
-_public_ int module_start(const void *self, int fd);
-_public_ int module_pause(const void *self);
-_public_ int module_resume(const void *self);
-_public_ int module_stop(const void *self);
-_public_ int module_become(const void *self,  recv_cb new_recv);
-_public_ int module_log(const void *self, const char *fmt, ...);
-_public_ int module_set_userdata(const void *self, const void *userdata);
-_public_ int module_update_fd(const void *self, int new_fd, int close_old);
-_public_ int module_subscribe(const void *self, const char *topic);
-_public_ int module_tell(const void *self, const char *message, const char *recipient);
-_public_ int module_publish(const void *self, const char *topic, const char *message);
+int module_binds_to(const self_t *self, const char *parent);
+_public_ int module_is(const self_t *self, const enum module_states st);
+_public_ int module_start(const self_t *self, int fd);
+_public_ int module_pause(const self_t *self);
+_public_ int module_resume(const self_t *self);
+_public_ int module_stop(const self_t *self);
+_public_ int module_become(const self_t *self,  recv_cb new_recv);
+_public_ int module_log(const self_t *self, const char *fmt, ...);
+_public_ int module_set_userdata(const self_t *self, const void *userdata);
+_public_ int module_update_fd(const self_t *self, int new_fd, int close_old);
+_public_ int module_subscribe(const self_t *self, const char *topic);
+_public_ int module_tell(const self_t *self, const char *message, const char *recipient);
+_public_ int module_publish(const self_t *self, const char *topic, const char *message);
 
 /* Modules interface functions */
 _public_ void _ctor0_ _weak_ modules_pre_start(void);

@@ -4,9 +4,10 @@
 
 ### Generic
 
-- [ ] find a better alternative to $ctx_$name_pre_start for each module pre_start function
-- [ ] rename get_fd function (as same function should be used to eg: set module's initial subscriptions and initial state)
-- [ ] Let users implement "non-pollable" modules, ie: modules that are not bound to a FD (but only receives pubsub message) -> ie: set RUNNING state anyway if certain FD is passed
+- [x] Use self_t as opaque handler to avoid void pointers and update various internal module.c macros
+- [x] find a better alternative to $ctx_$name_pre_start for each module pre_start function
+- [x] rename get_fd function (as same function should be used to eg: set module's initial subscriptions and initial state)
+- [x] Let users implement "non-pollable" modules, ie: modules that are not bound to a FD (but only receives pubsub message) -> ie: set RUNNING state anyway if certain FD is passed
 - [ ] Update doc
 
 **UPDATE DOC with changes until there (where to mention ctx##_##name_pre_start() function?) + RELEASE 1.0**
@@ -19,6 +20,11 @@
 - [ ] SUBMODULE SHOULD BE STARTED later (after all MODULES) -> ctor3
 - [ ] destroy children of modules at module deregister
 - [ ] bind children to parent states (ie: parent paused -> children paused; parent resumed -> children resumed...)
+
+### Generic
+
+- [ ] add an hashmap_exists() function
+- [ ] properly use an hashset for module subscriptions
 
 **UPDATE DOC with SUBMODULE interface + release 1.1**
 

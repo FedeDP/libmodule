@@ -10,10 +10,19 @@
 MODULE("B");
 
 /*
+ * This macro will create a function that is automatically 
+ * called before registering the module. Use this to set some 
+ * global state needed eg: in check() function
+ */
+MODULE_PRE_START() {
+    printf("B: Not yet inited!\n");
+}
+
+/*
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int get_fd(void) {
+static int init(void) {
     /* This module is subscribed to "test" topic */
     m_subscribe("test");
     
@@ -74,6 +83,7 @@ static void recv(msg_t *msg, const void *userdata) {
         modules_quit();
     } else {
         m_log("Received message '%s' from %s on topic '%s'.\n", msg->message->message, msg->message->sender, msg->message->topic);
+        /* Answer back to sender with a message */
         m_tell("Nice!", msg->message->sender);
     }
 }

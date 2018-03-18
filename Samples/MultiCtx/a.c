@@ -17,7 +17,7 @@ static void recv_ready(msg_t *msg, const void *userdata);
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int get_fd(void) {
+static int init(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};
