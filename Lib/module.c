@@ -413,7 +413,7 @@ module_ret_code module_pause(const self_t *self) {
     
     int ret = 0;
     if (mod->fd != MODULE_DONT_POLL) {
-        epoll_ctl(c->epollfd, EPOLL_CTL_DEL, mod->fd, NULL);
+        ret = epoll_ctl(c->epollfd, EPOLL_CTL_DEL, mod->fd, NULL);
     }
     if (!ret) {
         mod->state = PAUSED;
