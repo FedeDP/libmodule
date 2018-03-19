@@ -143,11 +143,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     
     module *mod = NULL;
     hashmap_get(context->modules, (char *)name, (void **)&mod);
-    if (mod) {
-        *self = NULL;
-        MODULE_DEBUG("Module %s already registered in context %s.\n", name, ctx_name);
-        return MOD_ERR;
-    }
+    MOD_ASSERT(!mod, "Module already registered in context.", MOD_ERR);
     
     MODULE_DEBUG("Registering module %s.\n", name);
     
