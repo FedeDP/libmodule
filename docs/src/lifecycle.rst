@@ -27,20 +27,20 @@ Evaluate will be then called at each state machine change, for each idle module.
 
 As soon as module's evaluate() returns TRUE, the module is started. It means its init() function is finally called and, if a proper FD or the special MODULE_DONT_POLL value is returned,
 its state is set to STARTED. |br|
-When a module reaches started state, modules_loop function will finally receive events from its fd. |br|
+When a module reaches started state, modules_loop()/modules_ctx_loop() functions will finally receive events from its fd. |br|
 
-Whenever an event triggers a module's fd, or a module receives a PubSub message from another one, its recv() callback is called. |br|
+Whenever an event triggers on a module's fd, or the module receives a PubSub message from another one, its recv() callback is called. |br|
 
-Finally, when program/context is being closed (after a modules_quit()/modules_ctx_quit()), each module's destroy() function is automatically called, during the process of module's deregistration. |br|
+Finally, after a modules_quit()/modules_ctx_quit(), each module's destroy() function is automatically called, during the process of module's deregistration. |br|
 
 Complex API
 -----------
 
-When dealing with libmodule's :ref:`module_complex`, no modules is automatically started for you, ie: you must manually call module_register on each module. |br|
+When dealing with libmodule's :ref:`module_complex`, no modules is automatically started for you, ie: you must manually call module_register()/module_deregister() on each module. |br|
 While this may seem useless, i am sure there can be some cases where you may wish to register/deregister modules yourself. |br|
 When using complex API, you are responsible to register/deregister modules, and thus initing/destroying them. |br|
 Note that with Complex API, module_pre_start() function is not available (it would be useless), and you won't need to define check() function. |br|
 You will still have to define evaluate(), init(), recv() and destroy() functions (but you can freely name them!). |br|
 
-Everything else but module's registration is the same as Easy API.
+Everything else but module's (de)registration is same as Easy API.
 
