@@ -1,23 +1,22 @@
 #include <module.h>
-#include <sys/timerfd.h>
 #include <unistd.h>
-#include <stdint.h>
+#include <string.h>
+#include <ctype.h>
 
 /* 
  * Declare and automagically initialize 
  * this module as soon as program starts.
  */
-MODULE("A");
+MODULE("Pippo");
 
 static void recv_ready(const msg_t *msg, const void *userdata);
 
 /*
- * This macro will create a function that is automatically 
- * called before registering the module. Use this to set some 
- * global state needed eg: in check() function 
+ * This function is automatically called before registering the module. 
+ * Use this to set some  global state needed eg: in check() function 
  */
 static void module_pre_start(void) {
-    printf("A: Not yet inited!\n");
+
 }
 
 /*
@@ -25,14 +24,8 @@ static void module_pre_start(void) {
  * returns a valid fd to be polled.
  */
 static int init(void) {
-    int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
-    
-    struct itimerspec timerValue = {{0}};
-    
-    timerValue.it_value.tv_sec = 1;
-    timerValue.it_interval.tv_sec = 1;
-    timerfd_settime(fd, 0, &timerValue, NULL);
-    return fd;
+    // return stdin fd
+    return STDIN_FILENO;
 }
 
 /* 
@@ -72,21 +65,25 @@ static void destroy(void) {
  */
 static void recv(const msg_t *msg, const void *userdata) {
     if (!msg->msg) {
-        uint64_t t;
-        read(msg->fd, &t, sizeof(uint64_t));
-    
-        static int counter = 0;
-        m_log("recv!\n");
-        counter++;
-    
-        if (counter % 3 == 0) {
+        char c;
+        read(msg->fd, &c, sizeof(char));
+        
+        switch (tolower(c)) {
+            case 'c':
+                m_log("Doggo, come here!\n");
+                m_tell("Doggo", "ComeHere");
+                break;
+            default:
+                /* Avoid newline */
+                if (c != 10) {
+                    m_log("You got to call your doggo first. Press 'c'.\n");
+                }
+                break;
+        }
+    } else {
+        if (!strcmp(msg->msg->message, "BauBau")) {
             m_become(ready);
-            m_set_userdata(&counter);
-            /* 
-             * Publish a message on "test" topic to let 
-             * other module know we're changing state.
-             */
-            m_publish("test", "changing recv");
+            m_log("Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
     }
 }
@@ -97,19 +94,37 @@ static void recv(const msg_t *msg, const void *userdata) {
  */
 static void recv_ready(const msg_t *msg, const void *userdata) {
     if (!msg->msg) {
-        uint64_t t;
-        read(msg->fd, &t, sizeof(uint64_t));
-    
-        int *counter = (int *)userdata;
-        m_log("recv2!\n");
-        (*counter)++;
-    
-        if (*counter % 3 == 0) {
-            /* B module won't receive this message as it is not subscribed to topic */
-            m_publish("test2", "changing recv");
-            m_unbecome();
+        char c;
+        read(msg->fd, &c, sizeof(char));
+        
+        switch (tolower(c)) {
+            case 'p':
+                m_log("Doggo, let's play a bit!\n");
+                m_tell("Doggo", "LetsPlay");
+                break;
+            case 's':
+                m_log("Doggo, you should sleep a bit!\n");
+                m_tell("Doggo", "LetsSleep");
+                break;
+            case 'f':
+                m_log("Doggo, you want some of these?\n");
+                m_tell("Doggo", "LetsEat");
+                break;
+            case 'w':
+                m_log("Doggo, wake up!\n");
+                m_tell("Doggo", "WakeUp");
+                break;
+            case 'q':
+                m_log("I have to go now!\n");
+                m_publish("leaving", "ByeBye");
+                modules_quit();
+                break;
+            default:
+                /* Avoid newline */
+                if (c != 10) {
+                    m_log("Unrecognized command. Beep. Please enter a new one... Totally not a bot.\n");
+                }
+                break;
         }
-    } else {
-        m_log("Received message %s from %s.\n", msg->msg->message, msg->msg->sender);
     }
 }

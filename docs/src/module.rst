@@ -85,14 +85,14 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param topic: topic to which subscribe.
   :type topic: :c:type:`const char *`
   
-.. c:macro:: m_tell(msg, recipient)
+.. c:macro:: m_tell(recipient, msg)
 
   Tell a message to another module.
     
-  :param msg: actual message to be sent.
   :param recipient: module to whom deliver the message.
-  :type msg: :c:type:`const char *`
+  :param msg: actual message to be sent.
   :type recipient: :c:type:`const char *`
+  :type msg: :c:type:`const char *`
   
 .. c:macro:: m_publish(topic, msg)
 
@@ -227,16 +227,16 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
   
-.. c:macro:: module_tell(self, msg, recipient)
+.. c:macro:: module_tell(self, recipient, msg)
 
   Tell a message to another module.
     
   :param self: pointer to module's handler
-  :param msg: actual message to be sent.
   :param recipient: module to whom deliver the message.
+  :param msg: actual message to be sent.
   :type self: :c:type:`const self_t *`
-  :type msg: :c:type:`const char *`
   :type recipient: :c:type:`const char *`
+  :type msg: :c:type:`const char *`
   
 .. c:macro:: module_publish(self, topic, msg)
 

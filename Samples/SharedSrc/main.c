@@ -11,6 +11,8 @@ int main() {
      */
     create_modules("test");
     
+    printf("Press 'c' to start playing with your own doggo...\n");
+    
     /*
      * Loop on this context to get our modules' events
      */

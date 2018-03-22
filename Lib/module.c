@@ -71,16 +71,18 @@ typedef struct {
     map_t modules;
 } m_context;
 
-static _ctor0_ void modules_init(void);
+static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
 static m_context *check_ctx(const char *ctx_name);
-static module_ret_code add_children(module *mod, const void *self);
+static module_ret_code add_children(module *mod, const self_t *self);
 static void evaluate_new_state(m_context *context);
 static int evaluate_module(void *data, void *m);
 static int add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
+static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic);
+static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
 static module_ret_code start_children(module *m);
 static module_ret_code stop_children(module *m);
 
@@ -157,8 +159,8 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
         mod->self.name = strdup(name);
         mod->self.ctx = strdup(ctx_name);
         mod->subscriptions = hashmap_new();
-        *self = &mod->self;        
-        evaluate_module(NULL, mod);        
+        *self = &mod->self;
+        evaluate_module(NULL, mod);
         return MOD_OK;
     }
     free(mod);
@@ -190,7 +192,7 @@ module_ret_code module_deregister(const self_t **self) {
     return MOD_OK;
 }
 
-static module_ret_code add_children(module *mod, const void *self) {
+static module_ret_code add_children(module *mod, const self_t *self) {
     child_t **tmp = &mod->children;
     while (*tmp) {
         tmp = &(*tmp)->next;
@@ -205,8 +207,7 @@ static module_ret_code add_children(module *mod, const void *self) {
 }
 
 module_ret_code module_binds_to(const self_t *self, const char *parent) {
-    self_t *tmp = (self_t *) self;
-    GET_CTX(tmp->ctx);
+    GET_CTX(self->ctx);
     
     module *mod = NULL;
     hashmap_get(c->modules, (char *)parent, (void **)&mod);
@@ -235,7 +236,7 @@ module_ret_code modules_ctx_loop(const char *ctx_name) {
                     
                     CTX_GET_MOD(self->name, c);
                     
-                    msg_t msg = { mod->fd, NULL };
+                    const msg_t msg = { mod->fd, NULL };
                     mod->hook->recv(&msg, mod->userdata);
                 }
             }
@@ -280,7 +281,7 @@ module_ret_code module_log(const self_t *self, const char *fmt, ...) {
     
     va_list args;
     va_start(args, fmt);
-    printf("%s: ", ((self_t *)self)->name);
+    printf("%s: ", self->name);
     vprintf(fmt, args);
     va_end(args);
     return MOD_OK;
@@ -334,7 +335,7 @@ module_ret_code module_subscribe(const self_t *self, const char *topic) {
 
 static int tell_if(void *data, void *m) {
     module *mod = (module *)m;
-    msg_t *msg = (msg_t *)data;
+    const msg_t *msg = (msg_t *)data;
     void *tmp = NULL;
 
     /* 
@@ -350,39 +351,48 @@ static int tell_if(void *data, void *m) {
     return MAP_OK;
 }
 
-module_ret_code module_tell(const self_t *self, const char *message, const char *recipient) {
-    self_t *s = (self_t *)self;
-    GET_CTX(s->ctx);
+static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic) {
+    pubsub_msg_t *m = malloc(sizeof(pubsub_msg_t));
+    if (m) {
+        m->message = message;
+        m->sender = sender;
+        m->topic = topic;
+    }
+    return m;
+}
+
+static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
+    if (m) {
+        msg_t msg = { -1, m };
+        if (mod) {
+            tell_if(&msg, mod);
+        } else if (c) {
+            hashmap_iterate(c->modules, tell_if, &msg);
+        }
+        free(m);
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+module_ret_code module_tell(const self_t *self, const char *recipient, const char *message) {
+    MOD_ASSERT(message, "NULL message.", MOD_ERR);
+    MOD_ASSERT(message, "NULL recipient.", MOD_ERR);
+    
+    GET_CTX(self->ctx);
     CTX_GET_MOD(recipient, c);
-    
-    msg_t msg = { .fd = -1 };
-    pubsub_msg_t *tmp = malloc(sizeof(pubsub_msg_t));
-    tmp->message = message;
-    tmp->sender = s->name;
-    tmp->topic = NULL;
-    msg.msg = tmp;
-    
-    tell_if(&msg, mod);
-    
-    free(tmp);
-    return MOD_OK;
+
+    pubsub_msg_t *m = create_pubsub_msg(message, self->name, NULL);
+    return tell_pubsub_msg(m, mod, NULL);
 }
 
 module_ret_code module_publish(const self_t *self, const char *topic, const char *message) {
-    self_t *s = (self_t *)self;
-    GET_CTX(s->ctx);
+    MOD_ASSERT(message, "NULL message.", MOD_ERR);
     
-    msg_t msg = { .fd = -1 };
-    pubsub_msg_t *tmp = malloc(sizeof(pubsub_msg_t));
-    tmp->message = message;
-    tmp->sender = s->name;
-    tmp->topic = topic;
-    msg.msg = tmp;
+    GET_CTX(self->ctx);
     
-    hashmap_iterate(c->modules, tell_if, &msg);
-    
-    free(tmp);
-    return MOD_OK;
+    pubsub_msg_t *m = create_pubsub_msg(message, self->name, topic);
+    return tell_pubsub_msg(m, NULL, c);
 }
 
 /** Module state getter **/
@@ -399,7 +409,7 @@ module_ret_code module_start(const self_t *self, int fd) {
     GET_MOD_IN_STATE(self, IDLE);
     
     mod->fd = fd;
-    MODULE_DEBUG("Starting module %s.\n", ((self_t *)self)->name);
+    MODULE_DEBUG("Starting module %s.\n", self->name);
     return module_resume(self);
 }
 
@@ -436,7 +446,7 @@ module_ret_code module_resume(const self_t *self) {
 module_ret_code module_stop(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
-    MODULE_DEBUG("Stopping module %s.\n", ((self_t *)self)->name);
+    MODULE_DEBUG("Stopping module %s.\n", self->name);
     mod->state = STOPPED;
     if (mod->fd == MODULE_DONT_POLL || close(mod->fd) == 0) { // implicitly calls EPOLL_CTL_DEL
         return MOD_OK;

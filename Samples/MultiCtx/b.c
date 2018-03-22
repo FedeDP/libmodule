@@ -7,9 +7,16 @@ static const char *myCtx = "SecondCtx";
 /* 
  * Declare and automagically initialize 
  * this module and its context as soon as program starts.
- * Note that both module and context names are not passed as string here.
  */
 MODULE_CTX("B", myCtx);
+
+/*
+ * This function is automatically called before registering the module. 
+ * Use this to set some  global state needed eg: in check() function 
+ */
+static void module_pre_start(void) {
+    
+}
 
 /*
  * Initializes this module's state;

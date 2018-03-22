@@ -11,13 +11,15 @@
 
 /* 
  * ctors order: 
- * 1) modules_pre_start() + modules_init();
- * 2) each module_pre_start()
- * 3) each module ctor function
+ * 1) modules_pre_start()
+ * 2) modules_init()
+ * 3) each module_pre_start()
+ * 4) each module ctor function
  */
 #define _ctor0_     __attribute__((constructor (101)))
 #define _ctor1_     __attribute__((constructor (102)))
 #define _ctor2_     __attribute__((constructor (103)))
+#define _ctor3_     __attribute__((constructor (104)))
 #define _dtor0_     __attribute__((destructor (101)))
 #define _dtor1_     __attribute__((destructor (102)))
 
@@ -27,14 +29,14 @@
 
 /* Interface Macros */
 #define MODULE_CTX(name, ctx) \
-    static void _ctor1_ module_pre_start(void); \
+    static void _ctor2_ module_pre_start(void); \
     static int init(void); \
     static int check(void); \
     static int evaluate(void); \
     static void recv(const msg_t *msg, const void *userdata); \
     static void destroy(void); \
     static const self_t *self = NULL; \
-    static void _ctor2_ constructor(void) { \
+    static void _ctor3_ constructor(void) { \
         if (check()) { \
             static userhook hook = { init, evaluate, recv, destroy }; \
             module_register(name, ctx, &self, &hook); \
@@ -56,7 +58,7 @@
 #define m_update_fd(fd, close_old)  module_update_fd(self, fd, close_old)
 #define m_log(fmt, ...)             module_log(self, fmt, ##__VA_ARGS__)
 #define m_subscribe(topic)          module_subscribe(self, topic)
-#define m_tell(msg, recipient)      module_tell(self, msg, recipient)
+#define m_tell(recipient, msg)      module_tell(self, recipient, msg)
 #define m_publish(topic, msg)       module_publish(self, topic, msg)
 #define m_broadcast(msg)            module_publish(self, NULL, msg)
 
@@ -121,7 +123,7 @@ _public_ module_ret_code module_log(const self_t *self, const char *fmt, ...);
 _public_ module_ret_code module_set_userdata(const self_t *self, const void *userdata);
 _public_ module_ret_code module_update_fd(const self_t *self, int new_fd, int close_old);
 _public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
-_public_ module_ret_code module_tell(const self_t *self, const char *message, const char *recipient);
+_public_ module_ret_code module_tell(const self_t *self, const char *recipient, const char *message);
 _public_ module_ret_code module_publish(const self_t *self, const char *topic, const char *message);
 
 /* Modules interface functions */

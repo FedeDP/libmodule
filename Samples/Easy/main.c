@@ -11,6 +11,7 @@ void modules_pre_start() {
 }
 
 int main() {
+    printf("Press 'c' to start playing with your own doggo...\n");
     /* Loop on our modules' events */
     modules_loop();
     return 0;

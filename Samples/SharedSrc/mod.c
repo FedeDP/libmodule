@@ -1,20 +1,23 @@
 #include <module.h>
-#include <sys/timerfd.h>
 #include <unistd.h>
-#include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 
+/* 
+ * Note how check() function is not required now 
+ * as we're explicitly calling module_register 
+ */
 static int A_init(void);
 static int B_init(void);
 static int evaluate(void);
 static void destroy(void);
 static void A_recv(const msg_t *msg, const void *userdata);
+static void A_recv_ready(const msg_t *msg, const void *userdata);
 static void B_recv(const msg_t *msg, const void *userdata);
+static void B_recv_sleeping(const msg_t *msg, const void *userdata);
 
 static const self_t *selfA, *selfB;
 static userhook hookA, hookB;
-
-static int counter = 0;
 
 /*
  * Create "A" and "B" modules in ctx_name context.
@@ -24,8 +27,8 @@ void create_modules(const char *ctx_name) {
     hookA = (userhook) { A_init, evaluate, A_recv, destroy };
     hookB = (userhook) { B_init, evaluate, B_recv, destroy };
     
-    module_register("A", ctx_name, &selfA, &hookA);
-    module_register("B", ctx_name, &selfB, &hookB);
+    module_register("Pippo", ctx_name, &selfA, &hookA);
+    module_register("Doggo", ctx_name, &selfB, &hookB);
     
     module_set_userdata(selfA, ctx_name);
     module_set_userdata(selfB, ctx_name);
@@ -44,14 +47,8 @@ void destroy_modules(void) {
  * returns a valid fd to be polled.
  */
 static int A_init(void) {
-    int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
-    
-    struct itimerspec timerValue = {{0}};
-    
-    timerValue.it_value.tv_sec = 1;
-    timerValue.it_interval.tv_sec = 1;
-    timerfd_settime(fd, 0, &timerValue, NULL);
-    return fd;
+    // return stdin fd
+    return STDIN_FILENO;
 }
 
 /*
@@ -59,14 +56,9 @@ static int A_init(void) {
  * returns a valid fd to be polled.
  */
 static int B_init(void) {
-    int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
-    
-    struct itimerspec timerValue = {{0}};
-    
-    timerValue.it_value.tv_sec = 2;
-    timerValue.it_interval.tv_sec = 2;
-    timerfd_settime(fd, 0, &timerValue, NULL);
-    return fd;
+    /* Doggo is subscribed to "leaving" topic */
+    module_subscribe(selfB, "leaving");
+    return MODULE_DONT_POLL;
 }
 
 /* 
@@ -93,13 +85,62 @@ static void destroy(void) {
  */
 static void A_recv(const msg_t *msg, const void *userdata) {
     if (!msg->msg) {
-        uint64_t t;
-        read(msg->fd, &t, sizeof(uint64_t));
-        module_log(selfA, "recv!\n");
+        char c;
+        read(msg->fd, &c, sizeof(char));
         
-        counter++;
-        if (counter == 15) {
-            modules_ctx_quit((char *)userdata);
+        switch (tolower(c)) {
+            case 'c':
+                module_log(selfA, "Doggo, come here!\n");
+                module_tell(selfA, "Doggo", "ComeHere");
+                break;
+            default:
+                /* Avoid newline */
+                if (c != 10) {
+                    module_log(selfA, "You got to call your doggo first. Press 'c'.\n");
+                }
+                break;
+        }
+    } else {
+        if (!strcmp(msg->msg->message, "BauBau")) {
+            module_become(selfA, A_recv_ready);
+            module_log(selfA, "Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
+        }
+    }
+}
+
+static void A_recv_ready(const msg_t *msg, const void *userdata) {
+    if (!msg->msg) {
+        char c;
+        read(msg->fd, &c, sizeof(char));
+        
+        switch (tolower(c)) {
+            case 'p':
+                module_log(selfA, "Doggo, let's play a bit!\n");
+                module_tell(selfA, "Doggo", "LetsPlay");
+                break;
+            case 's':
+                module_log(selfA, "Doggo, you should sleep a bit!\n");
+                module_tell(selfA, "Doggo", "LetsSleep");
+                break;
+            case 'f':
+                module_log(selfA, "Doggo, you want some of these?\n");
+                module_tell(selfA, "Doggo", "LetsEat");
+                break;
+            case 'w':
+                module_log(selfA, "Doggo, wake up!\n");
+                module_tell(selfA, "Doggo", "WakeUp");
+                break;
+            case 'q':
+                module_log(selfA, "I have to go now!\n");
+                module_publish(selfA, "leaving", "ByeBye");
+                modules_ctx_quit("test");
+                break;
+            default:
+                /* Avoid newline */
+                if (c != 10) {
+                    module_log(selfA, "Unrecognized command. Beep. Please enter a new one... Totally not a bot.\n");
+                }
+                break;
         }
     }
 }
@@ -108,14 +149,30 @@ static void A_recv(const msg_t *msg, const void *userdata) {
  * Our B module's poll callback.
  */
 static void B_recv(const msg_t *msg, const void *userdata) {
-    if (!msg->msg) {
-        uint64_t t;
-        read(msg->fd, &t, sizeof(uint64_t));
-        module_log(selfB, "recv!\n");
-        
-        counter++;
-        if (counter == 15) {
-            modules_ctx_quit((char *)userdata);
+    if (msg->msg) {
+        if (!strcmp(msg->msg->message, "ComeHere")) {
+            module_log(selfB, "Running...\n");
+            module_tell(selfB, msg->msg->sender, "BauBau");
+        } else if (!strcmp(msg->msg->message, "LetsPlay")) {
+            module_log(selfB, "BauBau BauuBauuu!\n");
+        } else if (!strcmp(msg->msg->message, "LetsEat")) {
+            module_log(selfB, "Burp!\n");
+        } else if (!strcmp(msg->msg->message, "LetsSleep")) {
+            module_become(selfB, B_recv_sleeping);
+            module_log(selfB, "ZzzZzz...\n");
+        } else if (!strcmp(msg->msg->message, "ByeBye")) {
+            module_log(selfB, "Sob...\n");
+        }
+    }
+}
+
+static void B_recv_sleeping(const msg_t *msg, const void *userdata) {
+    if (msg->msg) {
+        if (!strcmp(msg->msg->message, "WakeUp")) {
+            module_become(selfB, B_recv);
+            module_log(selfB, "Yawn...\n");
+        } else {
+            module_log(selfB, "ZzzZzz...\n");
         }
     }
 }

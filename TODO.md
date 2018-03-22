@@ -10,14 +10,20 @@
 - [x] Let users implement "non-pollable" modules, ie: modules that are not bound to a FD (but only receives pubsub message) -> ie: set RUNNING state anyway if certain FD is passed
 - [x] Update doc
 - [x] msg_t all const
-- [ ] add an hashmap_exists() function
-- [ ] properly use an hashset for module subscriptions
-- [ ] split in module.h and modules.h (module/module{s}.h)
+- [x] m_tell and m_publish -> check for NULL message
+- [x] m_tell check for NULL recipient
+- [ ] review hashmap code
 
 ### Logger
 
 - [ ] modules_set_logger() function to set a logger?
 - [ ] Logger will be called in module_log/m_log
+
+### Samples
+
+- [x] Improve easy example
+- [x] Improve sharedSrd example
+- [ ] Improve multictx example
 
 ### Finally
 
@@ -31,6 +37,7 @@
 - [ ] SUBMODULE SHOULD BE STARTED later (after all MODULES) -> ctor3
 - [ ] destroy children of modules at module deregister
 - [ ] bind children to parent states (ie: parent paused -> children paused; parent resumed -> children resumed...)
+- [ ] m_propagate -> like m_tell but to all children
 
 - [ ] new release
 

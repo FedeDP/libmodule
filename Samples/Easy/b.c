@@ -1,21 +1,20 @@
 #include <module.h>
-#include <sys/signalfd.h>
-#include <signal.h>
 #include <unistd.h>
+#include <string.h>
+
+static void recv_sleeping(const msg_t *msg, const void *userdata);
 
 /* 
  * Declare and automagically initialize 
  * this module as soon as program starts.
  */
-MODULE("B");
+MODULE("Doggo");
 
 /*
- * This macro will create a function that is automatically 
- * called before registering the module. Use this to set some 
- * global state needed eg: in check() function
+ * This function is automatically called before registering the module. 
+ * Use this to set some  global state needed eg: in check() function 
  */
 static void module_pre_start(void) {
-    printf("B: Not yet inited!\n");
 }
 
 /*
@@ -23,18 +22,9 @@ static void module_pre_start(void) {
  * returns a valid fd to be polled.
  */
 static int init(void) {
-    /* This module is subscribed to "test" topic */
-    m_subscribe("test");
-    
-    sigset_t mask;
-    
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGINT);
-    sigaddset(&mask, SIGTERM);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
-    
-    int fd = signalfd(-1, &mask, 0);
-    return fd;
+    /* Doggo is subscribed to "leaving" topic */
+    m_subscribe("leaving");
+    return MODULE_DONT_POLL;
 }
 
 /* 
@@ -73,17 +63,30 @@ static void destroy(void) {
  * Note that message_t->msg/sender are unused for now.
  */
 static void recv(const msg_t *msg, const void *userdata) {
-    if (!msg->msg) {
-        struct signalfd_siginfo fdsi;    
-        ssize_t s = read(msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
-        if (s != sizeof(struct signalfd_siginfo)) {
-            m_log("an error occurred while getting signalfd data.\n");
+    if (msg->msg) {
+        if (!strcmp(msg->msg->message, "ComeHere")) {
+            m_log("Running...\n");
+            m_tell(msg->msg->sender, "BauBau");
+        } else if (!strcmp(msg->msg->message, "LetsPlay")) {
+            m_log("BauBau BauuBauuu!\n");
+        } else if (!strcmp(msg->msg->message, "LetsEat")) {
+            m_log("Burp!\n");
+        } else if (!strcmp(msg->msg->message, "LetsSleep")) {
+            m_become(sleeping);
+            m_log("ZzzZzz...\n");
+        } else if (!strcmp(msg->msg->message, "ByeBye")) {
+            m_log("Sob...\n");
         }
-        m_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
-        modules_quit();
-    } else {
-        m_log("Received message '%s' from %s on topic '%s'.\n", msg->msg->message, msg->msg->sender, msg->msg->topic);
-        /* Answer back to sender with a message */
-        m_tell("Nice!", msg->msg->sender);
+    }
+}
+
+static void recv_sleeping(const msg_t *msg, const void *userdata) {
+    if (msg->msg) {
+        if (!strcmp(msg->msg->message, "WakeUp")) {
+            m_unbecome();
+            m_log("Yawn...\n");
+        } else {
+            m_log("ZzzZzz...\n");
+        }
     }
 }
