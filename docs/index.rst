@@ -13,6 +13,7 @@ Welcome to libmodule's documentation!
    src/concepts
    src/data_structures
    src/callbacks
+   src/lifecycle
    src/module
    src/modules
 

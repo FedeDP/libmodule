@@ -110,10 +110,12 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param msg: message to be delivered to all modules in a context.
   :type msg: :c:type:`const char *`
 
-Module less-easy API
+.. _module_complex:    
+  
+Module Complex API
 --------------------
 
-Less-easy API consists of `Module easy API`_ internal functions. |br|
+Complex (probably better to say less-easy) API consists of `Module easy API`_ internally used functions. |br|
 Sometime you may avoid using easy API; eg: if you wish to use same source file for different modules. |br|
 This behaviour is discouraged though. |br|
 Again, where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.

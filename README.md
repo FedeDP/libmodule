@@ -12,7 +12,7 @@ You will write less code, focusing on what you really need.
 
 It stands somewhere in the middle, trying to mix the 2 concepts.  
 It does not provide any faciliting to build an event loop; it does provide its own event loop though.  
-You may find some/lots of similarities between a libmodule's MODULE and an Actor.  
+You may find some/lots of similarities between a libmodule's *Module* and an Actor.  
 Indeed, libmodule was heavily inspired by my own actor library experience with [akka](https://akka.io/) for its API.  
 
 ## Is it portable?
@@ -36,8 +36,8 @@ It helps you to write standard and clean projects with small units, so called mo
 
 ## But...why?
 
-We all know OOP is not a solution to everything and C is still a beautiful and much used language.  
-Still, I admit to love code modularity that OOP enforces; moreover, I realized that I was using same code and abstractions over and over in my C projects (both side projects and at my job).  
+We all know OOP is not a solution to every problem and C is still a beautiful and much used language.  
+Still, I admit to love code modularity that OOP enforces; moreover, I realized that I was using same code abstractions over and over in my C projects (both side projects and at my job).  
 So I thought that writing a library to achieve those same abstractions in a cleaner and simpler way was the right thing to do.
 
 ## Build dep and how to build

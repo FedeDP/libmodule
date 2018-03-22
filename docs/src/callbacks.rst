@@ -5,11 +5,12 @@
 Module callbacks
 ================
 
-Every module needs 5 functions that be must defined by developer. |br|
-They are automatically declared by MODULE macro. |br|
-Moreover, a module_pre_start function is declared too, but it is not needed by libmodule interface, ie: it can be left undefined.
+Every module needs 5 functions that must be defined by developer. |br|
+If using :ref:`module_easy`, they are automatically declared by MODULE macro. |br|
+Moreover, a module_pre_start function is declared too, but it is not needed by libmodule interface, ie: it can be left undefined. Your compiler may warn you about that though.
 
 .. code::
+
     static void module_pre_start(void);
     static int init(void);
     static int check(void);
@@ -19,18 +20,21 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 
 .. c:function:: module_pre_start(void)
 
-  It can be used to create a function that will be called before any module is registered. |br|
-  It is the per-module version of :ref:`modules_pre_start <modules_pre_start>` function. |br|
+  This function will be called before any module is registered. |br|
+  It is the per-module version of :ref:`modules_pre_start <modules_pre_start>` function.
 
 .. c:function:: init(void)
 
-  Initializes module state
+  Initializes module state and returns an fd to be polled. |br|
+  A special fd value MODULE_DONT_POLL is defined, to create a non-pollable module. |br|
+  Non-pollable module acts much more similar to an actor, ie: they can only receive and send PubSub messages.
   
   :returns: FD to be polled for this module.
 
 .. c:function:: check(void)
 
-  Startup filter to check whether this module should be created and managed by libmodule
+  Startup filter to check whether this module should be created and managed by libmodule, |br|
+  as sometimes you may wish that not your modules are automatically started.
   
   :returns: true (not-0) if the module should be created, 0 otherwise.
 
@@ -43,9 +47,9 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
   
 .. c:function:: recv(msg, userdata)
 
-  Poll callback
+  Poll callback, called when any event is ready on module's fd.
   
-  :param: :c:type:`message_t *` msg: pointer to message_t struct. As of now, only fd field is used.
+  :param: :c:type:`const msg_t *` msg: pointer to msg_t struct.
   :param: :c:type:`const void *` userdata: pointer to userdata as set by m_set_userdata.
 
 .. c:function:: destroy(void)

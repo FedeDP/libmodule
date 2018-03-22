@@ -13,6 +13,7 @@
 - [x] m_tell and m_publish -> check for NULL message
 - [x] m_tell check for NULL recipient
 - [ ] review hashmap code
+- [ ] update DOC
 
 ### Logger
 

@@ -14,7 +14,7 @@ It is initialized through MODULE macro:
    
 .. code::
     
-    MODULE(test)
+    MODULE("test")
     
 This macro creates a "test" module. |br|
 MODULE macro also creates a constructor and destructor that are automatically called by libmodule at start and at end of program. |br|
@@ -35,7 +35,7 @@ To initialize a module binding it to its context, use MODULE_CTX macro:
    
 .. code::
     
-    MODULE_CTX(test, myCtx)
+    MODULE_CTX("test", "myCtx")
     
 This macro firstly creates a "myCtx" context, then a "test" module using same MODULE macro as before. |br|
 Indeed, MODULE macro is only a particular case of MODULE_CTX macro, where myCtx is automatically setted to "default". |br|

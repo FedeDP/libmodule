@@ -26,7 +26,7 @@ Types
     /* Callbacks typedefs */
     typedef int(*init_cb)(void);
     typedef int(*evaluate_cb)(void);
-    typedef void(*recv_cb)(msg_t *msg, const void *userdata);
+    typedef void(*recv_cb)(const msg_t *msg, const void *userdata);
     typedef void(*destroy_cb)(void);
 
     /* Struct that holds user defined callbacks */
