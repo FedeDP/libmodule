@@ -79,7 +79,7 @@ static m_context *check_ctx(const char *ctx_name);
 static module_ret_code add_children(module *mod, const self_t *self);
 static void evaluate_new_state(m_context *context);
 static int evaluate_module(void *data, void *m);
-static int add_subscription(module *mod, const char *topic);
+static module_ret_code add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
 static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
