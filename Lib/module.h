@@ -47,23 +47,24 @@
 #define MODULE(name) MODULE_CTX(name, DEFAULT_CTX)
    
 /* Defines for easy API (with no need bothering with both self and ctx) */
-#define m_is(x)                     module_is(self, x)
-#define m_start(fd)                 module_start(self, fd)
-#define m_pause()                   module_pause(self)
-#define m_resume()                  module_resume(self)
-#define m_stop()                    module_stop(self)
-#define m_become(x)                 module_become(self, recv_##x)
-#define m_unbecome()                module_become(self, recv)
-#define m_set_userdata(userdata)    module_set_userdata(self, userdata)
-#define m_update_fd(fd, close_old)  module_update_fd(self, fd, close_old)
-#define m_log(fmt, ...)             module_log(self, fmt, ##__VA_ARGS__)
-#define m_subscribe(topic)          module_subscribe(self, topic)
-#define m_tell(recipient, msg)      module_tell(self, recipient, msg)
-#define m_publish(topic, msg)       module_publish(self, topic, msg)
-#define m_broadcast(msg)            module_publish(self, NULL, msg)
+#define m_is(state)                     module_is(self, state)
+#define m_start(fd)                     module_start(self, fd)
+#define m_pause()                       module_pause(self)
+#define m_resume()                      module_resume(self)
+#define m_stop()                        module_stop(self)
+#define m_become(x)                     module_become(self, recv_##x)
+#define m_unbecome()                    module_become(self, recv)
+#define m_set_userdata(userdata)        module_set_userdata(self, userdata)
+#define m_update_fd(fd, close_old)      module_update_fd(self, fd, close_old)
+#define m_log(fmt, ...)                 module_log(self, fmt, ##__VA_ARGS__)
+#define m_subscribe(topic)              module_subscribe(self, topic)
+#define m_tell(recipient, msg)          module_tell(self, recipient, msg)
+#define m_publish(topic, msg)           module_publish(self, topic, msg)
+#define m_broadcast(msg)                module_publish(self, NULL, msg)
 
-#define modules_loop()              modules_ctx_loop(DEFAULT_CTX)
-#define modules_quit()              modules_ctx_quit(DEFAULT_CTX)
+#define modules_set_logger(log)         modules_ctx_set_logger(DEFAULT_CTX, log)
+#define modules_loop()                  modules_ctx_loop(DEFAULT_CTX)
+#define modules_quit()                  modules_ctx_quit(DEFAULT_CTX)
 
 /** Structs types **/
 
@@ -73,6 +74,7 @@ typedef struct _self self_t;
 /* Modules states */
 enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
+/* Module return codes */
 typedef enum {
     MOD_WRONG_STATE = -6,
     MOD_NO_PARENT,
@@ -100,6 +102,10 @@ typedef int(*evaluate_cb)(void);
 typedef void(*recv_cb)(const msg_t *msg, const void *userdata);
 typedef void(*destroy_cb)(void);
 
+/* Logger callback */
+typedef void(*log_cb)(const char *module_name, const char *context_name, 
+                      const char *fmt, va_list args, const void *userdata);
+
 /* Struct that holds user defined callbacks */
 typedef struct {
     init_cb init;                           // module's init function (should return a FD)
@@ -109,24 +115,35 @@ typedef struct {
 } userhook;
 
 /* Module interface functions */
+
+/* Module registration */
 _public_ module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook);
 _public_ module_ret_code module_deregister(const self_t **self);
-/* FIXME: do not export this for now as its support is not complete */
+/* Do not export this function for now as its support is not complete */
 module_ret_code module_binds_to(const self_t *self, const char *parent);
+
+/* Module state getters */
 _public_ int module_is(const self_t *self, const enum module_states st);
+
+/* Module state setters */
 _public_ module_ret_code module_start(const self_t *self, int fd);
 _public_ module_ret_code module_pause(const self_t *self);
 _public_ module_ret_code module_resume(const self_t *self);
 _public_ module_ret_code module_stop(const self_t *self);
+
+/* Module generic functions */
 _public_ module_ret_code module_become(const self_t *self,  recv_cb new_recv);
 _public_ module_ret_code module_log(const self_t *self, const char *fmt, ...);
 _public_ module_ret_code module_set_userdata(const self_t *self, const void *userdata);
 _public_ module_ret_code module_update_fd(const self_t *self, int new_fd, int close_old);
+
+/* Module PubSub interface */
 _public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
 _public_ module_ret_code module_tell(const self_t *self, const char *recipient, const char *message);
 _public_ module_ret_code module_publish(const self_t *self, const char *topic, const char *message);
 
 /* Modules interface functions */
 _public_ void _ctor0_ _weak_ modules_pre_start(void);
+_public_ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger);
 _public_ module_ret_code modules_ctx_loop(const char *ctx_name);
 _public_ module_ret_code modules_ctx_quit(const char *ctx_name);

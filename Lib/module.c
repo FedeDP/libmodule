@@ -68,6 +68,7 @@ typedef struct {
 typedef struct {
     int quit;
     int epollfd;
+    log_cb logger;
     map_t modules;
 } m_context;
 
@@ -77,6 +78,8 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
 static m_context *check_ctx(const char *ctx_name);
 static module_ret_code add_children(module *mod, const self_t *self);
+static void default_logger(const char *module_name, const char *context_name, 
+                           const char *fmt, va_list args, const void *userdata);
 static void evaluate_new_state(m_context *context);
 static int evaluate_module(void *data, void *m);
 static module_ret_code add_subscription(module *mod, const char *topic);
@@ -109,6 +112,8 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     (*context)->epollfd = epoll_create1(EPOLL_CLOEXEC); 
     MOD_ASSERT(((*context)->epollfd >= 0), "Failed to create epollfd.", MOD_ERR);
      
+    (*context)->logger = default_logger;
+    
     (*context)->modules = hashmap_new();
     if ((*context)->modules && hashmap_put(ctx, (char *)ctx_name, *context) == MAP_OK) {
         return MOD_OK;
@@ -216,6 +221,20 @@ module_ret_code module_binds_to(const self_t *self, const char *parent) {
     return add_children(mod, self);
 }
 
+static void default_logger(const char *module_name, const char *context_name, 
+                           const char *fmt, va_list args, const void *userdata) {
+    printf("[%s]|%s|: ", context_name, module_name);
+    vprintf(fmt, args);
+}
+
+module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
+    MOD_ASSERT(logger, "NULL logger. Fallbacking to default.", MOD_ERR);
+    GET_CTX(ctx_name);
+    
+    c->logger = logger;
+    return MOD_OK;
+}
+
 module_ret_code modules_ctx_loop(const char *ctx_name) {
     GET_CTX(ctx_name);
     
@@ -277,12 +296,11 @@ module_ret_code module_become(const self_t *self,  recv_cb new_recv) {
 }
 
 module_ret_code module_log(const self_t *self, const char *fmt, ...) {
-    MOD_ASSERT(self, "Module not found.", MOD_NO_MOD);
+    GET_MOD(self);
     
     va_list args;
     va_start(args, fmt);
-    printf("%s: ", self->name);
-    vprintf(fmt, args);
+    c->logger(self->name, self->ctx, fmt, args, mod->userdata);
     va_end(args);
     return MOD_OK;
 }
@@ -314,7 +332,7 @@ module_ret_code module_update_fd(const self_t *self, int new_fd, int close_old) 
     return MOD_ERR;
 }
 
-/** Actor-like interface **/
+/** Actor-like PubSub interface **/
 
 static module_ret_code add_subscription(module *mod, const char *topic) {
     void *tmp = NULL;
@@ -328,6 +346,7 @@ static module_ret_code add_subscription(module *mod, const char *topic) {
 }
 
 module_ret_code module_subscribe(const self_t *self, const char *topic) {
+    MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
     GET_MOD(self);
     
     return add_subscription(mod, topic);
@@ -395,8 +414,9 @@ module_ret_code module_publish(const self_t *self, const char *topic, const char
     return tell_pubsub_msg(m, NULL, c);
 }
 
-/** Module state getter **/
+/** Module state getters **/
 
+/* Define states getters */
 int module_is(const self_t *self, const enum module_states st) {
     GET_MOD(self);
     

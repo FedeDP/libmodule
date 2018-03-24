@@ -13,12 +13,13 @@
 - [x] m_tell and m_publish -> check for NULL message
 - [x] m_tell check for NULL recipient
 - [ ] review hashmap code
-- [ ] update DOC
+- [ ] split in modules.h and module.h? Split even module{s}_easy?
 
 ### Logger
 
-- [ ] modules_set_logger() function to set a logger?
-- [ ] Logger will be called in module_log/m_log
+- [x] modules_set_logger() function to set a logger?
+- [x] Logger will be called in module_log/m_log
+- [x] pass module's userdata to logger
 
 ### Samples
 

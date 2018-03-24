@@ -22,6 +22,13 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
   It can be useful to set some global state/read config that are needed to decide whether to start a module.
   You only need to define this function and it will be automatically called by libmodule.
   
+.. c:macro:: modules_set_logger(logger)
+
+  Set a logger for a context. By default, module's log prints to stdout. 
+  
+  :param logger: logger function.
+  :type logger: :c:type:`log_cb`
+  
 .. c:macro:: modules_loop(void)
 
   Start looping on events from modules
@@ -34,6 +41,15 @@ Modules multi-context API
 -------------------------
 Modules multi-context API let you manage your contexts in a very simple way. |br|
 It exposes very similar functions to single-context API (again, single-context is only a particular case of multi-context), that now take a "context_name" parameter.
+  
+.. c:function:: modules_ctx_set_logger(ctx_name, logger)
+
+  Set a logger for a context. By default, module's log prints to stdout.
+  
+  :param ctx_name: context name.
+  :param logger: logger function.
+  :type ctx_name: :c:type:`const char *`
+  :type logger: :c:type:`log_cb`
   
 .. c:function:: modules_ctx_loop(ctx_name)
 

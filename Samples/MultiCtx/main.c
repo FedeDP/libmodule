@@ -3,10 +3,19 @@
 
 static void *loop(void *param);
 
+static void logger(const char *module_name, const char *context_name, 
+                   const char *fmt, va_list args, const void *userdata) {
+    printf("%s@%s:\t*", module_name, context_name);
+    vprintf(fmt, args);
+}
+
 int main() {
     /* Our 2 contexts names */
     char *ctx1 = "FirstCtx";
     char *ctx2 = "SecondCtx";
+    
+    /* Set a different logger for ctx1 context */
+    modules_ctx_set_logger(ctx1, logger);
     
     /* Create 2 threads that will loop on each context events */
     pthread_t th1, th2;

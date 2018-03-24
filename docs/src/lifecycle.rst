@@ -26,7 +26,7 @@ Right after module's registration, its evaluate() function will be called, tryin
 Evaluate will be then called at each state machine change, for each idle module. |br|
 
 As soon as module's evaluate() returns TRUE, the module is started. It means its init() function is finally called and, if a proper FD or the special MODULE_DONT_POLL value is returned,
-its state is set to STARTED. |br|
+its state is set to RUNNING. |br|
 When a module reaches started state, modules_loop()/modules_ctx_loop() functions will finally receive events from its fd. |br|
 
 Whenever an event triggers on a module's fd, or the module receives a PubSub message from another one, its recv() callback is called. |br|

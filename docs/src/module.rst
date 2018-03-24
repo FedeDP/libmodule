@@ -98,14 +98,14 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
   Publish a message on a topic.
     
-  :param topic: topic on which publish message.
+  :param topic: topic on which publish message. NULL to broadcast message to all modules in same context.
   :param msg: actual message to be sent.
   :type topic: :c:type:`const char *`
   :type msg: :c:type:`const char *`
   
 .. c:macro:: m_broadcast(msg)
 
-  Broadcast a message in module's context
+  Broadcast a message in module's context. Same as calling m_publish(NULL, msg).
     
   :param msg: message to be delivered to all modules in a context.
   :type msg: :c:type:`const char *`
@@ -245,7 +245,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   Publish a message on a topic.
 
   :param self: pointer to module's handler
-  :param topic: topic on which publish message.
+  :param topic: topic on which publish message. NULL to broadcast message to all modules in same context.
   :param msg: actual message to be sent.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
