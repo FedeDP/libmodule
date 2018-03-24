@@ -24,7 +24,7 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
   
 .. c:macro:: modules_set_logger(logger)
 
-  Set a logger for a context. By default, module's log prints to stdout. 
+  Set a logger. By default, module's log prints to stdout. 
   
   :param logger: logger function.
   :type logger: :c:type:`log_cb`
