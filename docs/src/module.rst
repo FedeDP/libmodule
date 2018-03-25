@@ -19,7 +19,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
   Check current module's state
     
-  :param state: state we are interested in.
+  :param state: state we are interested in; note that it can be an OR of states (eg: IDLE | RUNNING)
   :type state: :c:type:`enum module_states` 
   :returns: false (0) if module'state is not 'state', true (1) if it is and MOD_ERR on error.
   
@@ -145,7 +145,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   Check current module's state
     
   :param self: pointer to module's handler.
-  :param state: state we are interested in.
+  :param state: state we are interested in; note that it can be an OR of states (eg: IDLE | RUNNING)
   :type self: :c:type:`const self_t *`
   :type state: :c:type:`enum module_states`
   :returns: false (0) if module'state is not 'state', true (1) if it is and MOD_ERR on error.
