@@ -2,6 +2,7 @@
 
 #include <module_cmn.h> 
 
+/* Defines for easy API (with no need bothering with both self and ctx) */
 #define modules_set_logger(log)         modules_ctx_set_logger(DEFAULT_CTX, log)
 #define modules_loop()                  modules_ctx_loop(DEFAULT_CTX)
 #define modules_quit()                  modules_ctx_quit(DEFAULT_CTX)
