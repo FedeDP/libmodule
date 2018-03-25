@@ -1,105 +1,21 @@
 #include <module.h> 
+#include <module_priv.h>
 #include <string.h>
-#include <stdlib.h>
-#include <sys/epoll.h>
 #include <unistd.h>
-#include <assert.h>
 #include <stdarg.h>
-#include <hashmap.h>
 
-#ifndef NDEBUG
-#define MODULE_DEBUG printf("Libmodule: "); printf
-#define MOD_ASSERT(cond, msg, ret) assert(cond)
-#else
-#define MODULE_DEBUG (void)
-#define MOD_ASSERT(cond, msg, ret) if(!cond) { fprintf(stderr, "%s\n", msg); return ret; }
-#endif
-
-#define GET_CTX(name) \
-    m_context *c = NULL; \
-    hashmap_get(ctx, (char *)name, (void **)&c); \
-    MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
-    
-#define CTX_GET_MOD(name, ctx) \
-    module *mod = NULL; \
-    hashmap_get(ctx->modules, (char *)name, (void **)&mod); \
-    MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
-
-#define GET_MOD(self) \
-    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
-    GET_CTX(self->ctx) \
-    CTX_GET_MOD(self->name, c)
-    
-#define GET_MOD_IN_STATE(self, state) \
-    GET_MOD(self); \
-    if (!module_is(self, state)) { return MOD_WRONG_STATE; }
-    
-#define CHILDREN_LOOP(f) \
-    child_t *tmp = m->children; \
-    while (tmp) { \
-        GET_MOD(tmp->self); \
-        f; \
-        tmp = tmp->next; \
-    }
-
-/* Struct that holds self module informations, static to each module */
-struct _self {
-    const char *name;                     // module's name
-    const char *ctx;                      // module's ctx 
-};
-
-typedef struct child {
-    const self_t *self;                   // module's name
-    struct child *next;                   // module's ctx 
-} child_t;
-
-/* Struct that holds data for each module */
-typedef struct {
-    userhook *hook;                       // module's user defined callbacks
-    const void *userdata;                 // module's user defined data
-    enum module_states state;             // module's state
-    self_t self;                          // module's info available to external world
-    int fd;                               // file descriptor to be polled
-    map_t subscriptions;                  // module's subscriptions
-    struct epoll_event ev;                // module's epoll event struct
-    child_t *children;                    // list of children modules
-} module;
-
-typedef struct {
-    int quit;
-    int epollfd;
-    log_cb logger;
-    map_t modules;
-} m_context;
-
-static _ctor1_ void modules_init(void);
-static _dtor0_ void modules_destroy(void);
 static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
 static m_context *check_ctx(const char *ctx_name);
 static module_ret_code add_children(module *mod, const self_t *self);
 static void default_logger(const char *module_name, const char *context_name, 
                            const char *fmt, va_list args, const void *userdata);
-static void evaluate_new_state(m_context *context);
-static int evaluate_module(void *data, void *m);
 static module_ret_code add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
 static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
 static module_ret_code start_children(module *m);
 static module_ret_code stop_children(module *m);
-
-static map_t ctx;
-
-static void modules_init(void) {
-    MODULE_DEBUG("Initializing library.\n");
-    ctx = hashmap_new();
-}
-
-static void modules_destroy(void) {
-    MODULE_DEBUG("Destroying library.\n");
-    hashmap_free(ctx);
-}
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
@@ -227,57 +143,7 @@ static void default_logger(const char *module_name, const char *context_name,
     vprintf(fmt, args);
 }
 
-module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
-    MOD_ASSERT(logger, "NULL logger. Fallbacking to default.", MOD_ERR);
-    GET_CTX(ctx_name);
-    
-    c->logger = logger;
-    return MOD_OK;
-}
-
-module_ret_code modules_ctx_loop(const char *ctx_name) {
-    GET_CTX(ctx_name);
-    
-    int size = hashmap_length(c->modules);
-    struct epoll_event *pevents = calloc(size, sizeof(struct epoll_event));
-    MOD_ASSERT(pevents, "Failed to malloc.", MOD_ERR);
-        
-    int ret = MOD_OK;
-    while (!c->quit) {
-        int nfds = epoll_wait(c->epollfd, pevents, size, -1);
-        if (nfds < 0) {
-            ret = MOD_ERR;
-            break;
-        } else {
-            for (int i = 0; i < nfds; i++) {
-                if (pevents[i].events & EPOLLIN) {
-                    self_t *self = (self_t *)pevents[i].data.ptr;
-                    
-                    CTX_GET_MOD(self->name, c);
-                    
-                    const msg_t msg = { mod->fd, NULL };
-                    mod->hook->recv(&msg, mod->userdata);
-                }
-            }
-            evaluate_new_state(c);
-        }
-    }
-    free(pevents);
-    return ret;
-}
-
-module_ret_code modules_ctx_quit(const char *ctx_name) {
-    GET_CTX(ctx_name);
-    
-    c->quit = 1;
-    return MOD_OK;
-}
-
-static void evaluate_new_state(m_context *context) {
-    hashmap_iterate(context->modules, evaluate_module, NULL);
-}
-
-static int evaluate_module(void *data, void *m) {
+int evaluate_module(void *data, void *m) {
     module *mod = (module *)m;
     if (module_is(&mod->self, IDLE) 
         && mod->hook->evaluate()) {

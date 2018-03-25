@@ -6,7 +6,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 Libmodule aims to let developers easily create modular C projects in a way which is both simple and elegant.  
-You will write less code, focusing on what you really need.  
+You will write less code, focusing on what really matters.  
 
 ## Is this an event loop or an actor lib?
 

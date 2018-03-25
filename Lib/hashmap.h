@@ -1,17 +1,11 @@
-/*
- * Generic hashmap manipulation functions
- *
- * Originally by Elliot C Back - http://elliottback.com/wp/hashmap-implementation-in-c/
- *
- * Modified by Pete Warden to fix a serious performance problem, support strings as keys
- * and removed thread synchronization - http://petewarden.typepad.com
- */
 #pragma once
 
-#define MAP_MISSING -3  /* No such element */
-#define MAP_FULL -2 	/* Hashmap is full */
-#define MAP_OMEM -1 	/* Out of Memory */
-#define MAP_OK 0 	    /* OK */
+enum map_errors {
+    MAP_MISSING = -3,
+    MAP_FULL,
+    MAP_OMEM,
+    MAP_OK
+};
 
 /*
  * any_t is a pointer.  This allows you to put arbitrary structures in

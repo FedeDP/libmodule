@@ -1,0 +1,14 @@
+#pragma once
+
+#include <module_cmn.h> 
+
+#define modules_set_logger(log)         modules_ctx_set_logger(DEFAULT_CTX, log)
+#define modules_loop()                  modules_ctx_loop(DEFAULT_CTX)
+#define modules_quit()                  modules_ctx_quit(DEFAULT_CTX)
+
+/* Modules interface functions */
+_public_ void _ctor0_ _weak_ modules_pre_start(void);
+_public_ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger);
+_public_ module_ret_code modules_ctx_loop(const char *ctx_name);
+_public_ module_ret_code modules_ctx_quit(const char *ctx_name);
+

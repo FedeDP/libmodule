@@ -1,4 +1,4 @@
-#include <module.h>
+#include <modules.h>
 #include <pthread.h>
 
 static void *loop(void *param);

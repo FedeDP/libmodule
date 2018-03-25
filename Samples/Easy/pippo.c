@@ -1,4 +1,5 @@
 #include <module.h>
+#include <modules.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>

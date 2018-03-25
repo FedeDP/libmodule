@@ -5,7 +5,8 @@
 ### Generic
 
 - [x] review hashmap code
-- [ ] split in modules.h and module.h? Split even module{s}_easy.h?
+- [x] split in modules.h and module.h
+- [ ] update doc
 
 ## Test it
 

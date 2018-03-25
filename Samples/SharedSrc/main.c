@@ -1,4 +1,4 @@
-#include <module.h>
+#include <modules.h>
 
 extern void create_modules(const char *ctx_name);
 extern void destroy_modules(void);

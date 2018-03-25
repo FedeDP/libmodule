@@ -1,4 +1,5 @@
 #include <module.h>
+#include <modules.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
 #include <stdint.h>
