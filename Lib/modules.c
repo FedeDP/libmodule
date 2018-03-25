@@ -15,7 +15,6 @@ static void modules_destroy(void) {
     hashmap_free(ctx);
 }
 
-
 module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
     MOD_ASSERT(logger, "NULL logger. Fallbacking to default.", MOD_ERR);
     GET_CTX(ctx_name);

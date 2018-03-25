@@ -6,7 +6,7 @@
 
 - [x] review hashmap code
 - [x] split in modules.h and module.h
-- [ ] install public headers in "/usr/lib/module/module.h/modules.h?"
+- [x] install public headers in "/usr/lib/module/module.h/modules.h?"
 - [ ] update doc
 
 ## Test it
