@@ -10,7 +10,6 @@ include(GNUInstallDirs)
 # Find source files
 file(GLOB SOURCES Lib/*.c)
 set(PUBLIC_H Lib/module.h Lib/modules.h)
-set(PRIVATE_H Lib/module_priv.h)
 
 # Include header files
 include_directories(Lib)
@@ -21,7 +20,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
     PUBLIC_HEADER "${PUBLIC_H}"
-    PRIVATE_HEADER "${PRIVATE_H}"
     )
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wl,--no-undefined -Wshadow -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security") 
@@ -33,8 +31,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE Lib/)
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/)
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
 install(FILES ${CMAKE_BINARY_DIR}/libmodule.pc
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig) 
-    
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
