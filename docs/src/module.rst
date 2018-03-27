@@ -20,9 +20,8 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
 .. c:macro:: MODULE(name)
 
-  Creates "name" module: declares all needed functions and creates both constructor and destructor |br|
-  that will automatically register/deregister this module at startup. |br|
-  Finally, it declares a "const self_t *self" global variable that will be automatically used in every function call.
+  Creates "name" module: declares all needed functions and creates both constructor and destructor that will automatically register/deregister this module at startup. |br|
+  Finally, it declares a :c:type:`const self_t *self` global variable that will be automatically used in every function call.
   
   :param name: name of the module to be created
   :type name: :c:type:`const char *` 
