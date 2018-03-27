@@ -5,7 +5,7 @@
 Modules
 =======
 
-Modules API denotes libmodule interface functions that can be found in  module/modules.h header. |br|
+Modules API denotes libmodule interface functions that can be found in <module/modules.h> header. |br|
 Like Module API, it has an easy, single-context API. Moreover, it has an equivalent multi-context API. |br|
 All these functions but modules_pre_start() return a :ref:`module_ret_code <module_ret_code>`.
 

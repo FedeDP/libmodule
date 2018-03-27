@@ -5,7 +5,7 @@
 Module
 ======
 
-Module API denotes libmodule interface functions that can be found in module/module.h header. |br|
+Module API denotes libmodule interface functions that can be found in <module/module.h> header. |br|
 It is splitted in two APIs.
 
 .. _module_easy:    

@@ -12,17 +12,6 @@ Types
     /* Modules states */
     enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
-    /* Module return codes */
-    typedef enum {
-        MOD_WRONG_STATE = -6,
-        MOD_NO_PARENT,
-        MOD_NO_CTX,
-        MOD_NO_MOD,
-        MOD_NO_SELF,
-        MOD_ERR,
-        MOD_OK
-    } module_ret_code;
-
     typedef struct {
         const char *topic;
         const char *message;
