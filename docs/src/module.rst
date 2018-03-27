@@ -5,6 +5,9 @@
 Module
 ======
 
+Module API denotes libmodule interface functions that can be found in module/module.h header. |br|
+It is splitted in two APIs.
+
 .. _module_easy:    
 
 Module easy API
@@ -113,11 +116,10 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 .. _module_complex:    
   
 Module Complex API
---------------------
+------------------
 
 Complex (probably better to say less-easy) API consists of `Module easy API`_ internally used functions. |br|
 Sometime you may avoid using easy API; eg: if you wish to use same source file for different modules. |br|
-This behaviour is discouraged though. |br|
 Again, where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.
 
 .. c:function:: module_register(name, ctx_name, self, hook)

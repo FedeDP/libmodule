@@ -4,10 +4,7 @@
 
 ### Generic
 
-- [x] review hashmap code
-- [x] split in modules.h and module.h
-- [x] install public headers in "/usr/lib/module/module.h/modules.h?"
-- [ ] update doc
+- [x] update doc
 
 ## Test it
 

@@ -7,7 +7,8 @@ To build these samples, use
 
     $ make $target
     
-where $target matches the name of the subfolder for your desired example.
+where $target matches the name of the subfolder for your desired example.  
+Please note that libmodule's correct includes are <module/module{s}.h>. In this examples <module{s}.h> are used as rpath is forced through makefile.
 
 ## Easy example
 

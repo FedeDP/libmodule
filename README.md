@@ -5,7 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/libmodule/badge/?version=latest)](http://libmodule.readthedocs.io/en/latest/?badge=latest)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Libmodule aims to let developers easily create modular C projects in a way which is both simple and elegant.  
+Libmodule is a C library targeting linux aiming to let developers easily create modular C projects in a way which is both simple and elegant.  
 You will write less code, focusing on what really matters.  
 
 ## Is this an event loop or an actor lib?
@@ -17,8 +17,7 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 
 ## Is it portable?
 
-No, it is not.  
-It uses epoll, which is linux specific.  
+No, it is not: it uses epoll, which is linux specific.  
 Moreover it heavily relies upon gcc attributes that may or may not be available for your compiler.  
 It is tested with both gcc and clang through [travis](https://travis-ci.org/FedeDP/libmodule).  
 Any patch to support other platforms is warmly welcomed though.  
@@ -42,8 +41,7 @@ So I thought that writing a library to achieve those same abstractions in a clea
 
 ## Build dep and how to build
 
-You only need cmake to build libmodule.  
-It does not depend upon external software.  
+You only need cmake to build libmodule; it does not depend upon external software.  
 Libmodule includes an [hashmap](https://github.com/petewarden/c_hashmap) implementation provided by Pete Warden (thank you!).  
 To build, you only need to issue:
 
@@ -56,7 +54,7 @@ If you wish to install, then you only need:
 
     # make install
 
-Libmodule will install a pkg-config file too. Use this to link libmodule in your projects, or use "-lmodule" flag.  
+Libmodule will install a pkg-config file too. Use this to link libmodule in your projects, or use "-lmodule" linker flag.  
 Please note that in order to test examples, there is no need to install the library.
 
 For Archlinux users, a PKGBUILD can be found in [Extra/Arch](https://github.com/FedeDP/libmodule/tree/master/Extra/Arch) folder.
