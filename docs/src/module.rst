@@ -18,6 +18,16 @@ These macros make it easy and transparent to developer all of the module's inter
 It enforces correct modularity too: each module must have its own source file. |br|
 Where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.
 
+.. c:macro:: MODULE(name)
+
+  Creates "name" module: declares all needed functions and creates both constructor and destructor |br|
+  that will automatically register/deregister this module at startup. |br|
+  Finally, it declares a "const self_t *self" global variable that will be automatically used in every function call.
+  
+  :param name: name of the module to be created
+  :type name: :c:type:`const char *` 
+  :returns: void
+
 .. c:macro:: m_is(state)
 
   Check current module's state
@@ -49,7 +59,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
   Change recv callback to recv_new_recv
     
-  :param new_recv: new module's recv; the function has suffix \recv_ concatenated with new_recv.
+  :param new_recv: new module's recv; the function has prefix \recv_ concatenated with new_recv
   :type new_recv: untyped
 
 .. c:macro:: m_unbecome(void)
@@ -58,14 +68,14 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
 .. c:macro:: m_set_userdata(userdata)
 
-  Set userdata for this module; userdata will be passed as parameter to recv callback.
+  Set userdata for this module; userdata will be passed as parameter to recv callback
     
   :param userdata: module's new userdata.
   :type userdata: :c:type:`const void *`
 
 .. c:macro:: m_update_fd(fd, close_old)
 
-  Update fd for this module.
+  Update fd for this module
     
   :param fd: module's new fd.
   :param close_old: whether to close old module fd.
@@ -74,7 +84,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
 .. c:macro:: m_log(fmt, args)
 
-  Logger for this module. Call it the same way you'd call printf
+  Logger function for this module. Call it the same way you'd call printf
     
   :param fmt: log's format.
   :param args: variadic argument.

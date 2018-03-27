@@ -165,6 +165,8 @@ static void B_recv(const msg_t *msg, const void *userdata) {
             module_log(selfB, "ZzzZzz...\n");
         } else if (!strcmp(msg->msg->message, "ByeBye")) {
             module_log(selfB, "Sob...\n");
+        } else if (!strcmp(msg->msg->message, "WakeUp")) {
+            module_log(selfB, "???\n");
         }
     }
 }

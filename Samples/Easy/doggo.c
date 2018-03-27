@@ -77,6 +77,8 @@ static void recv(const msg_t *msg, const void *userdata) {
             m_log("ZzzZzz...\n");
         } else if (!strcmp(msg->msg->message, "ByeBye")) {
             m_log("Sob...\n");
+        } else if (!strcmp(msg->msg->message, "WakeUp")) {
+            m_log("???\n");
         }
     }
 }
