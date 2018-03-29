@@ -40,7 +40,7 @@ When dealing with libmodule's :ref:`module_complex`, no modules is automatically
 While this may seem useless, i am sure there can be some cases where you may wish to register/deregister modules yourself. |br|
 When using complex API, you are responsible to register/deregister modules, and thus initing/destroying them. |br|
 Note that with Complex API, module_pre_start() function is not available (it would be useless), and you won't need to define check() function. |br|
-You will still have to define evaluate(), init(), recv() and destroy() functions (but you can freely name them!). |br|
+You will still have to define evaluate(), init(), receive() and destroy() functions (but you can freely name them!). |br|
 
 Everything else but module's (de)registration is same as Easy API.
 

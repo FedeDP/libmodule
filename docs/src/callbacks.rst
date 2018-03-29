@@ -15,7 +15,7 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
     static int init(void);
     static int check(void);
     static int evaluate(void);
-    static void recv(const msg_t *msg, const void *userdata);
+    static void receive(const msg_t *msg, const void *userdata);
     static void destroy(void);
 
 .. c:function:: module_pre_start(void)
@@ -45,9 +45,9 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
   
   :returns: true (not-0) if module is now ready to be started, else 0.
   
-.. c:function:: recv(msg, userdata)
+.. c:function:: receive(msg, userdata)
 
-  Poll callback, called when any event is ready on module's fd.
+  Poll callback, called when any event is ready on module's fd or when a PubSub message is received by a module.
   
   :param: :c:type:`const msg_t *` msg: pointer to msg_t struct.
   :param: :c:type:`const void *` userdata: pointer to userdata as set by m_set_userdata.

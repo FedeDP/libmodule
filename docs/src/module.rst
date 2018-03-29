@@ -56,18 +56,18 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_become(new_recv)
 
-  Change recv callback to recv_new_recv
+  Change receive callback to receive_new_recv
     
-  :param new_recv: new module's recv; the function has prefix \recv_ concatenated with new_recv
+  :param new_recv: new module's receive callback; the function has prefix \receive_ concatenated with new_recv
   :type new_recv: untyped
 
 .. c:macro:: m_unbecome(void)
 
-  Reset to default recv poll callback
+  Reset to default receive poll callback
 
 .. c:macro:: m_set_userdata(userdata)
 
-  Set userdata for this module; userdata will be passed as parameter to recv callback
+  Set userdata for this module; userdata will be passed as parameter to receive callback
     
   :param userdata: module's new userdata.
   :type userdata: :c:type:`const void *`
@@ -191,18 +191,18 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param self: pointer to module's handler
   :type self: :c:type:`const self_t *`
   
-.. c:function:: module_become(self, new_recv)
+.. c:function:: module_become(self, new_receive)
 
-  Change recv callback to new_recv
+  Change receive callback to new_receive
     
   :param self: pointer to module's handler
-  :param new_recv: new module's recv.
+  :param new_receive: new module's receive.
   :type self: :c:type:`const self_t *`
-  :type new_recv: :c:type:`recv_cb`
+  :type new_receive: :c:type:`recv_cb`
 
 .. c:function:: module_set_userdata(self, userdata)
 
-  Set userdata for this module; userdata will be passed as parameter to recv callback.
+  Set userdata for this module; userdata will be passed as parameter to receive callback.
     
   :param self: pointer to module's handler
   :param userdata: module's new userdata.

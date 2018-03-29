@@ -5,6 +5,8 @@
 ### Generic
 
 - [x] update doc
+- [x] rename recv to receive() to avoid issues with recv(2)
+- [x] Update check() comments in examples
 
 ## Test it
 

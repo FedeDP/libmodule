@@ -12,12 +12,12 @@
     static int init(void); \
     static int check(void); \
     static int evaluate(void); \
-    static void recv(const msg_t *msg, const void *userdata); \
+    static void receive(const msg_t *msg, const void *userdata); \
     static void destroy(void); \
     static const self_t *self = NULL; \
     static void _ctor3_ constructor(void) { \
         if (check()) { \
-            static userhook hook = { init, evaluate, recv, destroy }; \
+            static userhook hook = { init, evaluate, receive, destroy }; \
             module_register(name, ctx, &self, &hook); \
         } \
     } \
@@ -31,8 +31,8 @@
 #define m_pause()                       module_pause(self)
 #define m_resume()                      module_resume(self)
 #define m_stop()                        module_stop(self)
-#define m_become(x)                     module_become(self, recv_##x)
-#define m_unbecome()                    module_become(self, recv)
+#define m_become(x)                     module_become(self, receive_##x)
+#define m_unbecome()                    module_become(self, receive)
 #define m_set_userdata(userdata)        module_set_userdata(self, userdata)
 #define m_update_fd(fd, close_old)      module_update_fd(self, fd, close_old)
 #define m_log(fmt, ...)                 module_log(self, fmt, ##__VA_ARGS__)

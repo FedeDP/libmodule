@@ -12,7 +12,7 @@
  */
 MODULE("Pippo");
 
-static void recv_ready(const msg_t *msg, const void *userdata);
+static void receive_ready(const msg_t *msg, const void *userdata);
 
 /*
  * This function is automatically called before registering the module. 
@@ -33,8 +33,7 @@ static int init(void) {
 
 /* 
  * Whether this module should be actually created:
- * 0 means OK -> start this module
- * !0 means do not start.
+ * true if module must be created, !true otherwise.
  * 
  * Use this function as a starting filter: 
  * you may desire that a module is not started in certain conditions.
@@ -66,7 +65,7 @@ static void destroy(void) {
  * Our default poll callback.
  * Note that message_t->msg/sender are unused for now.
  */
-static void recv(const msg_t *msg, const void *userdata) {
+static void receive(const msg_t *msg, const void *userdata) {
     if (!msg->msg) {
         char c;
         read(msg->fd, &c, sizeof(char));
@@ -95,7 +94,7 @@ static void recv(const msg_t *msg, const void *userdata) {
  * Secondary poll callback.
  * Use m_become(ready) to start using this second poll callback.
  */
-static void recv_ready(const msg_t *msg, const void *userdata) {
+static void receive_ready(const msg_t *msg, const void *userdata) {
     if (!msg->msg) {
         char c;
         read(msg->fd, &c, sizeof(char));

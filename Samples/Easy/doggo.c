@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 
-static void recv_sleeping(const msg_t *msg, const void *userdata);
+static void receive_sleeping(const msg_t *msg, const void *userdata);
 
 /* 
  * Declare and automagically initialize 
@@ -30,8 +30,7 @@ static int init(void) {
 
 /* 
  * Whether this module should be actually created:
- * 0 means OK -> start this module
- * !0 means do not start.
+ * true if module must be created, !true otherwise.
  * 
  * Use this function as a starting filter: 
  * you may desire that a module is not started in certain conditions.
@@ -63,7 +62,7 @@ static void destroy(void) {
  * Our default poll callback.
  * Note that message_t->msg/sender are unused for now.
  */
-static void recv(const msg_t *msg, const void *userdata) {
+static void receive(const msg_t *msg, const void *userdata) {
     if (msg->msg) {
         if (!strcmp(msg->msg->message, "ComeHere")) {
             m_log("Running...\n");
@@ -83,7 +82,7 @@ static void recv(const msg_t *msg, const void *userdata) {
     }
 }
 
-static void recv_sleeping(const msg_t *msg, const void *userdata) {
+static void receive_sleeping(const msg_t *msg, const void *userdata) {
     if (msg->msg) {
         if (!strcmp(msg->msg->message, "WakeUp")) {
             m_unbecome();
