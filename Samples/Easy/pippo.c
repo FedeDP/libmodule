@@ -62,8 +62,7 @@ static void destroy(void) {
 }
 
 /*
- * Our default poll callback.
- * Note that message_t->msg/sender are unused for now.
+ * Default poll callback
  */
 static void receive(const msg_t *msg, const void *userdata) {
     if (!msg->msg) {
