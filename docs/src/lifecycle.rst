@@ -29,7 +29,7 @@ As soon as module's evaluate() returns TRUE, the module is started. It means its
 its state is set to RUNNING. |br|
 When a module reaches started state, modules_loop()/modules_ctx_loop() functions will finally receive events from its fd. |br|
 
-Whenever an event triggers on a module's fd, or the module receives a PubSub message from another one, its recv() callback is called. |br|
+Whenever an event triggers on a module's fd, or the module receives a PubSub message from another one, its receive() callback is called. |br|
 
 Finally, after a modules_quit()/modules_ctx_quit(), each module's destroy() function is automatically called, during the process of module's deregistration. |br|
 
