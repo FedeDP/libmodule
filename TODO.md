@@ -2,11 +2,14 @@
 
 ## 1.0
 
-### Generic
+### Multiple-fds module
 
-- [x] update doc
-- [x] rename recv to receive() to avoid issues with recv(2)
-- [x] Update check() comments in examples
+- [ ] Properly add a way to let one module listen on multiple fds (new private type: module_poll_t -> void init() { module_add_fd(x) or module_add_fds(...) variadic } )
+- [ ] Drop MODULE_DONT_POLL and limits.h include in module.h: if module has no fds it will act like MODULE_DONT_POLL
+- [ ] what about update_fd function? Should it linearly replace old fd with new one?
+- [ ] What about epoll? How can i find out fd to be passed to receive()?
+
+### API FREEZE
 
 ## Test it
 
