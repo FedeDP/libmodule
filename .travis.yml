@@ -1,4 +1,5 @@
-sudo: required
+dist: trusty
+sudo: false
 
 notifications:
   email:
@@ -12,19 +13,13 @@ compiler:
   - gcc
   - clang
 
-arch:
-    packages:
-        - cmake
-
-    script:
-        - "echo $CC"
-        - mkdir build
-        - cd build
-        - cmake -DCMAKE_BUILD_TYPE=Debug ../
-        - make
-        - cd ../Samples
-        - make
-
 script:
-    - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Debug ../
+    - make
+
+after_success:
+    - cd ../Samples
+    - make
 
