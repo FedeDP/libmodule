@@ -11,9 +11,16 @@
 - [x] fix valgrind issues
 - [x] update easy example
 - [x] add module_remove_fd function
-- [ ] update doc (mention MAX_EVENTS limit for each context)
+- [x] update doc (mention MAX_EVENTS limit for each context)
+- [x] make MAX_EVENTS customizable at compile time?
 
 ### API FREEZE
+
+### Port to kqueue on non-linux builds?
+
+- [ ] ifndef __linux__ -> we will only support unix builds -> freebsd and osx
+- [ ] https://gist.github.com/josephg/6c078a241b0e9e538ac04ef28be6e787
+- [ ] https://www.freebsd.org/cgi/man.cgi?query=kevent&apropos=0&sektion=0&manpath=FreeBSD+9.0-RELEASE&arch=default&format=html
 
 ## Test it
 

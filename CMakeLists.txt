@@ -22,8 +22,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     PUBLIC_HEADER "${PUBLIC_H}"
     )
 
+# build with -DMAX_EVENTS=X to overwrite the default value of 512
+# MAX_EVENTS are max number of fds for each context.
+if (NOT MAX_EVENTS)
+    set(MAX_EVENTS 512)
+endif (NOT MAX_EVENTS)
+message(STATUS "MAX_EVENTS=${MAX_EVENTS}")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wl,--no-undefined -Wshadow -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security") 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_GNU_SOURCE -fvisibility=hidden")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_GNU_SOURCE -fvisibility=hidden -DMAX_EVENTS=${MAX_EVENTS}")
 
 configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
 

@@ -5,8 +5,6 @@
 #include <sys/epoll.h>
 #include <stdlib.h>
 
-#define MAX_EVENTS  512
-
 #ifndef NDEBUG
 #define MODULE_DEBUG printf("Libmodule: "); printf
 #define MOD_ASSERT(cond, msg, ret) assert(cond)

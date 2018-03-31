@@ -72,13 +72,31 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param userdata: module's new userdata.
   :type userdata: :c:type:`const void *`
 
-.. c:macro:: m_update_fd(fd, close_old)
+.. c:macro:: m_add_fd(fd)
 
-  Update fd for this module
+  Add a new fd to be polled by a module
     
-  :param fd: module's new fd.
-  :param close_old: whether to close old module fd.
+  :param fd: module's old fd.
   :type fd: :c:type:`int`
+  
+.. c:macro:: m_rm_fd(fd, close_fd)
+
+  Remove a fd from a module
+    
+  :param fd: module's old fd.
+  :param close_fd: true to close the removed fd.
+  :type fd: :c:type:`int`
+  :type close_fd: :c:type:`int`
+
+.. c:macro:: m_update_fd(old_fd, new_fd, close_old)
+
+  Update old_fd to new_fd for this module
+    
+  :param old_fd: module's old fd to be replaced.
+  :param new_fd: module's new fd.
+  :param close_old: whether to close old_fd.
+  :type old_fd: :c:type:`int`
+  :type new_fd: :c:type:`int`
   :type close_old: :c:type:`int`
 
 .. c:macro:: m_log(fmt, args)
@@ -208,16 +226,38 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param userdata: module's new userdata.
   :type self: :c:type:`const self_t *`
   :type userdata: :c:type:`const void *`
-  
-.. c:function:: module_update_fd(self, fd, close_old)
 
-  Update fd for this module.
+.. c:function:: module_add_fd(self, fd)
+
+  Add a new fd to be polled by a module
     
   :param self: pointer to module's handler
-  :param fd: module's new fd.
-  :param close_old: whether to close old module fd.
+  :param fd: module's old fd.
   :type self: :c:type:`const self_t *`
   :type fd: :c:type:`int`
+  
+.. c:function:: module_rm_fd(self, fd, close_fd)
+
+  Remove a fd from a module
+    
+  :param self: pointer to module's handler
+  :param fd: module's old fd.
+  :param close_fd: true to close the removed fd.
+  :type self: :c:type:`const self_t *`
+  :type fd: :c:type:`int`
+  :type close_fd: :c:type:`int`
+  
+.. c:function:: module_update_fd(self, old_fd, new_fd, close_old)
+
+  Update old_fd to new_fd for this module
+    
+  :param self: pointer to module's handler
+  :param old_fd: module's old fd to be replaced.
+  :param new_fd: module's new fd.
+  :param close_old: whether to close old_fd.
+  :type self: :c:type:`const self_t *`
+  :type old_fd: :c:type:`int`
+  :type new_fd: :c:type:`int`
   :type close_old: :c:type:`int`
   
 .. c:function:: module_log(self, fmt, args)
