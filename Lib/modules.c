@@ -26,28 +26,23 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
 module_ret_code modules_ctx_loop(const char *ctx_name) {
     GET_CTX(ctx_name);
     
-    struct epoll_event pevents[MAX_EVENTS];
-    int ret = MOD_OK;
+    struct epoll_event pevents[MAX_EVENTS] = {{ 0 }};
     while (!c->quit) {
         int nfds = epoll_wait(c->epollfd, pevents, c->num_fds, -1);
-        if (nfds < 0) {
-            ret = MOD_ERR;
-            break;
-        } else {
-            for (int i = 0; i < nfds; i++) {
-                if (pevents[i].events & EPOLLIN) {
-                    module_poll_t *p = (module_poll_t *)pevents[i].data.ptr;
-                    
-                    CTX_GET_MOD(p->self->name, c);
-                    
-                    const msg_t msg = { p->fd, NULL };
-                    mod->hook->recv(&msg, mod->userdata);
-                }
+        MOD_ASSERT(nfds > 0, "Epoll_wait error.", MOD_ERR);
+        for (int i = 0; i < nfds; i++) {
+            if (pevents[i].events & EPOLLIN) {
+                module_poll_t *p = (module_poll_t *)pevents[i].data.ptr;
+                
+                CTX_GET_MOD(p->self->name, c);
+                
+                const msg_t msg = { p->fd, NULL };
+                mod->hook->recv(&msg, mod->userdata);
             }
-            evaluate_new_state(c);
         }
+        evaluate_new_state(c);
     }
-    return ret;
+    return MOD_OK;
 }
 
 static void evaluate_new_state(m_context *context) {

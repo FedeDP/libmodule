@@ -180,6 +180,10 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
     return MOD_OK;
 }
 
+/* 
+ * Append this fd to our list of fds and 
+ * if module is in RUNNING state, start listening on its events 
+ */
 module_ret_code module_add_fd(const self_t *self, int fd) {
     GET_MOD(self);
     MOD_ASSERT(c->num_fds < MAX_EVENTS, "Reached max number of events for this context.", MOD_ERR);
@@ -205,6 +209,7 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
     return MOD_OK;
 }
 
+/* Linearly searching for fd */
 module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd) {
     GET_MOD_IN_STATE(self, RUNNING);
     
