@@ -22,10 +22,9 @@ static void module_pre_start(void) {
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int init(void) {
+static void init(void) {
     /* Doggo is subscribed to "leaving" topic */
     m_subscribe("leaving");
-    return MODULE_DONT_POLL;
 }
 
 /* 

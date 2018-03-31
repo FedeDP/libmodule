@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/signalfd.h>
+#include <signal.h>
 
 /* 
  * Declare and automagically initialize 
@@ -26,9 +28,20 @@ static void module_pre_start(void) {
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int init(void) {
-    // return stdin fd
-    return STDIN_FILENO;
+static void init(void) {
+    /* Add signal fd */
+    sigset_t mask;
+    
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+    
+    int fd = signalfd(-1, &mask, 0);
+    m_add_fd(fd);
+    
+    /* Add stdin fd */
+    m_add_fd(STDIN_FILENO);
 }
 
 /* 
@@ -67,12 +80,23 @@ static void destroy(void) {
 static void receive(const msg_t *msg, const void *userdata) {
     if (!msg->msg) {
         char c;
-        read(msg->fd, &c, sizeof(char));
+        
+        /* Forcefully quit if we received a signal */
+        if (msg->fd != STDIN_FILENO) {
+            c = 'q';
+        } else {
+            read(msg->fd, &c, sizeof(char));
+        }
         
         switch (tolower(c)) {
             case 'c':
                 m_log("Doggo, come here!\n");
                 m_tell("Doggo", "ComeHere");
+                break;
+            case 'q':
+                m_log("I have to go now!\n");
+                m_publish("leaving", "ByeBye");
+                modules_quit();
                 break;
             default:
                 /* Avoid newline */
@@ -96,7 +120,13 @@ static void receive(const msg_t *msg, const void *userdata) {
 static void receive_ready(const msg_t *msg, const void *userdata) {
     if (!msg->msg) {
         char c;
-        read(msg->fd, &c, sizeof(char));
+        
+        /* Forcefully quit if we received a signal */
+        if (msg->fd != STDIN_FILENO) {
+            c = 'q';
+        } else {
+            read(msg->fd, &c, sizeof(char));
+        }
         
         switch (tolower(c)) {
             case 'p':

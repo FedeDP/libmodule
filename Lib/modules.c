@@ -26,31 +26,27 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
 module_ret_code modules_ctx_loop(const char *ctx_name) {
     GET_CTX(ctx_name);
     
-    int size = hashmap_length(c->modules);
-    struct epoll_event *pevents = calloc(size, sizeof(struct epoll_event));
-    MOD_ASSERT(pevents, "Failed to malloc.", MOD_ERR);
-    
+    struct epoll_event pevents[MAX_EVENTS];
     int ret = MOD_OK;
     while (!c->quit) {
-        int nfds = epoll_wait(c->epollfd, pevents, size, -1);
+        int nfds = epoll_wait(c->epollfd, pevents, c->num_fds, -1);
         if (nfds < 0) {
             ret = MOD_ERR;
             break;
         } else {
             for (int i = 0; i < nfds; i++) {
                 if (pevents[i].events & EPOLLIN) {
-                    self_t *self = (self_t *)pevents[i].data.ptr;
+                    module_poll_t *p = (module_poll_t *)pevents[i].data.ptr;
                     
-                    CTX_GET_MOD(self->name, c);
+                    CTX_GET_MOD(p->self->name, c);
                     
-                    const msg_t msg = { mod->fd, NULL };
+                    const msg_t msg = { p->fd, NULL };
                     mod->hook->recv(&msg, mod->userdata);
                 }
             }
             evaluate_new_state(c);
         }
     }
-    free(pevents);
     return ret;
 }
 
