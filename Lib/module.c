@@ -200,8 +200,9 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
         if (!epoll_ctl(c->epollfd, EPOLL_CTL_ADD, tmp->fd, &tmp->ev)) {
             return MOD_OK;
         }
+        return MOD_ERR;
     }
-    return MOD_ERR;
+    return MOD_OK;
 }
 
 module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd) {

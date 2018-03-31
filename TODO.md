@@ -11,7 +11,7 @@
 - [x] fix valgrind issues
 - [x] update easy example
 - [x] add module_remove_fd function
-- [ ] update doc
+- [ ] update doc (mention MAX_EVENTS limit for each context)
 
 ### API FREEZE
 
