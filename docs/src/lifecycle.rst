@@ -25,11 +25,12 @@ Once a module is registered, it will be initially set to an IDLE state. Idle mea
 Right after module's registration, its evaluate() function will be called, trying to start the module right after it was registered. |br|
 Evaluate will be then called at each state machine change, for each idle module. |br|
 
-As soon as module's evaluate() returns TRUE, the module is started. It means its init() function is finally called and, if a proper FD or the special MODULE_DONT_POLL value is returned,
-its state is set to RUNNING. |br|
-When a module reaches started state, modules_loop()/modules_ctx_loop() functions will finally receive events from its fd. |br|
+As soon as module's evaluate() returns TRUE, the module is started. It means its init() function is finally called and its state is set to RUNNING. |br|
+A single module can poll on multiple fds: just call module_add_fd() multiple times. Each context cannot poll on more than 512 fds. |br|
+When a module reaches started state, modules_loop()/modules_ctx_loop() functions will finally receive events from its fds. |br|
 
 Whenever an event triggers on a module's fd, or the module receives a PubSub message from another one, its receive() callback is called. |br|
+Receive callback will receive userdata too as parameter, as set by module_set_userdata().
 
 Finally, after a modules_quit()/modules_ctx_quit(), each module's destroy() function is automatically called, during the process of module's deregistration. |br|
 

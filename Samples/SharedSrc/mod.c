@@ -10,8 +10,8 @@
  * Note how check() function is not required now 
  * as we're explicitly calling module_register 
  */
-static int A_init(void);
-static int B_init(void);
+static void A_init(void);
+static void B_init(void);
 static int evaluate(void);
 static void destroy(void);
 static void A_recv(const msg_t *msg, const void *userdata);
@@ -49,19 +49,17 @@ void destroy_modules(void) {
  * Initializes A module's state;
  * returns a valid fd to be polled.
  */
-static int A_init(void) {
-    // return stdin fd
-    return STDIN_FILENO;
+static void A_init(void) {
+    module_add_fd(selfA, STDIN_FILENO);
 }
 
 /*
  * Initializes B module's state;
  * returns a valid fd to be polled.
  */
-static int B_init(void) {
+static void B_init(void) {
     /* Doggo is subscribed to "leaving" topic */
     module_subscribe(selfB, "leaving");
-    return MODULE_DONT_POLL;
 }
 
 /* 

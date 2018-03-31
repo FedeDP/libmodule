@@ -39,4 +39,13 @@ To initialize a module binding it to its context, use MODULE_CTX macro:
     
 This macro firstly creates a "myCtx" context, then a "test" module using same MODULE macro as before. |br|
 Indeed, MODULE macro is only a particular case of MODULE_CTX macro, where myCtx is automatically setted to "default". |br|
-This makes sense, as you can expect: single context API is a multi context API with only 1 context.
+This makes sense, as you can expect: single context API is a multi context API with only 1 context. |br|
+A context cannot listen on more than 512 fds, as defined by CMakeLists:
+
+.. code::
+    
+    # build with -DMAX_EVENTS=X to overwrite the default value of 512
+    # MAX_EVENTS are max number of fds for each context.
+    if (NOT MAX_EVENTS)
+        set(MAX_EVENTS 512)
+    endif (NOT MAX_EVENTS)

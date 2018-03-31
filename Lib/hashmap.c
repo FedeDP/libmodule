@@ -91,6 +91,7 @@ map_t hashmap_new(void) {
         m->data = calloc(INITIAL_SIZE, sizeof(hashmap_element));
         if (m->data) {
             m->table_size = INITIAL_SIZE;
+            m->size = 0;
         } else {
             hashmap_free(m);
             m = NULL;

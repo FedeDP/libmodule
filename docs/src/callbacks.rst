@@ -12,7 +12,7 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 .. code::
 
     static void module_pre_start(void);
-    static int init(void);
+    static void init(void);
     static int check(void);
     static int evaluate(void);
     static void receive(const msg_t *msg, const void *userdata);
@@ -25,11 +25,9 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 
 .. c:function:: init(void)
 
-  Initializes module state and returns an fd to be polled. |br|
-  A special fd value MODULE_DONT_POLL is defined, to create a non-pollable module. |br|
+  Initializes module state and calls module_add_fd() for each fd this module should listen to. |br|
+  To create a non-pollable module, just avoid adding any fd. |br|
   Non-pollable module acts much more similar to an actor, ie: they can only receive and send PubSub messages.
-  
-  :returns: FD to be polled for this module.
 
 .. c:function:: check(void)
 

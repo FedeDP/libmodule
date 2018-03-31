@@ -25,7 +25,7 @@ static void module_pre_start(void) {
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int init(void) {
+static void init(void) {
     sigset_t mask;
     
     sigemptyset(&mask);
@@ -34,7 +34,7 @@ static int init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    return fd;
+    m_add_fd(fd);
 }
 
 /* 

@@ -47,6 +47,13 @@ struct _self {
     const char *ctx;                      // module's ctx 
 };
 
+typedef struct _poll_t {
+    int fd;
+    struct epoll_event ev;                // fd's epoll event struct
+    self_t *self;                         // ptr needed to map a fd to a self_t in epoll
+    struct _poll_t *prev;
+} module_poll_t;
+
 typedef struct child {
     const self_t *self;                   // module's name
     struct child *next;                   // module's ctx 
@@ -58,15 +65,15 @@ typedef struct {
     const void *userdata;                 // module's user defined data
     enum module_states state;             // module's state
     self_t self;                          // module's info available to external world
-    int fd;                               // file descriptor to be polled
+    module_poll_t *fds;                   // module's fds to be polled
     map_t subscriptions;                  // module's subscriptions
-    struct epoll_event ev;                // module's epoll event struct
     child_t *children;                    // list of children modules
 } module;
 
 typedef struct {
     int quit;
     int epollfd;
+    int num_fds;                          // number of fds in this context
     log_cb logger;
     map_t modules;
 } m_context;

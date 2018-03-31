@@ -27,7 +27,7 @@ static void receive_ready(const msg_t *msg, const void *userdata);
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static int init(void) {
+static void init(void) {
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};
@@ -35,7 +35,7 @@ static int init(void) {
     timerValue.it_value.tv_sec = 1;
     timerValue.it_interval.tv_sec = 1;
     timerfd_settime(fd, 0, &timerValue, NULL);
-    return fd;
+    m_add_fd(fd);
 }
 
 /* 

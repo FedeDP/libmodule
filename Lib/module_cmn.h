@@ -41,7 +41,7 @@ typedef struct {
 } msg_t;
 
 /* Callbacks typedefs */
-typedef int(*init_cb)(void);
+typedef void(*init_cb)(void);
 typedef int(*evaluate_cb)(void);
 typedef void(*recv_cb)(const msg_t *msg, const void *userdata);
 typedef void(*destroy_cb)(void);
