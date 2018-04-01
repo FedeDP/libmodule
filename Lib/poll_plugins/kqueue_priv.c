@@ -26,5 +26,8 @@ int poll_wait(int fd, int num_fds) {
 }
 
 module_poll_t *poll_recv(int idx) {
+    if (pevents[idx].flags & EV_ERROR) {
+        return NULL;
+    }
     return (module_poll_t *)pevents[idx].udata;
 }

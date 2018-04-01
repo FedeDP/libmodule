@@ -32,6 +32,7 @@ module_ret_code modules_ctx_loop(const char *ctx_name) {
         MOD_ASSERT(nfds > 0, "Context loop error.", MOD_ERR);
         for (int i = 0; i < nfds; i++) {
             module_poll_t *p = poll_recv(i);
+            MOD_ASSERT(p, "Context loop error.", MOD_ERR);
             CTX_GET_MOD(p->self->name, c);
                 
             const msg_t msg = { p->fd, NULL };

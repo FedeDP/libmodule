@@ -6,13 +6,11 @@ notifications:
 
 language: c
 
-matrix:
-  include:
-    - os: linux
-      dist: trusty
-      sudo: false
-    - os: osx
-      osx_image: xcode7.2
+os:
+  - linux
+  - osx
+  
+sudo: false
 
 compiler:
   - gcc
