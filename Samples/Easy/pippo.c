@@ -5,8 +5,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-#include <sys/signalfd.h>
-#include <signal.h>
+#ifdef __linux__
+    #include <sys/signalfd.h>
+    #include <signal.h>
+#endif
 
 /* 
  * Declare and automagically initialize 
@@ -29,6 +31,7 @@ static void module_pre_start(void) {
  * returns a valid fd to be polled.
  */
 static void init(void) {
+#ifdef __linux__
     /* Add signal fd */
     sigset_t mask;
     
@@ -39,6 +42,7 @@ static void init(void) {
     
     int fd = signalfd(-1, &mask, 0);
     m_add_fd(fd);
+#endif
     
     /* Add stdin fd */
     m_add_fd(STDIN_FILENO);

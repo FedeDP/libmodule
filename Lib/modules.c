@@ -26,19 +26,29 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
 module_ret_code modules_ctx_loop(const char *ctx_name) {
     GET_CTX(ctx_name);
     
+#ifdef __linux__
     struct epoll_event pevents[MAX_EVENTS] = {{ 0 }};
+#else
+    struct kevent pevents[MAX_EVENTS] = {{ 0 }};
+#endif
     while (!c->quit) {
-        int nfds = epoll_wait(c->epollfd, pevents, c->num_fds, -1);
-        MOD_ASSERT(nfds > 0, "Epoll_wait error.", MOD_ERR);
+#ifdef __linux__
+        int nfds = epoll_wait(c->fd, pevents, c->num_fds, -1);
+#else
+        int nfds = kevent(c->fd, pevents, c->num_fds, NULL, 0, NULL);
+#endif
+        MOD_ASSERT(nfds > 0, "Context loop error.", MOD_ERR);
         for (int i = 0; i < nfds; i++) {
-            if (pevents[i].events & EPOLLIN) {
-                module_poll_t *p = (module_poll_t *)pevents[i].data.ptr;
+#ifdef __linux__
+            module_poll_t *p = (module_poll_t *)pevents[i].data.ptr;
+#else
+            module_poll_t *p = (module_poll_t *)pevents[i].udata;
+#endif
                 
-                CTX_GET_MOD(p->self->name, c);
+            CTX_GET_MOD(p->self->name, c);
                 
-                const msg_t msg = { p->fd, NULL };
-                mod->hook->recv(&msg, mod->userdata);
-            }
+            const msg_t msg = { p->fd, NULL };
+            mod->hook->recv(&msg, mod->userdata);
         }
         evaluate_new_state(c);
     }

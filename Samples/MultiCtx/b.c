@@ -2,8 +2,10 @@
 #include <modules.h>
 // #include <module/module.h>
 // #include <module/modules.h>
-#include <sys/signalfd.h>
-#include <signal.h>
+#ifdef __linux__
+    #include <sys/signalfd.h>
+    #include <signal.h>
+#endif
 #include <unistd.h>
 
 static const char *myCtx = "SecondCtx";
@@ -26,6 +28,7 @@ static void module_pre_start(void) {
  * returns a valid fd to be polled.
  */
 static void init(void) {
+#ifdef __linux__
     sigset_t mask;
     
     sigemptyset(&mask);
@@ -35,6 +38,7 @@ static void init(void) {
     
     int fd = signalfd(-1, &mask, 0);
     m_add_fd(fd);
+#endif
 }
 
 /* 
@@ -71,6 +75,7 @@ static void destroy(void) {
  * Default poll callback
  */
 static void receive(const msg_t *msg, const void *userdata) {
+#ifdef __linux__
     if (!msg->msg) {
         struct signalfd_siginfo fdsi;    
         ssize_t s = read(msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
@@ -80,4 +85,5 @@ static void receive(const msg_t *msg, const void *userdata) {
         m_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
         modules_ctx_quit(myCtx);
     }
+#endif
 }

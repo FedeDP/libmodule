@@ -18,9 +18,12 @@
 
 ### Port to kqueue on non-linux builds?
 
-- [ ] ifndef __linux__ -> we will only support unix builds -> freebsd and osx
-- [ ] https://gist.github.com/josephg/6c078a241b0e9e538ac04ef28be6e787
-- [ ] https://www.freebsd.org/cgi/man.cgi?query=kevent&apropos=0&sektion=0&manpath=FreeBSD+9.0-RELEASE&arch=default&format=html
+- [x] ifndef __linux__ -> we will only support unix builds -> freebsd and osx
+- [x] use kqueue where needed
+- [x] travis to build on osx too 
+- [ ] fix kevent call: returns 0 immediately...
+- [ ] Update doc and readme
+- [x] update Examples: properly ifdef linux only features (signalfd/timerfd)
 
 ## Test it
 

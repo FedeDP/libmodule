@@ -2,44 +2,49 @@
 
 #include <assert.h>
 #include <hashmap.h>
-#include <sys/epoll.h>
+#ifdef __linux__
+    #include <sys/epoll.h>
+#else
+    #include <sys/types.h>
+    #include <sys/event.h>
+    #include <sys/time.h>
+#endif
 #include <stdlib.h>
 
 #ifndef NDEBUG
-#define MODULE_DEBUG printf("Libmodule: "); printf
-#define MOD_ASSERT(cond, msg, ret) assert(cond)
+    #define MODULE_DEBUG printf("Libmodule: "); printf
+    #define MOD_ASSERT(cond, msg, ret) assert(cond)
 #else
-#define MODULE_DEBUG (void)
-#define MOD_ASSERT(cond, msg, ret) if(!cond) { fprintf(stderr, "%s\n", msg); return ret; }
+    #define MODULE_DEBUG (void)
+    #define MOD_ASSERT(cond, msg, ret) if(!cond) { fprintf(stderr, "%s\n", msg); return ret; }
 #endif
 
-
 #define GET_CTX(name) \
-m_context *c = NULL; \
-hashmap_get(ctx, (char *)name, (void **)&c); \
-MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
+    m_context *c = NULL; \
+    hashmap_get(ctx, (char *)name, (void **)&c); \
+    MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
 
 #define CTX_GET_MOD(name, ctx) \
-module *mod = NULL; \
-hashmap_get(ctx->modules, (char *)name, (void **)&mod); \
-MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
+    module *mod = NULL; \
+    hashmap_get(ctx->modules, (char *)name, (void **)&mod); \
+    MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
 #define GET_MOD(self) \
-MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
-GET_CTX(self->ctx) \
-CTX_GET_MOD(self->name, c)
+    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
+    GET_CTX(self->ctx) \
+    CTX_GET_MOD(self->name, c)
 
 #define GET_MOD_IN_STATE(self, state) \
-GET_MOD(self); \
-if (!module_is(self, state)) { return MOD_WRONG_STATE; }
+    GET_MOD(self); \
+    if (!module_is(self, state)) { return MOD_WRONG_STATE; }
 
 #define CHILDREN_LOOP(f) \
-child_t *tmp = m->children; \
-while (tmp) { \
-    GET_MOD(tmp->self); \
-    f; \
-    tmp = tmp->next; \
-}
+    child_t *tmp = m->children; \
+    while (tmp) { \
+        GET_MOD(tmp->self); \
+        f; \
+        tmp = tmp->next; \
+    }
 
 /* Struct that holds self module informations, static to each module */
 struct _self {
@@ -49,7 +54,11 @@ struct _self {
 
 typedef struct _poll_t {
     int fd;
+#ifdef __linux__
     struct epoll_event ev;                // fd's epoll event struct
+#else
+    struct kevent ev;
+#endif
     self_t *self;                         // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
 } module_poll_t;
@@ -72,7 +81,7 @@ typedef struct {
 
 typedef struct {
     int quit;
-    int epollfd;
+    int fd;
     int num_fds;                          // number of fds in this context
     log_cb logger;
     map_t modules;

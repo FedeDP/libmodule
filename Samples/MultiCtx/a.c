@@ -2,7 +2,9 @@
 #include <modules.h>
 // #include <module/module.h>
 // #include <module/modules.h>
-#include <sys/timerfd.h>
+#ifdef __linux__
+    #include <sys/timerfd.h>
+#endif
 #include <unistd.h>
 #include <stdint.h>
 
@@ -28,6 +30,7 @@ static void receive_ready(const msg_t *msg, const void *userdata);
  * returns a valid fd to be polled.
  */
 static void init(void) {
+#ifdef __linux__
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
     struct itimerspec timerValue = {{0}};
@@ -36,6 +39,7 @@ static void init(void) {
     timerValue.it_interval.tv_sec = 1;
     timerfd_settime(fd, 0, &timerValue, NULL);
     m_add_fd(fd);
+#endif
 }
 
 /* 
