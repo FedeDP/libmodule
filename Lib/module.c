@@ -218,6 +218,7 @@ module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd) {
             if (close_fd) {
                 close(t->fd);
             }
+            free(t->ev);
             free(t);
             c->num_fds--;
             return MOD_OK;
@@ -333,8 +334,9 @@ static int manage_fds(module *mod, m_context *c, int flag, int stop) {
     
     while (tmp && !ret) {
         ret = poll_set_new_evt(tmp, c, flag);
-        if (stop) {
+        if (flag == RM && stop) {
             ret += close(tmp->fd);
+            free(tmp->ev);
             t = tmp;
         }
         tmp = tmp->prev;
