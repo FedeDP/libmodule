@@ -1,17 +1,8 @@
 #include <module.h> 
-#include <module_priv.h>
+#include <poll_priv.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
-
-/* Useful macros to smooth away differences between epoll and kqueue */
-#ifdef __linux__
-    #define FLG_ADD     EPOLL_CTL_ADD
-    #define FLG_RM      EPOLL_CTL_DEL
-#else
-    #define FLG_ADD     EV_ADD
-    #define FLG_RM      EV_DELETE
-#endif
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
@@ -23,8 +14,6 @@ static module_ret_code add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
 static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
-static int set_new_poll_evt(module_poll_t *tmp, m_context *c, int flag);
-static int manage_fds(module *mod, m_context *c, int flag, int stop);
 static module_ret_code start_children(module *m);
 static module_ret_code stop_children(module *m);
 
@@ -35,11 +24,8 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MOD_ASSERT(*context, "Failed to malloc.", MOD_ERR);
     
     **context = (m_context) {0};
-#ifdef __linux__
-    (*context)->fd = epoll_create1(EPOLL_CLOEXEC); 
-#else
-    (*context)->fd = kqueue();
-#endif
+    
+    (*context)->fd = poll_create();
     MOD_ASSERT(((*context)->fd >= 0), "Failed to create context fd.", MOD_ERR);
      
     (*context)->logger = default_logger;
@@ -204,10 +190,7 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
     MOD_ASSERT(tmp, "Failed to malloc.", MOD_ERR);
        
     tmp->fd = fd;
-#ifdef __linux__
-    tmp->ev.data.ptr = (void *)tmp;
-    tmp->ev.events = EPOLLIN;
-#endif
+    poll_set_data(&tmp->ev, (void *)tmp);
     tmp->prev = mod->fds;
     tmp->self = (void *)self;
     mod->fds = tmp;
@@ -215,7 +198,7 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
     
     /* If a fd is added at runtime, start polling on it */
     if (module_is(self, RUNNING)) {
-        int ret = set_new_poll_evt(tmp, c, FLG_ADD);
+        int ret = poll_set_new_evt(tmp, c, ADD);
         return !ret ? MOD_OK : MOD_ERR;
     }
     return MOD_OK;
@@ -344,23 +327,12 @@ int module_is(const self_t *self, const enum module_states st) {
 
 /** Module state setters **/
 
-static int set_new_poll_evt(module_poll_t *tmp, m_context *c, int flag) {
-    int ret;
-#ifdef __linux__
-    ret = epoll_ctl(c->fd, flag, tmp->fd, &tmp->ev);
-#else
-    EV_SET(&tmp->ev, tmp->fd, EVFILT_READ, flag, 0, 0, (void *)tmp);
-    ret = kevent(c->fd, &tmp->ev, 1, NULL, 0, NULL);
-#endif
-    return ret;
-}
-
 static int manage_fds(module *mod, m_context *c, int flag, int stop) {
     module_poll_t *tmp = mod->fds, *t = NULL;
     int ret = 0;
     
     while (tmp && !ret) {
-        ret = set_new_poll_evt(tmp, c, flag);
+        ret = poll_set_new_evt(tmp, c, flag);
         if (stop) {
             ret += close(tmp->fd);
             t = tmp;
@@ -381,7 +353,7 @@ module_ret_code module_start(const self_t *self) {
 module_ret_code module_pause(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
-    int ret = manage_fds(mod, c, FLG_RM, 0);
+    int ret = manage_fds(mod, c, RM, 0);
     MOD_ASSERT(!ret, "Failed to pause module.", MOD_ERR);
       
     mod->state = PAUSED;
@@ -391,7 +363,7 @@ module_ret_code module_pause(const self_t *self) {
 module_ret_code module_resume(const self_t *self) {
     GET_MOD_IN_STATE(self, IDLE | PAUSED);
     
-    int ret = manage_fds(mod, c, FLG_ADD, 0);
+    int ret = manage_fds(mod, c, ADD, 0);
     MOD_ASSERT(!ret, "Failed to resume module.", MOD_ERR);
         
     mod->state = RUNNING;
@@ -403,7 +375,7 @@ module_ret_code module_stop(const self_t *self) {
     
     MODULE_DEBUG("Stopping module %s.\n", self->name);
     
-    int ret = manage_fds(mod, c, FLG_RM, 1);
+    int ret = manage_fds(mod, c, RM, 1);
     MOD_ASSERT(!ret, "Failed to stop module.", MOD_ERR);
        
     mod->state = STOPPED;

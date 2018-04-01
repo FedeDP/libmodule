@@ -2,13 +2,6 @@
 
 #include <assert.h>
 #include <hashmap.h>
-#ifdef __linux__
-    #include <sys/epoll.h>
-#else
-    #include <sys/types.h>
-    #include <sys/event.h>
-    #include <sys/time.h>
-#endif
 #include <stdlib.h>
 
 #ifndef NDEBUG
@@ -54,11 +47,7 @@ struct _self {
 
 typedef struct _poll_t {
     int fd;
-#ifdef __linux__
-    struct epoll_event ev;                // fd's epoll event struct
-#else
-    struct kevent ev;
-#endif
+    void *ev;
     self_t *self;                         // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
 } module_poll_t;

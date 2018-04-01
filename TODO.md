@@ -22,6 +22,7 @@
 - [x] use kqueue where needed
 - [x] travis to build on osx too 
 - [ ] fix kevent call: returns 0 immediately...
+- [x] create a header "poll_priv.h" and 2 plugins: epoll_priv.c and kqueue_priv.c; decide which one to compile in CMakeLists
 - [ ] Update doc and readme
 - [x] update Examples: properly ifdef linux only features (signalfd/timerfd)
 

@@ -9,6 +9,14 @@ include(GNUInstallDirs)
 
 # Find source files
 file(GLOB SOURCES Lib/*.c)
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    set(SOURCES ${SOURCES} Lib/poll_plugins/epoll_priv.c)
+else()
+    set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
+endif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+
+message(STATUS "Building for ${CMAKE_SYSTEM_NAME}")
+
 set(PUBLIC_H Lib/module.h Lib/modules.h)
 
 # Include header files
