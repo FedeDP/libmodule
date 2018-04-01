@@ -10,7 +10,7 @@ int poll_create(void) {
 }
 
 int poll_set_data(void **_ev, void *p) {
-    *ev = malloc(sizeof(struct kevent));
+    *_ev = malloc(sizeof(struct kevent));
     return MOD_OK;
 }
 
