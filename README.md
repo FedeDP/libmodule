@@ -21,7 +21,7 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 
 No, it is not: it uses epoll, which is linux specific.  
 Recently, it gained MacOS and BSD support, thanks to a [kqueue re-implementation](https://github.com/FedeDP/libmodule/tree/kqueue_support/Lib/poll_plugins) of libmodule's internal event loop.  
-That implementation is a mere blind-porting of libmodule's internal epoll-based event loop to kqueue API (that is indeed very similar).  
+It is is a mere blind-porting of libmodule's internal epoll-based event loop to kqueue API (that is indeed very similar).  
 As I can only test on linux though, you are advised that it may break sometimes, or it may have weird bugs.  
 *If anyone is interested in step up and test libmodule on these platforms, I'd be very thankful*.  
 
