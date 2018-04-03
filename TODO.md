@@ -2,24 +2,9 @@
 
 ## 1.0
 
-### API FREEZE
+**API FREEZE**
 
-### Port to kqueue on non-linux builds?
-
-- [x] ifndef __linux__ -> we will only support unix builds -> freebsd and osx
-- [x] use kqueue where needed
-- [x] travis to build on osx too 
-- [x] fix kevent call: returns 0 immediately...
-- [x] add a poll_close poll_priv interface function
-
-- [x] create a header "poll_priv.h" and 2 plugins: epoll_priv.c and kqueue_priv.c; decide which one to compile in CMakeLists
-- [x] free module_poll_t->ev
-- [x] Update doc and readme
-- [x] update Examples: properly ifdef linux only features (signalfd/timerfd)
-
-- [x] add MODULE_VERSION_ macros
-
-## Test it
+### Test it
 
 - [ ] write some tests (cmocka?)
 

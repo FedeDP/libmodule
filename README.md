@@ -8,7 +8,7 @@
 Libmodule is a C library targeting linux aiming to let developers easily create modular C projects in a way which is both simple and elegant.  
 You will write less code, focusing on what really matters.  
 
-**Please note that the library actually builds on macOS and BSD too.** See [Portability](https://github.com/FedeDP/libmodule#is-it-portable).
+**Please note that the library actually builds and works on macOS and BSD too.** See [Portability](https://github.com/FedeDP/libmodule#is-it-portable).
 
 ## Is this an event loop or an actor lib?
 
@@ -19,13 +19,16 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 
 ## Is it portable?
 
-No, it is not: it uses epoll, which is linux specific.  
-Recently, it gained MacOS and BSD support, thanks to a [kqueue re-implementation](https://github.com/FedeDP/libmodule/tree/kqueue_support/Lib/poll_plugins) of libmodule's internal event loop.  
-It is is a mere blind-porting of libmodule's internal epoll-based event loop to kqueue API (that is indeed very similar).  
-As I can only test on linux though, you are advised that it may break sometimes, or it may have weird bugs.  
+Short answer: no, it is not.  
+
+Long answer: it kinda of is. Not portable code is actually [compile-time-plugins](https://github.com/FedeDP/libmodule/tree/kqueue_support/Lib/poll_plugins) based.  
+On linux, libmodule's internal loop will use epoll, while on BSD and MacOS kqueue will be used.  
+The downside is that any poll plugin must have epoll-like interface. This is a choice: I find epoll-like APIs to be much more powerful and enjoyable to use.
+As I can only test on linux though, you are advised that other plugins may break or have weird bugs.  
+Kqueue plugin is currently tested through virtualbox, but again, be aware that I won't test anything on it.  
 *If anyone is interested in step up and test libmodule on these platforms, I'd be very thankful*.  
 
-Moreover it heavily relies upon gcc attributes that may or may not be available for your compiler.  
+Finally, it heavily relies upon gcc attributes that may or may not be available for your compiler.  
 It is tested with both gcc and clang on linux and osx through [travis](https://travis-ci.org/FedeDP/libmodule).  
 
 ## Is there any documentation?
