@@ -15,7 +15,7 @@ else()
     set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
 endif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
-message(STATUS "Building for ${CMAKE_SYSTEM_NAME}")
+message(STATUS "Building Libmodule ${PROJECT_VERSION} for ${CMAKE_SYSTEM_NAME}")
 
 set(PUBLIC_H Lib/module.h Lib/modules.h)
 
@@ -38,7 +38,7 @@ if (NOT MAX_EVENTS)
 endif (NOT MAX_EVENTS)
 message(STATUS "MAX_EVENTS=${MAX_EVENTS}")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security") 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_GNU_SOURCE -fvisibility=hidden -DMAX_EVENTS=${MAX_EVENTS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_GNU_SOURCE -fvisibility=hidden -DMAX_EVENTS=${MAX_EVENTS} -DMODULE_VERSION_MAJ=${PROJECT_VERSION_MAJOR} -DMODULE_VERSION_MIN=${PROJECT_VERSION_MINOR} -DMODULE_VERSION_PAT=${PROJECT_VERSION_PATCH}")
 
 configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
 

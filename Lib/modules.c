@@ -6,12 +6,12 @@ static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *context);
 
 static void modules_init(void) {
-    MODULE_DEBUG("Initializing library.\n");
+    MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     ctx = hashmap_new();
 }
 
 static void modules_destroy(void) {
-    MODULE_DEBUG("Destroying library.\n");
+    MODULE_DEBUG("Destroying libmodule.\n");
     hashmap_free(ctx);
 }
 

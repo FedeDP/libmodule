@@ -22,7 +22,7 @@ int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
 }
 
 int poll_wait(int fd, int num_fds) {
-    return kevent(fd, pevents, num_fds, NULL, 0, NULL);
+	return kevent(fd, NULL, 0, pevents, num_fds, NULL);
 }
 
 module_poll_t *poll_recv(int idx) {
@@ -30,4 +30,8 @@ module_poll_t *poll_recv(int idx) {
         return NULL;
     }
     return (module_poll_t *)pevents[idx].udata;
+}
+
+int poll_close(int fd) {
+	return close(fd);
 }

@@ -29,3 +29,7 @@ int poll_wait(int fd, int num_fds) {
 module_poll_t *poll_recv(int idx) {
     return (module_poll_t *)pevents[idx].data.ptr;
 }
+
+int poll_close(int fd) {
+	return close(fd);
+}

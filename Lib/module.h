@@ -41,6 +41,10 @@
 
 /* Module interface functions */
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 /* Module registration */
 _public_ module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook);
 _public_ module_ret_code module_deregister(const self_t **self);
@@ -68,3 +72,7 @@ _public_ module_ret_code module_update_fd(const self_t *self, int old_fd, int ne
 _public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
 _public_ module_ret_code module_tell(const self_t *self, const char *recipient, const char *message);
 _public_ module_ret_code module_publish(const self_t *self, const char *topic, const char *message);
+
+#ifdef __cplusplus
+}
+#endif

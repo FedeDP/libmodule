@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <hashmap.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule: "); printf

@@ -1,7 +1,6 @@
-#include <module.h> 
+#include <module.h>
 #include <poll_priv.h>
 #include <string.h>
-#include <unistd.h>
 #include <stdarg.h>
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context);
@@ -43,7 +42,7 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
 static void destroy_ctx(const char *ctx_name, m_context *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", ctx_name);
     hashmap_free(context->modules);
-    close(context->fd);
+    poll_close(context->fd);
     free(context);
     hashmap_remove(ctx, (char *)ctx_name);
 }
