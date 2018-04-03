@@ -21,12 +21,12 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 
 Short answer: no, it is not.  
 
-Long answer: it kinda of is. Not portable code is actually [compile-time-plugins](https://github.com/FedeDP/libmodule/tree/kqueue_support/Lib/poll_plugins) based.  
+Long answer: it kinda is. Non-portable code is actually [compile-time-plugins](https://github.com/FedeDP/libmodule/tree/kqueue_support/Lib/poll_plugins) based.  
 On linux, libmodule's internal loop will use epoll, while on BSD and MacOS kqueue will be used.  
 The downside is that any poll plugin must have epoll-like interface. This is a choice: I find epoll-like APIs to be much more powerful and enjoyable to use.  
 
-As I can only test on linux though, you are advised that other plugins may break or have weird bugs.  
-Kqueue plugin is currently tested through virtualbox, but again, be aware that I won't test anything on it.  
+As I can only test on linux with epoll though, you are advised that other plugins may break or have weird bugs.  
+Kqueue plugin is currently tested through virtualbox, but again, be aware that I have no time to test anything on it.  
 *If anyone is interested in step up and test libmodule on these platforms, I'd be very thankful*.  
 
 Finally, it heavily relies upon gcc attributes that may or may not be available for your compiler.  
