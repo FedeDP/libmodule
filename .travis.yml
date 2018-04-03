@@ -1,6 +1,3 @@
-dist: trusty
-sudo: false
-
 notifications:
   email:
     recipients: nierro92@gmail.com
@@ -8,6 +5,12 @@ notifications:
     on_failure: always
 
 language: c
+
+os:
+  - linux
+  - osx
+  
+sudo: false
 
 compiler:
   - gcc

@@ -1,7 +1,6 @@
-#include <module.h> 
-#include <module_priv.h>
+#include <module.h>
+#include <poll_priv.h>
 #include <string.h>
-#include <unistd.h>
 #include <stdarg.h>
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context);
@@ -14,7 +13,6 @@ static module_ret_code add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
 static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
-static int manage_fds(module *mod, m_context *c, int type, int stop);
 static module_ret_code start_children(module *m);
 static module_ret_code stop_children(module *m);
 
@@ -25,9 +23,9 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MOD_ASSERT(*context, "Failed to malloc.", MOD_ERR);
     
     **context = (m_context) {0};
-         
-    (*context)->epollfd = epoll_create1(EPOLL_CLOEXEC); 
-    MOD_ASSERT(((*context)->epollfd >= 0), "Failed to create epollfd.", MOD_ERR);
+    
+    (*context)->fd = poll_create();
+    MOD_ASSERT(((*context)->fd >= 0), "Failed to create context fd.", MOD_ERR);
      
     (*context)->logger = default_logger;
     
@@ -44,7 +42,7 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
 static void destroy_ctx(const char *ctx_name, m_context *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", ctx_name);
     hashmap_free(context->modules);
-    close(context->epollfd);
+    poll_close(context->fd);
     free(context);
     hashmap_remove(ctx, (char *)ctx_name);
 }
@@ -75,7 +73,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     MOD_ASSERT(mod, "Failed to malloc.", MOD_ERR);
     
     *mod = (module) {0};
-    if (hashmap_put(context->modules, (char *)name, mod) == MAP_OK) {        
+    if (hashmap_put(context->modules, (char *)name, mod) == MAP_OK) {
         mod->hook = hook;
         mod->state = IDLE;
         mod->self.name = strdup(name);
@@ -121,12 +119,11 @@ static module_ret_code add_children(module *mod, const self_t *self) {
         tmp = &(*tmp)->next;
     }
     *tmp = malloc(sizeof(child_t));
-    if (*tmp) {
-        (*tmp)->self = self;
-        (*tmp)->next = NULL;
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    MOD_ASSERT(*tmp, "Failed to malloc.", MOD_ERR);
+    
+    (*tmp)->self = self;
+    (*tmp)->next = NULL;
+    return MOD_OK;
 }
 
 module_ret_code module_binds_to(const self_t *self, const char *parent) {
@@ -192,8 +189,7 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
     MOD_ASSERT(tmp, "Failed to malloc.", MOD_ERR);
        
     tmp->fd = fd;
-    tmp->ev.data.ptr = (void *)tmp;
-    tmp->ev.events = EPOLLIN;
+    poll_set_data(&tmp->ev, (void *)tmp);
     tmp->prev = mod->fds;
     tmp->self = (void *)self;
     mod->fds = tmp;
@@ -201,10 +197,8 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
     
     /* If a fd is added at runtime, start polling on it */
     if (module_is(self, RUNNING)) {
-        if (!epoll_ctl(c->epollfd, EPOLL_CTL_ADD, tmp->fd, &tmp->ev)) {
-            return MOD_OK;
-        }
-        return MOD_ERR;
+        int ret = poll_set_new_evt(tmp, c, ADD);
+        return !ret ? MOD_OK : MOD_ERR;
     }
     return MOD_OK;
 }
@@ -223,6 +217,7 @@ module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd) {
             if (close_fd) {
                 close(t->fd);
             }
+            free(t->ev);
             free(t);
             c->num_fds--;
             return MOD_OK;
@@ -332,16 +327,16 @@ int module_is(const self_t *self, const enum module_states st) {
 
 /** Module state setters **/
 
-static int manage_fds(module *mod, m_context *c, int type, int stop) {
+static int manage_fds(module *mod, m_context *c, int flag, int stop) {
     module_poll_t *tmp = mod->fds, *t = NULL;
     int ret = 0;
     
     while (tmp && !ret) {
-        if (stop) {
-            ret = close(tmp->fd);
+        ret = poll_set_new_evt(tmp, c, flag);
+        if (flag == RM && stop) {
+            ret += close(tmp->fd);
+            free(tmp->ev);
             t = tmp;
-        } else {
-            ret = epoll_ctl(c->epollfd, type, tmp->fd, &tmp->ev);
         }
         tmp = tmp->prev;
         free(t); // only used when called with stop: properly free module_poll_t
@@ -359,32 +354,33 @@ module_ret_code module_start(const self_t *self) {
 module_ret_code module_pause(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
-    if (!manage_fds(mod, c, EPOLL_CTL_DEL, 0)) {
-        mod->state = PAUSED;
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    int ret = manage_fds(mod, c, RM, 0);
+    MOD_ASSERT(!ret, "Failed to pause module.", MOD_ERR);
+      
+    mod->state = PAUSED;
+    return MOD_OK;
 }
 
 module_ret_code module_resume(const self_t *self) {
     GET_MOD_IN_STATE(self, IDLE | PAUSED);
     
-    if (!manage_fds(mod, c, EPOLL_CTL_ADD, 0)) {
-        mod->state = RUNNING;
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    int ret = manage_fds(mod, c, ADD, 0);
+    MOD_ASSERT(!ret, "Failed to resume module.", MOD_ERR);
+        
+    mod->state = RUNNING;
+    return MOD_OK;
 }
 
 module_ret_code module_stop(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
     MODULE_DEBUG("Stopping module %s.\n", self->name);
-    if (!manage_fds(mod, c, -1, 1)) { // implicitly calls EPOLL_CTL_DEL
-        mod->state = STOPPED;
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    
+    int ret = manage_fds(mod, c, RM, 1);
+    MOD_ASSERT(!ret, "Failed to stop module.", MOD_ERR);
+       
+    mod->state = STOPPED;
+    return MOD_OK;
 }
 
 static module_ret_code start_children(module *m) {

@@ -1,17 +1,17 @@
 #include <modules.h>
-#include <module_priv.h>
+#include <poll_priv.h>
 
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *context);
 
 static void modules_init(void) {
-    MODULE_DEBUG("Initializing library.\n");
+    MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     ctx = hashmap_new();
 }
 
 static void modules_destroy(void) {
-    MODULE_DEBUG("Destroying library.\n");
+    MODULE_DEBUG("Destroying libmodule.\n");
     hashmap_free(ctx);
 }
 
@@ -26,19 +26,17 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
 module_ret_code modules_ctx_loop(const char *ctx_name) {
     GET_CTX(ctx_name);
     
-    struct epoll_event pevents[MAX_EVENTS] = {{ 0 }};
     while (!c->quit) {
-        int nfds = epoll_wait(c->epollfd, pevents, c->num_fds, -1);
-        MOD_ASSERT(nfds > 0, "Epoll_wait error.", MOD_ERR);
+        int nfds = poll_wait(c->fd, c->num_fds);
+        
+        MOD_ASSERT(nfds > 0, "Context loop error.", MOD_ERR);
         for (int i = 0; i < nfds; i++) {
-            if (pevents[i].events & EPOLLIN) {
-                module_poll_t *p = (module_poll_t *)pevents[i].data.ptr;
+            module_poll_t *p = poll_recv(i);
+            MOD_ASSERT(p, "Context loop error.", MOD_ERR);
+            CTX_GET_MOD(p->self->name, c);
                 
-                CTX_GET_MOD(p->self->name, c);
-                
-                const msg_t msg = { p->fd, NULL };
-                mod->hook->recv(&msg, mod->userdata);
-            }
+            const msg_t msg = { p->fd, NULL };
+            mod->hook->recv(&msg, mod->userdata);
         }
         evaluate_new_state(c);
     }
