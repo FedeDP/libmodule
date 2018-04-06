@@ -17,7 +17,9 @@ sudo: required
 dist: trusty
 
 install:
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew install cmocka; else wget http://fr.archive.ubuntu.com/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.1.1-1_amd64.deb; sudo dpkg -i libcmocka-dev_1.1.1-1_amd64.deb; fi
+  - if [ $TRAVIS_OS_NAME = linux]; then wget http://fr.archive.ubuntu.com/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.1.1-1_amd64.deb; fi
+  - if [ $TRAVIS_OS_NAME = linux]; then sudo dpkg -i libcmocka-dev_1.1.1-1_amd64.deb; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew install cmocka; fi
 
 compiler:
   - gcc
