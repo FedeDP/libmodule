@@ -60,7 +60,7 @@ typedef struct child {
 
 /* Struct that holds data for each module */
 typedef struct {
-    userhook *hook;                       // module's user defined callbacks
+    userhook hook;                        // module's user defined callbacks
     const void *userdata;                 // module's user defined data
     enum module_states state;             // module's state
     self_t self;                          // module's info available to external world

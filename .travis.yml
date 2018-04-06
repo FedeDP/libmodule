@@ -12,6 +12,14 @@ os:
   
 sudo: false
 
+addons:
+  apt:
+    packages:
+      - libcmocka-dev
+
+install:
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew install cmocka; fi
+
 compiler:
   - gcc
   - clang
@@ -19,10 +27,13 @@ compiler:
 script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Debug ../
+    - cmake -DCMAKE_BUILD_TYPE=Release ../
     - make
 
 after_success:
     - cd ../Samples
     - make
+    - cd ../tests
+    - make
+    - ./tests
 

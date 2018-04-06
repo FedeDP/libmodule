@@ -20,15 +20,14 @@ static void B_recv(const msg_t *msg, const void *userdata);
 static void B_recv_sleeping(const msg_t *msg, const void *userdata);
 
 static const self_t *selfA, *selfB;
-static userhook hookA, hookB;
 
 /*
  * Create "A" and "B" modules in ctx_name context.
  * These modules can share some callbacks.
  */
 void create_modules(const char *ctx_name) {
-    hookA = (userhook) { A_init, evaluate, A_recv, destroy };
-    hookB = (userhook) { B_init, evaluate, B_recv, destroy };
+    userhook hookA = (userhook) { A_init, evaluate, A_recv, destroy };
+    userhook hookB = (userhook) { B_init, evaluate, B_recv, destroy };
     
     module_register("Pippo", ctx_name, &selfA, &hookA);
     module_register("Doggo", ctx_name, &selfB, &hookB);

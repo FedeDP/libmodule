@@ -13,7 +13,7 @@
     static const self_t *self = NULL; \
     static void _ctor3_ constructor(void) { \
         if (check()) { \
-            static userhook hook = { init, evaluate, receive, destroy }; \
+            userhook hook = { init, evaluate, receive, destroy }; \
             module_register(name, ctx, &self, &hook); \
         } \
     } \

@@ -59,6 +59,8 @@ static m_context *check_ctx(const char *ctx_name) {
 module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook) {
     MOD_ASSERT(name, "NULL module name.", MOD_ERR);
     MOD_ASSERT(ctx_name, "NULL context name.", MOD_ERR);
+    MOD_ASSERT(self, "NULL self pointer.", MOD_ERR);
+    MOD_ASSERT(hook, "NULL userhook.", MOD_ERR);
     
     m_context *context = check_ctx(ctx_name);
     MOD_ASSERT(context, "Failed to create context.", MOD_ERR);
@@ -72,9 +74,9 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     mod = malloc(sizeof(module));
     MOD_ASSERT(mod, "Failed to malloc.", MOD_ERR);
     
-    *mod = (module) {0};
+    *mod = (module) {{ 0 }};
     if (hashmap_put(context->modules, (char *)name, mod) == MAP_OK) {
-        mod->hook = hook;
+        mod->hook = *hook;
         mod->state = IDLE;
         mod->self.name = strdup(name);
         mod->self.ctx = strdup(ctx_name);
@@ -89,6 +91,8 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
 }
 
 module_ret_code module_deregister(const self_t **self) {
+    MOD_ASSERT(self, "NULL self pointer.", MOD_ERR);
+    
     self_t *tmp = (self_t *) *self;
     
     GET_MOD(tmp);
@@ -97,18 +101,18 @@ module_ret_code module_deregister(const self_t **self) {
         
     module_stop(tmp);
         
-    mod->hook->destroy();
+    mod->hook.destroy();
+    
     /* Remove the module from the context */
     hashmap_remove(c->modules, (char *)tmp->name);
     /* Remove context without modules */
     if (hashmap_length(c->modules) == 0) {
         destroy_ctx(tmp->ctx, c);
     }
-    
     hashmap_free(mod->subscriptions);
     free((void *)tmp->name);
     free((void *)tmp->ctx);
-    tmp = NULL;
+    *self = NULL;
     free(mod);
     return MOD_OK;
 }
@@ -145,9 +149,9 @@ static void default_logger(const char *module_name, const char *context_name,
 int evaluate_module(void *data, void *m) {
     module *mod = (module *)m;
     if (module_is(&mod->self, IDLE) 
-        && mod->hook->evaluate()) {
+        && mod->hook.evaluate()) {
             
-        mod->hook->init();
+        mod->hook.init();
         module_start(&mod->self);
     }
     return MAP_OK;
@@ -156,7 +160,7 @@ int evaluate_module(void *data, void *m) {
 module_ret_code module_become(const self_t *self,  recv_cb new_recv) {    
     GET_MOD_IN_STATE(self, RUNNING);
     
-    mod->hook->recv = new_recv;
+    mod->hook.recv = new_recv;
     return MOD_OK;
 }
 
@@ -183,7 +187,7 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
  */
 module_ret_code module_add_fd(const self_t *self, int fd) {
     GET_MOD(self);
-    MOD_ASSERT(c->num_fds < MAX_EVENTS, "Reached max number of events for this context.", MOD_ERR);
+    MOD_ASSERT((c->num_fds < MAX_EVENTS), "Reached max number of events for this context.", MOD_ERR);
     
     module_poll_t *tmp = malloc(sizeof(module_poll_t));
     MOD_ASSERT(tmp, "Failed to malloc.", MOD_ERR);
@@ -267,7 +271,7 @@ static int tell_if(void *data, void *m) {
         hashmap_get(mod->subscriptions, (char *)msg->msg->topic, (void **)&tmp) == MAP_OK)) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->self.name);
-        mod->hook->recv(msg, mod->userdata);
+        mod->hook.recv(msg, mod->userdata);
     }
     return MAP_OK;
 }
@@ -385,7 +389,7 @@ module_ret_code module_stop(const self_t *self) {
 
 static module_ret_code start_children(module *m) {
     CHILDREN_LOOP({
-        mod->hook->init();
+        mod->hook.init();
         module_start(&mod->self);
     });
     return MOD_OK;

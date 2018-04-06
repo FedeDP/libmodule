@@ -6,7 +6,8 @@
 
 ### Test it
 
-- [ ] write some tests (cmocka?)
+- [ ] write modules.h tests
+- [ ] write remaining module.h tests
 
 ### Finally
 
