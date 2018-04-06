@@ -31,6 +31,7 @@ void test_module_register_NULL_self(void **state) {
     userhook hook = (userhook) { init, evaluate, recv, destroy };
     module_ret_code ret = module_register("testName", "testCtx", NULL, &hook);
     assert_false(ret == MOD_OK);
+    assert_null(self);
 }
 
 void test_module_register_NULL_hook(void **state) {
