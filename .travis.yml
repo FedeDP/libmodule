@@ -17,7 +17,7 @@ sudo: required
 dist: trusty
 
 install:
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew install cmocka; else sudo apt-get install libcmocka-dev; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew install cmocka; else wget http://fr.archive.ubuntu.com/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.1.1-1_amd64.deb; sudo dpkg -i libcmocka-dev_1.1.1-1_amd64.deb; fi
 
 compiler:
   - gcc
@@ -28,11 +28,10 @@ script:
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release ../
     - make
-
-after_success:
     - cd ../Samples
     - make
     - cd ../tests
     - make
     - ./tests.out
+
 

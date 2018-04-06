@@ -8,6 +8,8 @@
 
 - [ ] write modules.h tests
 - [ ] write remaining module.h tests
+- [x] Move tests in script in travis.yml so travis will fail if tests fail
+- [x] fix tests on linux...cmocka is too old on trusty
 
 ### Finally
 
