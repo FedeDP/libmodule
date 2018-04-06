@@ -4,21 +4,20 @@ notifications:
     on_success: change
     on_failure: always
 
+git:
+  depth: 3
+
 language: c
 
 os:
   - linux
   - osx
   
-sudo: false
-
-addons:
-  apt:
-    packages:
-      - libcmocka-dev
+sudo: required
+dist: trusty
 
 install:
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew install cmocka; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew install cmocka; else sudo apt-get install libcmocka-dev; fi
 
 compiler:
   - gcc
@@ -35,5 +34,5 @@ after_success:
     - make
     - cd ../tests
     - make
-    - ./tests
+    - ./tests.out
 
