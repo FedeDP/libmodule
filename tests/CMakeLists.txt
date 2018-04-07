@@ -8,8 +8,10 @@ include_directories("${PROJECT_SOURCE_DIR}/Lib")
 add_executable(ModuleTest ${SOURCES})
 add_dependencies(ModuleTest ModuleTest)
 add_test(ModuleTest ModuleTest)
-add_test(ModuleTest_valgrind valgrind
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    add_test(ModuleTest_valgrind valgrind
          --error-exitcode=1 --read-var-info=yes
          --leak-check=full --show-leak-kinds=all
          ./ModuleTest)
+endif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 target_link_libraries(ModuleTest cmocka module)
