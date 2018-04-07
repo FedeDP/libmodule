@@ -1,14 +1,16 @@
 # Libmodule Samples
 
 This folder contains some libmodule's examples.  
-As you can see, API is quite straightforward as being clean and simple has been one of the library's focus.
-
-To build these samples, use 
-
-    $ make $target
-    
-where $target matches the name of the subfolder for your desired example.  
+As you can see, API is quite straightforward as being clean and simple has been one of the library's focus.  
 Please note that libmodule's correct includes are <module/module{s}.h>. In this examples <module{s}.h> are used as rpath is forced through makefile.
+
+## Building
+
+To build these samples, pass "-DBUILD_SAMPLES=true" when building libmodule (from folder libmodule/build)
+
+    $ cmake ../ -DBUILD_SAMPLES=true
+    
+Then you'll find executables in Samples folder (eg: libmodule/build/Samples)
 
 ## Easy example
 

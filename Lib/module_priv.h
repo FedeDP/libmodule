@@ -5,12 +5,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#define MOD_ASSERT(cond, msg, ret) if(!cond) { fprintf(stderr, "%s\n", msg); return ret; }
+
 #ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule: "); printf
-    #define MOD_ASSERT(cond, msg, ret) assert(cond)
 #else
     #define MODULE_DEBUG (void)
-    #define MOD_ASSERT(cond, msg, ret) if(!cond) { fprintf(stderr, "%s\n", msg); return ret; }
 #endif
 
 #define GET_CTX(name) \

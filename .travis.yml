@@ -29,10 +29,10 @@ compiler:
 script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Release ../
+    - cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_SAMPLES=true ../
     - make
-    - cd ../Samples
-    - make
-    - cd ../tests
-    - make
-    - ./tests.out
+    - ctest -V
+
+after_success:
+    - cd ../docs
+    - make html

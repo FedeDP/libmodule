@@ -2,10 +2,21 @@ cmake_minimum_required (VERSION 3.3.2)
 
 project(module VERSION 1.0.0 LANGUAGES C DESCRIPTION "Easily create modular C programs")
 
-# set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE Release)
 
 include(GNUInstallDirs)
+
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    enable_testing()
+    add_subdirectory(tests)
+    message(STATUS "Building tests.")
+endif (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+
+if (BUILD_SAMPLES EQUAL true)
+     add_subdirectory(Samples)
+     message(STATUS "Building examples.")
+endif (BUILD_SAMPLES EQUAL true)
 
 # Find source files
 file(GLOB SOURCES Lib/*.c)
@@ -15,7 +26,7 @@ else()
     set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
 endif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
-message(STATUS "Building Libmodule ${PROJECT_VERSION} for ${CMAKE_SYSTEM_NAME}")
+message(STATUS "Building Libmodule ${PROJECT_VERSION} for ${CMAKE_SYSTEM_NAME}.")
 
 set(PUBLIC_H Lib/module.h Lib/modules.h)
 
