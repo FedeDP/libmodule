@@ -9,7 +9,7 @@ These tests are automatically executed and valgrind tested on travis ci after ev
 
 ## Build and test
 
-To build, you need cmocka; tests are automatically built when libmodule is built in Debug mode.  
+To build, you need cmocka and valgrind; tests are automatically built when libmodule is built in Debug mode.  
 To run, from libmodule/build folder, issue:
 
     $ ctest -V

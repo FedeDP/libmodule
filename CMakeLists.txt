@@ -13,10 +13,10 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message(STATUS "Building tests.")
 endif (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 
-if (BUILD_SAMPLES EQUAL true)
+if (BUILD_SAMPLES)
      add_subdirectory(Samples)
      message(STATUS "Building examples.")
-endif (BUILD_SAMPLES EQUAL true)
+endif (BUILD_SAMPLES)
 
 # Find source files
 file(GLOB SOURCES Lib/*.c)
