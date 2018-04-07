@@ -16,7 +16,7 @@ static void modules_destroy(void) {
 }
 
 module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
-    MOD_ASSERT(logger, "NULL logger. Fallbacking to default.", MOD_ERR);
+    MOD_ASSERT(logger, "NULL logger.", MOD_ERR);
     GET_CTX(ctx_name);
     
     c->logger = logger;
@@ -26,21 +26,28 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
 module_ret_code modules_ctx_loop(const char *ctx_name) {
     GET_CTX(ctx_name);
     
-    while (!c->quit) {
-        int nfds = poll_wait(c->fd, c->num_fds);
+    if (c->num_fds > 0 && !c->looping) {
+        c->quit = 0;
+        c->looping = 1;
+        while (!c->quit) {
+            int nfds = poll_wait(c->fd, c->num_fds);
         
-        MOD_ASSERT((nfds > 0), "Context loop error.", MOD_ERR);
-        for (int i = 0; i < nfds; i++) {
-            module_poll_t *p = poll_recv(i);
-            MOD_ASSERT(p, "Context loop error.", MOD_ERR);
-            CTX_GET_MOD(p->self->name, c);
+            MOD_ASSERT((nfds > 0), "Context loop error.", MOD_ERR);
+            for (int i = 0; i < nfds; i++) {
+                module_poll_t *p = poll_recv(i);
+                MOD_ASSERT(p, "Context loop error.", MOD_ERR);
+                CTX_GET_MOD(p->self->name, c);
                 
-            const msg_t msg = { p->fd, NULL };
-            mod->hook.recv(&msg, mod->userdata);
+                const msg_t msg = { p->fd, NULL };
+                mod->hook.recv(&msg, mod->userdata);
+            }
+            evaluate_new_state(c);
         }
-        evaluate_new_state(c);
+        c->looping = 0;
+        return MOD_OK;
     }
-    return MOD_OK;
+    MODULE_DEBUG(c->looping ? "Context already looping.\n" : "No events/fds specified.\n");
+    return MOD_ERR;
 }
 
 static void evaluate_new_state(m_context *context) {
@@ -50,6 +57,10 @@ static void evaluate_new_state(m_context *context) {
 module_ret_code modules_ctx_quit(const char *ctx_name) {
     GET_CTX(ctx_name);
     
-    c->quit = 1;
-    return MOD_OK;
+    if (c->looping) {
+        c->quit = 1;
+        return MOD_OK;
+    }
+    MODULE_DEBUG("Context not looping.\n");
+    return MOD_ERR;
 }

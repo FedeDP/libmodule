@@ -6,7 +6,7 @@
 
 ### Test it
 
-- [ ] write modules.h tests
+- [ ] write remaining modules.h tests (modules_ctx_loop and modules_ctx_quit successful run)
 - [ ] write remaining module.h tests
 - [x] Move tests in script in travis.yml so travis will fail if tests fail
 - [x] fix tests on linux...cmocka is too old on trusty

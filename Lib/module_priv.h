@@ -14,6 +14,7 @@
 #endif
 
 #define GET_CTX(name) \
+    MOD_ASSERT(name, "NULL ctx.", MOD_ERR); \
     m_context *c = NULL; \
     hashmap_get(ctx, (char *)name, (void **)&c); \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
@@ -71,6 +72,7 @@ typedef struct {
 
 typedef struct {
     int quit;
+    int looping;
     int fd;
     int num_fds;                          // number of fds in this context
     log_cb logger;

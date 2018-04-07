@@ -59,7 +59,7 @@ static m_context *check_ctx(const char *ctx_name) {
 module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook) {
     MOD_ASSERT(name, "NULL module name.", MOD_ERR);
     MOD_ASSERT(ctx_name, "NULL context name.", MOD_ERR);
-    MOD_ASSERT(self, "NULL self pointer.", MOD_ERR);
+    MOD_ASSERT(self, "NULL self double pointer.", MOD_ERR);
     MOD_ASSERT(hook, "NULL userhook.", MOD_ERR);
     
     m_context *context = check_ctx(ctx_name);
@@ -91,7 +91,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
 }
 
 module_ret_code module_deregister(const self_t **self) {
-    MOD_ASSERT(self, "NULL self pointer.", MOD_ERR);
+    MOD_ASSERT(self, "NULL self double pointer.", MOD_ERR);
     
     self_t *tmp = (self_t *) *self;
     
@@ -349,10 +349,13 @@ static int manage_fds(module *mod, m_context *c, int flag, int stop) {
 }
 
 module_ret_code module_start(const self_t *self) {
-    GET_MOD_IN_STATE(self, IDLE);
+    GET_MOD_IN_STATE(self, IDLE | STOPPED);
     
-    MODULE_DEBUG("Starting module %s.\n", self->name);
-    return module_resume(self);
+    int ret = manage_fds(mod, c, ADD, 0);
+    MOD_ASSERT(!ret, "Failed to start module.", MOD_ERR);
+    
+    mod->state = RUNNING;
+    return MOD_OK;
 }
 
 module_ret_code module_pause(const self_t *self) {
@@ -367,10 +370,10 @@ module_ret_code module_pause(const self_t *self) {
 
 module_ret_code module_resume(const self_t *self) {
     GET_MOD_IN_STATE(self, IDLE | PAUSED);
-    
+
     int ret = manage_fds(mod, c, ADD, 0);
     MOD_ASSERT(!ret, "Failed to resume module.", MOD_ERR);
-        
+
     mod->state = RUNNING;
     return MOD_OK;
 }
