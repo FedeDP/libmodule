@@ -38,7 +38,8 @@ You have some nice examples too, check [Samples](https://github.com/FedeDP/libmo
 
 ## TravisCI
 
-On [travis](https://travis-ci.org/FedeDP/libmodule), libmodule (with both gcc and clang), samples, docs and tests builds are tested. Moreover, tests are executed too.  
+On [travis](https://travis-ci.org/FedeDP/libmodule), libmodule, samples and tests builds are tested (with both gcc and clang).  
+Moreover, tests are executed too; on linux, tests are also valgrind checked. Unfortunately macOS reports weird memleaks about cmocka, so it had to be disabled there.  
 
 ## What is a module, anyway?
 
