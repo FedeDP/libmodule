@@ -30,16 +30,18 @@ Kqueue plugin is currently tested through virtualbox, but again, be aware that I
 *If anyone is interested in step up and test libmodule on these platforms, I'd be very thankful*.  
 
 Finally, it heavily relies upon gcc attributes that may or may not be available for your compiler.  
+Build are tested through [travis](https://github.com/FedeDP/libmodule#travis-ci)
 
 ## Is there any documentation?
 
 Yes, it is availabe at http://libmodule.readthedocs.io/en/latest/.  
 You have some nice examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.
 
-## TravisCI
+## Travis CI
 
-On [travis](https://travis-ci.org/FedeDP/libmodule), libmodule, samples and tests builds are tested (with both gcc and clang).  
-Moreover, tests are executed too; on linux, tests are also valgrind checked. Unfortunately macOS reports weird memleaks about cmocka, so it had to be disabled there.  
+Libmodule, samples and tests builds are tested with both gcc and clang on [travis](https://travis-ci.org/FedeDP/libmodule).  
+Moreover, tests are executed too; on linux, tests are also valgrind checked.  
+Unfortunately macOS reports weird memleaks about cmocka, so it had to be disabled there.
 
 ## What is a module, anyway?
 
