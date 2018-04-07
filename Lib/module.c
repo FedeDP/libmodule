@@ -13,6 +13,9 @@ static module_ret_code add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
 static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
+static int manage_fds(module *mod, m_context *c, int flag, int stop);
+static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str);
+static module_ret_code stop(const self_t *self, const enum module_states mask, const char *err_str, int stop);
 static module_ret_code start_children(module *m);
 static module_ret_code stop_children(module *m);
 
@@ -348,46 +351,40 @@ static int manage_fds(module *mod, m_context *c, int flag, int stop) {
     return ret;
 }
 
-module_ret_code module_start(const self_t *self) {
-    GET_MOD_IN_STATE(self, IDLE | STOPPED);
+static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str) {
+    GET_MOD_IN_STATE(self, mask);
     
     int ret = manage_fds(mod, c, ADD, 0);
-    MOD_ASSERT(!ret, "Failed to start module.", MOD_ERR);
+    MOD_ASSERT(!ret, err_str, MOD_ERR);
     
     mod->state = RUNNING;
     return MOD_OK;
+}
+
+static module_ret_code stop(const self_t *self, const enum module_states mask, const char *err_str, int stop) {
+    GET_MOD_IN_STATE(self, mask);
+    
+    int ret = manage_fds(mod, c, RM, stop);
+    MOD_ASSERT(!ret, err_str, MOD_ERR);
+    
+    mod->state = stop ? STOPPED : PAUSED;
+    return MOD_OK;
+}
+
+module_ret_code module_start(const self_t *self) {
+    return start(self, IDLE | STOPPED, "Failed to start module.");
 }
 
 module_ret_code module_pause(const self_t *self) {
-    GET_MOD_IN_STATE(self, RUNNING);
-    
-    int ret = manage_fds(mod, c, RM, 0);
-    MOD_ASSERT(!ret, "Failed to pause module.", MOD_ERR);
-      
-    mod->state = PAUSED;
-    return MOD_OK;
+    return stop(self, RUNNING, "Failed to pause module.", 0);
 }
 
 module_ret_code module_resume(const self_t *self) {
-    GET_MOD_IN_STATE(self, IDLE | PAUSED);
-
-    int ret = manage_fds(mod, c, ADD, 0);
-    MOD_ASSERT(!ret, "Failed to resume module.", MOD_ERR);
-
-    mod->state = RUNNING;
-    return MOD_OK;
+    return start(self, PAUSED, "Failed to resume module.");
 }
 
 module_ret_code module_stop(const self_t *self) {
-    GET_MOD_IN_STATE(self, RUNNING);
-    
-    MODULE_DEBUG("Stopping module %s.\n", self->name);
-    
-    int ret = manage_fds(mod, c, RM, 1);
-    MOD_ASSERT(!ret, "Failed to stop module.", MOD_ERR);
-       
-    mod->state = STOPPED;
-    return MOD_OK;
+    return stop(self, RUNNING | IDLE, "Failed to stop module.", 1);
 }
 
 static module_ret_code start_children(module *m) {
