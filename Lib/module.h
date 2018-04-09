@@ -4,7 +4,6 @@
 
 /* Interface Macros */
 #define MODULE_CTX(name, ctx) \
-    static void _ctor2_ module_pre_start(void); \
     static void init(void); \
     static int check(void); \
     static int evaluate(void); \
@@ -17,7 +16,8 @@
             module_register(name, ctx, &self, &hook); \
         } \
     } \
-    static void _dtor1_ destructor(void) { module_deregister(&self); }
+    static void _dtor1_ destructor(void) { module_deregister(&self); } \
+    static void _ctor2_ module_pre_start(void)
 
 #define MODULE(name) MODULE_CTX(name, DEFAULT_CTX)
    
@@ -33,7 +33,7 @@
 #define m_add_fd(fd)                            module_add_fd(self, fd)
 #define m_rm_fd(fd, close_fd)                   module_rm_fd(self, fd, close_fd)
 #define m_update_fd(old, new, close_old)        module_update_fd(self, old, new, close_old)
-#define m_log(fmt, ...)                         module_log(self, fmt, ##__VA_ARGS__)
+#define m_log(...)                              module_log(self, ##__VA_ARGS__)
 #define m_subscribe(topic)                      module_subscribe(self, topic)
 #define m_tell(recipient, msg)                  module_tell(self, recipient, msg)
 #define m_publish(topic, msg)                   module_publish(self, topic, msg)
