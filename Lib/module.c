@@ -72,7 +72,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     hashmap_get(context->modules, (char *)name, (void **)&mod);
     MOD_ASSERT(!mod, "Module already registered in context.", MOD_ERR);
     
-    MODULE_DEBUG("Registering module %s.\n", name);
+    MODULE_DEBUG("Registering module '%s'.\n", name);
     
     mod = malloc(sizeof(module));
     MOD_ASSERT(mod, "Failed to malloc.", MOD_ERR);
@@ -100,7 +100,7 @@ module_ret_code module_deregister(const self_t **self) {
     
     GET_MOD(tmp);
     
-    MODULE_DEBUG("Deregistering module %s.\n", tmp->name);
+    MODULE_DEBUG("Deregistering module '%s'.\n", tmp->name);
         
     module_stop(tmp);
         
