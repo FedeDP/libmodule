@@ -189,8 +189,10 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
  * if module is in RUNNING state, start listening on its events 
  */
 module_ret_code module_add_fd(const self_t *self, int fd) {
-    GET_MOD(self);
+    /* Cannot add a fd for STOPPED modules */
+    GET_MOD_IN_STATE(self, IDLE | RUNNING | PAUSED);
     MOD_ASSERT((c->num_fds < MAX_EVENTS), "Reached max number of events for this context.", MOD_ERR);
+    MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
     
     module_poll_t *tmp = malloc(sizeof(module_poll_t));
     MOD_ASSERT(tmp, "Failed to malloc.", MOD_ERR);
@@ -212,7 +214,9 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
 
 /* Linearly searching for fd */
 module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd) {
-    GET_MOD_IN_STATE(self, RUNNING);
+    /* Cannot rm a fd for STOPPED modules */
+    GET_MOD_IN_STATE(self, IDLE | RUNNING | PAUSED);
+    MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
     
     MOD_ASSERT(mod->fds, "No fd registered in this module.", MOD_ERR);
     module_poll_t **tmp = &mod->fds;
@@ -234,7 +238,10 @@ module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd) {
     return MOD_ERR;
 }
 
-module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, int close_old) {    
+module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, int close_old) {
+    MOD_ASSERT((old_fd >= 0), "Wrong old fd.", MOD_ERR);
+    MOD_ASSERT((new_fd >= 0), "Wrong new fd.", MOD_ERR);
+    
     if (module_rm_fd(self, old_fd, close_old) == MOD_OK) {
         return module_add_fd(self, new_fd);
     }

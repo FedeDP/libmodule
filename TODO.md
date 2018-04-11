@@ -7,15 +7,19 @@
 ### Test it
 
 - [ ] write remaining modules.h tests (modules_ctx_loop and modules_ctx_quit successful run)
-- [ ] write remaining module.h tests
-- [x] Move tests in script in travis.yml so travis will fail if tests fail
-- [x] fix tests on linux...cmocka is too old on trusty
+- [ ] write remaining module.h tests: module_become, module_log, module_set_userdata, module_add_fd, module_rm_fd, module_update_fd, module_subscribe, module_tell, module_publish
 
 ### Finally
 
-- [ ] Release 1.0
+- [ ] 1.0
 
 ## Later
+
+### Dep system
+
+- [ ] REQUIRE and AFTER macros
+
+- [ ] 1.1
 
 ### Submodules
 
@@ -25,11 +29,4 @@
 - [ ] bind children to parent states (ie: parent paused -> children paused; parent resumed -> children resumed...)
 - [ ] m_forward -> like m_tell but to all children
 
-- [ ] new release
-
-
-### Dep system
-
-- [ ] REQUIRE and AFTER macros
-
-- [ ] new release
+- [ ] 1.2
