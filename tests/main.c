@@ -12,6 +12,17 @@ int main(void) {
         /* Actually register a module */
         cmocka_unit_test(test_module_register),
         
+        /*
+         * Check that a module cannot be registered more that one time 
+         * if module_deregister does not get called before
+         */
+        cmocka_unit_test(test_module_register_already_registered),
+        /* 
+         * Check that another module register fails 
+         * if module has same name and same context 
+         */
+        cmocka_unit_test(test_module_register_same_name),
+        
         /* We have a module and its ctx now! */
         
         /* Test modules_ API */
@@ -32,6 +43,19 @@ int main(void) {
         cmocka_unit_test(test_module_stop),
         cmocka_unit_test(test_module_start_NULL_self),
         cmocka_unit_test(test_module_start),
+        
+        /* Test module logger */
+        cmocka_unit_test(test_module_log_NULL_self),
+        cmocka_unit_test(test_module_log),
+        
+        /* Test module set userdata */
+        cmocka_unit_test(test_module_set_userdata_NULL_self),
+        cmocka_unit_test(test_module_set_userdata),
+        
+        /* Test module become */
+        cmocka_unit_test(test_module_become_NULL_self),
+        cmocka_unit_test(test_module_become_NULL_func),
+        cmocka_unit_test(test_module_become),
         
         /* Test module_deregister failures */
         cmocka_unit_test(test_module_deregister_NULL_self),

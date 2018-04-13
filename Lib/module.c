@@ -63,6 +63,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     MOD_ASSERT(name, "NULL module name.", MOD_ERR);
     MOD_ASSERT(ctx_name, "NULL context name.", MOD_ERR);
     MOD_ASSERT(self, "NULL self double pointer.", MOD_ERR);
+    MOD_ASSERT((!*self), "Module already registered.", MOD_ERR);
     MOD_ASSERT(hook, "NULL userhook.", MOD_ERR);
     
     m_context *context = check_ctx(ctx_name);
@@ -70,7 +71,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     
     module *mod = NULL;
     hashmap_get(context->modules, (char *)name, (void **)&mod);
-    MOD_ASSERT(!mod, "Module already registered in context.", MOD_ERR);
+    MOD_ASSERT(!mod, "Module with same name already registered in context.", MOD_ERR);
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
     
@@ -160,7 +161,8 @@ int evaluate_module(void *data, void *m) {
     return MAP_OK;
 }
 
-module_ret_code module_become(const self_t *self,  recv_cb new_recv) {    
+module_ret_code module_become(const self_t *self,  recv_cb new_recv) {
+    MOD_ASSERT(new_recv, "Null recv callback.", MOD_ERR);
     GET_MOD_IN_STATE(self, RUNNING);
     
     mod->hook.recv = new_recv;

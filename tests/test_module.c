@@ -53,6 +53,27 @@ void test_module_register(void **state) {
     assert_true(module_is(self, RUNNING));
 }
 
+void test_module_register_already_registered(void **state) {
+    (void) state; /* unused */
+    
+    userhook hook = (userhook) { init, evaluate, recv, destroy };
+    module_ret_code ret = module_register("testName", ctx, &self, &hook);
+    assert_false(ret == MOD_OK);
+    assert_non_null(self);
+    assert_true(module_is(self, RUNNING));
+}
+
+void test_module_register_same_name(void **state) {
+    (void) state; /* unused */
+    
+    const self_t *self2 = NULL;
+    
+    userhook hook = (userhook) { init, evaluate, recv, destroy };
+    module_ret_code ret = module_register("testName", ctx, &self2, &hook);
+    assert_false(ret == MOD_OK);
+    assert_null(self2);
+}
+
 void test_module_deregister_NULL_self(void **state) {
     (void) state; /* unused */
     
@@ -131,6 +152,55 @@ void test_module_start(void **state) {
     module_ret_code ret = module_start(self);
     assert_true(ret == MOD_OK);
     assert_true(module_is(self, RUNNING));
+}
+
+void test_module_log_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_log(NULL, "Hi\n");
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_log(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_log(self, "Hi\n");
+    assert_true(ret == MOD_OK);
+}
+
+void test_module_set_userdata_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_set_userdata(NULL, NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_set_userdata(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_set_userdata(self, NULL);
+    assert_true(ret == MOD_OK);
+}
+
+void test_module_become_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_become(NULL, NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_become_NULL_func(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_become(self, NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_become(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_become(self, recv);
+    assert_true(ret == MOD_OK);
 }
 
 static void init(void) {

@@ -39,9 +39,9 @@ You have some nice examples too, check [Samples](https://github.com/FedeDP/libmo
 
 ## Travis CI
 
-Libmodule and samples and tests builds are tested with both gcc and clang on [travis](https://travis-ci.org/FedeDP/libmodule) on supported platforms.  
+Libmodule, samples and tests builds are tested with both gcc and clang on [travis](https://travis-ci.org/FedeDP/libmodule) on supported platforms.  
 Moreover, tests are executed too; on linux, tests are also valgrind checked.  
-Unfortunately macOS reported weird memleaks about cmocka, so it had to be disabled there.
+Unfortunately macOS reported weird memleaks about cmocka, so valgrind-check had to be disabled there.
 
 ## What is a module, anyway?
 
@@ -70,7 +70,7 @@ If you wish to install, then you only need:
 
     # make install
 
-Libmodule will install a pkg-config file too. Use this to link libmodule in your projects, or use "-lmodule" linker flag.  
+Libmodule will install a pkg-config script too. Use this to link libmodule in your projects, or use "-lmodule" linker flag.  
 Please note that in order to test examples, there is no need to install the library.
 
 For Archlinux users, a PKGBUILD can be found in [Extra/Arch](https://github.com/FedeDP/libmodule/tree/master/Extra/Arch) folder.

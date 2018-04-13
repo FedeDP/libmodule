@@ -5,7 +5,7 @@ static void logger(const char *module_name, const char *context_name,
                    const char *fmt, va_list args, const void *userdata) {
     printf("%s@%s:\t*", module_name, context_name);
     vprintf(fmt, args);
-                   }
+}
 
 void test_modules_ctx_set_logger_NULL_ctx(void **state) {
     (void) state; /* unused */
