@@ -203,6 +203,95 @@ void test_module_become(void **state) {
     assert_true(ret == MOD_OK);
 }
 
+void test_module_subscribe_NULL_topic(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_subscribe(self, NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_subscribe_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_subscribe(NULL, "topic");
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_subscribe(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_subscribe(self, "topic");
+    assert_true(ret == MOD_OK);
+}
+
+void test_module_tell_NULL_recipient(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_tell(self, NULL, "hi!");
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_tell_unhexistent_recipient(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_tell(self, "testName2", "hi!");
+    assert_false(ret == MOD_OK);
+}
+
+
+void test_module_tell_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_tell(NULL, "testName", "hi!");
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_tell_NULL_msg(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_tell(self, "testName", NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_tell(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_tell(self, "testName", "hi!");
+    assert_true(ret == MOD_OK);
+}
+
+void test_module_publish_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_publish(NULL, "topic", "hi!");
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_publish_NULL_msg(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_publish(self, "topic", NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_publish_NULL_topic(void **state) {
+    (void) state; /* unused */
+    
+    /* 
+     * module_publish with NULL topic is same as 
+     * broadcast message to all modules in same ctx
+     */
+    module_ret_code ret = module_publish(self, NULL, "hi!");
+    assert_true(ret == MOD_OK);
+}
+
+void test_module_publish(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_publish(self, "topic", "hi!");
+    assert_true(ret == MOD_OK);
+}
+
 static void init(void) {
     
 }

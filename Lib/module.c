@@ -63,7 +63,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     MOD_ASSERT(name, "NULL module name.", MOD_ERR);
     MOD_ASSERT(ctx_name, "NULL context name.", MOD_ERR);
     MOD_ASSERT(self, "NULL self double pointer.", MOD_ERR);
-    MOD_ASSERT((!*self), "Module already registered.", MOD_ERR);
+    MOD_ASSERT((!*self), "Self pointer to already registered module.", MOD_ERR);
     MOD_ASSERT(hook, "NULL userhook.", MOD_ERR);
     
     m_context *context = check_ctx(ctx_name);
@@ -313,8 +313,9 @@ static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *
 }
 
 module_ret_code module_tell(const self_t *self, const char *recipient, const char *message) {
+    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF);
     MOD_ASSERT(message, "NULL message.", MOD_ERR);
-    MOD_ASSERT(message, "NULL recipient.", MOD_ERR);
+    MOD_ASSERT(recipient, "NULL recipient.", MOD_ERR);
     
     GET_CTX(self->ctx);
     CTX_GET_MOD(recipient, c);
@@ -324,6 +325,7 @@ module_ret_code module_tell(const self_t *self, const char *recipient, const cha
 }
 
 module_ret_code module_publish(const self_t *self, const char *topic, const char *message) {
+    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF);
     MOD_ASSERT(message, "NULL message.", MOD_ERR);
     
     GET_CTX(self->ctx);

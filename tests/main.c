@@ -57,6 +57,24 @@ int main(void) {
         cmocka_unit_test(test_module_become_NULL_func),
         cmocka_unit_test(test_module_become),
         
+        /* Test module subscribe */
+        cmocka_unit_test(test_module_subscribe_NULL_topic),
+        cmocka_unit_test(test_module_subscribe_NULL_self),
+        cmocka_unit_test(test_module_subscribe),
+        
+        /* Test module tell */
+        cmocka_unit_test(test_module_tell_NULL_recipient),
+        cmocka_unit_test(test_module_tell_unhexistent_recipient),
+        cmocka_unit_test(test_module_tell_NULL_self),
+        cmocka_unit_test(test_module_tell_NULL_msg),
+        cmocka_unit_test(test_module_tell),
+        
+        /* Test module publish */
+        cmocka_unit_test(test_module_publish_NULL_self),
+        cmocka_unit_test(test_module_publish_NULL_msg),
+        cmocka_unit_test(test_module_publish_NULL_topic),
+        cmocka_unit_test(test_module_publish),
+        
         /* Test module_deregister failures */
         cmocka_unit_test(test_module_deregister_NULL_self),
         

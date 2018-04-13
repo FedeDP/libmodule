@@ -7,7 +7,7 @@
 ### Test it
 
 - [ ] write remaining modules.h tests (modules_ctx_loop and modules_ctx_quit successful run)
-- [ ] write remaining module.h tests (module_add_fd, module_rm_fd, module_update_fd, module_subscribe, module_tell, module_publish)
+- [ ] write remaining module.h tests (module_add_fd, module_rm_fd, module_update_fd)
 
 ### Finally
 
