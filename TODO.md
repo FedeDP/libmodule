@@ -2,24 +2,19 @@
 
 ## 1.0
 
-**API FREEZE**
-
-### Test it
-
-- [ ] write remaining modules.h tests (modules_ctx_loop and modules_ctx_quit successful run)
-- [ ] write remaining module.h tests (module_add_fd, module_rm_fd, module_update_fd)
-
 ### Finally
 
-- [ ] 1.0
+- [ ] Release 1.0
 
-## Later
+## 1.1
 
 ### Dep system
 
 - [ ] REQUIRE and AFTER macros
 
-- [ ] 1.1
+- [ ] Release 1.1
+
+## 1.2
 
 ### Submodules
 
@@ -29,4 +24,4 @@
 - [ ] bind children to parent states (ie: parent paused -> children paused; parent resumed -> children resumed...)
 - [ ] m_forward -> like m_tell but to all children
 
-- [ ] 1.2
+- [ ] Release 1.2
