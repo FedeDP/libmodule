@@ -25,3 +25,11 @@
 - [ ] m_forward -> like m_tell but to all children
 
 - [ ] Release 1.2
+
+## 1.3
+
+### Extra stuff for easier development
+
+- [ ] m_add_timer
+- [ ] m_add_socket
+- [ ] m_add_signal
