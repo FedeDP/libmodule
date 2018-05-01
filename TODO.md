@@ -4,7 +4,7 @@
 
 ### Finally
 
-- [ ] Release 1.0
+- [x] Release 1.0
 
 ## 1.1
 

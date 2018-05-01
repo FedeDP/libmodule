@@ -1,33 +1,24 @@
 # Maintainer: Federico Di Pierro <nierro92@gmail.com>
 
-pkgname=libmodule-git
-_gitname=libmodule
-pkgver=r37.d453079
+pkgname=libmodule
+pkgver=1.0.0
 pkgrel=1
 pkgdesc="C linux library to build simple and modular projects"
 arch=(x86_64)
-url="https://github.com/FedeDP/${_gitname}"
+url="https://github.com/FedeDP/${pkgname}"
 license=(GPL)
 depends=()
 makedepends=(git cmake)
-source=("git://github.com/FedeDP/${_gitname}.git")
+source=("git://github.com/FedeDP/${pkgname}.git")
 sha256sums=("SKIP")
 
-pkgver() {
-    cd "$_gitname"
-    ( set -o pipefail
-        git describe --long 2>/dev/null | sed 's/\([^-]*-g\)/r\1/;s/-/./g' ||
-        printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
-    )
-}
-
 prepare() {
-    cd "$_gitname"
+    cd "$pkgname"
     mkdir -p build
 }
 
 build() {
-    cd "$_gitname"/build
+    cd "$pkgname"/build
     cmake \
         -G "Unix Makefiles" \
         -DCMAKE_INSTALL_PREFIX=/usr \
@@ -38,6 +29,6 @@ build() {
 }
 
 package() {
-    cd "$_gitname"/build
+    cd "$pkgname"/build
     make DESTDIR="$pkgdir" install
 }
