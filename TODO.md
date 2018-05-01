@@ -27,3 +27,4 @@
 - [ ] m_add_timer
 - [ ] m_add_socket
 - [ ] m_add_signal
+- [ ] m_read_signal, m_read_socket, m_read_timer internal functions with an exposed m_read_fd() function.
