@@ -1,11 +1,5 @@
 # TODO
 
-## 1.0
-
-### Finally
-
-- [x] Release 1.0
-
 ## 1.1
 
 ### Dep system
