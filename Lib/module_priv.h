@@ -1,8 +1,6 @@
 #pragma once
 
-#include <assert.h>
 #include <hashmap.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 #define MOD_ASSERT(cond, msg, ret) if(!cond) { fprintf(stderr, "%s\n", msg); return ret; }

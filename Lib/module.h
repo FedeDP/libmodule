@@ -1,7 +1,6 @@
 #pragma once
 
 #include <module_cmn.h>
-#include <stdlib.h>
 
 /* Interface Macros */
 #define MODULE_CTX(name, ctx) \
