@@ -4,8 +4,15 @@
 
 ### Dep system
 
-- [ ] REQUIRE and AFTER macros
+- [x] REQUIRE and AFTER macros
+- [ ] Each module that has dependent modules will be stored in a map with a list of <list of dependent modules> as value.
+- [ ] When a module A is registered, the map will be checked and in case it has dependent modules, we will remove A module from their deps and if a module has no more deps, it will be started
+- [ ] After all modules have been registered, modules_post_register() will be called to -> drop all modules not yet started if they miss at least a REQUIRE module, or start them if they only miss AFTER modules.
 
+
+- [ ] Update doc
+- [ ] Update sample
+- [ ] Update tests
 - [ ] Release 1.1
 
 ## 1.2
@@ -20,11 +27,15 @@
 
 - [ ] Release 1.2
 
-## 1.3
+## 2.0 (API break)
 
 ### Extra stuff for easier development
 
 - [ ] m_add_timer
 - [ ] m_add_socket
 - [ ] m_add_signal
-- [ ] m_read_signal, m_read_socket, m_read_timer internal functions with an exposed m_read_fd() function.
+- [ ] m_read_signal, m_read_socket, m_read_timer internal functions with an exposed m_read_fd function.
+- [ ] API break: msg_t type will have an fd_t field with "fd, enum fd_type type"
+- [ ] "type" defaults to generic when eg: module_add_fd is called; will take correct type (eg {TIMER, SOCKET, SIGNAL}) when helper functions are called
+- [ ] Calling m_read_fd(fd_t x) on a generic type fd will just fail obviously.
+- [ ] m_read_fd(fd_t x) { switch (x.type) { case TIMER: ...} }

@@ -7,12 +7,15 @@
  * 1) modules_pre_start()
  * 2) modules_init()
  * 3) each module_pre_start()
- * 4) each module ctor function
+ * 4) each module deps setter
+ * 5) each module ctor function
  */
 #define _ctor0_     __attribute__((constructor (101)))
 #define _ctor1_     __attribute__((constructor (102)))
 #define _ctor2_     __attribute__((constructor (103)))
 #define _ctor3_     __attribute__((constructor (104)))
+#define _ctor4_     __attribute__((constructor (105)))
+#define _ctor5_     __attribute__((constructor (106)))
 #define _dtor0_     __attribute__((destructor (101)))
 #define _dtor1_     __attribute__((destructor (102)))
 
@@ -29,6 +32,8 @@ typedef struct _self self_t;
 /* Modules states */
 enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
+enum dep_type { HARD, SOFT };
+
 typedef struct {
     const char *topic;
     const char *message;
@@ -41,6 +46,7 @@ typedef struct {
 } msg_t;
 
 /* Callbacks typedefs */
+typedef void(*ctor)(void);
 typedef void(*init_cb)(void);
 typedef int(*evaluate_cb)(void);
 typedef void(*recv_cb)(const msg_t *msg, const void *userdata);
@@ -68,3 +74,14 @@ typedef enum {
     MOD_ERR,
     MOD_OK
 } module_ret_code;
+
+typedef struct {
+    const char *name;
+    enum dep_type type;
+} m_dep;
+
+typedef struct {
+    m_dep *list;
+    int size;
+    ctor fn;
+} m_dep_t;

@@ -144,6 +144,17 @@ module_ret_code module_binds_to(const self_t *self, const char *parent) {
     return add_children(mod, self);
 }
 
+module_ret_code module_enqueue_deps(const char *name, const m_dep_t *deps) {
+    // FIXME: actually implement backend logic
+    /*
+     * new map with "$moduleName" as key, and deps pointer as value.
+     * Every time a module is registered, cycle through all values in map 
+     * and remove a node from deps if needed.
+     * When deps.size == 0, call ctor to register the module.
+     */
+    return MOD_OK;
+}
+
 static void default_logger(const char *module_name, const char *context_name, 
                            const char *fmt, va_list args, const void *userdata) {
     printf("[%s]|%s|: ", context_name, module_name);

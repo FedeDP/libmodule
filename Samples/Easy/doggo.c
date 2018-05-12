@@ -10,6 +10,7 @@ static void receive_sleeping(const msg_t *msg, const void *userdata);
  * this module as soon as program starts.
  */
 MODULE("Doggo");
+REQUIRE("Pippo");
 
 /*
  * This function is automatically called before registering the module. 

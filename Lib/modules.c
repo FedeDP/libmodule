@@ -4,6 +4,7 @@
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *context);
+static _ctor5_ void modules_post_register(void);
 
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
@@ -63,4 +64,12 @@ module_ret_code modules_ctx_quit(const char *ctx_name) {
     }
     MODULE_DEBUG("Context not looping.\n");
     return MOD_ERR;
+}
+
+static void modules_post_register(void) {
+    /* 
+     * TODO: properly implement dep system:
+     * AFTER macro -> start here all deps not yet started;
+     * REQUIRE macro -> drop them here
+     */
 }

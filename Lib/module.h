@@ -1,6 +1,7 @@
 #pragma once
 
 #include <module_cmn.h>
+#include <stdlib.h>
 
 /* Interface Macros */
 #define MODULE_CTX(name, ctx) \
@@ -10,17 +11,39 @@
     static void receive(const msg_t *msg, const void *userdata); \
     static void destroy(void); \
     static const self_t *self = NULL; \
-    static void _ctor3_ constructor(void) { \
-        if (check()) { \
-            userhook hook = { init, evaluate, receive, destroy }; \
-            module_register(name, ctx, &self, &hook); \
+    static m_dep_t deps; \
+    static void _ctor4_ constructor(void) { \
+        if (!deps.size) { \
+            if (check()) { \
+                userhook hook = { init, evaluate, receive, destroy }; \
+                module_register(name, ctx, &self, &hook); \
+            } \
+        } else { \
+            module_enqueue_deps(name, &deps); \
         } \
     } \
     static void _dtor1_ destructor(void) { module_deregister(&self); } \
     static void _ctor2_ module_pre_start(void)
 
-#define MODULE(name) MODULE_CTX(name, DEFAULT_CTX)
-   
+#define MODULE(name)        MODULE_CTX(name, DEFAULT_CTX)
+
+#define ADD_VARIADIC_DEPS(t, ...) \
+do { \
+    char *_arr_[] = { __VA_ARGS__ }; \
+    int i; \
+    for (i = 0; i < sizeof(_arr_)/sizeof(char *); i++) { \
+        deps.list = realloc(deps.list, (i + 1) * sizeof(m_dep)); \
+        deps.list[i].name = strdup(_arr_[i]); \
+        deps.list[i].type = t; \
+    } \
+    deps.size += i; \
+    deps.fn = constructor; \
+} while(0)
+
+/* Ctor3 as they will be started before module constructor */
+#define REQUIRE(...)    static void _ctor3_ set_deps_hard(void) { ADD_VARIADIC_DEPS(HARD, ##__VA_ARGS__); }
+#define AFTER(...)      static void _ctor3_ set_deps_soft(void) { ADD_VARIADIC_DEPS(SOFT, ##__VA_ARGS__); }
+
 /* Defines for easy API (with no need bothering with both self and ctx) */
 #define m_is(state)                             module_is(self, state)
 #define m_start(fd)                             module_start(self)
@@ -42,7 +65,7 @@
 /* Module interface functions */
 
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
 
 /* Module registration */
@@ -50,6 +73,7 @@ _public_ module_ret_code module_register(const char *name, const char *ctx_name,
 _public_ module_ret_code module_deregister(const self_t **self);
 /* Do not export this function for now as its support is not complete */
 module_ret_code module_binds_to(const self_t *self, const char *parent);
+_public_ module_ret_code module_enqueue_deps(const char *name, const m_dep_t *deps);
 
 /* Module state getters */
 _public_ int module_is(const self_t *self, const enum module_states st);
