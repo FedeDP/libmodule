@@ -18,7 +18,7 @@
                 module_register(name, ctx, &self, &hook); \
             } \
         } else { \
-            module_enqueue_deps(name, &deps); \
+            module_enqueue_deps(name, ctx, &deps); \
         } \
     } \
     static void _dtor1_ destructor(void) { module_deregister(&self); } \
@@ -72,7 +72,7 @@ _public_ module_ret_code module_register(const char *name, const char *ctx_name,
 _public_ module_ret_code module_deregister(const self_t **self);
 /* Do not export this function for now as its support is not complete */
 module_ret_code module_binds_to(const self_t *self, const char *parent);
-_public_ module_ret_code module_enqueue_deps(const char *name, const m_dep_t *deps);
+_public_ module_ret_code module_enqueue_deps(const char *modName, const char *ctxName, const m_dep_t *deps);
 
 /* Module state getters */
 _public_ int module_is(const self_t *self, const enum module_states st);

@@ -75,6 +75,7 @@ typedef struct {
     int num_fds;                          // number of fds in this context
     log_cb logger;
     map_t modules;
+    map_t deps;
 } m_context;
 
 int evaluate_module(void *data, void *m);

@@ -9,6 +9,7 @@ static m_context *check_ctx(const char *ctx_name);
 static module_ret_code add_children(module *mod, const self_t *self);
 static void default_logger(const char *module_name, const char *context_name, 
                            const char *fmt, va_list args, const void *userdata);
+static int evaluate_deps(const char *modName);
 static module_ret_code add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
 static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic);
@@ -88,6 +89,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
         mod->subscriptions = hashmap_new();
         *self = &mod->self;
         evaluate_module(NULL, mod);
+        evaluate_deps(mod->self.name);
         return MOD_OK;
     }
     free(mod);
@@ -144,7 +146,7 @@ module_ret_code module_binds_to(const self_t *self, const char *parent) {
     return add_children(mod, self);
 }
 
-module_ret_code module_enqueue_deps(const char *name, const m_dep_t *deps) {
+module_ret_code module_enqueue_deps(const char *modName, const char *ctxName, const m_dep_t *deps) {
     // FIXME: actually implement backend logic
     /*
      * new map with "$moduleName" as key, and deps pointer as value.
@@ -159,6 +161,11 @@ static void default_logger(const char *module_name, const char *context_name,
                            const char *fmt, va_list args, const void *userdata) {
     printf("[%s]|%s|: ", context_name, module_name);
     vprintf(fmt, args);
+}
+
+static int evaluate_deps(const char *modName) {
+    // FIXME: actually implement deps system backend logic
+    return MOD_OK;
 }
 
 int evaluate_module(void *data, void *m) {
