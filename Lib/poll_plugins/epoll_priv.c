@@ -1,8 +1,5 @@
 #include <poll_priv.h>
 #include <sys/epoll.h>
-#include <sys/timerfd.h>
-#include <sys/signalfd.h>
-#include <signal.h>
 
 struct epoll_event pevents[MAX_EVENTS] = {{ 0 }};
 

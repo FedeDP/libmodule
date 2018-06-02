@@ -41,9 +41,6 @@
         tmp = tmp->next; \
     }
 
-/* Useful macros to smooth away differences between supported OS */
-enum op_type { ADD, RM };
-
 /* Struct that holds self module informations, static to each module */
 struct _self {
     const char *name;                     // module's name
