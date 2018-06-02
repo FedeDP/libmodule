@@ -6,7 +6,7 @@
 struct kevent pevents[MAX_EVENTS] = {{ 0 }};
 
 int poll_create(void) {
-    return kqueue();
+    return kqueue1(O_CLOEXEC);
 }
 
 int poll_set_data(void **_ev, void *p) {
