@@ -9,36 +9,36 @@
     static int evaluate(void); \
     static void receive(const msg_t *msg, const void *userdata); \
     static void destroy(void); \
-    static const self_t *self = NULL; \
+    static const self_t *_self = NULL; \
     static void _ctor3_ constructor(void) { \
         if (check()) { \
             userhook hook = { init, evaluate, receive, destroy }; \
-            module_register(name, ctx, &self, &hook); \
+            module_register(name, ctx, &_self, &hook); \
         } \
     } \
-    static void _dtor1_ destructor(void) { module_deregister(&self); } \
+    static void _dtor1_ destructor(void) { module_deregister(&_self); } \
     static void _ctor2_ module_pre_start(void)
 
 #define MODULE(name) MODULE_CTX(name, DEFAULT_CTX)
-   
-/* Defines for easy API (with no need bothering with both self and ctx) */
-#define m_is(state)                             module_is(self, state)
-#define m_start(fd)                             module_start(self)
-#define m_pause()                               module_pause(self)
-#define m_resume()                              module_resume(self)
-#define m_stop()                                module_stop(self)
-#define m_become(x)                             module_become(self, receive_##x)
-#define m_unbecome()                            module_become(self, receive)
-#define m_set_userdata(userdata)                module_set_userdata(self, userdata)
-#define m_add_fd(fd)                            module_add_fd(self, fd)
-#define m_rm_fd(fd, close_fd)                   module_rm_fd(self, fd, close_fd)
-#define m_update_fd(old, new, close_old)        module_update_fd(self, old, new, close_old)
-#define m_log(...)                              module_log(self, ##__VA_ARGS__)
-#define m_subscribe(topic)                      module_subscribe(self, topic)
-#define m_tell(recipient, msg)                  module_tell(self, recipient, msg)
-#define m_reply(sender, msg)                    module_reply(self, sender, msg)
-#define m_publish(topic, msg)                   module_publish(self, topic, msg)
-#define m_broadcast(msg)                        module_publish(self, NULL, msg)
+
+/* Defines for easy API (with no need bothering with both _self and ctx) */
+#define m_is(state)                             module_is(_self, state)
+#define m_start(fd)                             module_start(_self)
+#define m_pause()                               module_pause(_self)
+#define m_resume()                              module_resume(_self)
+#define m_stop()                                module_stop(_self)
+#define m_become(x)                             module_become(_self, receive_##x)
+#define m_unbecome()                            module_become(_self, receive)
+#define m_set_userdata(userdata)                module_set_userdata(_self, userdata)
+#define m_add_fd(fd)                            module_add_fd(_self, fd)
+#define m_rm_fd(fd, close_fd)                   module_rm_fd(_self, fd, close_fd)
+#define m_update_fd(old, new, close_old)        module_update_fd(_self, old, new, close_old)
+#define m_log(...)                              module_log(_self, ##__VA_ARGS__)
+#define m_subscribe(topic)                      module_subscribe(_self, topic)
+#define m_tell(recipient, msg)                  module_tell(_self, recipient, msg)
+#define m_reply(sender, msg)                    module_reply(_self, sender, msg)
+#define m_publish(topic, msg)                   module_publish(_self, topic, msg)
+#define m_broadcast(msg)                        module_publish(_self, NULL, msg)
 
 /* Module interface functions */
 

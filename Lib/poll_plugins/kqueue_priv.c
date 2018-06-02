@@ -6,7 +6,11 @@
 struct kevent pevents[MAX_EVENTS] = {{ 0 }};
 
 int poll_create(void) {
+#ifdef __APPLE__
+    return kqueue();
+#else
     return kqueue1(O_CLOEXEC);
+#endif
 }
 
 int poll_set_data(void **_ev, void *p) {
