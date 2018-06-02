@@ -32,12 +32,15 @@ enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 typedef struct {
     const char *topic;
     const char *message;
-    const char *sender;
+    const self_t *sender;
 } pubsub_msg_t;
 
 typedef struct {
-    const int fd;
-    const pubsub_msg_t *msg;
+    const int is_pubsub;
+    union {
+        const int fd;
+        const pubsub_msg_t *msg;
+    };
 } msg_t;
 
 /* Callbacks typedefs */
@@ -47,8 +50,7 @@ typedef void(*recv_cb)(const msg_t *msg, const void *userdata);
 typedef void(*destroy_cb)(void);
 
 /* Logger callback */
-typedef void(*log_cb)(const char *module_name, const char *context_name, 
-                      const char *fmt, va_list args, const void *userdata);
+typedef void(*log_cb)(const self_t *self, const char *fmt, va_list args, const void *userdata);
 
 /* Struct that holds user defined callbacks */
 typedef struct {

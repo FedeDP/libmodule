@@ -76,7 +76,7 @@ static void destroy(void) {
  */
 static void receive(const msg_t *msg, const void *userdata) {
 #ifdef __linux__
-    if (!msg->msg) {
+    if (!msg->is_pubsub) {
         struct signalfd_siginfo fdsi;    
         ssize_t s = read(msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
         if (s != sizeof(struct signalfd_siginfo)) {

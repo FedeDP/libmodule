@@ -82,7 +82,7 @@ static void destroy(void) {
  * Default poll callback
  */
 static void receive(const msg_t *msg, const void *userdata) {
-    if (!msg->msg) {
+    if (!msg->is_pubsub) {
         char c;
         
         /* Forcefully quit if we received a signal */
@@ -122,7 +122,7 @@ static void receive(const msg_t *msg, const void *userdata) {
  * Use m_become(ready) to start using this second poll callback.
  */
 static void receive_ready(const msg_t *msg, const void *userdata) {
-    if (!msg->msg) {
+    if (!msg->is_pubsub) {
         char c;
         
         /* Forcefully quit if we received a signal */

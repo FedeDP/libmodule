@@ -1,13 +1,21 @@
 #include <modules.h>
+#include <module.h>
 // #include <module/modules.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 static void *loop(void *param);
 
-static void logger(const char *module_name, const char *context_name, 
-                   const char *fmt, va_list args, const void *userdata) {
-    printf("%s@%s:\t*", module_name, context_name);
-    vprintf(fmt, args);
+static void logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
+    char *mname = NULL, *cname = NULL;
+    if (module_get_name(self, &mname) == MOD_OK &&
+        module_get_context(self, &cname) == MOD_OK) {
+       
+        printf("%s@%s:\t*", mname, cname);
+        vprintf(fmt, args);
+        free(mname);
+        free(cname);
+    }
 }
 
 int main() {

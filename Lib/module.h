@@ -36,6 +36,7 @@
 #define m_log(...)                              module_log(self, ##__VA_ARGS__)
 #define m_subscribe(topic)                      module_subscribe(self, topic)
 #define m_tell(recipient, msg)                  module_tell(self, recipient, msg)
+#define m_reply(sender, msg)                    module_reply(self, sender, msg)
 #define m_publish(topic, msg)                   module_publish(self, topic, msg)
 #define m_broadcast(msg)                        module_publish(self, NULL, msg)
 
@@ -67,10 +68,13 @@ _public_ module_ret_code module_set_userdata(const self_t *self, const void *use
 _public_ module_ret_code module_add_fd(const self_t *self, int fd);
 _public_ module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd);
 _public_ module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, int close_old);
+_public_ module_ret_code module_get_name(const self_t *mod_self, char **name);
+_public_ module_ret_code module_get_context(const self_t *mod_self, char **ctx);
 
 /* Module PubSub interface */
 _public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
 _public_ module_ret_code module_tell(const self_t *self, const char *recipient, const char *message);
+_public_ module_ret_code module_reply(const self_t *self, const self_t *sender, const char *message);
 _public_ module_ret_code module_publish(const self_t *self, const char *topic, const char *message);
 
 #ifdef __cplusplus

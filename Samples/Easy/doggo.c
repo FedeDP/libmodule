@@ -61,10 +61,10 @@ static void destroy(void) {
  * Default poll callback
  */
 static void receive(const msg_t *msg, const void *userdata) {
-    if (msg->msg) {
+    if (msg->is_pubsub) {
         if (!strcmp(msg->msg->message, "ComeHere")) {
             m_log("Running...\n");
-            m_tell(msg->msg->sender, "BauBau");
+            m_reply(msg->msg->sender, "BauBau");
         } else if (!strcmp(msg->msg->message, "LetsPlay")) {
             m_log("BauBau BauuBauuu!\n");
         } else if (!strcmp(msg->msg->message, "LetsEat")) {
@@ -81,7 +81,7 @@ static void receive(const msg_t *msg, const void *userdata) {
 }
 
 static void receive_sleeping(const msg_t *msg, const void *userdata) {
-    if (msg->msg) {
+    if (msg->is_pubsub) {
         if (!strcmp(msg->msg->message, "WakeUp")) {
             m_unbecome();
             m_log("Yawn...\n");

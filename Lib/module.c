@@ -7,11 +7,10 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
 static m_context *check_ctx(const char *ctx_name);
 static module_ret_code add_children(module *mod, const self_t *self);
-static void default_logger(const char *module_name, const char *context_name, 
-                           const char *fmt, va_list args, const void *userdata);
+static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata);
 static module_ret_code add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
-static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic);
+static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
 static int manage_fds(module *mod, m_context *c, int flag, int stop);
 static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str);
@@ -144,9 +143,8 @@ module_ret_code module_binds_to(const self_t *self, const char *parent) {
     return add_children(mod, self);
 }
 
-static void default_logger(const char *module_name, const char *context_name, 
-                           const char *fmt, va_list args, const void *userdata) {
-    printf("[%s]|%s|: ", context_name, module_name);
+static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
+    printf("[%s]|%s|: ", self->ctx, self->name);
     vprintf(fmt, args);
 }
 
@@ -174,7 +172,7 @@ module_ret_code module_log(const self_t *self, const char *fmt, ...) {
     
     va_list args;
     va_start(args, fmt);
-    c->logger(self->name, self->ctx, fmt, args, mod->userdata);
+    c->logger(self, fmt, args, mod->userdata);
     va_end(args);
     return MOD_OK;
 }
@@ -250,6 +248,16 @@ module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, int
     return MOD_ERR;
 }
 
+module_ret_code module_get_name(const self_t *self, char **name) {
+    *name = strdup(self->name);
+    return MOD_OK;
+}
+
+module_ret_code module_get_context(const self_t *self, char **ctx) {
+    *ctx = strdup(self->ctx);
+    return MOD_OK;
+}
+
 /** Actor-like PubSub interface **/
 
 static module_ret_code add_subscription(module *mod, const char *topic) {
@@ -288,7 +296,7 @@ static int tell_if(void *data, void *m) {
     return MAP_OK;
 }
 
-static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, const char *topic) {
+static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic) {
     pubsub_msg_t *m = malloc(sizeof(pubsub_msg_t));
     if (m) {
         m->message = message;
@@ -300,7 +308,7 @@ static pubsub_msg_t *create_pubsub_msg(const char *message, const char *sender, 
 
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
     if (m) {
-        msg_t msg = { -1, m };
+        msg_t msg = { .is_pubsub = 1, .msg = m };
         if (mod) {
             tell_if(&msg, mod);
         } else if (c) {
@@ -320,8 +328,12 @@ module_ret_code module_tell(const self_t *self, const char *recipient, const cha
     GET_CTX(self->ctx);
     CTX_GET_MOD(recipient, c);
 
-    pubsub_msg_t *m = create_pubsub_msg(message, self->name, NULL);
+    pubsub_msg_t *m = create_pubsub_msg(message, self, NULL);
     return tell_pubsub_msg(m, mod, NULL);
+}
+
+module_ret_code module_reply(const self_t *self, const self_t *sender, const char *message) {
+    return module_tell(self, sender->name, message);
 }
 
 module_ret_code module_publish(const self_t *self, const char *topic, const char *message) {
@@ -330,7 +342,7 @@ module_ret_code module_publish(const self_t *self, const char *topic, const char
     
     GET_CTX(self->ctx);
     
-    pubsub_msg_t *m = create_pubsub_msg(message, self->name, topic);
+    pubsub_msg_t *m = create_pubsub_msg(message, self, topic);
     return tell_pubsub_msg(m, NULL, c);
 }
 

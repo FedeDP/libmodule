@@ -1,5 +1,8 @@
 #include <poll_priv.h>
 #include <sys/epoll.h>
+#include <sys/timerfd.h>
+#include <sys/signalfd.h>
+#include <signal.h>
 
 struct epoll_event pevents[MAX_EVENTS] = {{ 0 }};
 
@@ -11,7 +14,7 @@ int poll_set_data(void **_ev, void *p) {
     *_ev = malloc(sizeof(struct epoll_event));
     MOD_ASSERT(*_ev, "Failed to malloc", MOD_ERR);
     struct epoll_event *ev = (struct epoll_event *)*_ev;
-    
+
     ev->data.ptr = p;
     ev->events = EPOLLIN;
     return MOD_OK;
@@ -31,5 +34,5 @@ module_poll_t *poll_recv(int idx) {
 }
 
 int poll_close(int fd) {
-	return close(fd);
+    return close(fd);
 }

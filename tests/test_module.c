@@ -12,7 +12,7 @@ void test_module_register_NULL_name(void **state) {
     (void) state; /* unused */
 
     userhook hook = (userhook) { init, evaluate, recv, destroy };
-    module_ret_code ret = module_register(NULL, ctx, &self, &hook);
+    module_ret_code ret = module_register(NULL, CTX, &self, &hook);
     assert_false(ret == MOD_OK);
     assert_null(self);
 }
@@ -30,7 +30,7 @@ void test_module_register_NULL_self(void **state) {
     (void) state; /* unused */
     
     userhook hook = (userhook) { init, evaluate, recv, destroy };
-    module_ret_code ret = module_register("testName", ctx, NULL, &hook);
+    module_ret_code ret = module_register("testName", CTX, NULL, &hook);
     assert_false(ret == MOD_OK);
     assert_null(self);
 }
@@ -38,7 +38,7 @@ void test_module_register_NULL_self(void **state) {
 void test_module_register_NULL_hook(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_register("testName", ctx, &self, NULL);    
+    module_ret_code ret = module_register("testName", CTX, &self, NULL);    
     assert_false(ret == MOD_OK);
     assert_null(self);
 }
@@ -47,7 +47,7 @@ void test_module_register(void **state) {
     (void) state; /* unused */
     
     userhook hook = (userhook) { init, evaluate, recv, destroy };
-    module_ret_code ret = module_register("testName", ctx, &self, &hook);
+    module_ret_code ret = module_register("testName", CTX, &self, &hook);
     assert_true(ret == MOD_OK);
     assert_non_null(self);
     assert_true(module_is(self, RUNNING));
@@ -57,7 +57,7 @@ void test_module_register_already_registered(void **state) {
     (void) state; /* unused */
     
     userhook hook = (userhook) { init, evaluate, recv, destroy };
-    module_ret_code ret = module_register("testName", ctx, &self, &hook);
+    module_ret_code ret = module_register("testName", CTX, &self, &hook);
     assert_false(ret == MOD_OK);
     assert_non_null(self);
     assert_true(module_is(self, RUNNING));
@@ -69,7 +69,7 @@ void test_module_register_same_name(void **state) {
     const self_t *self2 = NULL;
     
     userhook hook = (userhook) { init, evaluate, recv, destroy };
-    module_ret_code ret = module_register("testName", ctx, &self2, &hook);
+    module_ret_code ret = module_register("testName", CTX, &self2, &hook);
     assert_false(ret == MOD_OK);
     assert_null(self2);
 }

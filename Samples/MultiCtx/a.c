@@ -76,7 +76,7 @@ static void destroy(void) {
  * Default poll callback
  */
 static void receive(const msg_t *msg, const void *userdata) {
-    if (!msg->msg) {
+    if (!msg->is_pubsub) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
     
@@ -96,7 +96,7 @@ static void receive(const msg_t *msg, const void *userdata) {
  * Use m_become(ready) to start using this second poll callback.
  */
 static void receive_ready(const msg_t *msg, const void *userdata) {
-    if (!msg->msg) {
+    if (!msg->is_pubsub) {
         uint64_t t;
         read(msg->fd, &t, sizeof(uint64_t));
     

@@ -38,7 +38,7 @@ module_ret_code modules_ctx_loop(const char *ctx_name) {
                 MOD_ASSERT(p, "Context loop error.", MOD_ERR);
                 CTX_GET_MOD(p->self->name, c);
                 
-                const msg_t msg = { p->fd, NULL };
+                const msg_t msg = { .is_pubsub = 0, .fd = p->fd };
                 mod->hook.recv(&msg, mod->userdata);
             }
             evaluate_new_state(c);

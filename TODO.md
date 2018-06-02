@@ -1,16 +1,29 @@
 # TODO
 
-## 1.1
+## 2.0
 
-### Dep system
+### Small API improvements
 
-- [ ] REQUIRE and AFTER macros
+- [x] Pass a self_t instead of const char *name/context in various exposed function
+- [x] Add a module_get_name/context(self_t *self) that returns a strdupped string
 
-- [ ] Release 1.1
+### Remote modules concept
 
-## 1.2
+- [ ] Add "type" enum in self_t -> LOCAL, REMOTE
+- [ ] Add a MODULE_REMOTE() macro
+- [ ] Remote modules work as bus between 2+ remote libmodule instances. When you send a message to a remote module, it will be forwarded to real remote module
+- [ ] Study feasibility...
+- [ ] REST like api? Wrap remote messages in json through jansson?
 
-### Submodules
+- [ ] UPDATE DOC
+
+## Dep system (??)
+
+- [ ] REQUIRE and AFTER macros?
+
+- [ ] Release
+
+## Submodules (??)
 
 - [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);
 - [ ] SUBMODULE SHOULD BE STARTED later (after all MODULES) -> ctor3 (this way it'll support only level 1 submodules though (ie: a submodule cannot have submodules))
@@ -18,13 +31,4 @@
 - [ ] bind children to parent states (ie: parent paused -> children paused; parent resumed -> children resumed...)
 - [ ] m_forward -> like m_tell but to all children
 
-- [ ] Release 1.2
-
-## 1.3
-
-### Extra stuff for easier development
-
-- [ ] m_add_timer
-- [ ] m_add_socket
-- [ ] m_add_signal
-- [ ] m_read_signal, m_read_socket, m_read_timer internal functions with an exposed m_read_fd() function.
+- [ ] Release

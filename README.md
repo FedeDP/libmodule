@@ -19,22 +19,18 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 
 ## Is it portable?
 
-Short answer: no, it is not.  
-
-Long answer: it kinda is. Non-portable code is actually [compile-time-plugins](https://github.com/FedeDP/libmodule/tree/master/Lib/poll_plugins) based.  
+Yes, it is. Non-portable code is actually [compile-time-plugins](https://github.com/FedeDP/libmodule/tree/master/Lib/poll_plugins) based.  
 On linux, libmodule's internal loop will use epoll, while on BSD and MacOS kqueue will be used.  
 The downside is that any poll plugin must have epoll-like interface. This is a choice: I find epoll-like APIs to be much more powerful and enjoyable to use.  
-
-As I can only test on linux with epoll though, you are advised that other plugins may break or have weird bugs.  
-Kqueue plugin is currently tested through virtualbox, but again, be aware that I have no time to test anything on it.  
-*If anyone is interested in step up and test libmodule on these platforms, I'd be very thankful*.  
-
 Finally, it heavily relies upon gcc attributes that may or may not be available for your compiler.  
 Builds on supported platforms are tested through [travis](https://github.com/FedeDP/libmodule#travis-ci).
 
+As I can only test on linux with epoll though, you are advised that other plugins may break or have weird bugs.  
+*If anyone is interested in step up and test libmodule on non-linux platforms, I'd be very thankful*.  
+
 ## Is there any documentation?
 
-Yes, it is availabe at http://libmodule.readthedocs.io/en/latest/.  
+Yes, it is availabe at [readthedocs](http://libmodule.readthedocs.io/en/latest/).  
 You have some nice examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.
 
 ## Travis CI

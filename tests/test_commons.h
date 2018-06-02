@@ -5,4 +5,4 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#define ctx "testCtx"
+#define CTX "testCtx"

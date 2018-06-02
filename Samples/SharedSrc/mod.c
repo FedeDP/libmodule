@@ -84,7 +84,7 @@ static void destroy(void) {
  * Our A module's poll callback.
  */
 static void A_recv(const msg_t *msg, const void *userdata) {
-    if (!msg->msg) {
+    if (!msg->is_pubsub) {
         char c;
         read(msg->fd, &c, sizeof(char));
         
@@ -109,7 +109,7 @@ static void A_recv(const msg_t *msg, const void *userdata) {
 }
 
 static void A_recv_ready(const msg_t *msg, const void *userdata) {
-    if (!msg->msg) {
+    if (!msg->is_pubsub) {
         char c;
         read(msg->fd, &c, sizeof(char));
         
@@ -149,10 +149,10 @@ static void A_recv_ready(const msg_t *msg, const void *userdata) {
  * Our B module's poll callback.
  */
 static void B_recv(const msg_t *msg, const void *userdata) {
-    if (msg->msg) {
+    if (msg->is_pubsub) {
         if (!strcmp(msg->msg->message, "ComeHere")) {
             module_log(selfB, "Running...\n");
-            module_tell(selfB, msg->msg->sender, "BauBau");
+            module_reply(selfB, msg->msg->sender, "BauBau");
         } else if (!strcmp(msg->msg->message, "LetsPlay")) {
             module_log(selfB, "BauBau BauuBauuu!\n");
         } else if (!strcmp(msg->msg->message, "LetsEat")) {
@@ -169,7 +169,7 @@ static void B_recv(const msg_t *msg, const void *userdata) {
 }
 
 static void B_recv_sleeping(const msg_t *msg, const void *userdata) {
-    if (msg->msg) {
+    if (msg->is_pubsub) {
         if (!strcmp(msg->msg->message, "WakeUp")) {
             module_become(selfB, B_recv);
             module_log(selfB, "Yawn...\n");

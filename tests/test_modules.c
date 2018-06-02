@@ -1,10 +1,18 @@
 #include "test_modules.h"
 #include <modules.h>
+#include <module.h>
+#include <stdlib.h>
 
-static void logger(const char *module_name, const char *context_name, 
-                   const char *fmt, va_list args, const void *userdata) {
-    printf("%s@%s:\t*", module_name, context_name);
-    vprintf(fmt, args);
+static void logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
+    char *name = NULL, *context = NULL;
+    if (module_get_name(self, &name) == MOD_OK && 
+        module_get_context(self, &context) == MOD_OK) {
+        
+        printf("%s@%s:\t*", name, context);
+        vprintf(fmt, args);
+        free(name);
+        free(context);
+    }
 }
 
 void test_modules_ctx_set_logger_NULL_ctx(void **state) {
@@ -17,21 +25,21 @@ void test_modules_ctx_set_logger_NULL_ctx(void **state) {
 void test_modules_ctx_set_logger_NULL_logger(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = modules_ctx_set_logger(ctx, NULL);
+    module_ret_code ret = modules_ctx_set_logger(CTX, NULL);
     assert_false(ret == MOD_OK);
 }
 
 void test_modules_ctx_set_logger(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = modules_ctx_set_logger(ctx, logger);
+    module_ret_code ret = modules_ctx_set_logger(CTX, logger);
     assert_true(ret == MOD_OK);
 }
 
 void test_modules_ctx_set_logger_no_ctx(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = modules_ctx_set_logger(ctx, logger);
+    module_ret_code ret = modules_ctx_set_logger(CTX, logger);
     assert_false(ret == MOD_OK);
 }
 
@@ -45,7 +53,7 @@ void test_modules_ctx_quit_NULL_ctx(void **state) {
 void test_modules_ctx_quit_no_loop(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = modules_ctx_quit(ctx);
+    module_ret_code ret = modules_ctx_quit(CTX);
     assert_false(ret == MOD_OK);
 }
 
@@ -59,6 +67,6 @@ void test_modules_ctx_loop_NULL_ctx(void **state) {
 void test_modules_ctx_loop_no_fds(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = modules_ctx_loop(ctx);
+    module_ret_code ret = modules_ctx_loop(CTX);
     assert_false(ret == MOD_OK);
 }
