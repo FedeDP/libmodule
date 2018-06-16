@@ -1,7 +1,5 @@
 #include "hashmap.h"
-
-#include <stdlib.h>
-#include <stdio.h>
+#include <poll_priv.h>
 #include <string.h>
 
 #define INITIAL_SIZE        256
@@ -14,8 +12,10 @@ typedef struct _hashmap_element {
     any_t data;
 } hashmap_element;
 
-/* A hashmap has some maximum size and current size,
- * as well as the data to hold. */
+/* 
+ * A hashmap has some maximum size and current size,
+ * as well as the data to hold. 
+ */
 typedef struct _hashmap_map {
     int table_size;
     int size;
@@ -86,9 +86,9 @@ static unsigned long crc32_tab[] = {
  * Return an empty hashmap, or NULL on failure.
  */
 map_t hashmap_new(void) {
-    hashmap_map *m = malloc(sizeof(hashmap_map));
+    hashmap_map *m = memhook._malloc(sizeof(hashmap_map));
     if (m) {
-        m->data = calloc(INITIAL_SIZE, sizeof(hashmap_element));
+        m->data = memhook._calloc(INITIAL_SIZE, sizeof(hashmap_element));
         if (m->data) {
             m->table_size = INITIAL_SIZE;
             m->size = 0;
@@ -164,7 +164,7 @@ static int hashmap_hash(map_t in, char *key) {
 static int hashmap_rehash(map_t in) {
     /* Setup the new elements */
     hashmap_map *m = (hashmap_map *) in;
-    hashmap_element *temp = calloc(2 * m->table_size, sizeof(hashmap_element));
+    hashmap_element *temp = memhook._calloc(2 * m->table_size, sizeof(hashmap_element));
     if (!temp) {
         return MAP_OMEM;
     }
@@ -185,7 +185,7 @@ static int hashmap_rehash(map_t in) {
             status = hashmap_put(m, curr[i].key, curr[i].data);
         }
     }
-    free(curr);
+    memhook._free(curr);
     return status;
 }
 
@@ -289,8 +289,8 @@ int hashmap_remove(map_t in, char* key) {
 /* Deallocate the hashmap */
 void hashmap_free(map_t in) {
     hashmap_map* m = (hashmap_map*) in;
-    free(m->data);
-    free(m);
+    memhook._free(m->data);
+    memhook._free(m);
 }
 
 /* Return the length of the hashmap */

@@ -21,7 +21,7 @@ static module_ret_code stop_children(module *m);
 static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
-    *context = malloc(sizeof(m_context));
+    *context = memhook._malloc(sizeof(m_context));
     MOD_ASSERT(*context, "Failed to malloc.", MOD_ERR);
     
     **context = (m_context) {0};
@@ -45,7 +45,7 @@ static void destroy_ctx(const char *ctx_name, m_context *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", ctx_name);
     hashmap_free(context->modules);
     poll_close(context->fd);
-    free(context);
+    memhook._free(context);
     hashmap_remove(ctx, (char *)ctx_name);
 }
 
@@ -74,7 +74,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
     
-    mod = malloc(sizeof(module));
+    mod = memhook._malloc(sizeof(module));
     MOD_ASSERT(mod, "Failed to malloc.", MOD_ERR);
     
     *mod = (module) {{ 0 }};
@@ -125,7 +125,7 @@ static module_ret_code add_children(module *mod, const self_t *self) {
     while (*tmp) {
         tmp = &(*tmp)->next;
     }
-    *tmp = malloc(sizeof(child_t));
+    *tmp = memhook._malloc(sizeof(child_t));
     MOD_ASSERT(*tmp, "Failed to malloc.", MOD_ERR);
     
     (*tmp)->self = self;
@@ -155,6 +155,10 @@ int evaluate_module(void *data, void *m) {
             
         mod->hook.init();
         module_start(&mod->self);
+    // TODO -> remote modules!
+//         if (mod->is_remote) {
+//             get_remote_subscriptions(mod);
+//         }
     }
     return MAP_OK;
 }
@@ -194,7 +198,7 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
     MOD_ASSERT((c->num_fds < MAX_EVENTS), "Reached max number of events for this context.", MOD_ERR);
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
     
-    module_poll_t *tmp = malloc(sizeof(module_poll_t));
+    module_poll_t *tmp = memhook._malloc(sizeof(module_poll_t));
     MOD_ASSERT(tmp, "Failed to malloc.", MOD_ERR);
        
     tmp->fd = fd;
@@ -297,7 +301,7 @@ static int tell_if(void *data, void *m) {
 }
 
 static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic) {
-    pubsub_msg_t *m = malloc(sizeof(pubsub_msg_t));
+    pubsub_msg_t *m = memhook._malloc(sizeof(pubsub_msg_t));
     if (m) {
         m->message = message;
         m->sender = sender;

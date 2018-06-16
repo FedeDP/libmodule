@@ -6,6 +6,9 @@
 
 - [x] Pass a self_t instead of const char *name/context in various exposed function
 - [x] Add a module_get_name/context(self_t *self) that returns a strdupped string
+- [x] add a modules_set_memhook function to let user define memory allocator/deallocator functions. Defaults to malloc/realloc/free
+
+- [ ] UPDATE DOC + document MODULE_VERSION_MAJ/MIN/PATCH
 
 ### Remote modules concept
 
@@ -13,7 +16,7 @@
 - [ ] Add a MODULE_REMOTE() macro
 - [ ] Remote modules work as bus between 2+ remote libmodule instances. When you send a message to a remote module, it will be forwarded to real remote module
 - [ ] Study feasibility...
-- [ ] REST like api? Wrap remote messages in json through jansson?
+- [ ] REST like api? Wrap remote messages in json through jansson? (https://babelouest.github.io/ulfius/ ?)
 
 - [ ] UPDATE DOC
 

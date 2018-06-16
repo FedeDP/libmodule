@@ -44,13 +44,19 @@ typedef struct {
 } msg_t;
 
 /* Callbacks typedefs */
-typedef void(*init_cb)(void);
-typedef int(*evaluate_cb)(void);
-typedef void(*recv_cb)(const msg_t *msg, const void *userdata);
-typedef void(*destroy_cb)(void);
+typedef void (*init_cb)(void);
+typedef int (*evaluate_cb)(void);
+typedef void (*recv_cb)(const msg_t *msg, const void *userdata);
+typedef void (*destroy_cb)(void);
 
 /* Logger callback */
-typedef void(*log_cb)(const self_t *self, const char *fmt, va_list args, const void *userdata);
+typedef void (*log_cb)(const self_t *self, const char *fmt, va_list args, const void *userdata);
+
+/* Memory management user-passed functions */
+typedef void *(*malloc_fn)(size_t size);
+typedef void *(*realloc_fn)(void *ptr, size_t size);
+typedef void *(*calloc_fn)(size_t nmemb, size_t size);
+typedef void (*free_fn)(void *ptr);
 
 /* Struct that holds user defined callbacks */
 typedef struct {
@@ -59,6 +65,14 @@ typedef struct {
     recv_cb recv;                           // module's recv function
     destroy_cb destroy;                     // module's destroy function
 } userhook;
+
+/* Struct that holds user defined memory functions */
+typedef struct {
+    malloc_fn _malloc;
+    realloc_fn _realloc;
+    calloc_fn _calloc;
+    free_fn _free;
+} memalloc_hook;
 
 /* Module return codes */
 typedef enum {

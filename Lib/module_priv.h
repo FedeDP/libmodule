@@ -82,3 +82,4 @@ typedef struct {
 int evaluate_module(void *data, void *m);
 
 map_t ctx;
+memalloc_hook memhook;

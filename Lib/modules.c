@@ -8,11 +8,32 @@ static void evaluate_new_state(m_context *context);
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     ctx = hashmap_new();
+    modules_set_memalloc_hook(NULL);
 }
 
 static void modules_destroy(void) {
     MODULE_DEBUG("Destroying libmodule.\n");
     hashmap_free(ctx);
+}
+
+module_ret_code modules_set_memalloc_hook(memalloc_hook *hook) {
+    if (hook) {
+        MOD_ASSERT(hook->_malloc, "NULL malloc fn.", MOD_ERR);
+        MOD_ASSERT(hook->_realloc, "NULL realloc fn.", MOD_ERR);
+        MOD_ASSERT(hook->_calloc, "NULL calloc fn.", MOD_ERR);
+        MOD_ASSERT(hook->_free, "NULL free fn.", MOD_ERR);
+
+        memhook._malloc = hook->_malloc;
+        memhook._realloc = hook->_realloc;
+        memhook._calloc = hook->_calloc;
+        memhook._free = hook->_free;
+    } else {
+        memhook._malloc = malloc;
+        memhook._realloc = realloc;
+        memhook._calloc = calloc;
+        memhook._free = free;
+    }
+    return MOD_OK;
 }
 
 module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
