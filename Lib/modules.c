@@ -7,8 +7,8 @@ static void evaluate_new_state(m_context *context);
 
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
-    ctx = hashmap_new();
     modules_set_memalloc_hook(NULL);
+    ctx = hashmap_new();
 }
 
 static void modules_destroy(void) {
