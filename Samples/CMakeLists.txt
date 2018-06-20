@@ -4,7 +4,7 @@ file(GLOB EASY_SRC Easy/*.c)
 file(GLOB MULTICTX_SRC MultiCtx/*.c)
 file(GLOB SHAREDSRC_SRC SharedSrc/*.c)
 
-include_directories("${PROJECT_SOURCE_DIR}/Lib")
+include_directories("${PROJECT_SOURCE_DIR}/Lib/public/")
 
 add_executable(Easy ${EASY_SRC})
 add_executable(MultiCtx ${MULTICTX_SRC})

@@ -4,7 +4,7 @@ find_package(CMocka REQUIRED)
 
 file(GLOB SOURCES *.c)
 
-include_directories("${PROJECT_SOURCE_DIR}/Lib")
+include_directories("${PROJECT_SOURCE_DIR}/Lib/public")
 add_executable(ModuleTest ${SOURCES})
 add_dependencies(ModuleTest ModuleTest)
 add_test(ModuleTest ModuleTest)

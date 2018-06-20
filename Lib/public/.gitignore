@@ -1,0 +1,2 @@
+# Exclude compile time module_cmn.h created by cmake config file
+module_cmn.h

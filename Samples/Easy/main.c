@@ -8,6 +8,7 @@
  * There is no need to explicitly call it.
  */
 void modules_pre_start() {
+    printf("Started Libmodule %d.%d.%d\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 

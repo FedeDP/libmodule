@@ -2,6 +2,10 @@
 
 #include <stdio.h>
 
+#define MODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
+#define MODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
+#define MODULE_VERSION_PAT @PROJECT_VERSION_PATCH@
+
 /* 
  * ctors order: 
  * 1) modules_pre_start()

@@ -18,6 +18,9 @@ if (BUILD_SAMPLES)
      message(STATUS "Building examples.")
 endif (BUILD_SAMPLES)
 
+configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
+configure_file(Lib/public/module_cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/public/module_cmn.h @ONLY)
+
 # Find source files
 file(GLOB SOURCES Lib/*.c)
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -28,10 +31,11 @@ endif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
 message(STATUS "Building Libmodule ${PROJECT_VERSION} for ${CMAKE_SYSTEM_NAME}.")
 
-set(PUBLIC_H Lib/module.h Lib/modules.h)
+# Find public headers
+file(GLOB PUBLIC_H Lib/public/*.h)
 
 # Include header files
-include_directories(Lib)
+include_directories(Lib Lib/public)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
@@ -49,11 +53,9 @@ if (NOT MAX_EVENTS)
 endif (NOT MAX_EVENTS)
 message(STATUS "MAX_EVENTS=${MAX_EVENTS}")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security") 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_GNU_SOURCE -fvisibility=hidden -DMAX_EVENTS=${MAX_EVENTS} -DMODULE_VERSION_MAJ=${PROJECT_VERSION_MAJOR} -DMODULE_VERSION_MIN=${PROJECT_VERSION_MINOR} -DMODULE_VERSION_PAT=${PROJECT_VERSION_PATCH}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_GNU_SOURCE -fvisibility=hidden -DMAX_EVENTS=${MAX_EVENTS}")
 
-configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
-
-target_include_directories(${PROJECT_NAME} PRIVATE Lib/)
+target_include_directories(${PROJECT_NAME} PRIVATE Lib/ Lib/public/)
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

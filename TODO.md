@@ -6,9 +6,28 @@
 
 - [x] Pass a self_t instead of const char *name/context in various exposed function
 - [x] Add a module_get_name/context(self_t *self) that returns a strdupped string
-- [x] add a modules_set_memhook function to let user define memory allocator/deallocator functions. Defaults to malloc/realloc/free
+
+### Fixes
+
+- [x] fix library -> module_cmn.h should be a public header
+- [x] fix MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT export
 
 - [ ] UPDATE DOC + document MODULE_VERSION_MAJ/MIN/PATCH
+
+### Mem Alloc functions customizable
+
+- [x] add a modules_set_memhook function to let user define memory allocator/deallocator functions. Defaults to malloc/realloc/free
+
+### FindModule.cmake
+
+- [ ] add a FindModule.cmake -> see ddcutil (https://github.com/rockowitz/ddcutil)
+
+### Async nessage handling
+
+- [ ] all PubSub functions should start a new thread that mallocs the pubsubmsg and writes its address in a pipe. (is the thread really needed?)
+- [ ] Each module has a pipe 
+- [ ] The module gets awaken by the pipe and its recv() call is called
+- [ ] This way PubSub messaging is not blocking (ie module A tells module B something, and module B, in his recv, starts waiting on something else. A is locked until B recv() function exits)
 
 ### Remote modules concept
 
