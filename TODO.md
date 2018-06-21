@@ -17,6 +17,7 @@
 - [x] move public interface to public/module/, this way i can use normal path includes while building tests and samples
 - [x] Add a readme.md in public/module.
 - [x] Add a cpp example
+- [x] Drop unused code
 
 - [ ] Switch to uint8 etc etc where needed (eg: c->quit, msg->is_pubsub etc etc)
 - [ ] Change license to Apache 2.0

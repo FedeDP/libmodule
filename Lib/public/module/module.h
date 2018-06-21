@@ -49,8 +49,6 @@ extern "C"{
 /* Module registration */
 _public_ module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook);
 _public_ module_ret_code module_deregister(const self_t **self);
-/* Do not export this function for now as its support is not complete */
-module_ret_code module_binds_to(const self_t *self, const char *parent);
 
 /* Module state getters */
 _public_ int module_is(const self_t *self, const enum module_states st);

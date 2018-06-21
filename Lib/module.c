@@ -6,7 +6,6 @@
 static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
 static m_context *check_ctx(const char *ctx_name);
-static module_ret_code add_children(module *mod, const self_t *self);
 static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata);
 static module_ret_code add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
@@ -15,8 +14,6 @@ static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *
 static int manage_fds(module *mod, m_context *c, int flag, int stop);
 static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str);
 static module_ret_code stop(const self_t *self, const enum module_states mask, const char *err_str, int stop);
-static module_ret_code start_children(module *m);
-static module_ret_code stop_children(module *m);
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
@@ -120,29 +117,6 @@ module_ret_code module_deregister(const self_t **self) {
     return MOD_OK;
 }
 
-static module_ret_code add_children(module *mod, const self_t *self) {
-    child_t **tmp = &mod->children;
-    while (*tmp) {
-        tmp = &(*tmp)->next;
-    }
-    *tmp = memhook._malloc(sizeof(child_t));
-    MOD_ASSERT(*tmp, "Failed to malloc.", MOD_ERR);
-    
-    (*tmp)->self = self;
-    (*tmp)->next = NULL;
-    return MOD_OK;
-}
-
-module_ret_code module_binds_to(const self_t *self, const char *parent) {
-    GET_CTX(self->ctx);
-    
-    module *mod = NULL;
-    hashmap_get(c->modules, (char *)parent, (void **)&mod);
-    MOD_ASSERT(mod, "Parent module not found.", MOD_NO_PARENT);
-    
-    return add_children(mod, self);
-}
-
 static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
     printf("[%s]|%s|: ", self->ctx, self->name);
     vprintf(fmt, args);
@@ -155,10 +129,6 @@ int evaluate_module(void *data, void *m) {
             
         mod->hook.init();
         module_start(&mod->self);
-    // TODO -> remote modules!
-//         if (mod->is_remote) {
-//             get_remote_subscriptions(mod);
-//         }
     }
     return MAP_OK;
 }
@@ -411,19 +381,4 @@ module_ret_code module_resume(const self_t *self) {
 
 module_ret_code module_stop(const self_t *self) {
     return stop(self, RUNNING | IDLE, "Failed to stop module.", 1);
-}
-
-static module_ret_code start_children(module *m) {
-    CHILDREN_LOOP({
-        mod->hook.init();
-        module_start(&mod->self);
-    });
-    return MOD_OK;
-}
-
-static module_ret_code stop_children(module *m) {
-    CHILDREN_LOOP({
-        module_stop(&mod->self);
-    });
-    return MOD_OK;
 }
