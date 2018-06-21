@@ -1,6 +1,6 @@
 #pragma once
 
-#include <module_cmn.h>
+#include "module_cmn.h"
 
 /* Interface Macros */
 #define MODULE_CTX(name, ctx) \
@@ -19,7 +19,7 @@
     static void _dtor1_ destructor(void) { module_deregister(&_self); } \
     static void _ctor2_ module_pre_start(void)
 
-#define MODULE(name) MODULE_CTX(name, DEFAULT_CTX)
+#define MODULE(name) MODULE_CTX(name, MODULE_DEFAULT_CTX)
 
 /* Defines for easy API (with no need bothering with both _self and ctx) */
 #define m_is(state)                             module_is(_self, state)

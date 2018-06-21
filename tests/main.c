@@ -82,6 +82,7 @@ int main(void) {
         cmocka_unit_test(test_module_deregister),
         
         /* We have no more our module and its ctx */
+        cmocka_unit_test(test_modules_ctx_loop_no_maxevents),
         
         /* Test modules_ API: it should fail now */
         cmocka_unit_test(test_modules_ctx_set_logger_no_ctx), // here context is already destroyed

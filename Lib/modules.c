@@ -44,18 +44,20 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
     return MOD_OK;
 }
 
-module_ret_code modules_ctx_loop(const char *ctx_name) {
+module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
+    MOD_ASSERT((max_events > 0), "max_events parameter must be > 0.", MOD_ERR);
     GET_CTX(ctx_name);
     
     if (c->num_fds > 0 && !c->looping) {
         c->quit = 0;
         c->looping = 1;
+        c->max_events = max_events;
+        poll_init_pevents(&c->pevents, c->max_events);
         while (!c->quit) {
-            int nfds = poll_wait(c->fd, c->num_fds);
-        
+            int nfds = poll_wait(c->fd, c->max_events, c->pevents);
             MOD_ASSERT((nfds > 0), "Context loop error.", MOD_ERR);
             for (int i = 0; i < nfds; i++) {
-                module_poll_t *p = poll_recv(i);
+                module_poll_t *p = poll_recv(i, c->pevents);
                 MOD_ASSERT(p, "Context loop error.", MOD_ERR);
                 CTX_GET_MOD(p->self->name, c);
                 
@@ -64,6 +66,7 @@ module_ret_code modules_ctx_loop(const char *ctx_name) {
             }
             evaluate_new_state(c);
         }
+        poll_destroy_pevents(&c->pevents, &c->max_events);
         c->looping = 0;
         return MOD_OK;
     }

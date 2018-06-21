@@ -3,8 +3,6 @@
 #include <sys/event.h>
 #include <sys/time.h>
 
-struct kevent pevents[MAX_EVENTS] = {{ 0 }};
-
 int poll_create(void) {
 #ifdef __APPLE__
     return kqueue();
@@ -25,17 +23,33 @@ int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
     return kevent(c->fd, _ev, 1, NULL, 0, NULL);
 }
 
-int poll_wait(int fd, int num_fds) {
-	return kevent(fd, NULL, 0, pevents, num_fds, NULL);
+int poll_init_pevents(void **pevents, int max_events) {
+    *pevents = memhook._calloc(max_events, sizeof(struct kevent));
+    if (*pevents) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
 }
 
-module_poll_t *poll_recv(int idx) {
-    if (pevents[idx].flags & EV_ERROR) {
+int poll_wait(int fd, int max_events, void *pevents) {
+    return kevent(fd, NULL, 0, (struct kevent *)pevents, max_events, NULL);
+}
+
+module_poll_t *poll_recv(int idx, void *pevents) {
+    struct kevent *pev = (struct kevent *)pevents;
+    if (pev[idx].flags & EV_ERROR) {
         return NULL;
     }
-    return (module_poll_t *)pevents[idx].udata;
+    return (module_poll_t *)pev[idx].udata;
 }
 
-int poll_close(int fd) {
+int poll_destroy_pevents(void **pevents, int *max_events) {
+    memhook._free(*pevents);
+    *pevents = NULL;
+    *max_events = 0;
+}
+
+int poll_close(int fd, void **pevents, int *max_events) {
+    poll_destroy_pevents(pevents, max_events);
     return close(fd);
 }

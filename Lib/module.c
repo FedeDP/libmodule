@@ -44,7 +44,7 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
 static void destroy_ctx(const char *ctx_name, m_context *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", ctx_name);
     hashmap_free(context->modules);
-    poll_close(context->fd);
+    poll_close(context->fd, &context->pevents, &context->max_events);
     memhook._free(context);
     hashmap_remove(ctx, (char *)ctx_name);
 }
@@ -195,7 +195,6 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
 module_ret_code module_add_fd(const self_t *self, int fd) {
     /* Cannot add a fd for STOPPED modules */
     GET_MOD_IN_STATE(self, IDLE | RUNNING | PAUSED);
-    MOD_ASSERT((c->num_fds < MAX_EVENTS), "Reached max number of events for this context.", MOD_ERR);
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
     
     module_poll_t *tmp = memhook._malloc(sizeof(module_poll_t));

@@ -1,6 +1,6 @@
 #include "test_modules.h"
-#include <modules.h>
-#include <module.h>
+#include <module/modules.h>
+#include <module/module.h>
 #include <stdlib.h>
 
 static void logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
@@ -61,6 +61,13 @@ void test_modules_ctx_loop_NULL_ctx(void **state) {
     (void) state; /* unused */
     
     module_ret_code ret = modules_ctx_loop(NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_modules_ctx_loop_no_maxevents(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = modules_ctx_loop_events(CTX, 0);
     assert_false(ret == MOD_OK);
 }
 

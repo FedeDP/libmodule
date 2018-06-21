@@ -2,7 +2,6 @@
 
 This folder contains some libmodule's examples.  
 As you can see, API is quite straightforward as being clean and simple has been one of the library's focus.  
-Please note that libmodule's correct includes are <module/module{s}.h>. In this examples <module{s}.h> are used as rpath is forced through makefile.
 
 ## Building
 
@@ -27,3 +26,7 @@ There can be some cases, though, were 2 modules share a huge callback that you m
 
 [MultiCtx](https://github.com/FedeDP/libmodule/tree/master/Samples/MultiCtx) example shows how to use "most complicated" libmodule API.  
 This example fully introduces context's concept, already seen in previous example.  
+
+## Cpp example
+
+[Cpp](https://github.com/FedeDP/libmodule/tree/master/Samples/Cpp) example is same example as Easy, but built for c++.  

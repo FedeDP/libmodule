@@ -1,6 +1,5 @@
-#include <modules.h>
-#include <module.h>
-// #include <module/modules.h>
+#include <module/modules.h>
+#include <module/module.h>
 #include <pthread.h>
 #include <stdlib.h>
 

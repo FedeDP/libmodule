@@ -1,7 +1,5 @@
-#include <module.h>
-#include <modules.h>
-// #include <module/module.h>
-// #include <module/modules.h>
+#include <module/module.h>
+#include <module/modules.h>
 #ifdef __linux__
     #include <sys/signalfd.h>
     #include <signal.h>

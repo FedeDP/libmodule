@@ -1,5 +1,5 @@
 #include "test_module.h"
-#include <module.h>
+#include <module/module.h>
 
 static void init(void);
 static int evaluate(void);

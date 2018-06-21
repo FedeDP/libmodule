@@ -23,7 +23,9 @@
 #define _weak_      __attribute__((weak))
 #define _public_    __attribute__ ((visibility("default")))
 
-#define DEFAULT_CTX "default"
+#define MODULE_DEFAULT_CTX  "default"
+#define MODULE_MAX_EVENTS   64
+
 
 /** Structs types **/
 
