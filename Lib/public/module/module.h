@@ -66,6 +66,8 @@ _public_ module_ret_code module_set_userdata(const self_t *self, const void *use
 _public_ module_ret_code module_add_fd(const self_t *self, int fd);
 _public_ module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd);
 _public_ module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, int close_old);
+
+/* Note that both name and ctx must be freed by user */
 _public_ module_ret_code module_get_name(const self_t *mod_self, char **name);
 _public_ module_ret_code module_get_context(const self_t *mod_self, char **ctx);
 

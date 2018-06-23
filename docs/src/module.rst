@@ -264,6 +264,24 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type old_fd: :c:type:`int`
   :type new_fd: :c:type:`int`
   :type close_old: :c:type:`int`
+
+.. c:function:: module_get_name(self, name)
+
+  Get module's name from his self pointer.
+    
+  :param self: pointer to module's handler
+  :param name: pointer to storage for module's name. Note that this must be freed by user.
+  :type self: :c:type:`const self_t *`
+  :type name: :c:type:`char **`
+  
+  .. c:function:: module_get_context(self, ctx)
+
+  Get module's name from his self pointer.
+    
+  :param self: pointer to module's handler
+  :param ctx: pointer to storage for module's ctx. Note that this must be freed by user.
+  :type self: :c:type:`const self_t *`
+  :type ctx: :c:type:`char **`
   
 .. c:function:: module_log(self, fmt, args)
 
