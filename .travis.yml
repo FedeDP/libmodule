@@ -20,8 +20,8 @@ install:
   - if [ $TRAVIS_OS_NAME = linux ]; then wget http://fr.archive.ubuntu.com/ubuntu/pool/universe/c/cmocka/libcmocka0_1.1.1-1_amd64.deb; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then wget http://fr.archive.ubuntu.com/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.1.1-1_amd64.deb; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo dpkg -i libcmocka0_1.1.1-1_amd64.deb libcmocka-dev_1.1.1-1_amd64.deb; fi
-  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install valgrind python-sphinx; fi
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew install cmocka sphinx-doc; brew link sphinx-doc --force; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install valgrind; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew install cmocka; fi
 
 compiler:
   - gcc
@@ -30,6 +30,6 @@ compiler:
 script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DBUILD_DOCS=true ../
+    - cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true ../
     - make
     - ctest -V
