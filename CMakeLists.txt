@@ -1,40 +1,58 @@
 cmake_minimum_required (VERSION 3.3.2)
 
-project(module VERSION 1.0.0 DESCRIPTION "Easily create modular C programs")
+project(module VERSION 2.0.0 DESCRIPTION "Easily create modular C programs")
 
 set(CMAKE_BUILD_TYPE Debug)
 # set(CMAKE_BUILD_TYPE Release)
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 include(GNUInstallDirs)
 
-if (BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
-    message(STATUS "Building tests.")
-endif (BUILD_TESTS)
+if(BUILD_TESTS)
+    find_package(Cmocka REQUIRED)
+    find_package(Valgrind REQUIRED)
+    if (VALGRIND_FOUND AND CMOCKA_FOUND)
+        enable_testing()
+        add_subdirectory(tests)
+        message(STATUS "Building tests.")
+    else()
+        message(WARNING "Missing cmocka or valgrind.")
+    endif()
+endif()
 
-if (BUILD_SAMPLES)
+if(BUILD_SAMPLES)
      add_subdirectory(Samples)
      message(STATUS "Building examples.")
-endif (BUILD_SAMPLES)
+endif()
+
+if(BUILD_DOCS)
+     find_package(Sphinx REQUIRED)
+    if(SPHINX_FOUND)
+        add_subdirectory(docs)
+        message(STATUS "Building docs.")
+    else()
+        message(WARNING "Missing sphinx.")
+    endif()
+endif()
 
 configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
 configure_file(Lib/public/module/module_cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/public/module/module_cmn.h @ONLY)
 
 # Find source files
 file(GLOB SOURCES Lib/*.c)
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(SOURCES ${SOURCES} Lib/poll_plugins/epoll_priv.c)
 else()
     set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
-endif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+endif()
 
 message(STATUS "Building Libmodule ${PROJECT_VERSION} for ${CMAKE_SYSTEM_NAME}.")
 
 # Find public headers
 file(GLOB PUBLIC_H Lib/public/module/*.h)
 
-# Include header files
+# Include private and public headers
 include_directories(Lib Lib/public/module)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})

@@ -30,6 +30,6 @@ compiler:
 script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true ../
+    - cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DBUILD_DOCS=true ../
     - make
     - ctest -V

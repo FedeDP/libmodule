@@ -1,7 +1,7 @@
 #pragma once
 
 #include <assert.h>
-#include <hashmap.h>
+#include "hashmap.h"
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -33,14 +33,6 @@
     GET_MOD(self); \
     if (!module_is(self, state)) { return MOD_WRONG_STATE; }
 
-#define CHILDREN_LOOP(f) \
-    child_t *tmp = m->children; \
-    while (tmp) { \
-        GET_MOD(tmp->self); \
-        f; \
-        tmp = tmp->next; \
-    }
-
 /* Struct that holds self module informations, static to each module */
 struct _self {
     const char *name;                     // module's name
@@ -54,11 +46,6 @@ typedef struct _poll_t {
     struct _poll_t *prev;
 } module_poll_t;
 
-typedef struct child {
-    const self_t *self;                   // module's name
-    struct child *next;                   // module's ctx 
-} child_t;
-
 /* Struct that holds data for each module */
 typedef struct {
     userhook hook;                        // module's user defined callbacks
@@ -67,12 +54,11 @@ typedef struct {
     self_t self;                          // module's info available to external world
     module_poll_t *fds;                   // module's fds to be polled
     map_t subscriptions;                  // module's subscriptions
-    child_t *children;                    // list of children modules
 } module;
 
 typedef struct {
-    int quit;
-    int looping;
+    uint8_t quit;
+    uint8_t looping;
     int fd;
     int num_fds;                          // number of fds in this context
     log_cb logger;

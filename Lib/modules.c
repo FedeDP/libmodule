@@ -1,5 +1,5 @@
-#include <modules.h>
-#include <poll_priv.h>
+#include "modules.h"
+#include "poll_priv.h"
 
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
@@ -47,12 +47,13 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
 module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
     MOD_ASSERT((max_events > 0), "max_events parameter must be > 0.", MOD_ERR);
     GET_CTX(ctx_name);
+    MOD_ASSERT((c->num_fds > 0), "No fds to loop on.", MOD_ERR);
+    MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
     
-    if (c->num_fds > 0 && !c->looping) {
+    if (poll_init_pevents(&c->pevents, max_events) == MOD_OK) {
         c->quit = 0;
         c->looping = 1;
         c->max_events = max_events;
-        poll_init_pevents(&c->pevents, c->max_events);
         while (!c->quit) {
             int nfds = poll_wait(c->fd, c->max_events, c->pevents);
             MOD_ASSERT((nfds > 0), "Context loop error.", MOD_ERR);
@@ -70,7 +71,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
         c->looping = 0;
         return MOD_OK;
     }
-    MODULE_DEBUG(c->looping ? "Context already looping.\n" : "No events/fds specified.\n");
+    MODULE_DEBUG("Failed to malloc.\n");
     return MOD_ERR;
 }
 

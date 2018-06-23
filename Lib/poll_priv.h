@@ -1,7 +1,7 @@
 #pragma once
 
-#include <module_cmn.h>
-#include <module_priv.h>
+#include "module_cmn.h"
+#include "module_priv.h"
 
 /* Useful macros to smooth away differences between supported OS */
 enum op_type { ADD, RM };

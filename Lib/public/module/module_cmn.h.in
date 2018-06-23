@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <stdint.h>
 
 #define MODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
 #define MODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
@@ -26,7 +27,6 @@
 #define MODULE_DEFAULT_CTX  "default"
 #define MODULE_MAX_EVENTS   64
 
-
 /** Structs types **/
 
 /* Incomplete structure declaration to self handler */
@@ -42,7 +42,7 @@ typedef struct {
 } pubsub_msg_t;
 
 typedef struct {
-    const int is_pubsub;
+    const uint8_t is_pubsub;
     union {
         const int fd;
         const pubsub_msg_t *msg;

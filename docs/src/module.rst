@@ -21,7 +21,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 .. c:macro:: MODULE(name)
 
   Creates "name" module: declares all needed functions and creates both constructor and destructor that will automatically register/deregister this module at startup. |br|
-  Finally, it declares a :c:type:`const self_t *self` global variable that will be automatically used in every function call.
+  Finally, it declares a :c:type:`const self_t *_self` global variable that will be automatically used in every function call.
   
   :param name: name of the module to be created
   :type name: :c:type:`const char *` 
@@ -33,15 +33,12 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
     
   :param state: state we are interested in; note that it can be an OR of states (eg: IDLE | RUNNING)
   :type state: :c:type:`enum module_states` 
-  :returns: false (0) if module'state is not 'state', true (1) if it is and MOD_ERR on error.
+  :returns: false (0) if module' state is not 'state', true (1) if it is and MOD_ERR on error.
   
-.. c:macro:: m_start(fd)
+.. c:macro:: m_start(void)
 
-  Start a module by polling on fd
-    
-  :param fd: fd to be polled.
-  :type fd: :c:type:`int` 
-  
+  Start module's polling
+
 .. c:macro:: m_pause(void)
 
   Pause module's polling
@@ -52,7 +49,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_stop(void)
 
-  Stop module's polling by closing its fd
+  Stop module's polling by closing its fds. Note that module is not destroyed: you can add new fds and call m_start on it.
   
 .. c:macro:: m_become(new_recv)
 
@@ -124,6 +121,16 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :type recipient: :c:type:`const char *`
   :type msg: :c:type:`const char *`
   
+    
+.. c:macro:: m_reply(sender, msg)
+
+  Reply to a received message.
+    
+  :param sender: module which sent us a message.
+  :param msg: actual message to be sent.
+  :type recipient: :c:type:`const self_t *`
+  :type msg: :c:type:`const char *`
+  
 .. c:macro:: m_publish(topic, msg)
 
   Publish a message on a topic.
@@ -179,14 +186,12 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type state: :c:type:`enum module_states`
   :returns: false (0) if module'state is not 'state', true (1) if it is and MOD_ERR on error.
   
-.. c:function:: module_start(self, fd)
+.. c:function:: module_start(self)
 
-  Start a module by polling on fd
+  Start module's polling
     
   :param self: pointer to module's handler
-  :param fd: fd to be polled.
   :type self: :c:type:`const self_t *`
-  :type fd: :c:type:`int` 
   
 .. c:function:: module_pause(self)
 
@@ -204,7 +209,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_stop(self)
 
-  Stop module's polling by closing its fd. Note that module is not destroyed: you can call module_start with a new fd.
+  Stop module's polling by closing its fds. Note that module is not destroyed: you can add new fds and call module_start on it.
     
   :param self: pointer to module's handler
   :type self: :c:type:`const self_t *`
@@ -271,7 +276,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type fmt: :c:type:`const char *`
   :type args: :c:type:`variadic`
 
-.. c:macro:: module_subscribe(self, topic)
+.. c:function:: module_subscribe(self, topic)
 
   Subscribes the module to a topic.
 
@@ -280,7 +285,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
   
-.. c:macro:: module_tell(self, recipient, msg)
+.. c:function:: module_tell(self, recipient, msg)
 
   Tell a message to another module.
     
@@ -291,7 +296,18 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type recipient: :c:type:`const char *`
   :type msg: :c:type:`const char *`
   
-.. c:macro:: module_publish(self, topic, msg)
+.. c:function:: module_reply(self, sender, msg)
+
+  Reply to a received message.
+    
+  :param self: pointer to module's handler
+  :param sender: module which sent us a message.
+  :param msg: actual message to be sent.
+  :type self: :c:type:`const self_t *`
+  :type sender: :c:type:`const self_t *`
+  :type msg: :c:type:`const char *`
+  
+.. c:function:: module_publish(self, topic, msg)
 
   Publish a message on a topic.
 

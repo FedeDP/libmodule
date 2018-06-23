@@ -1,5 +1,9 @@
 #include "test_module.h"
 #include <module/module.h>
+#include <unistd.h>
+#include <sys/stat.h> 
+#include <fcntl.h>
+#include <errno.h>
 
 static void init(void);
 static int evaluate(void);
@@ -7,6 +11,7 @@ static void recv(const msg_t *msg, const void *userdata);
 static void destroy(void);
 
 const self_t *self = NULL;
+int fd;
 
 void test_module_register_NULL_name(void **state) {
     (void) state; /* unused */
@@ -201,6 +206,61 @@ void test_module_become(void **state) {
     
     module_ret_code ret = module_become(self, recv);
     assert_true(ret == MOD_OK);
+}
+
+void test_module_add_wrong_fd(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_add_fd(self, -1);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_add_fd_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    fd = open("/dev/tty", O_RDWR);
+    module_ret_code ret = module_add_fd(NULL, fd);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_add_fd(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_add_fd(self, fd);
+    assert_true(ret == MOD_OK);
+}
+
+void test_module_rm_wrong_fd(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_rm_fd(self, -1, 1);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_rm_wrong_fd_2(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_rm_fd(self, fd + 1, 1);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_rm_fd_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_rm_fd(NULL, fd, 1);
+    assert_false(ret == MOD_OK);
+}
+
+static int fd_is_valid(int fd) {
+    return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+}
+
+void test_module_rm_fd(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_rm_fd(self, fd, 1);
+    assert_true(ret == MOD_OK);
+    assert_false(fd_is_valid(fd));
 }
 
 void test_module_subscribe_NULL_topic(void **state) {

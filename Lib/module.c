@@ -1,5 +1,5 @@
-#include <module.h>
-#include <poll_priv.h>
+#include "module.h"
+#include "poll_priv.h"
 #include <string.h>
 #include <stdarg.h>
 
@@ -176,7 +176,7 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
     tmp->self = (void *)self;
     mod->fds = tmp;
     c->num_fds++;
-    
+
     /* If a fd is added at runtime, start polling on it */
     if (module_is(self, RUNNING)) {
         int ret = poll_set_new_evt(tmp, c, ADD);

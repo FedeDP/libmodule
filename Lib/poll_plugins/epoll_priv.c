@@ -1,4 +1,4 @@
-#include <poll_priv.h>
+#include "poll_priv.h"
 #include <sys/epoll.h>
 
 int poll_create(void) {
@@ -29,7 +29,7 @@ int poll_init_pevents(void **pevents, int max_events) {
 }
 
 int poll_wait(int fd, int max_events, void *pevents) {
-    return epoll_wait(fd, (struct epoll_event *)pevents, max_events, -1);
+    return epoll_wait(fd, (struct epoll_event *) pevents, max_events, -1);
 }
 
 module_poll_t *poll_recv(int idx, void *pevents) {
@@ -41,6 +41,7 @@ int poll_destroy_pevents(void **pevents, int *max_events) {
     memhook._free(*pevents);
     *pevents = NULL;
     *max_events = 0;
+    return 0;
 }
 
 int poll_close(int fd, void **pevents, int *max_events) {

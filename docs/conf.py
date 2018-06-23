@@ -23,10 +23,8 @@ project = 'libmodule'
 copyright = '2018, Federico Di Pierro'
 author = 'Federico Di Pierro'
 
-# The short X.Y version
-version = ''
-# The full version, including alpha/beta/rc tags
-release = '1.0.0'
+version = '2.0.0'
+release = '2.0.0'
 
 highlight_language = "c"
 

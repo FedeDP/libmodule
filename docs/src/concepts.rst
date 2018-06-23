@@ -20,11 +20,6 @@ This macro creates a "test" module. |br|
 MODULE macro also creates a constructor and destructor that are automatically called by libmodule at start and at end of program. |br|
 Finally, this macro declares all of needed callbacks and returns an opaque handler for the module, that will be transparently passed with each call to libmodule API while using :ref:`module_easy`. |br|
 
-Submodule concept
------------------
-
-PLACEHOLDER (being worked on)
-
 Context concept
 ---------------
 

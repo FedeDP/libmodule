@@ -23,7 +23,7 @@
 
 /* Defines for easy API (with no need bothering with both _self and ctx) */
 #define m_is(state)                             module_is(_self, state)
-#define m_start(fd)                             module_start(_self)
+#define m_start()                               module_start(_self)
 #define m_pause()                               module_pause(_self)
 #define m_resume()                              module_resume(_self)
 #define m_stop()                                module_stop(_self)

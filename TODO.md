@@ -19,12 +19,18 @@
 - [x] Add a cpp example
 - [x] Drop unused code
 
-- [ ] Switch to uint8 etc etc where needed (eg: c->quit, msg->is_pubsub etc etc)
-- [ ] Change license to Apache 2.0
+- [x] Fix failing tests
+- [x] Switch to uint8 etc etc where needed (eg: c->quit, msg->is_pubsub etc etc)
+
+- [x] UPDATE DOC + document MODULE_VERSION_MAJ/MIN/PATCH
+
+- [ ] Release 2.0
 
 ### Mem Alloc functions customizable
 
 - [x] add a modules_set_memhook function to let user define memory allocator/deallocator functions. Defaults to malloc/realloc/free
+
+## 2.1
 
 ### Async nessage handling
 
@@ -33,9 +39,11 @@
 - [ ] The module gets awaken by the pipe and its recv() call is called
 - [ ] This way PubSub messaging is not blocking (ie module A tells module B something, and module B, in his recv, starts waiting on something else. A is locked until B recv() function exits)
 
-- [ ] UPDATE DOC + document MODULE_VERSION_MAJ/MIN/PATCH + release 2.0
+- [ ] UPDATE DOC
 
-## 2.1/3.0
+- [ ] Release 2.1
+
+## 2.2/3.0
 
 ### Remote modules concept
 

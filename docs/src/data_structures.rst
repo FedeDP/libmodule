@@ -1,6 +1,18 @@
 Libmodule Data Structures
 =========================
 
+Macros
+------
+
+.. code::
+
+    #define MODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
+    #define MODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
+    #define MODULE_VERSION_PAT @PROJECT_VERSION_PATCH@
+    
+    #define MODULE_DEFAULT_CTX  "default"
+    #define MODULE_MAX_EVENTS   64
+
 Types
 -----
 
@@ -15,12 +27,15 @@ Types
     typedef struct {
         const char *topic;
         const char *message;
-        const char *sender;
+        const self_t *sender;
     } pubsub_msg_t;
 
     typedef struct {
-        const int fd;
-        const pubsub_msg_t *msg;
+        const uint8_t is_pubsub;
+        union {
+            const int fd;
+            const pubsub_msg_t *msg;
+        };
     } msg_t;
 
     /* Callbacks typedefs */
@@ -30,8 +45,13 @@ Types
     typedef void(*destroy_cb)(void);
 
     /* Logger callback */
-    typedef void(*log_cb)(const char *module_name, const char *context_name, 
-                        const char *fmt, va_list args, const void *userdata);
+    typedef void (*log_cb)(const self_t *self, const char *fmt, va_list args, const void *userdata);
+    
+    /* Memory management user-passed functions */
+    typedef void *(*malloc_fn)(size_t size);
+    typedef void *(*realloc_fn)(void *ptr, size_t size);
+    typedef void *(*calloc_fn)(size_t nmemb, size_t size);
+    typedef void (*free_fn)(void *ptr);
 
     /* Struct that holds user defined callbacks */
     typedef struct {
@@ -40,6 +60,14 @@ Types
         recv_cb recv;                           // module's recv function
         destroy_cb destroy;                     // module's destroy function
     } userhook;
+    
+    /* Struct that holds user defined memory functions */
+    typedef struct {
+        malloc_fn _malloc;
+        realloc_fn _realloc;
+        calloc_fn _calloc;
+        free_fn _free;
+    } memalloc_hook;
 
 .. _module_ret_code:  
 

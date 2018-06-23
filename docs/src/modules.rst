@@ -7,7 +7,16 @@ Modules
 
 Modules API denotes libmodule interface functions that can be found in <module/modules.h> header. |br|
 Like Module API, it has an easy, single-context API. Moreover, it has an equivalent multi-context API. |br|
-All these functions but modules_pre_start() return a :ref:`module_ret_code <module_ret_code>`.
+All these functions but modules_pre_start() return a :ref:`module_ret_code <module_ret_code>`. |br|
+
+Moreover, there is a single function that is common to every context (thus does not need ctx_name param). |br|
+
+.. c:function:: modules_set_memalloc_hook(hook)
+
+  Set memory management functions. By default: malloc, realloc, calloc and free are used.
+  
+  :param hook: new memory management hook.
+  :type hook: :c:type:`memalloc_hook *`
 
 Modules easy API
 ----------------
@@ -51,12 +60,21 @@ It exposes very similar functions to single-context API (again, single-context i
   :type ctx_name: :c:type:`const char *`
   :type logger: :c:type:`log_cb`
   
-.. c:function:: modules_ctx_loop(ctx_name)
+.. c:macro:: modules_ctx_loop(ctx_name)
 
-  Start looping on events from modules
+  Start looping on events from modules. Note that this is just a macro that calls modules_ctx_loop_events with MODULE_MAX_EVENTS (64) events.
   
   :param ctx_name: context name.
   :type ctx_name: :c:type:`const char *`
+  
+.. c:function:: modules_ctx_loop_events(ctx_name, maxevents)
+
+  Start looping on events from modules, on at most maxevents events at the same time.
+  
+  :param ctx_name: context name.
+  :param maxevents: max number of fds wakeup that will be managed at the same time.
+  :type ctx_name: :c:type:`const char *`
+  :type maxevents: :c:type:`int`
   
 .. c:function:: modules_ctx_quit(ctx_name)
 
