@@ -260,6 +260,8 @@ void test_module_rm_fd(void **state) {
     
     module_ret_code ret = module_rm_fd(self, fd, 1);
     assert_true(ret == MOD_OK);
+    
+    /* Fd is now closed (module_rm_fd with 1 flag) thus is no more valid */
     assert_false(fd_is_valid(fd));
 }
 

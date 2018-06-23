@@ -47,7 +47,7 @@ int poll_destroy_pevents(void **pevents, int *max_events) {
     memhook._free(*pevents);
     *pevents = NULL;
     *max_events = 0;
-    return 0;
+    return MOD_OK;
 }
 
 int poll_close(int fd, void **pevents, int *max_events) {
