@@ -222,11 +222,15 @@ module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, int
 }
 
 module_ret_code module_get_name(const self_t *self, char **name) {
+    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF);
+    
     *name = strdup(self->name);
     return MOD_OK;
 }
 
 module_ret_code module_get_context(const self_t *self, char **ctx) {
+    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF);
+    
     *ctx = strdup(self->ctx);
     return MOD_OK;
 }
