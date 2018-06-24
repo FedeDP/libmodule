@@ -2,33 +2,7 @@
 
 ## 2.0
 
-### Small API improvements
-
-- [x] Pass a self_t instead of const char *name/context in various exposed function
-- [x] Add a module_get_name/context(self_t *self) that returns a strdupped string
-
-### Fixes
-
-- [x] fix library -> module_cmn.h should be a public header
-- [x] fix MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT export
-- [x] BUILD_TESTS instead of checking for CMAKE_BUILD_TYPE
-- [x] define MODULE_MAX_EVENTS in module_cmn.h interface 
-- [x] offer a new modules_loop that takes a max_events parameter.
-- [x] move public interface to public/module/, this way i can use normal path includes while building tests and samples
-- [x] Add a readme.md in public/module.
-- [x] Add a cpp example
-- [x] Drop unused code
-
-- [x] Fix failing tests
-- [x] Switch to uint8 etc etc where needed (eg: c->quit, msg->is_pubsub etc etc)
-
-- [x] UPDATE DOC + document MODULE_VERSION_MAJ/MIN/PATCH
-
 - [ ] Release 2.0
-
-### Mem Alloc functions customizable
-
-- [x] add a modules_set_memhook function to let user define memory allocator/deallocator functions. Defaults to malloc/realloc/free
 
 ## 2.1
 

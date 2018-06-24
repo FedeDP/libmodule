@@ -1,3 +1,9 @@
+cmake_minimum_required(VERSION 3.0)
+
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
+find_package(Sphinx REQUIRED)
+
 # configured documentation tools and intermediate build results
 set(BINARY_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/_build")
  
