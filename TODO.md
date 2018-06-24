@@ -2,18 +2,16 @@
 
 ## 2.0
 
-- [ ] Release 2.0
+- [x] Release 2.0
 
 ## 2.1
 
 ### Async nessage handling
 
-- [ ] all PubSub functions should start a new thread that mallocs the pubsubmsg and writes its address in a pipe. (is the thread really needed?)
+- [ ] all PubSub functions should that malloc the pubsubmsg and writes its address in a pipe.
 - [ ] Each module has a pipe 
 - [ ] The module gets awaken by the pipe and its recv() call is called
 - [ ] This way PubSub messaging is not blocking (ie module A tells module B something, and module B, in his recv, starts waiting on something else. A is locked until B recv() function exits)
-
-- [ ] UPDATE DOC
 
 - [ ] Release 2.1
 
