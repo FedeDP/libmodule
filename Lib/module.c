@@ -304,36 +304,33 @@ module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
 }
 
 module_ret_code tell_system_pubsub_msg(m_context *c, enum sys_msg_t type, ...) {
-    if (c->looping) {
-        pubsub_msg_t m = { .topic = NULL, .sender = NULL, .message = NULL, .type = SYSTEM };
-        switch (type) {
-            case LOOP_STARTED:
-                m.message = "LOOP_STARTED";
-                break;
-            case LOOP_STOPPED:
-                m.message = "LOOP_STOPPED";
-                break;
-            case TOPIC_REGISTERED:
-            case TOPIC_DEREGISTERED:{
-                char name[256] = { 0 };
+    pubsub_msg_t m = { .topic = NULL, .sender = NULL, .message = NULL, .type = SYSTEM };
+    switch (type) {
+        case LOOP_STARTED:
+            m.message = "LOOP_STARTED";
+            break;
+        case LOOP_STOPPED:
+            m.message = "LOOP_STOPPED";
+            break;
+        case TOPIC_REGISTERED:
+        case TOPIC_DEREGISTERED:{
+            char name[256] = { 0 };
             
-                va_list args;
-                va_start(args, type);
+            va_list args;
+            va_start(args, type);
             
-                char *topic = va_arg(args, char *);
-                snprintf(name, sizeof(name) - 1, "TOPIC_%s: %s", type == TOPIC_REGISTERED ? "REGISTERED" : "DEREGISTERED", topic);
-                m.message = name;
+            char *topic = va_arg(args, char *);
+            snprintf(name, sizeof(name) - 1, "TOPIC_%s: %s", type == TOPIC_REGISTERED ? "REGISTERED" : "DEREGISTERED", topic);
+            m.message = name;
             
-                va_end(args);
-                }
-                break;
-            default:
-                break;
-        }
-        if (m.message) {
-            hashmap_iterate(c->modules, tell_if, &m);
-            return MOD_OK;
-        }
+            va_end(args);
+            }
+            break;
+        default:
+            break;
+    }
+    if (m.message) {
+        return tell_pubsub_msg(&m, NULL, c);
     }
     return MOD_ERR;
 }
@@ -370,12 +367,15 @@ static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender
 }
 
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
-    if (mod) {
-        tell_if(m, mod);
-    } else if (c) {
-        hashmap_iterate(c->modules, tell_if, m);
+    if (c->looping) {
+        if (mod) {
+            tell_if(m, mod);
+        } else if (c) {
+            hashmap_iterate(c->modules, tell_if, m);
+        }
+        return MOD_OK;
     }
-    return MOD_OK;
+    return MOD_ERR;
 }
 
 module_ret_code module_tell(const self_t *self, const char *recipient, const char *message) {
@@ -395,13 +395,20 @@ module_ret_code module_reply(const self_t *self, const self_t *sender, const cha
 }
 
 module_ret_code module_publish(const self_t *self, const char *topic, const char *message) {
-    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF);
     MOD_ASSERT(message, "NULL message.", MOD_ERR);
     
-    GET_CTX(self->ctx);
+    GET_MOD(self);
     
-    pubsub_msg_t m = { .topic = topic, .message = message, .sender = self, .type = USER };
-    return tell_pubsub_msg(&m, NULL, c);
+    void *tmp = NULL;
+    /* 
+     * Only module that registered a topic can publish on the topic.
+     * Moreover, a publish can only be made on existent topic.
+     */
+    if (!topic || (hashmap_get(c->topics, (char *)topic, (void **)&tmp) == MAP_OK && tmp == mod)) {
+        pubsub_msg_t m = { .topic = topic, .message = message, .sender = self, .type = USER };
+        return tell_pubsub_msg(&m, NULL, c);
+    }
+    return MOD_ERR;
 }
 
 /** Module state getters **/

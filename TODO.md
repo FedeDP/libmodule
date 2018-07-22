@@ -11,6 +11,10 @@
 - [x] Fix easy sample when leaving (doggo does not recveive last m_publish())
 - [x] use pipe2 on linux, and pipe + fnctl on osx/bsd (set fds to NON_BLOCKING)
 - [x] Add a pubsub msg sent to all modules in a ctx when the ctx starts/stops looping
+- [x] PubSub system only works on looping context
+- [x] Publishing message only works on existent topic
+- [x] Only module which created a topic can publish on that topic
+- [x] Add easy api defines
 
 ### API improvements
 
@@ -20,9 +24,9 @@
 
 - [x] Add special system-pubsub messages when: loop is started, loop is stopped, topic is registered, topic is deregistered
 
-
+- [x] Add module_unsubscribe/module_(de)register_topic tests
 - [ ] fix tests
-- [ ] check memleaks
+- [x] check memleaks
 
 - [ ] Update examples
 - [ ] Update doc: now modules_loop is always needed, even in case on pubsub only messaging

@@ -68,6 +68,14 @@ int main(void) {
         /* Test module subscribe */
         cmocka_unit_test(test_module_subscribe_NULL_topic),
         cmocka_unit_test(test_module_subscribe_NULL_self),
+        cmocka_unit_test(test_module_subscribe_nonexistent_topic),
+        
+        /* Test module topic registration */
+        cmocka_unit_test(test_register_topic_NULL_topic),
+        cmocka_unit_test(test_register_topic_NULL_self),
+        cmocka_unit_test(test_register_topic),
+        
+        /* Now topic has been registered, subscribe should work */
         cmocka_unit_test(test_module_subscribe),
         
         /* Test module tell */
@@ -82,6 +90,15 @@ int main(void) {
         cmocka_unit_test(test_module_publish_NULL_msg),
         cmocka_unit_test(test_module_publish_NULL_topic),
         cmocka_unit_test(test_module_publish),
+        
+        /* Test module topic deregister */
+        cmocka_unit_test(test_deregister_topic_NULL_topic),
+        cmocka_unit_test(test_deregister_topic_NULL_self),
+        cmocka_unit_test(test_deregister_topic),
+        
+        /* Now publish on same topic should fail */
+        cmocka_unit_test(test_module_publish_nonexistent_topic),
+        
         
         /* Test module_deregister failures */
         cmocka_unit_test(test_module_deregister_NULL_self),

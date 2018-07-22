@@ -279,6 +279,13 @@ void test_module_subscribe_NULL_self(void **state) {
     assert_false(ret == MOD_OK);
 }
 
+void test_module_subscribe_nonexistent_topic(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_subscribe(self, "topic");
+    assert_false(ret == MOD_OK);
+}
+
 void test_module_subscribe(void **state) {
     (void) state; /* unused */
     
@@ -347,10 +354,61 @@ void test_module_publish_NULL_topic(void **state) {
     assert_true(ret == MOD_OK);
 }
 
+void test_module_publish_nonexistent_topic(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_publish(self, "topic", "hi!");
+    assert_false(ret == MOD_OK);
+}
+
 void test_module_publish(void **state) {
     (void) state; /* unused */
     
     module_ret_code ret = module_publish(self, "topic", "hi!");
+    assert_true(ret == MOD_OK);
+}
+
+void test_register_topic_NULL_topic(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_register_topic(self, NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_register_topic_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_register_topic(NULL, "topic");
+    assert_false(ret == MOD_OK);
+}
+
+
+void test_register_topic(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_register_topic(self, "topic");
+    assert_true(ret == MOD_OK);
+}
+
+void test_deregister_topic_NULL_topic(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_deregister_topic(self, NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_deregister_topic_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_deregister_topic(NULL, "topic");
+    assert_false(ret == MOD_OK);
+}
+
+
+void test_deregister_topic(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_deregister_topic(self, "topic");
     assert_true(ret == MOD_OK);
 }
 
