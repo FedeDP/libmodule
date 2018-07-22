@@ -367,7 +367,8 @@ static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender
 }
 
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
-    if (c->looping) {
+    /* Note that if (c) here is just to silence a stupid codacy warning */
+    if (c && c->looping) {
         if (mod) {
             tell_if(m, mod);
         } else if (c) {
