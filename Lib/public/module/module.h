@@ -72,7 +72,10 @@ _public_ module_ret_code module_get_name(const self_t *mod_self, char **name);
 _public_ module_ret_code module_get_context(const self_t *mod_self, char **ctx);
 
 /* Module PubSub interface */
+_public_ module_ret_code module_register_topic(const self_t *self, const char *topic);
+_public_ module_ret_code module_deregister_topic(const self_t *self, const char *topic);
 _public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
+_public_ module_ret_code module_unsubscribe(const self_t *self, const char *topic);
 _public_ module_ret_code module_tell(const self_t *self, const char *recipient, const char *message);
 _public_ module_ret_code module_reply(const self_t *self, const self_t *sender, const char *message);
 _public_ module_ret_code module_publish(const self_t *self, const char *topic, const char *message);

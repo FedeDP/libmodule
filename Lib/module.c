@@ -6,10 +6,10 @@
 static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
 static m_context *check_ctx(const char *ctx_name);
+static module_ret_code init_pubsub_fd(module *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata);
-static module_ret_code add_subscription(module *mod, const char *topic);
 static int tell_if(void *data, void *m);
-static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic);
+static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic, enum msg_type type);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
 static int manage_fds(module *mod, m_context *c, int flag, int stop);
 static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str);
@@ -55,6 +55,17 @@ static m_context *check_ctx(const char *ctx_name) {
     return context;
 }
 
+static module_ret_code init_pubsub_fd(module *mod) {
+    if (_pipe(mod->pubsub_fd) == 0) {
+        if (module_add_fd(&mod->self, mod->pubsub_fd[0]) == MOD_OK) {
+            return MOD_OK;
+        }
+        close(mod->pubsub_fd[0]);
+        close(mod->pubsub_fd[1]);
+    }
+    return MOD_ERR;
+}
+
 module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook) {
     MOD_ASSERT(name, "NULL module name.", MOD_ERR);
     MOD_ASSERT(ctx_name, "NULL context name.", MOD_ERR);
@@ -94,15 +105,12 @@ module_ret_code module_deregister(const self_t **self) {
     MOD_ASSERT(self, "NULL self double pointer.", MOD_ERR);
     
     self_t *tmp = (self_t *) *self;
-    
     GET_MOD(tmp);
     
     MODULE_DEBUG("Deregistering module '%s'.\n", tmp->name);
-        
-    module_stop(tmp);
-        
-    mod->hook.destroy();
     
+    module_stop(tmp);
+    mod->hook.destroy();
     /* Remove the module from the context */
     hashmap_remove(c->modules, (char *)tmp->name);
     /* Remove context without modules */
@@ -237,11 +245,29 @@ module_ret_code module_get_context(const self_t *self, char **ctx) {
 
 /** Actor-like PubSub interface **/
 
-static module_ret_code add_subscription(module *mod, const char *topic) {
+module_ret_code module_register_topic(const self_t *self, const char *topic) {
+    MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
+    GET_MOD(self);
     void *tmp = NULL;
-    if (hashmap_get(mod->subscriptions, (char *)topic, (void **)&tmp) == MAP_MISSING) {
-        /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
-        if (hashmap_put(mod->subscriptions, (char *)topic, mod) == MAP_OK) {
+    
+    if (hashmap_get(c->topics, (char *)topic, (void **)&tmp) == MAP_MISSING) {
+        if (hashmap_put(c->topics, (char *)topic, mod) == MAP_OK) {
+            tell_system_pubsub_msg(c, TOPIC_REGISTERED, topic);
+            return MOD_OK;
+        }
+    }
+    return MOD_ERR;
+}
+
+module_ret_code module_deregister_topic(const self_t *self, const char *topic) {
+    MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
+    GET_MOD(self);
+    void *tmp = NULL;
+    
+    /* Only same mod which registered topic can deregister it */
+    if (hashmap_get(c->topics, (char *)topic, (void **)&tmp) == MAP_OK && tmp == mod) {
+        if (hashmap_remove(c->topics, (char *)topic) == MAP_OK) {
+            tell_system_pubsub_msg(c, TOPIC_DEREGISTERED, topic);
             return MOD_OK;
         }
     }
@@ -251,50 +277,103 @@ static module_ret_code add_subscription(module *mod, const char *topic) {
 module_ret_code module_subscribe(const self_t *self, const char *topic) {
     MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
     GET_MOD(self);
+    void *tmp = NULL;
     
-    return add_subscription(mod, topic);
+    if (hashmap_get(c->topics, (char *)topic, (void **)&tmp) == MAP_OK && 
+        hashmap_get(mod->subscriptions, (char *)topic, (void **)&tmp) == MAP_MISSING) {
+        /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
+        if (hashmap_put(mod->subscriptions, (char *)topic, mod) == MAP_OK) {
+            return MOD_OK;
+        }
+    }
+    return MOD_ERR;
+}
+
+module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
+    MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
+    GET_MOD(self);
+    void *tmp = NULL;
+    
+    if (hashmap_get(c->topics, (char *)topic, (void **)&tmp) == MAP_OK && 
+        hashmap_remove(mod->subscriptions, (char *)topic) == MAP_OK) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+module_ret_code tell_system_pubsub_msg(m_context *c, enum sys_msg_t type, ...) {
+    if (c->looping) {
+        pubsub_msg_t m = { .topic = NULL, .sender = NULL, .message = NULL, .type = SYSTEM };
+        switch (type) {
+            case LOOP_STARTED:
+                m.message = "LOOP_STARTED";
+                break;
+            case LOOP_STOPPED:
+                m.message = "LOOP_STOPPED";
+                break;
+            case TOPIC_REGISTERED:
+            case TOPIC_DEREGISTERED:{
+                char name[256] = { 0 };
+            
+                va_list args;
+                va_start(args, type);
+            
+                char *topic = va_arg(args, char *);
+                snprintf(name, sizeof(name) - 1, "TOPIC_%s: %s", type == TOPIC_REGISTERED ? "REGISTERED" : "DEREGISTERED", topic);
+                m.message = name;
+            
+                va_end(args);
+                }
+                break;
+            default:
+                break;
+        }
+        if (m.message) {
+            hashmap_iterate(c->modules, tell_if, &m);
+            return MOD_OK;
+        }
+    }
+    return MOD_ERR;
 }
 
 static int tell_if(void *data, void *m) {
     module *mod = (module *)m;
-    const msg_t *msg = (msg_t *)data;
+    const pubsub_msg_t *msg = (pubsub_msg_t *)data;
     void *tmp = NULL;
 
     /* 
      * Only if mod is actually running and 
      * if topic is null or this module is subscribed to topic 
      */
-    if (module_is(&mod->self, RUNNING) && (!msg->msg->topic || 
-        hashmap_get(mod->subscriptions, (char *)msg->msg->topic, (void **)&tmp) == MAP_OK)) {
+    if (module_is(&mod->self, RUNNING) && (!msg->topic || 
+        hashmap_get(mod->subscriptions, (char *)msg->topic, (void **)&tmp) == MAP_OK)) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->self.name);
-        mod->hook.recv(msg, mod->userdata);
+        
+        pubsub_msg_t *mm = create_pubsub_msg(msg->message, msg->sender, msg->topic, msg->type);
+        write(mod->pubsub_fd[1], &mm, sizeof(pubsub_msg_t *));
     }
     return MAP_OK;
 }
 
-static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic) {
+static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic, enum msg_type type) {
     pubsub_msg_t *m = memhook._malloc(sizeof(pubsub_msg_t));
     if (m) {
-        m->message = message;
+        m->message = strdup(message);
         m->sender = sender;
-        m->topic = topic;
+        m->topic = strdup(topic);
+        *(int *)&m->type = type;
     }
     return m;
 }
 
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
-    if (m) {
-        msg_t msg = { .is_pubsub = 1, .msg = m };
-        if (mod) {
-            tell_if(&msg, mod);
-        } else if (c) {
-            hashmap_iterate(c->modules, tell_if, &msg);
-        }
-        free(m);
-        return MOD_OK;
+    if (mod) {
+        tell_if(m, mod);
+    } else if (c) {
+        hashmap_iterate(c->modules, tell_if, m);
     }
-    return MOD_ERR;
+    return MOD_OK;
 }
 
 module_ret_code module_tell(const self_t *self, const char *recipient, const char *message) {
@@ -305,8 +384,8 @@ module_ret_code module_tell(const self_t *self, const char *recipient, const cha
     GET_CTX(self->ctx);
     CTX_GET_MOD(recipient, c);
 
-    pubsub_msg_t *m = create_pubsub_msg(message, self, NULL);
-    return tell_pubsub_msg(m, mod, NULL);
+    pubsub_msg_t m = { .topic = NULL, .message = message, .sender = self, .type = USER };
+    return tell_pubsub_msg(&m, mod, NULL);
 }
 
 module_ret_code module_reply(const self_t *self, const self_t *sender, const char *message) {
@@ -319,8 +398,8 @@ module_ret_code module_publish(const self_t *self, const char *topic, const char
     
     GET_CTX(self->ctx);
     
-    pubsub_msg_t *m = create_pubsub_msg(message, self, topic);
-    return tell_pubsub_msg(m, NULL, c);
+    pubsub_msg_t m = { .topic = topic, .message = message, .sender = self, .type = USER };
+    return tell_pubsub_msg(&m, NULL, c);
 }
 
 /** Module state getters **/
@@ -353,6 +432,17 @@ static int manage_fds(module *mod, m_context *c, int flag, int stop) {
 
 static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str) {
     GET_MOD_IN_STATE(self, mask);
+    
+    /* 
+     * Starting module for the first time
+     * or after it was stopped. 
+     * Properly add back its pubsub fds
+     */
+    if (mask & IDLE) {
+        if (init_pubsub_fd(mod) != MOD_OK) {
+            return MOD_ERR;
+        }
+    }
     
     int ret = manage_fds(mod, c, ADD, 0);
     MOD_ASSERT(!ret, err_str, MOD_ERR);

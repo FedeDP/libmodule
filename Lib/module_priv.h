@@ -1,5 +1,3 @@
-#pragma once
-
 #include <assert.h>
 #include "hashmap.h"
 #include <stdlib.h>
@@ -54,6 +52,7 @@ typedef struct {
     self_t self;                          // module's info available to external world
     module_poll_t *fds;                   // module's fds to be polled
     map_t subscriptions;                  // module's subscriptions
+    int pubsub_fd[2];                     // In and Out pipe for pubsub msg
 } module;
 
 typedef struct {
@@ -65,9 +64,13 @@ typedef struct {
     map_t modules;
     void *pevents;
     int max_events;
+    map_t topics;
 } m_context;
 
-int evaluate_module(void *data, void *m);
+enum sys_msg_t { LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED };
 
-map_t ctx;
-memalloc_hook memhook;
+int evaluate_module(void *data, void *m);
+module_ret_code tell_system_pubsub_msg(m_context *c, enum sys_msg_t type, ...);
+
+extern map_t ctx;
+extern memalloc_hook memhook;

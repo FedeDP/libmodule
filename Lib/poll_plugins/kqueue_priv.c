@@ -54,3 +54,17 @@ int poll_close(int fd, void **pevents, int *max_events) {
     poll_destroy_pevents(pevents, max_events);
     return close(fd);
 }
+
+int _pipe(int fd[2]) {
+    int ret = pipe(fd);
+    if (ret == 0) {
+        for (int i = 0; i < 2; i++) {
+            int flags = fcntl(fd[i], F_GETFL, 0);
+            if (flags == -1) {
+                flags = 0;
+            }
+            fcntl(fd[i], F_SETFL, flags | O_NONBLOCK);
+        }
+    }
+    return ret;
+}

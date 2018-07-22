@@ -4,6 +4,10 @@
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *context);
+static int flush_pubsub_msg(void *data, void *m);
+
+map_t ctx;
+memalloc_hook memhook;
 
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
@@ -54,6 +58,10 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
         c->quit = 0;
         c->looping = 1;
         c->max_events = max_events;
+        
+        /* Tell every module that loop is started */
+        tell_system_pubsub_msg(c, LOOP_STARTED);
+        
         while (!c->quit) {
             int nfds = poll_wait(c->fd, c->max_events, c->pevents);
             MOD_ASSERT((nfds > 0), "Context loop error.", MOD_ERR);
@@ -62,11 +70,33 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
                 MOD_ASSERT(p, "Context loop error.", MOD_ERR);
                 CTX_GET_MOD(p->self->name, c);
                 
-                const msg_t msg = { .is_pubsub = 0, .fd = p->fd };
+                const msg_t msg;
+                pubsub_msg_t *m = NULL;
+                if (p->fd == mod->pubsub_fd[0]) {
+                    *(int *)&msg.is_pubsub = 1;
+                    read(p->fd, &m, sizeof(struct pubsub_msg_t *));
+                    *(pubsub_msg_t **)&msg.msg = m;
+                } else {
+                    *(int *)&msg.is_pubsub = 0;
+                    *(int *)&msg.fd = p->fd;
+                }
+
                 mod->hook.recv(&msg, mod->userdata);
+
+                if (p->fd == mod->pubsub_fd[0]) {
+                    free((void *)m->message);
+                    free((void *)m->topic);
+                    free(m);
+                }
             }
             evaluate_new_state(c);
         }
+        
+        /* Tell every module that loop is stopped */
+        tell_system_pubsub_msg(c, LOOP_STOPPED);
+        
+        /* Flush pubsub msg to avoid memleaks */
+        hashmap_iterate(c->modules, flush_pubsub_msg, NULL);
         poll_destroy_pevents(&c->pevents, &c->max_events);
         c->looping = 0;
         return MOD_OK;
@@ -77,6 +107,19 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
 
 static void evaluate_new_state(m_context *context) {
     hashmap_iterate(context->modules, evaluate_module, NULL);
+}
+
+static int flush_pubsub_msg(void *data, void *m) {
+    module *mod = (module *)m;
+    pubsub_msg_t *mm = NULL;
+    
+    while (read(mod->pubsub_fd[0], &mm, sizeof(struct pubsub_msg_t *)) == sizeof(void *)) {
+        MODULE_DEBUG("Flushing pubsub message for module '%s'.\n", mod->self.name);
+        const msg_t msg = { .is_pubsub = 1, .msg = mm };
+        mod->hook.recv(&msg, mod->userdata);
+        free(mm);
+    }
+    return 0;
 }
 
 module_ret_code modules_ctx_quit(const char *ctx_name) {

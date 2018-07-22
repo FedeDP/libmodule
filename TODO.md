@@ -1,17 +1,28 @@
 # TODO
 
-## 2.0
-
-- [x] Release 2.0
-
 ## 2.1
 
 ### Async nessage handling
 
-- [ ] all PubSub functions should that malloc the pubsubmsg and writes its address in a pipe.
-- [ ] Each module has a pipe 
-- [ ] The module gets awaken by the pipe and its recv() call is called
-- [ ] This way PubSub messaging is not blocking (ie module A tells module B something, and module B, in his recv, starts waiting on something else. A is locked until B recv() function exits)
+- [x] all PubSub functions should malloc the pubsubmsg and writes its address in a pipe.
+- [x] Each module has a pipe associated
+- [x] The module gets awaken by the pipe and its recv() call is called
+- [x] fix possible memleaks when leaving if some pubsub msg is still queued (flush all queued messages)
+- [x] Fix easy sample when leaving (doggo does not recveive last m_publish())
+- [x] use pipe2 on linux, and pipe + fnctl on osx/bsd (set fds to NON_BLOCKING)
+- [x] Add a pubsub msg sent to all modules in a ctx when the ctx starts/stops looping
+
+### API improvements
+
+- [x] add module_unsubscribe
+- [x] add module_register_topic 
+- [x] add module_deregister_topic
+
+- [x] Add special system-pubsub messages when: loop is started, loop is stopped, topic is registered, topic is deregistered
+
+- [ ] Update examples
+
+- [ ] Update doc: now modules_loop is always needed, even in case on pubsub only messaging
 
 - [ ] Release 2.1
 
