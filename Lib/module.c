@@ -367,11 +367,10 @@ static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender
 }
 
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
-    /* Note that if (c) here is just to silence a stupid codacy warning */
-    if (c && c->looping) {
+    if (c->looping) {
         if (mod) {
             tell_if(m, mod);
-        } else if (c) {
+        } else {
             hashmap_iterate(c->modules, tell_if, m);
         }
         return MOD_OK;
@@ -388,7 +387,7 @@ module_ret_code module_tell(const self_t *self, const char *recipient, const cha
     CTX_GET_MOD(recipient, c);
 
     pubsub_msg_t m = { .topic = NULL, .message = message, .sender = self, .type = USER };
-    return tell_pubsub_msg(&m, mod, NULL);
+    return tell_pubsub_msg(&m, mod, c);
 }
 
 module_ret_code module_reply(const self_t *self, const self_t *sender, const char *message) {
