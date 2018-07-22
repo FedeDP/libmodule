@@ -29,7 +29,8 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     (*context)->logger = default_logger;
     
     (*context)->modules = hashmap_new();
-    if ((*context)->modules && hashmap_put(ctx, (char *)ctx_name, *context) == MAP_OK) {
+    (*context)->topics = hashmap_new();
+    if ((*context)->topics && (*context)->modules && hashmap_put(ctx, (char *)ctx_name, *context) == MAP_OK) {
         return MOD_OK;
     }
     
@@ -41,6 +42,7 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
 static void destroy_ctx(const char *ctx_name, m_context *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", ctx_name);
     hashmap_free(context->modules);
+    hashmap_free(context->topics);
     poll_close(context->fd, &context->pevents, &context->max_events);
     memhook._free(context);
     hashmap_remove(ctx, (char *)ctx_name);
