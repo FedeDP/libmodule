@@ -20,8 +20,11 @@
 
 - [x] Add special system-pubsub messages when: loop is started, loop is stopped, topic is registered, topic is deregistered
 
-- [ ] Update examples
 
+- [ ] fix tests
+- [ ] check memleaks
+
+- [ ] Update examples
 - [ ] Update doc: now modules_loop is always needed, even in case on pubsub only messaging
 
 - [ ] Release 2.1

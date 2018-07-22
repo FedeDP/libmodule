@@ -30,7 +30,6 @@ int main(void) {
         cmocka_unit_test(test_modules_ctx_set_logger_NULL_logger),
         cmocka_unit_test(test_modules_ctx_set_logger),
         cmocka_unit_test(test_modules_ctx_loop_NULL_ctx),
-        cmocka_unit_test(test_modules_ctx_loop_no_fds),
         cmocka_unit_test(test_modules_ctx_quit_NULL_ctx),
         cmocka_unit_test(test_modules_ctx_quit_no_loop),
         
@@ -95,7 +94,6 @@ int main(void) {
         
         /* Test modules_ API: it should fail now */
         cmocka_unit_test(test_modules_ctx_set_logger_no_ctx), // here context is already destroyed
-        cmocka_unit_test(test_modules_ctx_loop_no_fds),  // here context is already destroyed
         cmocka_unit_test(test_modules_ctx_quit_no_loop) // here context is already destroyed
     };
     return cmocka_run_group_tests(tests, NULL, NULL);

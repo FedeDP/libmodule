@@ -70,10 +70,3 @@ void test_modules_ctx_loop_no_maxevents(void **state) {
     module_ret_code ret = modules_ctx_loop_events(CTX, 0);
     assert_false(ret == MOD_OK);
 }
-
-void test_modules_ctx_loop_no_fds(void **state) {
-    (void) state; /* unused */
-    
-    module_ret_code ret = modules_ctx_loop(CTX);
-    assert_false(ret == MOD_OK);
-}
