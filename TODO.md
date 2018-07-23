@@ -15,6 +15,8 @@
 - [x] Publishing message only works on existent topic
 - [x] Only module which created a topic can publish on that topic
 - [x] Add easy api defines
+- [x] Do not require a looping context to send pubsub message. Messages will be delivered as soon as context starts looping.
+- [x] When stopping a module, close its write side of pipe to avoid memleak if it gets restarted.
 
 ### API improvements
 

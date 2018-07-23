@@ -367,15 +367,12 @@ static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender
 }
 
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
-    if (c->looping) {
-        if (mod) {
-            tell_if(m, mod);
-        } else {
-            hashmap_iterate(c->modules, tell_if, m);
-        }
-        return MOD_OK;
+    if (mod) {
+        tell_if(m, mod);
+    } else {
+        hashmap_iterate(c->modules, tell_if, m);
     }
-    return MOD_ERR;
+    return MOD_OK;
 }
 
 module_ret_code module_tell(const self_t *self, const char *recipient, const char *message) {
@@ -467,6 +464,9 @@ static module_ret_code stop(const self_t *self, const enum module_states mask, c
     MOD_ASSERT(!ret, err_str, MOD_ERR);
     
     mod->state = stop ? STOPPED : PAUSED;
+    if (stop) {
+        close(mod->pubsub_fd[1]);
+    }
     return MOD_OK;
 }
 
