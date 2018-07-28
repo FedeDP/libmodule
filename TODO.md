@@ -34,6 +34,8 @@
 
 - [x] Fixed issues with module_stop that did not cleanly wiped module->fds, preventing a module_start to be successful
 
+- [x] Forcefully rm all fds when de-registering a module: if one stops a module, then adds some fds without starting it, then de-registers it, we would have memleaks
+
 - [ ] Update examples
 - [ ] Update doc: now modules_loop is always needed, even in case on pubsub only messaging
 
