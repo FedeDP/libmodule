@@ -111,6 +111,9 @@ module_ret_code module_deregister(const self_t **self) {
     
     MODULE_DEBUG("Deregistering module '%s'.\n", tmp->name);
     
+    /* Free all unread pubsub msg for this module */
+    flush_pubsub_msg(tmp, mod);
+    
     module_stop(tmp);
     mod->hook.destroy();
     /* Remove the module from the context */
@@ -173,17 +176,16 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
  * if module is in RUNNING state, start listening on its events 
  */
 module_ret_code module_add_fd(const self_t *self, int fd) {
-    /* Cannot add a fd for STOPPED modules */
-    GET_MOD_IN_STATE(self, IDLE | RUNNING | PAUSED);
+    GET_MOD(self);
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
-    
+
     module_poll_t *tmp = memhook._malloc(sizeof(module_poll_t));
     MOD_ASSERT(tmp, "Failed to malloc.", MOD_ERR);
-       
+
     tmp->fd = fd;
     poll_set_data(&tmp->ev, (void *)tmp);
     tmp->prev = mod->fds;
-    tmp->self = (void *)self;
+    tmp->self = (self_t *)self;
     mod->fds = tmp;
     c->num_fds++;
 
@@ -197,8 +199,7 @@ module_ret_code module_add_fd(const self_t *self, int fd) {
 
 /* Linearly searching for fd */
 module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd) {
-    /* Cannot rm a fd for STOPPED modules */
-    GET_MOD_IN_STATE(self, IDLE | RUNNING | PAUSED);
+    GET_MOD(self);
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
     
     MOD_ASSERT(mod->fds, "No fd registered in this module.", MOD_ERR);
@@ -335,6 +336,25 @@ module_ret_code tell_system_pubsub_msg(m_context *c, enum sys_msg_t type, ...) {
     return MOD_ERR;
 }
 
+int flush_pubsub_msg(void *data, void *m) {
+    module *mod = (module *)m;
+    pubsub_msg_t *mm = NULL;
+    
+    while (read(mod->pubsub_fd[0], &mm, sizeof(struct pubsub_msg_t *)) == sizeof(void *)) {
+        /* 
+         * Actually tell msg ONLY if we are not deregistering module, 
+         * ie: we are stopping looping on the context 
+         */
+        if (data) {
+            MODULE_DEBUG("Flushing pubsub message for module '%s'.\n", mod->self.name);
+            const msg_t msg = { .is_pubsub = 1, .msg = mm };
+            mod->hook.recv(&msg, mod->userdata);
+        }
+        destroy_pubsub_msg(mm);
+    }
+    return 0;
+}
+
 static int tell_if(void *data, void *m) {
     module *mod = (module *)m;
     const pubsub_msg_t *msg = (pubsub_msg_t *)data;
@@ -358,12 +378,18 @@ static int tell_if(void *data, void *m) {
 static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic, enum msg_type type) {
     pubsub_msg_t *m = memhook._malloc(sizeof(pubsub_msg_t));
     if (m) {
-        m->message = strdup(message);
+        m->message = message ? strdup(message) : NULL;
         m->sender = sender;
-        m->topic = strdup(topic);
+        m->topic = topic ? strdup(topic) : NULL;
         *(int *)&m->type = type;
     }
     return m;
+}
+
+void destroy_pubsub_msg(pubsub_msg_t *m) {
+    free((char *)m->message);
+    free((char *)m->topic);
+    free(m);
 }
 
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
@@ -420,18 +446,16 @@ int module_is(const self_t *self, const enum module_states st) {
 /** Module state setters **/
 
 static int manage_fds(module *mod, m_context *c, int flag, int stop) {
-    module_poll_t *tmp = mod->fds, *t = NULL;
+    module_poll_t *tmp = mod->fds;
     int ret = 0;
     
     while (tmp && !ret) {
         ret = poll_set_new_evt(tmp, c, flag);
-        if (flag == RM && stop) {
-            ret += close(tmp->fd);
-            free(tmp->ev);
-            t = tmp;
-        }
+        const int fd = tmp->fd;
         tmp = tmp->prev;
-        free(t); // only used when called with stop: properly free module_poll_t
+        if (flag == RM && stop) {
+            ret += module_rm_fd(&mod->self, fd, 1);
+        }
     }
     return ret;
 }
@@ -441,7 +465,7 @@ static module_ret_code start(const self_t *self, const enum module_states mask, 
     
     /* 
      * Starting module for the first time
-     * or after it was stopped. 
+     * or after it was stopped.
      * Properly add back its pubsub fds
      */
     if (mask & IDLE) {
@@ -449,10 +473,10 @@ static module_ret_code start(const self_t *self, const enum module_states mask, 
             return MOD_ERR;
         }
     }
-    
+
     int ret = manage_fds(mod, c, ADD, 0);
     MOD_ASSERT(!ret, err_str, MOD_ERR);
-    
+
     mod->state = RUNNING;
     return MOD_OK;
 }

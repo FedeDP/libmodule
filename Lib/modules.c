@@ -4,7 +4,6 @@
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *context);
-static int flush_pubsub_msg(void *data, void *m);
 
 map_t ctx;
 memalloc_hook memhook;
@@ -84,9 +83,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
                 mod->hook.recv(&msg, mod->userdata);
 
                 if (p->fd == mod->pubsub_fd[0]) {
-                    free((void *)m->message);
-                    free((void *)m->topic);
-                    free(m);
+                    destroy_pubsub_msg(m);
                 }
             }
             evaluate_new_state(c);
@@ -107,19 +104,6 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
 
 static void evaluate_new_state(m_context *context) {
     hashmap_iterate(context->modules, evaluate_module, NULL);
-}
-
-static int flush_pubsub_msg(void *data, void *m) {
-    module *mod = (module *)m;
-    pubsub_msg_t *mm = NULL;
-    
-    while (read(mod->pubsub_fd[0], &mm, sizeof(struct pubsub_msg_t *)) == sizeof(void *)) {
-        MODULE_DEBUG("Flushing pubsub message for module '%s'.\n", mod->self.name);
-        const msg_t msg = { .is_pubsub = 1, .msg = mm };
-        mod->hook.recv(&msg, mod->userdata);
-        free(mm);
-    }
-    return 0;
 }
 
 module_ret_code modules_ctx_quit(const char *ctx_name) {
