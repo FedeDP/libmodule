@@ -35,3 +35,4 @@ To initialize a module binding it to its context, use MODULE_CTX macro:
 This macro firstly creates a "myCtx" context, then a "test" module using same MODULE macro as before. |br|
 Indeed, MODULE macro is only a particular case of MODULE_CTX macro, where myCtx is automatically setted to "default". |br|
 This makes sense, as you can expect: single context API is a multi context API with only 1 context. |br|
+Modules can only see and reach (through PubSub messaging) other modules from same context. |br|

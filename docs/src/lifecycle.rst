@@ -26,19 +26,18 @@ Right after module's registration, its evaluate() function will be called, tryin
 Evaluate will be then called at each state machine change, for each idle module. |br|
 
 As soon as module's evaluate() returns TRUE, the module is started. It means its init() function is finally called and its state is set to RUNNING. |br|
-A single module can poll on multiple fds: just call module_add_fd() multiple times. Each context cannot poll on more than 512 fds. |br|
-When a module reaches started state, modules_loop()/modules_ctx_loop() functions will finally receive events from its fds. |br|
+A single module can poll on multiple fds: just call module_add_fd() multiple times. |br|
+When a module reaches RUNNING state, modules_loop()/modules_ctx_loop() functions will finally receive events from its fds. |br|
 
 Whenever an event triggers on a module's fd, or the module receives a PubSub message from another one, its receive() callback is called. |br|
 Receive callback will receive userdata too as parameter, as set by module_set_userdata().
 
-Finally, after a modules_quit()/modules_ctx_quit(), each module's destroy() function is automatically called, during the process of module's deregistration. |br|
+Finally, when leaving program, each module's destroy() function is automatically called during the process of automatic module's deregistration. |br|
 
 Complex API
 -----------
 
 When dealing with libmodule's :ref:`module_complex`, no modules is automatically started for you, ie: you must manually call module_register()/module_deregister() on each module. |br|
-While this may seem useless, i am sure there can be some cases where you may wish to register/deregister modules yourself. |br|
 When using complex API, you are responsible to register/deregister modules, and thus initing/destroying them. |br|
 Note that with Complex API, module_pre_start() function is not available (it would be useless), and you won't need to define check() function. |br|
 You will still have to define evaluate(), init(), receive() and destroy() functions (but you can freely name them!). |br|

@@ -40,7 +40,7 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
   
 .. c:macro:: modules_loop(void)
 
-  Start looping on events from modules
+  Start looping on events from modules. Note that as soon as modules_loop is called, a message with type == SYSTEM will be broadcasted to all modules.
   
 .. c:macro:: modules_quit(void)
 
@@ -69,7 +69,7 @@ It exposes very similar functions to single-context API (again, single-context i
   
 .. c:function:: modules_ctx_loop_events(ctx_name, maxevents)
 
-  Start looping on events from modules, on at most maxevents events at the same time.
+  Start looping on events from modules, on at most maxevents events at the same time. Note that as soon as modules_ctx_loop_events is called, a message with type == SYSTEM will be broadcasted to all modules.
   
   :param ctx_name: context name.
   :param maxevents: max number of fds wakeup that will be managed at the same time.

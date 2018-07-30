@@ -24,10 +24,13 @@ Types
     /* Modules states */
     enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
+    enum msg_type { USER, SYSTEM };
+    
     typedef struct {
         const char *topic;
         const char *message;
         const self_t *sender;
+        const enum msg_type type;
     } pubsub_msg_t;
 
     typedef struct {
