@@ -149,7 +149,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
     
   :param sender: module which sent us a message.
   :param msg: actual message to be sent.
-  :type recipient: :c:type:`const self_t *`
+  :type sender: :c:type:`const self_t *`
   :type msg: :c:type:`const char *`
   
 .. c:macro:: m_publish(topic, msg)
