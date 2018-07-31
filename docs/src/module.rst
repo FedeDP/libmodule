@@ -107,14 +107,14 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_register_topic(topic)
 
-  Subscribes the module to a topic.
+  Registers a new topic in module's context.
     
   :param topic: topic to be registered. Only a not-existent topic can be registered. Note that as soon as a topic is registered, a message with type == SYSTEM will be broadcasted to all modules.
   :type topic: :c:type:`const char *`
   
 .. c:macro:: m_deregister_topic(topic)
 
-  Subscribes the module to a topic.
+  Deregisters topic in module's context.
     
   :param topic: topic to be deregistered. Only topic creator can deregister a topic.
   :type topic: :c:type:`const char *`
@@ -128,7 +128,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_unsubscribe(topic)
 
-  Subscribes the module to a topic.
+  Unsubscribes the module from a topic.
     
   :param topic: topic to which unsubscribe. Note that topic must be registered before.
   :type topic: :c:type:`const char *`
@@ -317,7 +317,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_register_topic(self, topic)
 
-  Subscribes the module to a topic.
+  Registers a new topic in module's context.
   
   :param self: pointer to module's handler
   :param topic: topic to be registered. Only a not-existent topic can be registered. Note that as soon as a topic is registered, a message with type == SYSTEM will be broadcasted to all modules.
@@ -326,7 +326,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_deregister_topic(self, topic)
 
-  Subscribes the module to a topic.
+  Deregisters topic in module's context.
     
   :param self: pointer to module's handler
   :param topic: topic to be deregistered. Only topic creator can deregister a topic.
@@ -344,7 +344,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_unsubscribe(self, topic)
 
-  Subscribes the module to a topic.
+  Unsubscribes the module from a topic.
     
   :param self: pointer to module's handler
   :param topic: topic to which unsubscribe. Note that topic must be registered before.

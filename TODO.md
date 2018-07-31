@@ -27,14 +27,17 @@
 - [x] Add special system-pubsub messages when: loop is started, loop is stopped, topic is registered, topic is deregistered
 
 - [x] Add module_unsubscribe/module_(de)register_topic tests
-- [x] fix tests
-- [x] fix memleaks
 
 - [x] Add/rm fd for stopped modules too.
-
 - [x] Fixed issues with module_stop that did not cleanly wiped module->fds, preventing a module_start to be successful
-
 - [x] Forcefully rm all fds when de-registering a module: if one stops a module, then adds some fds without starting it, then de-registers it, we would have memleaks
+
+### Generic
+
+- [x] Actually bump soversion
+
+- [x] fix tests
+- [x] fix memleaks
 
 - [ ] Update examples
 - [x] Update doc: now modules_loop is always needed, even in case on pubsub only messaging
