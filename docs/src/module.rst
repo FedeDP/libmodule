@@ -295,7 +295,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type self: :c:type:`const self_t *`
   :type name: :c:type:`char **`
   
-  .. c:function:: module_get_context(self, ctx)
+.. c:function:: module_get_context(self, ctx)
 
   Get module's name from his self pointer.
     
