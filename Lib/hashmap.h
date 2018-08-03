@@ -28,8 +28,8 @@ typedef any_t map_t;
 
 map_t hashmap_new();
 int hashmap_iterate(map_t in, PFany f, any_t item);
-int hashmap_put(map_t in, char* key, any_t value);
-int hashmap_get(map_t in, char* key, any_t *arg);
-int hashmap_remove(map_t in, char* key);
+int hashmap_put(map_t in, const char *key, any_t value);
+int hashmap_get(map_t in, const char *key, any_t *arg);
+int hashmap_remove(map_t in, const char *key);
 void hashmap_free(map_t in);
 int hashmap_length(map_t in);

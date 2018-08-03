@@ -88,7 +88,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
             }
             evaluate_new_state(c);
         }
-        
+
         /* Tell every module that loop is stopped */
         tell_system_pubsub_msg(c, LOOP_STOPPED);
         

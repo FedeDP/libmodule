@@ -30,8 +30,8 @@
 #define m_become(x)                             module_become(_self, receive_##x)
 #define m_unbecome()                            module_become(_self, receive)
 #define m_set_userdata(userdata)                module_set_userdata(_self, userdata)
-#define m_add_fd(fd)                            module_add_fd(_self, fd)
-#define m_rm_fd(fd, close_fd)                   module_rm_fd(_self, fd, close_fd)
+#define m_add_fd(fd)                            module_register_fd(_self, fd)
+#define m_rm_fd(fd, close_fd)                   module_deregister_fd(_self, fd, close_fd)
 #define m_update_fd(old, new, close_old)        module_update_fd(_self, old, new, close_old)
 #define m_log(...)                              module_log(_self, ##__VA_ARGS__)
 #define m_register_topic(topic)                 module_register_topic(_self, topic)
@@ -42,6 +42,10 @@
 #define m_reply(sender, msg)                    module_reply(_self, sender, msg)
 #define m_publish(topic, msg)                   module_publish(_self, topic, msg)
 #define m_broadcast(msg)                        module_publish(_self, NULL, msg)
+
+/* Compatibility with < 2.1 */
+#define module_add_fd                           module_register_fd
+#define module_rm_fd                            module_deregister_fd
 
 /* Module interface functions */
 
@@ -66,8 +70,8 @@ _public_ module_ret_code module_stop(const self_t *self);
 _public_ module_ret_code module_become(const self_t *self,  recv_cb new_recv);
 _public_ module_ret_code module_log(const self_t *self, const char *fmt, ...);
 _public_ module_ret_code module_set_userdata(const self_t *self, const void *userdata);
-_public_ module_ret_code module_add_fd(const self_t *self, int fd);
-_public_ module_ret_code module_rm_fd(const self_t *self, int fd, int close_fd);
+_public_ module_ret_code module_register_fd(const self_t *self, int fd);
+_public_ module_ret_code module_deregister_fd(const self_t *self, int fd, int close_fd);
 _public_ module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, int close_old);
 
 /* Note that both name and ctx must be freed by user */

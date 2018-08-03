@@ -7,7 +7,7 @@
 
 /* We need to keep keys and values */
 typedef struct _hashmap_element {
-    char *key;
+    const char *key;
     int in_use;
     any_t data;
 } hashmap_element;
@@ -23,8 +23,8 @@ typedef struct _hashmap_map {
 } hashmap_map;
 
 static unsigned long crc32(const unsigned char *s, unsigned int len);
-static unsigned int hashmap_hash_int(hashmap_map *m, char *keystring);
-static int hashmap_hash(map_t in, char* key);
+static unsigned int hashmap_hash_int(hashmap_map *m, const char *keystring);
+static int hashmap_hash(map_t in, const char* key);
 static int hashmap_rehash(map_t in);
 
 static unsigned long crc32_tab[] = {
@@ -114,7 +114,7 @@ static unsigned long crc32(const unsigned char *s, unsigned int len) {
 /*
  * Hashing function for a string
  */
-static unsigned int hashmap_hash_int(hashmap_map *m, char *keystring) {
+static unsigned int hashmap_hash_int(hashmap_map *m, const char *keystring) {
     unsigned long key = crc32((unsigned char*)(keystring), strlen(keystring));
 
     /* Robert Jenkins' 32 bit Mix Function */
@@ -137,7 +137,7 @@ static unsigned int hashmap_hash_int(hashmap_map *m, char *keystring) {
  * Return the integer of the location in data
  * to store the point to the item, or MAP_FULL.
  */
-static int hashmap_hash(map_t in, char *key) {
+static int hashmap_hash(map_t in, const char *key) {
     hashmap_map *m = (hashmap_map *)in;
 
     /* If full, return immediately */
@@ -192,7 +192,7 @@ static int hashmap_rehash(map_t in) {
 /*
  * Add a pointer to the hashmap with some key
  */
-int hashmap_put(map_t in, char* key, any_t value) {
+int hashmap_put(map_t in, const char *key, any_t value) {
     hashmap_map *m = (hashmap_map *) in;
 
     /* Find a place to put our value */
@@ -206,7 +206,7 @@ int hashmap_put(map_t in, char* key, any_t value) {
 
     /* Set the data */
     m->data[index].data = value;
-    m->data[index].key = key;
+    m->data[index].key = strdup(key);
     m->data[index].in_use = 1;
     m->size++;
     return MAP_OK;
@@ -215,7 +215,7 @@ int hashmap_put(map_t in, char* key, any_t value) {
 /*
  * Get your pointer out of the hashmap with a key
  */
-int hashmap_get(map_t in, char* key, any_t *arg) {
+int hashmap_get(map_t in, const char *key, any_t *arg) {
     hashmap_map *m = (hashmap_map *) in;
 
     /* Find data location */
@@ -261,7 +261,7 @@ int hashmap_iterate(map_t in, PFany f, any_t item) {
 /*
  * Remove an element with that key from the map
  */
-int hashmap_remove(map_t in, char* key) {
+int hashmap_remove(map_t in, const char *key) {
     hashmap_map *m = (hashmap_map *) in;
 
     /* Find key */
@@ -273,6 +273,7 @@ int hashmap_remove(map_t in, char* key) {
             /* Blank out the fields */
             m->data[curr].in_use = 0;
             m->data[curr].data = NULL;
+            free((void *)m->data[curr].key);
             m->data[curr].key = NULL;
 
             /* Reduce the size */
@@ -289,6 +290,9 @@ int hashmap_remove(map_t in, char* key) {
 /* Deallocate the hashmap */
 void hashmap_free(map_t in) {
     hashmap_map* m = (hashmap_map*) in;
+    for (int i = 0; i < m->table_size; i++) {
+        free((void *)m->data[i].key);
+    }
     memhook._free(m->data);
     memhook._free(m);
 }

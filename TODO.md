@@ -38,8 +38,11 @@
 
 - [x] fix tests
 - [x] fix memleaks
+- [x] Fixed bug when passing a locally scoped variable as key in hashmap_put()
+- [x] Rename module_{add, rm}_fd to module_{register, deregister}_fd and add a compatibility macro
 
-- [ ] Update examples
+- [ ] Update examples -> Cpp, MultiCtx, SharedSrc
+
 - [x] Update doc: now modules_loop is always needed, even in case on pubsub only messaging
 
 - [ ] Release 2.1
