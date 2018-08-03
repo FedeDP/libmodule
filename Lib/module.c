@@ -30,7 +30,7 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     
     (*context)->modules = hashmap_new();
     (*context)->topics = hashmap_new();
-    if ((*context)->topics && (*context)->modules && hashmap_put(ctx, (char *)ctx_name, *context) == MAP_OK) {
+    if ((*context)->topics && (*context)->modules && hashmap_put(ctx, ctx_name, *context) == MAP_OK) {
         return MOD_OK;
     }
     
@@ -45,12 +45,12 @@ static void destroy_ctx(const char *ctx_name, m_context *context) {
     hashmap_free(context->topics);
     poll_close(context->fd, &context->pevents, &context->max_events);
     memhook._free(context);
-    hashmap_remove(ctx, (char *)ctx_name);
+    hashmap_remove(ctx, ctx_name);
 }
 
 static m_context *check_ctx(const char *ctx_name) {
     m_context *context = NULL;
-    hashmap_get(ctx, (char *)ctx_name, (void **)&context); \
+    hashmap_get(ctx, ctx_name, (void **)&context); \
     if (!context) {
         init_ctx(ctx_name, &context);
     }
@@ -79,7 +79,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     MOD_ASSERT(context, "Failed to create context.", MOD_ERR);
     
     module *mod = NULL;
-    hashmap_get(context->modules, (char *)name, (void **)&mod);
+    hashmap_get(context->modules, name, (void **)&mod);
     MOD_ASSERT(!mod, "Module with same name already registered in context.", MOD_ERR);
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
@@ -88,7 +88,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     MOD_ASSERT(mod, "Failed to malloc.", MOD_ERR);
     
     *mod = (module) {{ 0 }};
-    if (hashmap_put(context->modules, (char *)name, mod) == MAP_OK) {
+    if (hashmap_put(context->modules, name, mod) == MAP_OK) {
         mod->hook = *hook;
         mod->state = IDLE;
         mod->self.name = strdup(name);
@@ -118,7 +118,7 @@ module_ret_code module_deregister(const self_t **self) {
     
     mod->hook.destroy();
     /* Remove the module from the context */
-    hashmap_remove(c->modules, (char *)tmp->name);
+    hashmap_remove(c->modules, tmp->name);
     /* Remove context without modules */
     if (hashmap_length(c->modules) == 0) {
         destroy_ctx(tmp->ctx, c);
@@ -254,8 +254,8 @@ module_ret_code module_register_topic(const self_t *self, const char *topic) {
     GET_MOD(self);
     void *tmp = NULL;
     
-    if (hashmap_get(c->topics, (char *)topic, (void **)&tmp) == MAP_MISSING) {
-        if (hashmap_put(c->topics, (char *)topic, mod) == MAP_OK) {
+    if (hashmap_get(c->topics, topic, (void **)&tmp) == MAP_MISSING) {
+        if (hashmap_put(c->topics, topic, mod) == MAP_OK) {
             tell_system_pubsub_msg(c, TOPIC_REGISTERED, topic);
             return MOD_OK;
         }
@@ -299,8 +299,8 @@ module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
     GET_MOD(self);
     void *tmp = NULL;
     
-    if (hashmap_get(c->topics, (char *)topic, (void **)&tmp) == MAP_OK && 
-        hashmap_remove(mod->subscriptions, (char *)topic) == MAP_OK) {
+    if (hashmap_get(c->topics, topic, (void **)&tmp) == MAP_OK && 
+        hashmap_remove(mod->subscriptions, topic) == MAP_OK) {
         return MOD_OK;
     }
     return MOD_ERR;
@@ -367,7 +367,7 @@ static int tell_if(void *data, void *m) {
      * if topic is null or this module is subscribed to topic 
      */
     if (module_is(&mod->self, RUNNING) && (!msg->topic || 
-        hashmap_get(mod->subscriptions, (char *)msg->topic, (void **)&tmp) == MAP_OK)) {
+        hashmap_get(mod->subscriptions, msg->topic, (void **)&tmp) == MAP_OK)) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->self.name);
         
@@ -429,7 +429,7 @@ module_ret_code module_publish(const self_t *self, const char *topic, const char
      * Only module that registered a topic can publish on the topic.
      * Moreover, a publish can only be made on existent topic.
      */
-    if (!topic || (hashmap_get(c->topics, (char *)topic, (void **)&tmp) == MAP_OK && tmp == mod)) {
+    if (!topic || (hashmap_get(c->topics, topic, (void **)&tmp) == MAP_OK && tmp == mod)) {
         pubsub_msg_t m = { .topic = topic, .message = message, .sender = self, .type = USER };
         return tell_pubsub_msg(&m, NULL, c);
     }
