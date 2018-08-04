@@ -4,8 +4,8 @@
 #include <string.h>
 #include <ctype.h>
 #ifdef __linux__
-    #include <sys/signalfd.h>
-    #include <signal.h>
+#include <sys/signalfd.h>
+#include <signal.h>
 #endif
 
 /* 
@@ -21,7 +21,7 @@ static void receive_ready(const msg_t *msg, const void *userdata);
  * Use this to set some  global state needed eg: in check() function 
  */
 static void module_pre_start(void) {
-
+    
 }
 
 /*
@@ -29,7 +29,7 @@ static void module_pre_start(void) {
  * returns a valid fd to be polled.
  */
 static void init(void) {
-#ifdef __linux__
+    #ifdef __linux__
     /* Add signal fd */
     sigset_t mask;
     
@@ -39,11 +39,11 @@ static void init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    m_add_fd(fd);
-#endif
+    m_register_fd(fd);
+    #endif
     
     /* Add stdin fd */
-    m_add_fd(STDIN_FILENO);
+    m_register_fd(STDIN_FILENO);
 }
 
 /* 
@@ -108,8 +108,10 @@ static void receive(const msg_t *msg, const void *userdata) {
                 break;
         }
     } else {
-        if (!strcmp(msg->msg->message, "BauBau")) {
+        if (msg->msg->type == USER && !strcmp(msg->msg->message, "BauBau")) {
             m_become(ready);
+            /* Finally register Leaving topic */
+            m_register_topic("leaving");
             m_log("Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
     }

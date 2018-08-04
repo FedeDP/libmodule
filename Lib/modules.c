@@ -59,7 +59,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
         c->max_events = max_events;
         
         /* Tell every module that loop is started */
-        tell_system_pubsub_msg(c, LOOP_STARTED);
+        tell_system_pubsub_msg(c, LOOP_STARTED, NULL);
         
         while (!c->quit) {
             int nfds = poll_wait(c->fd, c->max_events, c->pevents);
@@ -73,7 +73,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
                 pubsub_msg_t *m = NULL;
                 if (p->fd == mod->pubsub_fd[0]) {
                     *(int *)&msg.is_pubsub = 1;
-                    read(p->fd, &m, sizeof(struct pubsub_msg_t *));
+                    read(p->fd, &m, sizeof(pubsub_msg_t *));
                     *(pubsub_msg_t **)&msg.msg = m;
                 } else {
                     *(int *)&msg.is_pubsub = 0;
@@ -90,7 +90,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
         }
 
         /* Tell every module that loop is stopped */
-        tell_system_pubsub_msg(c, LOOP_STOPPED);
+        tell_system_pubsub_msg(c, LOOP_STOPPED, NULL);
         
         /* Flush pubsub msg to avoid memleaks */
         hashmap_iterate(c->modules, flush_pubsub_msg, NULL);

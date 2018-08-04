@@ -306,36 +306,9 @@ module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
     return MOD_ERR;
 }
 
-module_ret_code tell_system_pubsub_msg(m_context *c, enum sys_msg_t type, ...) {
-    pubsub_msg_t m = { .topic = NULL, .sender = NULL, .message = NULL, .type = SYSTEM };
-    switch (type) {
-        case LOOP_STARTED:
-            m.message = "LOOP_STARTED";
-            break;
-        case LOOP_STOPPED:
-            m.message = "LOOP_STOPPED";
-            break;
-        case TOPIC_REGISTERED:
-        case TOPIC_DEREGISTERED:{
-            char name[256] = { 0 };
-            
-            va_list args;
-            va_start(args, type);
-            
-            char *topic = va_arg(args, char *);
-            snprintf(name, sizeof(name) - 1, "TOPIC_%s: %s", type == TOPIC_REGISTERED ? "REGISTERED" : "DEREGISTERED", topic);
-            m.message = name;
-            
-            va_end(args);
-            }
-            break;
-        default:
-            break;
-    }
-    if (m.message) {
-        return tell_pubsub_msg(&m, NULL, c);
-    }
-    return MOD_ERR;
+module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic) {
+    pubsub_msg_t m = { .topic = topic, .sender = NULL, .message = NULL, .type = type };
+    return tell_pubsub_msg(&m, NULL, c);
 }
 
 int flush_pubsub_msg(void *data, void *m) {
@@ -364,9 +337,10 @@ static int tell_if(void *data, void *m) {
 
     /* 
      * Only if mod is actually running and 
+     * or it is a SYSTEM message. or
      * if topic is null or this module is subscribed to topic 
      */
-    if (module_is(&mod->self, RUNNING) && (!msg->topic || 
+    if (module_is(&mod->self, RUNNING) && (msg->type != USER || !msg->topic || 
         hashmap_get(mod->subscriptions, msg->topic, (void **)&tmp) == MAP_OK)) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->self.name);

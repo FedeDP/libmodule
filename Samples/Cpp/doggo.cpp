@@ -22,8 +22,7 @@ static void module_pre_start(void) {
  * returns a valid fd to be polled.
  */
 static void init(void) {
-    /* Doggo is subscribed to "leaving" topic */
-    m_subscribe("leaving");
+    
 }
 
 /* 
@@ -50,7 +49,7 @@ static int evaluate(void) {
 
 /*
  * Destroyer function, called at module unload (at end of program).
- * Note that module's FD is automatically closed for you.
+ * Note that any module's fds are automatically closed for you.
  */
 static void destroy(void) {
     
@@ -61,26 +60,36 @@ static void destroy(void) {
  */
 static void receive(const msg_t *msg, const void *userdata) {
     if (msg->is_pubsub) {
-        if (!strcmp(msg->msg->message, "ComeHere")) {
-            m_log("Running...\n");
-            m_reply(msg->msg->sender, "BauBau");
-        } else if (!strcmp(msg->msg->message, "LetsPlay")) {
-            m_log("BauBau BauuBauuu!\n");
-        } else if (!strcmp(msg->msg->message, "LetsEat")) {
-            m_log("Burp!\n");
-        } else if (!strcmp(msg->msg->message, "LetsSleep")) {
-            m_become(sleeping);
-            m_log("ZzzZzz...\n");
-        } else if (!strcmp(msg->msg->message, "ByeBye")) {
-            m_log("Sob...\n");
-        } else if (!strcmp(msg->msg->message, "WakeUp")) {
-            m_log("???\n");
+        switch (msg->msg->type) {
+            case USER:
+                if (!strcmp(msg->msg->message, "ComeHere")) {
+                    m_log("Running...\n");
+                    m_reply(msg->msg->sender, "BauBau");
+                } else if (!strcmp(msg->msg->message, "LetsPlay")) {
+                    m_log("BauBau BauuBauuu!\n");
+                } else if (!strcmp(msg->msg->message, "LetsEat")) {
+                    m_log("Burp!\n");
+                } else if (!strcmp(msg->msg->message, "LetsSleep")) {
+                    m_become(sleeping);
+                    m_log("ZzzZzz...\n");
+                } else if (!strcmp(msg->msg->message, "ByeBye")) {
+                    m_log("Sob...\n");
+                } else if (!strcmp(msg->msg->message, "WakeUp")) {
+                    m_log("???\n");
+                }
+                break;
+            case TOPIC_REGISTERED:
+                /* Doggo should subscribe to "leaving" topic */
+                m_subscribe(msg->msg->topic);
+                break;
+            default:
+                break;
         }
     }
 }
 
 static void receive_sleeping(const msg_t *msg, const void *userdata) {
-    if (msg->is_pubsub) {
+    if (msg->is_pubsub && msg->msg->type == USER) {
         if (!strcmp(msg->msg->message, "WakeUp")) {
             m_unbecome();
             m_log("Yawn...\n");

@@ -13,6 +13,5 @@ void modules_pre_start() {
 
 int main() {
     /* Loop on our modules' events */
-    modules_loop();
-    return 0;
+    return modules_loop();
 }

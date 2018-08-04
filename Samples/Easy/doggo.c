@@ -60,7 +60,8 @@ static void destroy(void) {
  */
 static void receive(const msg_t *msg, const void *userdata) {
     if (msg->is_pubsub) {
-        if (msg->msg->type == USER) {
+        switch (msg->msg->type) {
+        case USER:
             if (!strcmp(msg->msg->message, "ComeHere")) {
                 m_log("Running...\n");
                 m_reply(msg->msg->sender, "BauBau");
@@ -76,18 +77,19 @@ static void receive(const msg_t *msg, const void *userdata) {
             } else if (!strcmp(msg->msg->message, "WakeUp")) {
                 m_log("???\n");
             }
-        } else {
-            if (strstr(msg->msg->message, "TOPIC_REGISTERED: ")) {
-                const char *topic = msg->msg->message + strlen("TOPIC_REGISTERED: ");
-                /* Doggo should subscribe to "leaving" topic */
-                m_subscribe(topic);
-            }
+            break;
+        case TOPIC_REGISTERED:
+            /* Doggo should subscribe to "leaving" topic */
+            m_subscribe(msg->msg->topic);
+            break;
+        default:
+            break;
         }
     }
 }
 
 static void receive_sleeping(const msg_t *msg, const void *userdata) {
-    if (msg->is_pubsub) {
+    if (msg->is_pubsub && msg->msg->type == USER) {
         if (!strcmp(msg->msg->message, "WakeUp")) {
             m_unbecome();
             m_log("Yawn...\n");

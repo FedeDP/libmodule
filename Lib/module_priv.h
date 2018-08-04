@@ -67,10 +67,8 @@ typedef struct {
     map_t topics;
 } m_context;
 
-enum sys_msg_t { LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED };
-
 int evaluate_module(void *data, void *m);
-module_ret_code tell_system_pubsub_msg(m_context *c, enum sys_msg_t type, ...);
+module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic);
 int flush_pubsub_msg(void *data, void *m);
 void destroy_pubsub_msg(pubsub_msg_t *m);
 
