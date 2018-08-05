@@ -2,8 +2,9 @@ cmake_minimum_required (VERSION 3.3.2)
 
 project(module VERSION 2.1.1 DESCRIPTION "Easily create modular C programs")
 
-# set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+   set(CMAKE_BUILD_TYPE Release)
+endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -47,7 +48,7 @@ else()
     set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
 endif()
 
-message(STATUS "Building Libmodule ${PROJECT_VERSION} for ${CMAKE_SYSTEM_NAME}.")
+message(STATUS "Building Libmodule ${PROJECT_VERSION}-${CMAKE_BUILD_TYPE} for ${CMAKE_SYSTEM_NAME}.")
 
 # Find public headers
 file(GLOB PUBLIC_H Lib/public/module/*.h)
