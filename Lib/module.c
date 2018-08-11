@@ -91,8 +91,8 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     if (hashmap_put(context->modules, name, mod) == MAP_OK) {
         mod->hook = *hook;
         mod->state = IDLE;
-        mod->self.name = strdup(name);
-        mod->self.ctx = strdup(ctx_name);
+        mod->self.name = mem_strdup(name);
+        mod->self.ctx = mem_strdup(ctx_name);
         mod->fds = NULL;
         mod->subscriptions = hashmap_new();
         *self = &mod->self;
@@ -236,15 +236,24 @@ module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, int
 module_ret_code module_get_name(const self_t *self, char **name) {
     MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF);
     
-    *name = strdup(self->name);
+    *name = mem_strdup(self->name);
     return MOD_OK;
 }
 
 module_ret_code module_get_context(const self_t *self, char **ctx) {
     MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF);
     
-    *ctx = strdup(self->ctx);
+    *ctx = mem_strdup(self->ctx);
     return MOD_OK;
+}
+
+char *mem_strdup(const char *s) {
+    const int len = strlen(s) + 1;
+    char *new = memhook._malloc(len);
+    if (new) {
+        memcpy(new, s, len);
+    }
+    return new;
 }
 
 /** Actor-like PubSub interface **/
@@ -354,9 +363,9 @@ static int tell_if(void *data, void *m) {
 static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic, enum msg_type type) {
     pubsub_msg_t *m = memhook._malloc(sizeof(pubsub_msg_t));
     if (m) {
-        m->message = message ? strdup(message) : NULL;
+        m->message = message ? mem_strdup(message) : NULL;
         m->sender = sender;
-        m->topic = topic ? strdup(topic) : NULL;
+        m->topic = topic ? mem_strdup(topic) : NULL;
         *(int *)&m->type = type;
     }
     return m;

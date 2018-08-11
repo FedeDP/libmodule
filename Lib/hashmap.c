@@ -206,7 +206,7 @@ int hashmap_put(map_t in, const char *key, any_t value) {
 
     /* Set the data */
     m->data[index].data = value;
-    m->data[index].key = strdup(key);
+    m->data[index].key = mem_strdup(key);
     m->data[index].in_use = 1;
     m->size++;
     return MAP_OK;
