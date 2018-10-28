@@ -83,12 +83,14 @@ int main(void) {
         cmocka_unit_test(test_module_tell_unhexistent_recipient),
         cmocka_unit_test(test_module_tell_NULL_self),
         cmocka_unit_test(test_module_tell_NULL_msg),
+        cmocka_unit_test(test_module_tell_wrong_size),
         cmocka_unit_test(test_module_tell),
         
         /* Test module publish */
         cmocka_unit_test(test_module_publish_NULL_self),
         cmocka_unit_test(test_module_publish_NULL_msg),
         cmocka_unit_test(test_module_publish_NULL_topic),
+        cmocka_unit_test(test_module_publish_wrong_size),
         cmocka_unit_test(test_module_publish),
         
         /* Test module topic deregister */

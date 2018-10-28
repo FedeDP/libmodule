@@ -106,7 +106,7 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
             m_unbecome();
         }
         if (*counter == 10) {
-            modules_ctx_quit(myCtx);
+            modules_ctx_quit(myCtx, 0);
         }
     }
 }

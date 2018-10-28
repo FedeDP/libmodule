@@ -9,7 +9,7 @@ static m_context *check_ctx(const char *ctx_name);
 static module_ret_code init_pubsub_fd(module *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata);
 static int tell_if(void *data, void *m);
-static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic, enum msg_type type);
+static pubsub_msg_t *create_pubsub_msg(const unsigned char *message, const self_t *sender, const char *topic, enum msg_type type, const size_t size);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
 static int manage_fds(module *mod, m_context *c, int flag, int stop);
 static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str);
@@ -99,7 +99,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
         evaluate_module(NULL, mod);
         return MOD_OK;
     }
-    free(mod);
+    memhook._free(mod);
     return MOD_ERR;
 }
 
@@ -124,10 +124,10 @@ module_ret_code module_deregister(const self_t **self) {
         destroy_ctx(tmp->ctx, c);
     }
     hashmap_free(mod->subscriptions);
-    free((void *)tmp->name);
-    free((void *)tmp->ctx);
+    memhook._free((void *)tmp->name);
+    memhook._free((void *)tmp->ctx);
     *self = NULL;
-    free(mod);
+    memhook._free(mod);
     return MOD_OK;
 }
 
@@ -213,8 +213,8 @@ module_ret_code module_deregister_fd(const self_t *self, int fd, int close_fd) {
             if (close_fd) {
                 close(t->fd);
             }
-            free(t->ev);
-            free(t);
+            memhook._free(t->ev);
+            memhook._free(t);
             c->num_fds--;
             return MOD_OK;
         }
@@ -248,10 +248,13 @@ module_ret_code module_get_context(const self_t *self, char **ctx) {
 }
 
 char *mem_strdup(const char *s) {
-    const int len = strlen(s) + 1;
-    char *new = memhook._malloc(len);
-    if (new) {
-        memcpy(new, s, len);
+    char *new = NULL;
+    if (s) {
+        const int len = strlen(s) + 1;
+        new = memhook._malloc(len);
+        if (new) {
+            memcpy(new, s, len);
+        }
     }
     return new;
 }
@@ -316,7 +319,7 @@ module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
 }
 
 module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic) {
-    pubsub_msg_t m = { .topic = topic, .sender = NULL, .message = NULL, .type = type };
+    pubsub_msg_t m = { .topic = topic, .sender = NULL, .message = NULL, .type = type, .size = 0 };
     return tell_pubsub_msg(&m, NULL, c);
 }
 
@@ -334,7 +337,7 @@ int flush_pubsub_msg(void *data, void *m) {
             const msg_t msg = { .is_pubsub = 1, .msg = mm };
             mod->hook.recv(&msg, mod->userdata);
         }
-        destroy_pubsub_msg(mm);
+        memhook._free(mm);
     }
     return 0;
 }
@@ -354,27 +357,23 @@ static int tell_if(void *data, void *m) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->self.name);
         
-        pubsub_msg_t *mm = create_pubsub_msg(msg->message, msg->sender, msg->topic, msg->type);
+        pubsub_msg_t *mm = create_pubsub_msg(msg->message, msg->sender, msg->topic, msg->type, msg->size);
         write(mod->pubsub_fd[1], &mm, sizeof(pubsub_msg_t *));
     }
     return MAP_OK;
 }
 
-static pubsub_msg_t *create_pubsub_msg(const char *message, const self_t *sender, const char *topic, enum msg_type type) {
+static pubsub_msg_t *create_pubsub_msg(const unsigned char *message, const self_t *sender, const char *topic, 
+                                       enum msg_type type, const size_t size) {
     pubsub_msg_t *m = memhook._malloc(sizeof(pubsub_msg_t));
     if (m) {
-        m->message = message ? mem_strdup(message) : NULL;
+        m->message = message;
         m->sender = sender;
-        m->topic = topic ? mem_strdup(topic) : NULL;
+        m->topic = topic;
         *(int *)&m->type = type;
+        *(size_t *)&m->size = size;
     }
     return m;
-}
-
-void destroy_pubsub_msg(pubsub_msg_t *m) {
-    free((char *)m->message);
-    free((char *)m->topic);
-    free(m);
 }
 
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
@@ -386,24 +385,27 @@ static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *
     return MOD_OK;
 }
 
-module_ret_code module_tell(const self_t *self, const char *recipient, const char *message) {
+module_ret_code module_tell(const self_t *self, const char *recipient, const unsigned char *message, 
+                            const ssize_t size) {
     MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF);
     MOD_ASSERT(message, "NULL message.", MOD_ERR);
+    MOD_ASSERT((size > 0), "Wrong message size.", MOD_ERR);
     MOD_ASSERT(recipient, "NULL recipient.", MOD_ERR);
     
     GET_CTX(self->ctx);
     CTX_GET_MOD(recipient, c);
 
-    pubsub_msg_t m = { .topic = NULL, .message = message, .sender = self, .type = USER };
+    pubsub_msg_t m = { .topic = NULL, .message = message, .sender = self, .type = USER, .size = size };
     return tell_pubsub_msg(&m, mod, c);
 }
 
-module_ret_code module_reply(const self_t *self, const self_t *sender, const char *message) {
-    return module_tell(self, sender->name, message);
+module_ret_code module_reply(const self_t *self, const self_t *sender, const unsigned char *message, const ssize_t size) {
+    return module_tell(self, sender->name, message, size);
 }
 
-module_ret_code module_publish(const self_t *self, const char *topic, const char *message) {
+module_ret_code module_publish(const self_t *self, const char *topic, const unsigned char *message, const ssize_t size) {
     MOD_ASSERT(message, "NULL message.", MOD_ERR);
+    MOD_ASSERT((size > 0), "Wrong message size.", MOD_ERR);
     
     GET_MOD(self);
     
@@ -413,7 +415,7 @@ module_ret_code module_publish(const self_t *self, const char *topic, const char
      * Moreover, a publish can only be made on existent topic.
      */
     if (!topic || (hashmap_get(c->topics, topic, (void **)&tmp) == MAP_OK && tmp == mod)) {
-        pubsub_msg_t m = { .topic = topic, .message = message, .sender = self, .type = USER };
+        pubsub_msg_t m = { .topic = topic, .message = message, .sender = self, .type = USER, .size = size };
         return tell_pubsub_msg(&m, NULL, c);
     }
     return MOD_ERR;

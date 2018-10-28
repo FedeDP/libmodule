@@ -1,11 +1,31 @@
-## 2.2.0 (possibly 3.0.0)
+## 3.0.0
 
-- [ ] pubsub messaging to send bytes instead of string (ie: add size to pubsub_msg_t)
-- [ ] Avoid strdup for pubsub msg and trust user-provided pointer
-- [ ] Add a module_tell_dup/module_publish_dup to do a malloc and memcpy -> use this if you want every module to receive unique pointer to memory
+- [x] pubsub messaging to send bytes instead of string (ie: add size to pubsub_msg_t)
+- [x] Avoid strdup for pubsub msg and trust user-provided pointer
+- [x] Same as above for topic?
 - [x] Use memhook malloc/free in epoll_priv, kqueue_priv poll_set_data()
 - [x] Avoid strdup and use internal strdup that makes use of memhook
-- [ ] If 3.0.0 (api break) drop module_add_fd/rm_fd
+- [x] modules_quit should take an "exit value" parameter
+- [x] Modules constructor should have higher priority (eg: start from 110?)
+- [x] Add module_tell/publish/reply/broadcast_str macro?
+
+- [x] If 3.0.0 (api break) drop module_add_fd/rm_fd
+
+- [x] Install license file in /usr/share/licenses/libmodule/
+
+### Pre-Release
+
+- [x] Update examples
+- [ ] Update doc
+
+### Release
+
+- [ ] Switch to 3.0.0
+- [ ] Roll new release
+
+## 3.1.0
+
+- [ ] Add a module_tell_dup/module_publish_dup to do a malloc and memcpy -> use this if you want every module to receive unique pointer to data
 
 ## Later/Ideas
 

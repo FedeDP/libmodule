@@ -273,7 +273,7 @@ int hashmap_remove(map_t in, const char *key) {
             /* Blank out the fields */
             m->data[curr].in_use = 0;
             m->data[curr].data = NULL;
-            free((void *)m->data[curr].key);
+            memhook._free((void *)m->data[curr].key);
             m->data[curr].key = NULL;
 
             /* Reduce the size */
@@ -291,7 +291,7 @@ int hashmap_remove(map_t in, const char *key) {
 void hashmap_free(map_t in) {
     hashmap_map* m = (hashmap_map*) in;
     for (int i = 0; i < m->table_size; i++) {
-        free((void *)m->data[i].key);
+        memhook._free((void *)m->data[i].key);
     }
     memhook._free(m->data);
     memhook._free(m);

@@ -93,12 +93,12 @@ static void receive(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'c':
                 m_log("Doggo, come here!\n");
-                m_tell("Doggo", "ComeHere");
+                m_tell_str("Doggo", "ComeHere");
                 break;
             case 'q':
                 m_log("I have to go now!\n");
-                m_publish("leaving", "ByeBye");
-                modules_quit();
+                m_publish_str("leaving", "ByeBye");
+                modules_quit(0);
                 break;
             default:
                 /* Avoid newline */
@@ -108,7 +108,7 @@ static void receive(const msg_t *msg, const void *userdata) {
                 break;
         }
     } else {
-        if (msg->msg->type == USER && !strcmp(msg->msg->message, "BauBau")) {
+        if (msg->msg->type == USER && !strcmp((char *)msg->msg->message, "BauBau")) {
             m_become(ready);
             /* Finally register Leaving topic */
             m_register_topic("leaving");
@@ -135,24 +135,24 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'p':
                 m_log("Doggo, let's play a bit!\n");
-                m_tell("Doggo", "LetsPlay");
+                m_tell_str("Doggo", "LetsPlay");
                 break;
             case 's':
                 m_log("Doggo, you should sleep a bit!\n");
-                m_tell("Doggo", "LetsSleep");
+                m_tell_str("Doggo", "LetsSleep");
                 break;
             case 'f':
                 m_log("Doggo, you want some of these?\n");
-                m_tell("Doggo", "LetsEat");
+                m_tell_str("Doggo", "LetsEat");
                 break;
             case 'w':
                 m_log("Doggo, wake up!\n");
-                m_tell("Doggo", "WakeUp");
+                m_tell_str("Doggo", "WakeUp");
                 break;
             case 'q':
                 m_log("I have to go now!\n");
-                m_publish("leaving", "ByeBye");
-                modules_quit();
+                m_publish_str("leaving", "ByeBye");
+                modules_quit(0);
                 break;
             default:
                 /* Avoid newline */

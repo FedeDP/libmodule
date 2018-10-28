@@ -56,6 +56,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
     if (poll_init_pevents(&c->pevents, max_events) == MOD_OK) {
         c->quit = 0;
         c->looping = 1;
+        c->quit_code = 0;
         c->max_events = max_events;
         
         /* Tell every module that loop is started */
@@ -83,7 +84,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
                 mod->hook.recv(&msg, mod->userdata);
 
                 if (p->fd == mod->pubsub_fd[0]) {
-                    destroy_pubsub_msg(m);
+                    memhook._free(m);
                 }
             }
             evaluate_new_state(c);
@@ -96,7 +97,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
         hashmap_iterate(c->modules, flush_pubsub_msg, NULL);
         poll_destroy_pevents(&c->pevents, &c->max_events);
         c->looping = 0;
-        return MOD_OK;
+        return c->quit_code;
     }
     MODULE_DEBUG("Failed to malloc.\n");
     return MOD_ERR;
@@ -106,11 +107,12 @@ static void evaluate_new_state(m_context *context) {
     hashmap_iterate(context->modules, evaluate_module, NULL);
 }
 
-module_ret_code modules_ctx_quit(const char *ctx_name) {
+module_ret_code modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) {
     GET_CTX(ctx_name);
     
     if (c->looping) {
         c->quit = 1;
+        c->quit_code = quit_code;
         return MOD_OK;
     }
     MODULE_DEBUG("Context not looping.\n");

@@ -32,22 +32,20 @@
 #define m_set_userdata(userdata)                module_set_userdata(_self, userdata)
 #define m_register_fd(fd)                       module_register_fd(_self, fd)
 #define m_deregister_fd(fd, close_fd)           module_deregister_fd(_self, fd, close_fd)
-#define m_add_fd                                m_register_fd
-#define m_rm_fd                                 m_deregister_fd
 #define m_update_fd(old, new, close_old)        module_update_fd(_self, old, new, close_old)
 #define m_log(...)                              module_log(_self, ##__VA_ARGS__)
 #define m_register_topic(topic)                 module_register_topic(_self, topic)
 #define m_deregister_topic(topic)               module_deregister_topic(_self, topic)
 #define m_subscribe(topic)                      module_subscribe(_self, topic)
 #define m_unsubscribe(topic)                    module_unsubscribe(_self, topic)
-#define m_tell(recipient, msg)                  module_tell(_self, recipient, msg)
-#define m_reply(sender, msg)                    module_reply(_self, sender, msg)
-#define m_publish(topic, msg)                   module_publish(_self, topic, msg)
-#define m_broadcast(msg)                        module_publish(_self, NULL, msg)
-
-/* Compatibility with < 2.1 */
-#define module_add_fd                           module_register_fd
-#define module_rm_fd                            module_deregister_fd
+#define m_tell(recipient, msg, size)            module_tell(_self, recipient, msg, size)
+#define m_reply(sender, msg, size)              module_reply(_self, sender, msg, size)
+#define m_publish(topic, msg, size)             module_publish(_self, topic, msg, size)
+#define m_broadcast(msg, size)                  module_publish(_self, NULL, msg, size)
+#define m_tell_str(recipient, msg)              module_tell(_self, recipient, (unsigned char *)msg, strlen(msg))
+#define m_reply_str(sender, msg)                module_reply(_self, sender, (unsigned char *)msg, strlen(msg))
+#define m_publish_str(topic, msg)               module_publish(_self, topic, (unsigned char *)msg, strlen(msg))
+#define m_broadcast_str(msg)                    module_publish(_self, NULL, (unsigned char *)msg, strlen(msg))
 
 /* Module interface functions */
 
@@ -85,9 +83,12 @@ _public_ module_ret_code module_register_topic(const self_t *self, const char *t
 _public_ module_ret_code module_deregister_topic(const self_t *self, const char *topic);
 _public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
 _public_ module_ret_code module_unsubscribe(const self_t *self, const char *topic);
-_public_ module_ret_code module_tell(const self_t *self, const char *recipient, const char *message);
-_public_ module_ret_code module_reply(const self_t *self, const self_t *sender, const char *message);
-_public_ module_ret_code module_publish(const self_t *self, const char *topic, const char *message);
+_public_ module_ret_code module_tell(const self_t *self, const char *recipient, const unsigned char *message,
+                                     const ssize_t size);
+_public_ module_ret_code module_reply(const self_t *self, const self_t *sender, const unsigned char *message,
+                                      const ssize_t size);
+_public_ module_ret_code module_publish(const self_t *self, const char *topic, const unsigned char *message,
+                                        const ssize_t size);
 
 #ifdef __cplusplus
 }

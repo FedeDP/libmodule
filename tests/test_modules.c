@@ -46,14 +46,14 @@ void test_modules_ctx_set_logger_no_ctx(void **state) {
 void test_modules_ctx_quit_NULL_ctx(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = modules_ctx_quit(NULL);
+    module_ret_code ret = modules_ctx_quit(NULL, 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_modules_ctx_quit_no_loop(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = modules_ctx_quit(CTX);
+    module_ret_code ret = modules_ctx_quit(CTX, 0);
     assert_false(ret == MOD_OK);
 }
 

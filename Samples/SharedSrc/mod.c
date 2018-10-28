@@ -88,12 +88,12 @@ static void A_recv(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'c':
                 module_log(selfA, "Doggo, come here!\n");
-                module_tell(selfA, "Doggo", "ComeHere");
+                module_tell(selfA, "Doggo", "ComeHere", strlen("ComeHere"));
                 break;
             case 'q':
                 module_log(selfA, "I have to go now!\n");
-                module_publish(selfA, "leaving", "ByeBye");
-                modules_ctx_quit("test");
+                module_publish(selfA, "leaving", "ByeBye", strlen("ByeBye"));
+                modules_ctx_quit("test", 0);
                 break;
             default:
                 /* Avoid newline */
@@ -103,7 +103,7 @@ static void A_recv(const msg_t *msg, const void *userdata) {
                 break;
         }
     } else {
-        if (msg->msg->type == USER  && !strcmp(msg->msg->message, "BauBau")) {
+        if (msg->msg->type == USER  && !strcmp((char *)msg->msg->message, "BauBau")) {
             module_become(selfA, A_recv_ready);
             module_log(selfA, "Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
@@ -118,24 +118,24 @@ static void A_recv_ready(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'p':
                 module_log(selfA, "Doggo, let's play a bit!\n");
-                module_tell(selfA, "Doggo", "LetsPlay");
+                module_tell(selfA, "Doggo", "LetsPlay", strlen("LetsPlay"));
                 break;
             case 's':
                 module_log(selfA, "Doggo, you should sleep a bit!\n");
-                module_tell(selfA, "Doggo", "LetsSleep");
+                module_tell(selfA, "Doggo", "LetsSleep", strlen("LetsSleep"));
                 break;
             case 'f':
                 module_log(selfA, "Doggo, you want some of these?\n");
-                module_tell(selfA, "Doggo", "LetsEat");
+                module_tell(selfA, "Doggo", "LetsEat", strlen("LetsEat"));
                 break;
             case 'w':
                 module_log(selfA, "Doggo, wake up!\n");
-                module_tell(selfA, "Doggo", "WakeUp");
+                module_tell(selfA, "Doggo", "WakeUp", strlen("WakeUp"));
                 break;
             case 'q':
                 module_log(selfA, "I have to go now!\n");
-                module_publish(selfA, "leaving", "ByeBye");
-                modules_ctx_quit("test");
+                module_publish(selfA, "leaving", "ByeBye", strlen("ByeBye"));
+                modules_ctx_quit("test", 0);
                 break;
             default:
                 /* Avoid newline */
@@ -154,19 +154,19 @@ static void B_recv(const msg_t *msg, const void *userdata) {
     if (msg->is_pubsub) {
         switch (msg->msg->type) {
             case USER:
-                if (!strcmp(msg->msg->message, "ComeHere")) {
+                if (!strcmp((char *)msg->msg->message, "ComeHere")) {
                     module_log(selfB, "Running...\n");
-                    module_reply(selfB, msg->msg->sender, "BauBau");
-                } else if (!strcmp(msg->msg->message, "LetsPlay")) {
+                    module_reply(selfB, msg->msg->sender, "BauBau", strlen("BauBau"));
+                } else if (!strcmp((char *)msg->msg->message, "LetsPlay")) {
                     module_log(selfB, "BauBau BauuBauuu!\n");
-                } else if (!strcmp(msg->msg->message, "LetsEat")) {
+                } else if (!strcmp((char *)msg->msg->message, "LetsEat")) {
                     module_log(selfB, "Burp!\n");
-                } else if (!strcmp(msg->msg->message, "LetsSleep")) {
+                } else if (!strcmp((char *)msg->msg->message, "LetsSleep")) {
                     module_become(selfB, B_recv_sleeping);
                     module_log(selfB, "ZzzZzz...\n");
-                } else if (!strcmp(msg->msg->message, "ByeBye")) {
+                } else if (!strcmp((char *)msg->msg->message, "ByeBye")) {
                     module_log(selfB, "Sob...\n");
-                } else if (!strcmp(msg->msg->message, "WakeUp")) {
+                } else if (!strcmp((char *)msg->msg->message, "WakeUp")) {
                     module_log(selfB, "???\n");
                 }
                 break;
@@ -182,7 +182,7 @@ static void B_recv(const msg_t *msg, const void *userdata) {
 
 static void B_recv_sleeping(const msg_t *msg, const void *userdata) {
     if (msg->is_pubsub && msg->msg->type == USER) {
-        if (!strcmp(msg->msg->message, "WakeUp")) {
+        if (!strcmp((char *)msg->msg->message, "WakeUp")) {
             module_become(selfB, B_recv);
             module_log(selfB, "Yawn...\n");
         } else {
