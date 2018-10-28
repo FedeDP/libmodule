@@ -47,7 +47,7 @@ void destroy_modules(void) {
  * returns a valid fd to be polled.
  */
 static void A_init(void) {
-    module_register_fd(selfA, STDIN_FILENO);
+    module_register_fd(selfA, STDIN_FILENO, 0);
 }
 
 /*

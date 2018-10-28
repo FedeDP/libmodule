@@ -54,8 +54,8 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
     MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
     
     if (poll_init_pevents(&c->pevents, max_events) == MOD_OK) {
-        c->quit = 0;
-        c->looping = 1;
+        c->quit = false;
+        c->looping = true;
         c->quit_code = 0;
         c->max_events = max_events;
         
@@ -96,7 +96,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
         /* Flush pubsub msg to avoid memleaks */
         hashmap_iterate(c->modules, flush_pubsub_msg, NULL);
         poll_destroy_pevents(&c->pevents, &c->max_events);
-        c->looping = 0;
+        c->looping = false;
         return c->quit_code;
     }
     MODULE_DEBUG("Failed to malloc.\n");
@@ -111,7 +111,7 @@ module_ret_code modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) 
     GET_CTX(ctx_name);
     
     if (c->looping) {
-        c->quit = 1;
+        c->quit = true;
         c->quit_code = quit_code;
         return MOD_OK;
     }

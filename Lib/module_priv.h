@@ -39,6 +39,7 @@ struct _self {
 
 typedef struct _poll_t {
     int fd;
+    bool autoclose;
     void *ev;
     self_t *self;                         // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
@@ -56,9 +57,9 @@ typedef struct {
 } module;
 
 typedef struct {
-    uint8_t quit;
+    bool quit;
     uint8_t quit_code;
-    uint8_t looping;
+    bool looping;
     int fd;
     int num_fds;                          // number of fds in this context
     log_cb logger;

@@ -212,7 +212,7 @@ void test_module_become(void **state) {
 void test_module_add_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_register_fd(self, -1);
+    module_ret_code ret = module_register_fd(self, -1, 1);
     assert_false(ret == MOD_OK);
 }
 
@@ -220,35 +220,35 @@ void test_module_add_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
     fd = open("/dev/tty", O_RDWR);
-    module_ret_code ret = module_register_fd(NULL, fd);
+    module_ret_code ret = module_register_fd(NULL, fd, 1);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_add_fd(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_register_fd(self, fd);
+    module_ret_code ret = module_register_fd(self, fd, 1);
     assert_true(ret == MOD_OK);
 }
 
 void test_module_rm_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_deregister_fd(self, -1, 1);
+    module_ret_code ret = module_deregister_fd(self, -1);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_rm_wrong_fd_2(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_deregister_fd(self, fd + 1, 1);
+    module_ret_code ret = module_deregister_fd(self, fd + 1);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_rm_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_deregister_fd(NULL, fd, 1);
+    module_ret_code ret = module_deregister_fd(NULL, fd);
     assert_false(ret == MOD_OK);
 }
 
@@ -259,7 +259,7 @@ static int fd_is_valid(int fd) {
 void test_module_rm_fd(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_deregister_fd(self, fd, 1);
+    module_ret_code ret = module_deregister_fd(self, fd);
     assert_true(ret == MOD_OK);
     
     /* Fd is now closed (module_deregister_fd with 1 flag) thus is no more valid */

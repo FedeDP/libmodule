@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define MODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
 #define MODULE_VERSION_MIN @PROJECT_VERSION_MINOR@

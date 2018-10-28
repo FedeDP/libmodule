@@ -59,7 +59,7 @@ static m_context *check_ctx(const char *ctx_name) {
 
 static module_ret_code init_pubsub_fd(module *mod) {
     if (_pipe(mod->pubsub_fd) == 0) {
-        if (module_register_fd(&mod->self, mod->pubsub_fd[0]) == MOD_OK) {
+        if (module_register_fd(&mod->self, mod->pubsub_fd[0], true) == MOD_OK) {
             return MOD_OK;
         }
         close(mod->pubsub_fd[0]);
@@ -176,7 +176,7 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
  * Append this fd to our list of fds and 
  * if module is in RUNNING state, start listening on its events 
  */
-module_ret_code module_register_fd(const self_t *self, int fd) {
+module_ret_code module_register_fd(const self_t *self, int fd, bool autoclose) {
     GET_MOD(self);
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
 
@@ -184,6 +184,7 @@ module_ret_code module_register_fd(const self_t *self, int fd) {
     MOD_ASSERT(tmp, "Failed to malloc.", MOD_ERR);
 
     tmp->fd = fd;
+    tmp->autoclose = autoclose;
     poll_set_data(&tmp->ev, (void *)tmp);
     tmp->prev = mod->fds;
     tmp->self = (self_t *)self;
@@ -199,7 +200,7 @@ module_ret_code module_register_fd(const self_t *self, int fd) {
 }
 
 /* Linearly searching for fd */
-module_ret_code module_deregister_fd(const self_t *self, int fd, int close_fd) {
+module_ret_code module_deregister_fd(const self_t *self, int fd) {
     GET_MOD(self);
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
     
@@ -210,7 +211,7 @@ module_ret_code module_deregister_fd(const self_t *self, int fd, int close_fd) {
         if ((*tmp)->fd == fd) {
             module_poll_t *t = *tmp;
             *tmp = (*tmp)->prev;
-            if (close_fd) {
+            if (t->autoclose) {
                 close(t->fd);
             }
             memhook._free(t->ev);
@@ -223,12 +224,12 @@ module_ret_code module_deregister_fd(const self_t *self, int fd, int close_fd) {
     return MOD_ERR;
 }
 
-module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, int close_old) {
+module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, bool autoclose) {
     MOD_ASSERT((old_fd >= 0), "Wrong old fd.", MOD_ERR);
     MOD_ASSERT((new_fd >= 0), "Wrong new fd.", MOD_ERR);
     
-    if (module_deregister_fd(self, old_fd, close_old) == MOD_OK) {
-        return module_register_fd(self, new_fd);
+    if (module_deregister_fd(self, old_fd) == MOD_OK) {
+        return module_register_fd(self, new_fd, autoclose);
     }
     return MOD_ERR;
 }
@@ -441,7 +442,7 @@ static int manage_fds(module *mod, m_context *c, int flag, int stop) {
         const int fd = tmp->fd;
         tmp = tmp->prev;
         if (flag == RM && stop) {
-            ret += module_deregister_fd(&mod->self, fd, 1);
+            ret += module_deregister_fd(&mod->self, fd);
         }
     }
     return ret;

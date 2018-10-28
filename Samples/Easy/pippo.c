@@ -39,11 +39,11 @@ static void init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    m_register_fd(fd);
+    m_register_fd(fd, 1);
 #endif
     
     /* Add stdin fd */
-    m_register_fd(STDIN_FILENO);
+    m_register_fd(STDIN_FILENO, 0);
 }
 
 /* 
