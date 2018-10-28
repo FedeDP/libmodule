@@ -28,7 +28,8 @@ Types
 
     typedef struct {
         const char *topic;
-        const char *message;
+        const unsigned char *message;
+        const ssize_t size;
         const self_t *sender;
         const enum msg_type type;
     } pubsub_msg_t;

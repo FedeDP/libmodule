@@ -15,8 +15,8 @@
 
 ### Pre-Release
 
-- [x] Update examples
-- [ ] Update doc
+- [x] Update examples and tests
+- [x] Update doc
 
 ### Release
 

@@ -31,10 +31,10 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 
 .. c:function:: check(void)
 
-  Startup filter to check whether this module should be created and managed by libmodule, |br|
+  Startup filter to check whether this module should be registered and managed by libmodule, |br|
   as sometimes you may wish that not your modules are automatically started.
   
-  :returns: true (not-0) if the module should be created, 0 otherwise.
+  :returns: true (not-0) if the module should be registered, 0 otherwise.
 
 .. c:function:: evaluate(void)
 

@@ -42,9 +42,12 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
 
   Start looping on events from modules. Note that as soon as modules_loop is called, a message with type == SYSTEM will be broadcasted to all modules.
   
-.. c:macro:: modules_quit(void)
+.. c:macro:: modules_quit(quit_code)
 
-  Leave libmodule's events loop
+  Leave libmodule's events loop.
+  
+  :param quit_code: exit code that should be returned by modules_loop.
+  :type quit_code: :c:type:`const uint8_t`
   
 Modules multi-context API
 -------------------------
@@ -76,9 +79,12 @@ It exposes very similar functions to single-context API (again, single-context i
   :type ctx_name: :c:type:`const char *`
   :type maxevents: :c:type:`int`
   
-.. c:function:: modules_ctx_quit(ctx_name)
+.. c:function:: modules_ctx_quit(ctx_name, quit_code)
 
-  Leave libmodule's events loop
+  Leave libmodule's events loop.
   
   :param ctx_name: context name.
+  :param quit_code: exit code that should be returned by modules_loop.
   :type ctx_name: :c:type:`const char *`
+  :type quit_code: :c:type:`const uint8_t`
+

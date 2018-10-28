@@ -133,38 +133,81 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param topic: topic to which unsubscribe. Note that topic must be registered before.
   :type topic: :c:type:`const char *`
   
-.. c:macro:: m_tell(recipient, msg)
+.. c:macro:: m_tell(recipient, msg, size)
 
   Tell a message to another module.
     
   :param recipient: module to whom deliver the message.
-  :param msg: actual message to be sent.
+  :param msg: actual data to be sent.
+  :param size: size of data to be sent.
   :type recipient: :c:type:`const char *`
-  :type msg: :c:type:`const char *`
+  :type msg: :c:type:`const unsigned char *`
+  :type size: :c:type:`const ssize_t`
   
     
-.. c:macro:: m_reply(sender, msg)
+.. c:macro:: m_reply(sender, msg, size)
 
   Reply to a received message.
     
   :param sender: module which sent us a message.
-  :param msg: actual message to be sent.
+  :param msg: actual data to be sent.
+  :param size: size of data to be sent.
   :type sender: :c:type:`const self_t *`
-  :type msg: :c:type:`const char *`
+  :type msg: :c:type:`const unsigned char *`
+  :type size: :c:type:`const ssize_t`
   
-.. c:macro:: m_publish(topic, msg)
+.. c:macro:: m_publish(topic, msg, size)
 
   Publish a message on a topic.
     
   :param topic: topic on which publish message. NULL to broadcast message to all modules in same context. Note that only topic creator can publish message on topic.
-  :param msg: actual message to be sent.
+  :param msg: actual data to be published.
+  :param size: size of data to be published.
   :type topic: :c:type:`const char *`
-  :type msg: :c:type:`const char *`
+  :type msg: :c:type:`const unsigned char *`
+  :type size: :c:type:`const ssize_t`
   
-.. c:macro:: m_broadcast(msg)
+.. c:macro:: m_broadcast(msg, size)
 
   Broadcast a message in module's context. Same as calling m_publish(NULL, msg).
     
+  :param msg: data to be delivered to all modules in a context.
+  :param size: size of data to be delivered.
+  :type msg: :c:type:`const unsigned char *`
+  :type size: :c:type:`const ssize_t`
+  
+.. c:macro:: m_tell_str(recipient, msg)
+
+  Tell a string message to another module. Size is automatically computed through strlen.
+    
+  :param recipient: module to whom deliver the message.
+  :param msg: message to be sent.
+  :type recipient: :c:type:`const char *`
+  :type msg: :c:type:`const char *`
+
+    
+.. c:macro:: m_reply_str(sender, msg)
+
+  Reply to a received message with a string. Size is automatically computed through strlen.
+    
+  :param sender: module which sent us a message.
+  :param msg: message to be sent.
+  :type sender: :c:type:`const self_t *`
+  :type msg: :c:type:`const char *`
+  
+.. c:macro:: m_publish_str(topic, msg)
+
+  Publish a string message on a topic. Size is automatically computed through strlen.
+    
+  :param topic: topic on which publish message. NULL to broadcast message to all modules in same context. Note that only topic creator can publish message on topic.
+  :param msg: message to be published.
+  :type topic: :c:type:`const char *`
+  :type msg: :c:type:`const char *`
+  
+.. c:macro:: m_broadcast_str(msg)
+
+  Broadcast a string message in module's context. Same as calling m_publish(NULL, msg). Size is automatically computed through strlen.
+
   :param msg: message to be delivered to all modules in a context.
   :type msg: :c:type:`const char *`
 
@@ -351,35 +394,41 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
   
-.. c:function:: module_tell(self, recipient, msg)
+.. c:function:: module_tell(self, recipient, msg, size)
 
   Tell a message to another module.
     
   :param self: pointer to module's handler
   :param recipient: module to whom deliver the message.
-  :param msg: actual message to be sent.
+  :param msg: actual data to be sent.
+  :param size: size of data to be sent.
   :type self: :c:type:`const self_t *`
   :type recipient: :c:type:`const char *`
-  :type msg: :c:type:`const char *`
+  :type msg: :c:type:`const unsigned char *`
+  :type size: :c:type:`const ssize_t`
   
-.. c:function:: module_reply(self, sender, msg)
+.. c:function:: module_reply(self, sender, msg, size)
 
   Reply to a received message.
     
   :param self: pointer to module's handler
   :param sender: module which sent us a message.
-  :param msg: actual message to be sent.
+  :param msg: actual data to be sent.
+  :param size: size of data to be sent.
   :type self: :c:type:`const self_t *`
   :type sender: :c:type:`const self_t *`
-  :type msg: :c:type:`const char *`
+  :type msg: :c:type:`const unsigned char *`
+  :type size: :c:type:`const ssize_t`
   
-.. c:function:: module_publish(self, topic, msg)
+.. c:function:: module_publish(self, topic, msg, size)
 
   Publish a message on a topic.
 
   :param self: pointer to module's handler
   :param topic: topic on which publish message. NULL to broadcast message to all modules in same context. Note that only topic creator can publish message on topic.
-  :param msg: actual message to be sent.
+  :param msg: actual data to be published.
+  :param size: size of data to be published.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
-  :type msg: :c:type:`const char *`
+  :type msg: :c:type:`const unsigned char *`
+  :type size: :c:type:`const ssize_t`
