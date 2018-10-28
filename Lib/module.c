@@ -114,7 +114,7 @@ module_ret_code module_deregister(const self_t **self) {
     /* Free all unread pubsub msg for this module */
     flush_pubsub_msg(tmp, mod);
     
-    stop(*self, RUNNING | IDLE | PAUSED | STOPPED, "Failed to stop module.", 1);
+    stop(*self, RUNNING | IDLE | PAUSED, "Failed to stop module.", 1);
     
     mod->hook.destroy();
     /* Remove the module from the context */
@@ -475,6 +475,10 @@ static module_ret_code stop(const self_t *self, const enum module_states mask, c
     MOD_ASSERT(!ret, err_str, MOD_ERR);
     
     mod->state = stop ? STOPPED : PAUSED;
+    /*
+     * When module gets stopped, its write-end pubsub fd is closed too 
+     * Read-end is already closed by stop().
+     */
     if (stop) {
         close(mod->pubsub_fd[1]);
     }
