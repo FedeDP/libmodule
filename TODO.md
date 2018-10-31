@@ -12,6 +12,8 @@
 - [x] module_register_fd to take an "autoclose" parameter; drop "close" parameter from module_deregister_fd
 - [x] module_register_fd to take an *userptr variable too. The pointer will be then forwarded in receive() when called on that fd
 
+- [x] Avoid memleak in hashmap_rehash function
+
 - [x] Constify as much as possible
 - [x] Use stdbool where needed
 

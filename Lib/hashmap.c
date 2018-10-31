@@ -26,6 +26,7 @@ static unsigned long crc32(const unsigned char *s, unsigned int len);
 static unsigned int hashmap_hash_int(hashmap_map *m, const char *keystring);
 static int hashmap_hash(map_t in, const char* key);
 static int hashmap_rehash(map_t in);
+static int _hashmap_put(map_t in, const char *key, any_t value);
 
 static unsigned long crc32_tab[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
@@ -182,7 +183,8 @@ static int hashmap_rehash(map_t in) {
     int status = MAP_OK;
     for (int i = 0; i < old_size && status == MAP_OK; i++) {
         if (curr[i].in_use) {
-            status = hashmap_put(m, curr[i].key, curr[i].data);
+            /* Internal hashmap_put to avoid re-mallocing already malloc'd keys */
+            status = _hashmap_put(m, curr[i].key, curr[i].data);
         }
     }
     memhook._free(curr);
@@ -190,9 +192,13 @@ static int hashmap_rehash(map_t in) {
 }
 
 /*
- * Add a pointer to the hashmap with some key
+ * Add a pointer to the hashmap with some strdupped key
  */
 int hashmap_put(map_t in, const char *key, any_t value) {
+    return _hashmap_put(in, mem_strdup(key), value);
+}
+
+static int _hashmap_put(map_t in, const char *key, any_t value) {
     hashmap_map *m = (hashmap_map *) in;
 
     /* Find a place to put our value */
@@ -203,10 +209,10 @@ int hashmap_put(map_t in, const char *key, any_t value) {
         }
         index = hashmap_hash(in, key);
     }
-
+    
     /* Set the data */
     m->data[index].data = value;
-    m->data[index].key = mem_strdup(key);
+    m->data[index].key = key;
     m->data[index].in_use = 1;
     m->size++;
     return MAP_OK;
