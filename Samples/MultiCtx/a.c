@@ -36,7 +36,7 @@ static void init(void) {
     timerValue.it_value.tv_sec = 1;
     timerValue.it_interval.tv_sec = 1;
     timerfd_settime(fd, 0, &timerValue, NULL);
-    m_register_fd(fd, 1);
+    m_register_fd(fd, 1, NULL);
 #endif
 }
 
@@ -76,7 +76,7 @@ static void destroy(void) {
 static void receive(const msg_t *msg, const void *userdata) {
     if (!msg->is_pubsub) {
         uint64_t t;
-        read(msg->fd, &t, sizeof(uint64_t));
+        read(msg->fd_msg->fd, &t, sizeof(uint64_t));
     
         static int counter = 0;
         m_log("recv!\n");
@@ -96,7 +96,7 @@ static void receive(const msg_t *msg, const void *userdata) {
 static void receive_ready(const msg_t *msg, const void *userdata) {
     if (!msg->is_pubsub) {
         uint64_t t;
-        read(msg->fd, &t, sizeof(uint64_t));
+        read(msg->fd_msg->fd, &t, sizeof(uint64_t));
     
         int *counter = (int *)userdata;
         m_log("recv2!\n");

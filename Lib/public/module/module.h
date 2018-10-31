@@ -7,7 +7,7 @@
     static void init(void); \
     static int check(void); \
     static int evaluate(void); \
-    static void receive(const msg_t *msg, const void *userdata); \
+    static void receive(const msg_t *const msg, const void *userdata); \
     static void destroy(void); \
     static const self_t *_self = NULL; \
     static void _ctor3_ constructor(void) { \
@@ -30,9 +30,8 @@
 #define m_become(x)                             module_become(_self, receive_##x)
 #define m_unbecome()                            module_become(_self, receive)
 #define m_set_userdata(userdata)                module_set_userdata(_self, userdata)
-#define m_register_fd(fd, autoclose)            module_register_fd(_self, fd, autoclose)
+#define m_register_fd(fd, autoclose, data)      module_register_fd(_self, fd, autoclose, data)
 #define m_deregister_fd(fd)                     module_deregister_fd(_self, fd)
-#define m_update_fd(old, new, close_old)        module_update_fd(_self, old, new, close_old)
 #define m_log(...)                              module_log(_self, ##__VA_ARGS__)
 #define m_register_topic(topic)                 module_register_topic(_self, topic)
 #define m_deregister_topic(topic)               module_deregister_topic(_self, topic)
@@ -54,11 +53,11 @@ extern "C"{
 #endif
 
 /* Module registration */
-_public_ module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook);
+_public_ module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, const userhook *hook);
 _public_ module_ret_code module_deregister(const self_t **self);
 
 /* Module state getters */
-_public_ int module_is(const self_t *self, const enum module_states st);
+_public_ bool module_is(const self_t *self, const enum module_states st);
 
 /* Module state setters */
 _public_ module_ret_code module_start(const self_t *self);
@@ -67,12 +66,11 @@ _public_ module_ret_code module_resume(const self_t *self);
 _public_ module_ret_code module_stop(const self_t *self);
 
 /* Module generic functions */
-_public_ module_ret_code module_become(const self_t *self,  recv_cb new_recv);
+_public_ module_ret_code module_become(const self_t *self, const recv_cb new_recv);
 _public_ module_ret_code module_log(const self_t *self, const char *fmt, ...);
 _public_ module_ret_code module_set_userdata(const self_t *self, const void *userdata);
-_public_ module_ret_code module_register_fd(const self_t *self, int fd, bool autoclose);
-_public_ module_ret_code module_deregister_fd(const self_t *self, int fd);
-_public_ module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, bool autoclose);
+_public_ module_ret_code module_register_fd(const self_t *self, const int fd, const bool autoclose, const void *userptr);
+_public_ module_ret_code module_deregister_fd(const self_t *self, const int fd);
 
 /* Note that both name and ctx must be freed by user */
 _public_ module_ret_code module_get_name(const self_t *mod_self, char **name);

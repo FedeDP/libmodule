@@ -5,27 +5,24 @@ int poll_create(void) {
     return epoll_create1(EPOLL_CLOEXEC);
 }
 
-int poll_set_data(void **_ev, void *p) {
+int poll_set_data(void **_ev) {
     *_ev = memhook._malloc(sizeof(struct epoll_event));
     MOD_ASSERT(*_ev, "Failed to malloc", MOD_ERR);
-    struct epoll_event *ev = (struct epoll_event *)*_ev;
-
-    ev->data.ptr = p;
-    ev->events = EPOLLIN;
     return MOD_OK;
 }
 
 int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
     int f = flag == ADD ? EPOLL_CTL_ADD : EPOLL_CTL_DEL;
+    struct epoll_event *ev = (struct epoll_event *)tmp->ev;
+    ev->data.ptr = tmp;
+    ev->events = EPOLLIN;
     return epoll_ctl(c->fd, f, tmp->fd, (struct epoll_event *)tmp->ev);
 }
 
 int poll_init_pevents(void **pevents, int max_events) {
     *pevents = memhook._calloc(max_events, sizeof(struct epoll_event));
-    if (*pevents) {
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    MOD_ASSERT(*pevents, "Failed to malloc", MOD_ERR);
+    return MOD_OK;
 }
 
 int poll_wait(int fd, int max_events, void *pevents) {

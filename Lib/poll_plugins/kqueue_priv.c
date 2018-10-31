@@ -11,8 +11,9 @@ int poll_create(void) {
 #endif
 }
 
-int poll_set_data(void **_ev, void *p) {
+int poll_set_data(void **_ev) {
     *_ev = memhook._malloc(sizeof(struct kevent));
+    MOD_ASSERT(*_ev, "Failed to malloc", MOD_ERR);
     return MOD_OK;
 }
 
@@ -25,10 +26,8 @@ int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
 
 int poll_init_pevents(void **pevents, int max_events) {
     *pevents = memhook._calloc(max_events, sizeof(struct kevent));
-    if (*pevents) {
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    MOD_ASSERT(*pevents, "Failed to malloc", MOD_ERR);
+    return MOD_OK;
 }
 
 int poll_wait(int fd, int max_events, void *pevents) {

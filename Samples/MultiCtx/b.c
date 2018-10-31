@@ -35,7 +35,7 @@ static void init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    m_register_fd(fd, 1);
+    m_register_fd(fd, 1, NULL);
 #endif
 }
 
@@ -75,8 +75,8 @@ static void destroy(void) {
 static void receive(const msg_t *msg, const void *userdata) {
 #ifdef __linux__
     if (!msg->is_pubsub) {
-        struct signalfd_siginfo fdsi;    
-        ssize_t s = read(msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
+        struct signalfd_siginfo fdsi;
+        ssize_t s = read(msg->fd_msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
         if (s != sizeof(struct signalfd_siginfo)) {
             m_log("an error occurred while getting signalfd data.\n");
         }

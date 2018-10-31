@@ -19,7 +19,7 @@ static void modules_destroy(void) {
     hashmap_free(ctx);
 }
 
-module_ret_code modules_set_memalloc_hook(memalloc_hook *hook) {
+module_ret_code modules_set_memalloc_hook(const memalloc_hook *hook) {
     if (hook) {
         MOD_ASSERT(hook->_malloc, "NULL malloc fn.", MOD_ERR);
         MOD_ASSERT(hook->_realloc, "NULL realloc fn.", MOD_ERR);
@@ -39,7 +39,7 @@ module_ret_code modules_set_memalloc_hook(memalloc_hook *hook) {
     return MOD_OK;
 }
 
-module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
+module_ret_code modules_ctx_set_logger(const char *ctx_name, const log_cb logger) {
     MOD_ASSERT(logger, "NULL logger.", MOD_ERR);
     GET_CTX(ctx_name);
     
@@ -47,21 +47,21 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, log_cb logger) {
     return MOD_OK;
 }
 
-module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
+module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_events) {
     MOD_ASSERT((max_events > 0), "max_events parameter must be > 0.", MOD_ERR);
     GET_CTX(ctx_name);
     MOD_ASSERT((c->num_fds > 0), "No fds to loop on.", MOD_ERR);
     MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
-    
+
     if (poll_init_pevents(&c->pevents, max_events) == MOD_OK) {
         c->quit = false;
         c->looping = true;
         c->quit_code = 0;
         c->max_events = max_events;
-        
+
         /* Tell every module that loop is started */
         tell_system_pubsub_msg(c, LOOP_STARTED, NULL);
-        
+
         while (!c->quit) {
             int nfds = poll_wait(c->fd, c->max_events, c->pevents);
             MOD_ASSERT((nfds > 0), "Context loop error.", MOD_ERR);
@@ -69,22 +69,27 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, int max_events) {
                 module_poll_t *p = poll_recv(i, c->pevents);
                 MOD_ASSERT(p, "Context loop error.", MOD_ERR);
                 CTX_GET_MOD(p->self->name, c);
-                
-                const msg_t msg;
-                pubsub_msg_t *m = NULL;
+
+                msg_t msg;
+                fd_msg_t fd_msg;
+
                 if (p->fd == mod->pubsub_fd[0]) {
-                    *(int *)&msg.is_pubsub = 1;
-                    read(p->fd, &m, sizeof(pubsub_msg_t *));
-                    *(pubsub_msg_t **)&msg.msg = m;
+                    /* Received on pubsub interface */
+                    *(bool *)&msg.is_pubsub = true;
+                    read(p->fd, (void **)&msg.pubsub_msg, sizeof(pubsub_msg_t *));
                 } else {
-                    *(int *)&msg.is_pubsub = 0;
-                    *(int *)&msg.fd = p->fd;
+                    /* Received from FD */
+                    *(bool *)&msg.is_pubsub = false;
+                    *(int *)&fd_msg.fd = p->fd;
+                    fd_msg.userptr = p->userptr;
+                    *(fd_msg_t **)&msg.fd_msg = &fd_msg;
                 }
 
                 mod->hook.recv(&msg, mod->userdata);
 
+                /* Properly free pubsub msg */
                 if (p->fd == mod->pubsub_fd[0]) {
-                    memhook._free(m);
+                    memhook._free((void *)msg.pubsub_msg);
                 }
             }
             evaluate_new_state(c);

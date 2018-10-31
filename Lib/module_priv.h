@@ -41,7 +41,8 @@ typedef struct _poll_t {
     int fd;
     bool autoclose;
     void *ev;
-    self_t *self;                         // ptr needed to map a fd to a self_t in epoll
+    const void *userptr;
+    const self_t *self;                   // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
 } module_poll_t;
 

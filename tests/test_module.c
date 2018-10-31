@@ -212,7 +212,7 @@ void test_module_become(void **state) {
 void test_module_add_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_register_fd(self, -1, 1);
+    module_ret_code ret = module_register_fd(self, -1, 1, NULL);
     assert_false(ret == MOD_OK);
 }
 
@@ -220,14 +220,14 @@ void test_module_add_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
     fd = open("/dev/tty", O_RDWR);
-    module_ret_code ret = module_register_fd(NULL, fd, 1);
+    module_ret_code ret = module_register_fd(NULL, fd, 1, NULL);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_add_fd(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_register_fd(self, fd, 1);
+    module_ret_code ret = module_register_fd(self, fd, 1, NULL);
     assert_true(ret == MOD_OK);
 }
 

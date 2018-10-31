@@ -14,6 +14,8 @@
  */
 MODULE("Pippo");
 
+static int myData = 5;
+
 static void receive_ready(const msg_t *msg, const void *userdata);
 
 /*
@@ -39,11 +41,11 @@ static void init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    m_register_fd(fd, 1);
+    m_register_fd(fd, 1, &myData);
 #endif
     
     /* Add stdin fd */
-    m_register_fd(STDIN_FILENO, 0);
+    m_register_fd(STDIN_FILENO, 0, NULL);
 }
 
 /* 
@@ -84,10 +86,14 @@ static void receive(const msg_t *msg, const void *userdata) {
         char c;
         
         /* Forcefully quit if we received a signal */
-        if (msg->fd != STDIN_FILENO) {
+        if (msg->fd_msg->fd != STDIN_FILENO) {
             c = 'q';
+            int *data = (int *)msg->fd_msg->userptr;
+            if (data) {
+                m_log("Data is %d\n", *data);
+            }
         } else {
-            read(msg->fd, &c, sizeof(char));
+            read(msg->fd_msg->fd, &c, sizeof(char));
         }
         
         switch (tolower(c)) {
@@ -108,7 +114,7 @@ static void receive(const msg_t *msg, const void *userdata) {
                 break;
         }
     } else {
-        if (msg->msg->type == USER && !strcmp((char *)msg->msg->message, "BauBau")) {
+        if (msg->pubsub_msg->type == USER && !strcmp((char *)msg->pubsub_msg->message, "BauBau")) {
             m_become(ready);
             /* Finally register Leaving topic */
             m_register_topic("leaving");
@@ -126,10 +132,10 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
         char c;
         
         /* Forcefully quit if we received a signal */
-        if (msg->fd != STDIN_FILENO) {
+        if (msg->fd_msg->fd != STDIN_FILENO) {
             c = 'q';
         } else {
-            read(msg->fd, &c, sizeof(char));
+            read(msg->fd_msg->fd, &c, sizeof(char));
         }
         
         switch (tolower(c)) {

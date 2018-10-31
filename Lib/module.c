@@ -59,7 +59,7 @@ static m_context *check_ctx(const char *ctx_name) {
 
 static module_ret_code init_pubsub_fd(module *mod) {
     if (_pipe(mod->pubsub_fd) == 0) {
-        if (module_register_fd(&mod->self, mod->pubsub_fd[0], true) == MOD_OK) {
+        if (module_register_fd(&mod->self, mod->pubsub_fd[0], true, NULL) == MOD_OK) {
             return MOD_OK;
         }
         close(mod->pubsub_fd[0]);
@@ -68,7 +68,7 @@ static module_ret_code init_pubsub_fd(module *mod) {
     return MOD_ERR;
 }
 
-module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, userhook *hook) {
+module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, const userhook *hook) {
     MOD_ASSERT(name, "NULL module name.", MOD_ERR);
     MOD_ASSERT(ctx_name, "NULL context name.", MOD_ERR);
     MOD_ASSERT(self, "NULL self double pointer.", MOD_ERR);
@@ -147,7 +147,7 @@ int evaluate_module(void *data, void *m) {
     return MAP_OK;
 }
 
-module_ret_code module_become(const self_t *self,  recv_cb new_recv) {
+module_ret_code module_become(const self_t *self, const recv_cb new_recv) {
     MOD_ASSERT(new_recv, "Null recv callback.", MOD_ERR);
     GET_MOD_IN_STATE(self, RUNNING);
     
@@ -165,7 +165,7 @@ module_ret_code module_log(const self_t *self, const char *fmt, ...) {
     return MOD_OK;
 }
 
-module_ret_code module_set_userdata(const self_t *self, const void *userdata) {    
+module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
     GET_MOD(self);
     
     mod->userdata = userdata;
@@ -176,7 +176,7 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
  * Append this fd to our list of fds and 
  * if module is in RUNNING state, start listening on its events 
  */
-module_ret_code module_register_fd(const self_t *self, int fd, bool autoclose) {
+module_ret_code module_register_fd(const self_t *self, const int fd, const bool autoclose, const void *userptr) {
     GET_MOD(self);
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
 
@@ -185,7 +185,8 @@ module_ret_code module_register_fd(const self_t *self, int fd, bool autoclose) {
 
     tmp->fd = fd;
     tmp->autoclose = autoclose;
-    poll_set_data(&tmp->ev, (void *)tmp);
+    tmp->userptr = userptr;
+    poll_set_data(&tmp->ev);
     tmp->prev = mod->fds;
     tmp->self = (self_t *)self;
     mod->fds = tmp;
@@ -200,7 +201,8 @@ module_ret_code module_register_fd(const self_t *self, int fd, bool autoclose) {
 }
 
 /* Linearly searching for fd */
-module_ret_code module_deregister_fd(const self_t *self, int fd) {
+module_ret_code module_deregister_fd(const self_t *self, const int fd)
+{
     GET_MOD(self);
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
     
@@ -220,16 +222,6 @@ module_ret_code module_deregister_fd(const self_t *self, int fd) {
             return MOD_OK;
         }
         tmp = &(*tmp)->prev;
-    }
-    return MOD_ERR;
-}
-
-module_ret_code module_update_fd(const self_t *self, int old_fd, int new_fd, bool autoclose) {
-    MOD_ASSERT((old_fd >= 0), "Wrong old fd.", MOD_ERR);
-    MOD_ASSERT((new_fd >= 0), "Wrong new fd.", MOD_ERR);
-    
-    if (module_deregister_fd(self, old_fd) == MOD_OK) {
-        return module_register_fd(self, new_fd, autoclose);
     }
     return MOD_ERR;
 }
@@ -328,14 +320,14 @@ int flush_pubsub_msg(void *data, void *m) {
     module *mod = (module *)m;
     pubsub_msg_t *mm = NULL;
     
-    while (read(mod->pubsub_fd[0], &mm, sizeof(pubsub_msg_t *)) == sizeof(void *)) {
+    while (read(mod->pubsub_fd[0], &mm, sizeof(pubsub_msg_t *)) == sizeof(pubsub_msg_t *)) {
         /* 
          * Actually tell msg ONLY if we are not deregistering module, 
-         * ie: we are stopping looping on the context 
+         * ie: we are stopping looping on the context. 
          */
         if (!data) {
             MODULE_DEBUG("Flushing pubsub message for module '%s'.\n", mod->self.name);
-            const msg_t msg = { .is_pubsub = 1, .msg = mm };
+            const msg_t msg = { .is_pubsub = 1, .pubsub_msg = mm };
             mod->hook.recv(&msg, mod->userdata);
         }
         memhook._free(mm);
@@ -425,7 +417,7 @@ module_ret_code module_publish(const self_t *self, const char *topic, const unsi
 /** Module state getters **/
 
 /* Define states getters */
-int module_is(const self_t *self, const enum module_states st) {
+bool module_is(const self_t *self, const enum module_states st) {
     GET_MOD(self);
     
     return mod->state & st;
