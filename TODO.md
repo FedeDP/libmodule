@@ -22,7 +22,7 @@
 
 - [x] Install license file in /usr/share/licenses/libmodule/
 
-- [ ] Add a module_easy.h public header? modules_easy.h too?
+- [x] Add a module_easy.h public header? modules_easy.h too?
 
 ### Pre-Release
 

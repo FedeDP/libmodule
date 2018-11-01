@@ -1,4 +1,4 @@
-#include <module/modules.h>
+#include <module/modules_easy.h>
 
 /*
  * This function is automatically called before initing any module.

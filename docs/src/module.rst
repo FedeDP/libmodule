@@ -5,7 +5,7 @@
 Module
 ======
 
-Module API denotes libmodule interface functions that can be found in <module/module.h> header. |br|
+Module API denotes libmodule interface functions to manage each module lifecycle. |br|
 It is splitted in two APIs.
 
 .. _module_easy:    
@@ -13,18 +13,31 @@ It is splitted in two APIs.
 Module easy API
 ---------------
 
-Module easy API consists of a single-context-multi-modules set of macros. |br|
+Module easy API consists of a single-context-multi-modules set of macros. It can be found in <module/module_easy.h>. |br|
 These macros make it easy and transparent to developer all of the module's internal mechanisms, providing a very simple way to use libmodule. |br|
 It enforces correct modularity too: each module must have its own source file. |br|
 Where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.
 
 .. c:macro:: MODULE(name)
 
-  Creates "name" module: declares all needed functions and creates both constructor and destructor that will automatically register/deregister this module at startup. |br|
-  Finally, it declares a :c:type:`const self_t *_self` global variable that will be automatically used in every function call.
+  Creates "name" module with a default context: declares all needed functions and creates both constructor and destructor that will automatically register/deregister this module at startup. |br|
+  Finally, it declares a :c:type:`const self_t *_self` global variable that will be automatically used in every function call. |br|
+  Note that default context will be automatically created if this is the first module to bind on it.
   
   :param name: name of the module to be created
   :type name: :c:type:`const char *` 
+  :returns: void
+  
+.. c:macro:: MODULE_CTX(name, ctxName)
+
+  Creates "name" module in ctxName context: declares all needed functions and creates both constructor and destructor that will automatically register/deregister this module at startup. |br|
+  Finally, it declares a :c:type:`const self_t *_self` global variable that will be automatically used in every function call. |br|
+  Note that ctxName context will be automatically created if this is the first module to bind on it.
+  
+  :param name: name of the module to be created
+  :param ctxName: name of the context in which the module has to be created
+  :type name: :c:type:`const char *` 
+  :type ctxName: :c:type:`const char *` 
   :returns: void
 
 .. c:macro:: m_is(state)
@@ -207,8 +220,8 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 Module Complex API
 ------------------
 
-Complex (probably better to say less-easy) API consists of `Module easy API`_ internally used functions. |br|
-Sometime you may avoid using easy API; eg: if you wish to use same source file for different modules. |br|
+Complex (probably better to say less-easy) API consists of `Module easy API`_ internally used functions. It can be found in <module/module.h> header. |br|
+Sometime you may avoid using easy API; eg: if you wish to use same source file for different modules, or if you wish to manually register a module. |br|
 Again, where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.
 
 .. c:function:: module_register(name, ctx_name, self, hook)

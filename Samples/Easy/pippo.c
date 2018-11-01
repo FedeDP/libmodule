@@ -1,5 +1,5 @@
-#include <module/module.h>
-#include <module/modules.h>
+#include <module/module_easy.h>
+#include <module/modules_easy.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>

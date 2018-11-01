@@ -1,4 +1,4 @@
-#include <module/module.h>
+#include <module/module_easy.h>
 #include <module/modules.h>
 #ifdef __linux__
     #include <sys/signalfd.h>

@@ -1,4 +1,4 @@
-#include <module/modules.h>
+#include <module/modules_easy.h>
 #include <module/module.h>
 #include <pthread.h>
 #include <stdlib.h>

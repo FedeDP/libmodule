@@ -1,5 +1,5 @@
 #include "test_modules.h"
-#include <module/modules.h>
+#include <module/modules_easy.h>
 #include <module/module.h>
 #include <stdlib.h>
 

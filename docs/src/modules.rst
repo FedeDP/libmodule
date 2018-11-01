@@ -5,7 +5,7 @@
 Modules
 =======
 
-Modules API denotes libmodule interface functions that can be found in <module/modules.h> header. |br|
+Modules API denotes libmodule interface functions to manage context loop. |br|
 Like Module API, it has an easy, single-context API. Moreover, it has an equivalent multi-context API. |br|
 All these functions but modules_pre_start() return a :ref:`module_ret_code <module_ret_code>`. |br|
 
@@ -21,7 +21,7 @@ Moreover, there is a single function that is common to every context (thus does 
 Modules easy API
 ----------------
 Modules easy API should be used in conjunction with :ref:`module_easy`. |br|
-It abstracts all of libmodule internals mechanisms to provide an easy-to-use and simple API.
+It abstracts all of libmodule internals mechanisms to provide an easy-to-use and simple API. It can be found in <module/modules_easy.h> header.
 
 .. _modules_pre_start:
 
@@ -51,7 +51,7 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
   
 Modules multi-context API
 -------------------------
-Modules multi-context API let you manage your contexts in a very simple way. |br|
+Modules multi-context API let you manage your contexts in a very simple way. It is exposed by <module/modules.h> header. |br|
 It exposes very similar functions to single-context API (again, single-context is only a particular case of multi-context), that now take a "context_name" parameter.
   
 .. c:function:: modules_ctx_set_logger(ctx_name, logger)
