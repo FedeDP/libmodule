@@ -330,7 +330,7 @@ int flush_pubsub_msg(void *data, void *m) {
             const msg_t msg = { .is_pubsub = 1, .pubsub_msg = mm };
             mod->hook.recv(&msg, mod->userdata);
         }
-        memhook._free(mm);
+        destroy_pubsub_msg(mm);
     }
     return 0;
 }
@@ -362,11 +362,16 @@ static pubsub_msg_t *create_pubsub_msg(const unsigned char *message, const self_
     if (m) {
         m->message = message;
         m->sender = sender;
-        m->topic = topic;
+        m->topic = mem_strdup(topic);
         *(int *)&m->type = type;
         *(size_t *)&m->size = size;
     }
     return m;
+}
+
+void destroy_pubsub_msg(pubsub_msg_t *m) {
+    memhook._free((char *)m->topic);
+    memhook._free(m);
 }
 
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {

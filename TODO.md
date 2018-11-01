@@ -2,7 +2,6 @@
 
 - [x] pubsub messaging to send bytes instead of string (ie: add size to pubsub_msg_t)
 - [x] Avoid strdup for pubsub msg and trust user-provided pointer
-- [x] Same as above for topic
 - [x] Use memhook malloc/free in epoll_priv, kqueue_priv poll_set_data()
 - [x] Avoid strdup and use internal strdup that makes use of memhook
 - [x] modules_quit should take an "exit value" parameter

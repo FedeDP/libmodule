@@ -32,4 +32,4 @@ PubSub notes
 Note that a context must be looping to receive any pubsub message. |br|
 Moreover, when a context stops looping, all pubsub messages will be flushed and thus delivered to each RUNNING module. |br|
 Pubsub message sent while context is not looping are buffered until context starts looping. For more information, see `pipe capacity <https://linux.die.net/man/7/pipe>`_. |br|
-Finally, please be aware that both data and topic sent through pubsub messaging are trusted, ie: you should pay attention to their scopes.
+Finally, please be aware that data pointer sent through pubsub messaging is trusted, ie: you should pay attention to its scope.

@@ -89,7 +89,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
 
                 /* Properly free pubsub msg */
                 if (p->fd == mod->pubsub_fd[0]) {
-                    memhook._free((void *)msg.pubsub_msg);
+                    destroy_pubsub_msg((pubsub_msg_t *)msg.pubsub_msg);
                 }
             }
             evaluate_new_state(c);

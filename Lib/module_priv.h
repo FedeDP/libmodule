@@ -73,6 +73,7 @@ typedef struct {
 int evaluate_module(void *data, void *m);
 module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic);
 int flush_pubsub_msg(void *data, void *m);
+void destroy_pubsub_msg(pubsub_msg_t *m);
 char *mem_strdup(const char *s);
 
 extern map_t ctx;
