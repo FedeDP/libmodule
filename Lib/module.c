@@ -64,6 +64,8 @@ static module_ret_code init_pubsub_fd(module *mod) {
         }
         close(mod->pubsub_fd[0]);
         close(mod->pubsub_fd[1]);
+        mod->pubsub_fd[0] = -1;
+        mod->pubsub_fd[1] = -1;
     }
     return MOD_ERR;
 }
@@ -114,7 +116,7 @@ module_ret_code module_deregister(const self_t **self) {
     /* Free all unread pubsub msg for this module */
     flush_pubsub_msg(tmp, mod);
     
-    stop(*self, RUNNING | IDLE | PAUSED, "Failed to stop module.", 1);
+    stop(*self, RUNNING | IDLE | PAUSED | STOPPED, "Failed to stop module.", 1);
     
     mod->hook.destroy();
     /* Remove the module from the context */
@@ -192,7 +194,7 @@ module_ret_code module_register_fd(const self_t *self, const int fd, const bool 
     mod->fds = tmp;
     c->num_fds++;
 
-    /* If a fd is added at runtime, start polling on it */
+    /* If a fd is registered at runtime, start polling on it */
     if (module_is(self, RUNNING)) {
         int ret = poll_set_new_evt(tmp, c, ADD);
         return !ret ? MOD_OK : MOD_ERR;
@@ -201,25 +203,28 @@ module_ret_code module_register_fd(const self_t *self, const int fd, const bool 
 }
 
 /* Linearly searching for fd */
-module_ret_code module_deregister_fd(const self_t *self, const int fd)
-{
+module_ret_code module_deregister_fd(const self_t *self, const int fd) {
     GET_MOD(self);
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
-    
     MOD_ASSERT(mod->fds, "No fd registered in this module.", MOD_ERR);
     module_poll_t **tmp = &mod->fds;
     
+    int ret = 0;
     while (*tmp) {
         if ((*tmp)->fd == fd) {
             module_poll_t *t = *tmp;
             *tmp = (*tmp)->prev;
+            /* If a fd is deregistered for a RUNNING module, stop polling on it */
+            if (module_is(self, RUNNING)) {
+                ret = poll_set_new_evt(t, c, RM);
+            }
             if (t->autoclose) {
                 close(t->fd);
             }
             memhook._free(t->ev);
             memhook._free(t);
             c->num_fds--;
-            return MOD_OK;
+            return !ret ? MOD_OK : MOD_ERR;
         }
         tmp = &(*tmp)->prev;
     }
@@ -341,11 +346,11 @@ static int tell_if(void *data, void *m) {
     void *tmp = NULL;
 
     /* 
-     * Only if mod is actually running and 
-     * or it is a SYSTEM message. or
-     * if topic is null or this module is subscribed to topic 
+     * Only if mod is actually running or paused and 
+     * it is a SYSTEM message or
+     * topic is null or this module is subscribed to topic 
      */
-    if (module_is(&mod->self, RUNNING) && (msg->type != USER || !msg->topic || 
+    if (module_is(&mod->self, RUNNING | PAUSED) && (msg->type != USER || !msg->topic || 
         hashmap_get(mod->subscriptions, msg->topic, (void **)&tmp) == MAP_OK)) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->self.name);
@@ -435,11 +440,12 @@ static int manage_fds(module *mod, m_context *c, int flag, int stop) {
     int ret = 0;
     
     while (tmp && !ret) {
-        ret = poll_set_new_evt(tmp, c, flag);
-        const int fd = tmp->fd;
+        module_poll_t *t = tmp;
         tmp = tmp->prev;
         if (flag == RM && stop) {
-            ret += module_deregister_fd(&mod->self, fd);
+            ret = module_deregister_fd(&mod->self, t->fd);
+        } else {
+            ret = poll_set_new_evt(t, c, flag);
         }
     }
     return ret;
@@ -477,8 +483,10 @@ static module_ret_code stop(const self_t *self, const enum module_states mask, c
      * When module gets stopped, its write-end pubsub fd is closed too 
      * Read-end is already closed by stop().
      */
-    if (stop) {
+    if (stop && mod->pubsub_fd[1] != -1) {
         close(mod->pubsub_fd[1]);
+        mod->pubsub_fd[0] = -1;
+        mod->pubsub_fd[1] = -1;
     }
     return MOD_OK;
 }
@@ -496,5 +504,5 @@ module_ret_code module_resume(const self_t *self) {
 }
 
 module_ret_code module_stop(const self_t *self) {
-    return stop(self, RUNNING | IDLE, "Failed to stop module.", 1);
+    return stop(self, RUNNING | PAUSED, "Failed to stop module.", 1);
 }
