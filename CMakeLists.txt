@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.3.2)
 
-project(module VERSION 2.1.1 DESCRIPTION "Easily create modular C programs")
+project(module VERSION 3.0.0 DESCRIPTION "Easily create modular C programs")
 
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE Release)

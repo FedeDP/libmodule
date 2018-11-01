@@ -36,6 +36,7 @@ typedef struct _self self_t;
 /* Modules states */
 enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
+/* PubSub message types */
 enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED };
 
 typedef struct {
@@ -61,7 +62,7 @@ typedef struct {
 
 /* Callbacks typedefs */
 typedef void (*init_cb)(void);
-typedef int (*evaluate_cb)(void);
+typedef bool (*evaluate_cb)(void);
 typedef void (*recv_cb)(const msg_t *const msg, const void *userdata);
 typedef void (*destroy_cb)(void);
 

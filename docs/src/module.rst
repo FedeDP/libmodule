@@ -32,8 +32,8 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   Check current module's state
     
   :param state: state we are interested in; note that it can be an OR of states (eg: IDLE | RUNNING)
-  :type state: :c:type:`enum module_states` 
-  :returns: false (0) if module' state is not 'state', true (1) if it is and MOD_ERR on error.
+  :type state: :c:type:`const enum module_states` 
+  :returns: false if module' state is not 'state', true if it is and MOD_ERR on error.
   
 .. c:macro:: m_start(void)
 
@@ -69,32 +69,23 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param userdata: module's new userdata.
   :type userdata: :c:type:`const void *`
 
-.. c:macro:: m_register_fd(fd)
+.. c:macro:: m_register_fd(fd, autoclose, userptr)
 
-  Add a new fd to be polled by a module
+  Registers a new fd to be polled by a module
     
-  :param fd: module's old fd.
-  :type fd: :c:type:`int`
+  :param fd: fd to be registered.
+  :param autoclose: whether to automatically close the fd on module stop/fd deregistering.
+  :param userptr: data to be passed in receive() callback msg->fd_msg_t when an event happens on this fd.
+  :type fd: :c:type:`const int`
+  :type autoclose: :c:type:`const bool`
+  :type userptr: :c:type:`const void *`
   
-.. c:macro:: m_deregister_fd(fd, close_fd)
+.. c:macro:: m_deregister_fd(fd)
 
-  Remove a fd from a module
+  Deregisters a fd from a module
     
   :param fd: module's old fd.
-  :param close_fd: true to close the removed fd.
-  :type fd: :c:type:`int`
-  :type close_fd: :c:type:`int`
-
-.. c:macro:: m_update_fd(old_fd, new_fd, close_old)
-
-  Update old_fd to new_fd for this module
-    
-  :param old_fd: module's old fd to be replaced.
-  :param new_fd: module's new fd.
-  :param close_old: whether to close old_fd.
-  :type old_fd: :c:type:`int`
-  :type new_fd: :c:type:`int`
-  :type close_old: :c:type:`int`
+  :type fd: :c:type:`const int`
 
 .. c:macro:: m_log(fmt, args)
 
@@ -247,8 +238,8 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param self: pointer to module's handler.
   :param state: state we are interested in; note that it can be an OR of states (eg: IDLE | RUNNING)
   :type self: :c:type:`const self_t *`
-  :type state: :c:type:`enum module_states`
-  :returns: false (0) if module'state is not 'state', true (1) if it is and MOD_ERR on error.
+  :type state: :c:type:`const enum module_states`
+  :returns: false  if module'state is not 'state', true if it is and MOD_ERR on error.
   
 .. c:function:: module_start(self)
 
@@ -285,7 +276,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param self: pointer to module's handler
   :param new_receive: new module's receive.
   :type self: :c:type:`const self_t *`
-  :type new_receive: :c:type:`recv_cb`
+  :type new_receive: :c:type:`const recv_cb`
 
 .. c:function:: module_set_userdata(self, userdata)
 
@@ -296,38 +287,27 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type self: :c:type:`const self_t *`
   :type userdata: :c:type:`const void *`
 
-.. c:function:: module_register_fd(self, fd)
+.. c:function:: module_register_fd(self, fd, autoclose, userptr)
 
-  Add a new fd to be polled by a module
+  Register a new fd to be polled by a module
+    
+  :param self: pointer to module's handler
+  :param fd: fd to be registered.
+  :param autoclose: whether to automatically close the fd on module stop/fd deregistering.
+  :param userptr: data to be passed in receive() callback msg->fd_msg_t when an event happens on this fd.
+  :type self: :c:type:`const self_t *`
+  :type fd: :c:type:`const int`
+  :type autoclose: :c:type:`const bool`
+  :type userptr: :c:type:`const void *`
+  
+.. c:function:: module_deregister_fd(self, fd)
+
+  Deregister a fd from a module
     
   :param self: pointer to module's handler
   :param fd: module's old fd.
   :type self: :c:type:`const self_t *`
-  :type fd: :c:type:`int`
-  
-.. c:function:: module_deregister_fd(self, fd, close_fd)
-
-  Remove a fd from a module
-    
-  :param self: pointer to module's handler
-  :param fd: module's old fd.
-  :param close_fd: true to close the removed fd.
-  :type self: :c:type:`const self_t *`
-  :type fd: :c:type:`int`
-  :type close_fd: :c:type:`int`
-  
-.. c:function:: module_update_fd(self, old_fd, new_fd, close_old)
-
-  Update old_fd to new_fd for this module
-    
-  :param self: pointer to module's handler
-  :param old_fd: module's old fd to be replaced.
-  :param new_fd: module's new fd.
-  :param close_old: whether to close old_fd.
-  :type self: :c:type:`const self_t *`
-  :type old_fd: :c:type:`int`
-  :type new_fd: :c:type:`int`
-  :type close_old: :c:type:`int`
+  :type fd: :c:type:`const int`
 
 .. c:function:: module_get_name(self, name)
 

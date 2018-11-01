@@ -16,7 +16,7 @@ Moreover, there is a single function that is common to every context (thus does 
   Set memory management functions. By default: malloc, realloc, calloc and free are used.
   
   :param hook: new memory management hook.
-  :type hook: :c:type:`memalloc_hook *`
+  :type hook: :c:type:`const memalloc_hook *`
 
 Modules easy API
 ----------------
@@ -36,15 +36,15 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
   Set a logger. By default, module's log prints to stdout. 
   
   :param logger: logger function.
-  :type logger: :c:type:`log_cb`
+  :type logger: :c:type:`const log_cb`
   
 .. c:macro:: modules_loop(void)
 
-  Start looping on events from modules. Note that as soon as modules_loop is called, a message with type == SYSTEM will be broadcasted to all modules.
+  Start looping on events from modules. Note that as soon as modules_loop is called, a message with type == LOOP_STARTED will be broadcasted to all context's modules.
   
 .. c:macro:: modules_quit(quit_code)
 
-  Leave libmodule's events loop.
+  Leave libmodule's events loop. Note that as soon as it is called, a message with type == LOOP_STOPPED will be broadcasted to all context's modules.
   
   :param quit_code: exit code that should be returned by modules_loop.
   :type quit_code: :c:type:`const uint8_t`
@@ -61,7 +61,7 @@ It exposes very similar functions to single-context API (again, single-context i
   :param ctx_name: context name.
   :param logger: logger function.
   :type ctx_name: :c:type:`const char *`
-  :type logger: :c:type:`log_cb`
+  :type logger: :c:type:`const log_cb`
   
 .. c:macro:: modules_ctx_loop(ctx_name)
 
@@ -72,16 +72,16 @@ It exposes very similar functions to single-context API (again, single-context i
   
 .. c:function:: modules_ctx_loop_events(ctx_name, maxevents)
 
-  Start looping on events from modules, on at most maxevents events at the same time. Note that as soon as modules_ctx_loop_events is called, a message with type == SYSTEM will be broadcasted to all modules.
+  Start looping on events from modules, on at most maxevents events at the same time. Note that as soon as modules_loop is called, a message with type == LOOP_STARTED will be broadcasted to all context's modules.
   
   :param ctx_name: context name.
   :param maxevents: max number of fds wakeup that will be managed at the same time.
   :type ctx_name: :c:type:`const char *`
-  :type maxevents: :c:type:`int`
+  :type maxevents: :c:type:`const int`
   
 .. c:function:: modules_ctx_quit(ctx_name, quit_code)
 
-  Leave libmodule's events loop.
+  Leave libmodule's events loop. Note that as soon as it is called, a message with type == LOOP_STOPPED will be broadcasted to all context's modules.
   
   :param ctx_name: context name.
   :param quit_code: exit code that should be returned by modules_loop.

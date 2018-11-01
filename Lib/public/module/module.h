@@ -5,8 +5,8 @@
 /* Interface Macros */
 #define MODULE_CTX(name, ctx) \
     static void init(void); \
-    static int check(void); \
-    static int evaluate(void); \
+    static bool check(void); \
+    static bool evaluate(void); \
     static void receive(const msg_t *const msg, const void *userdata); \
     static void destroy(void); \
     static const self_t *_self = NULL; \

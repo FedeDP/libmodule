@@ -15,18 +15,18 @@ module registration/deregistration is completely automated and transparent to de
 This means that when using easy API (or multicontext API), you will only have to declare a source file as a module and define needed functions. |br|
 
 Before any module is registered into libmodule, each module's module_pre_start() function is called. |br|
-This function can be useful to set each module pre-starting state: this may be needed if any check() function depends on another module resource. |br|
+This function can be useful to set each module pre-starting state: this may be needed if any check() function depends on some global state (eg: as read by config file). |br|
 
 After every module_pre_start() function is called, libmodule will start checking which module needs to be registered, eventually registering them. |br|
-For every module, check() function will be called; if and only if that function returns a TRUE value (ie: non-0 return code), the module will be registered. |br|
+For every module, check() function will be called; if and only if that function returns true, the module will be registered. |br|
 An unregistered module is just dead code; none of its functions will ever be called. |br|
-Once a module is registered, it will be initially set to an IDLE state. Idle means that the module is not started yet, ie: it must still set a proper fd to be polled. |br|
+Once a module is registered, it will be initially set to an IDLE state. Idle means that the module is not started yet, thus it cannot receive any PubSub msg nor any event from fds. |br|
 
 Right after module's registration, its evaluate() function will be called, trying to start the module right after it was registered. |br|
 Evaluate will be then called at each state machine change, for each idle module. |br|
 
-As soon as module's evaluate() returns TRUE, the module is started. It means its init() function is finally called and its state is set to RUNNING. |br|
-A single module can poll on multiple fds: just call module_add_fd() multiple times. |br|
+As soon as module's evaluate() returns true, the module is started. It means its init() function is finally called and its state is set to RUNNING. |br|
+A single module can poll on multiple fds: just call module_register_fd() multiple times. |br|
 When a module reaches RUNNING state, modules_loop()/modules_ctx_loop() functions will finally receive events from its fds. |br|
 
 Whenever an event triggers on a module's fd, or the module receives a PubSub message from another one, its receive() callback is called. |br|

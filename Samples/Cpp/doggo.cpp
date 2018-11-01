@@ -32,8 +32,8 @@ static void init(void) {
  * Use this function as a starting filter: 
  * you may desire that a module is not started in certain conditions.
  */
-static int check(void) {
-    return 1;
+static bool check(void) {
+    return true;
 }
 
 /* 
@@ -43,8 +43,8 @@ static int check(void) {
  * Eg: you can evaluate your global state to make this module start right after
  * certain conditions are met.
  */
-static int evaluate(void) {
-    return 1;
+static bool evaluate(void) {
+    return true;
 }
 
 /*

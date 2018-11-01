@@ -24,6 +24,7 @@ Types
     /* Modules states */
     enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
+    /* PubSub message types */
     enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED };
 
     typedef struct {
@@ -35,17 +36,22 @@ Types
     } pubsub_msg_t;
 
     typedef struct {
-        const uint8_t is_pubsub;
+        const int fd;
+        const void *userptr;
+    } fd_msg_t;
+
+    typedef struct {
+        const bool is_pubsub;
         union {
-            const int fd;
-            const pubsub_msg_t *msg;
+            const fd_msg_t      *const fd_msg;
+            const pubsub_msg_t  *const pubsub_msg;
         };
     } msg_t;
 
     /* Callbacks typedefs */
     typedef void(*init_cb)(void);
-    typedef int(*evaluate_cb)(void);
-    typedef void(*recv_cb)(const msg_t *msg, const void *userdata);
+    typedef bool(*evaluate_cb)(void);
+    typedef void(*recv_cb)(const msg_t *const msg, const void *userdata);
     typedef void(*destroy_cb)(void);
 
     /* Logger callback */

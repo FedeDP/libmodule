@@ -7,7 +7,7 @@
 #include <string.h>
 
 static void init(void);
-static int evaluate(void);
+static bool evaluate(void);
 static void recv(const msg_t *msg, const void *userdata);
 static void destroy(void);
 
@@ -431,8 +431,8 @@ static void init(void) {
     
 }
 
-static int evaluate(void) {
-    return 1;
+static bool evaluate(void) {
+    return true;
 }
 
 static void recv(const msg_t *msg, const void *userdata) {

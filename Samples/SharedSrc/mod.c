@@ -10,7 +10,7 @@
  */
 static void A_init(void);
 static void B_init(void);
-static int evaluate(void);
+static bool evaluate(void);
 static void destroy(void);
 static void A_recv(const msg_t *msg, const void *userdata);
 static void A_recv_ready(const msg_t *msg, const void *userdata);
@@ -65,8 +65,8 @@ static void B_init(void) {
  * Eg: you can evaluate your global state to make this module start right after
  * certain conditions are met.
  */
-static int evaluate(void) {
-    return 1;
+static bool evaluate(void) {
+    return true;
 }
 
 /*

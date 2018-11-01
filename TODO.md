@@ -22,27 +22,21 @@
 
 - [x] Install license file in /usr/share/licenses/libmodule/
 
+- [ ] Add a module_easy.h public header? modules_easy.h too?
+
 ### Pre-Release
 
 - [x] Update examples and tests
-- [ ] Update doc
+- [x] Update doc
 
 ### Release
 
-- [ ] Switch to 3.0.0
+- [x] Switch to 3.0.0
 - [ ] Roll new release
-
-## 3.1.0
-
-- [ ] Add a module_tell_dup/module_publish_dup to do a malloc and memcpy -> use this if you want every module to receive unique pointer to data
 
 ## Later/Ideas
 
-### Dep system (??)
-
-- [ ] REQUIRE and AFTER macros?
-
-- [ ] Release
+- [ ] Let contexts talk together? Eg: broadcast(msg, bool global) to send a message to all modules in every context; module_publish message in another context? etc etc
 
 ### Submodules (??)
 

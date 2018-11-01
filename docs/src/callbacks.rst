@@ -13,9 +13,9 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 
     static void module_pre_start(void);
     static void init(void);
-    static int check(void);
-    static int evaluate(void);
-    static void receive(const msg_t *msg, const void *userdata);
+    static bool check(void);
+    static bool evaluate(void);
+    static void receive(const msg_t *const msg, const void *userdata);
     static void destroy(void);
 
 .. c:function:: module_pre_start(void)
@@ -25,31 +25,33 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 
 .. c:function:: init(void)
 
-  Initializes module state and calls module_add_fd() for each fd this module should listen to. |br|
-  To create a non-pollable module, just avoid adding any fd. |br|
-  Non-pollable module acts much more similar to an actor, ie: they can only receive and send PubSub messages.
+  Initializes module state; useful to call module_register_fd() for each fd this module should listen to. |br|
+  To create a non-pollable module, just avoid registering any fd. |br|
+  Non-pollable module acts much more similar to an actor, ie: they can only receive and send PubSub messages. |br|
+  Moreover this is the right place to eventually register any topic.
 
 .. c:function:: check(void)
 
   Startup filter to check whether this module should be registered and managed by libmodule, |br|
   as sometimes you may wish that not your modules are automatically started.
   
-  :returns: true (not-0) if the module should be registered, 0 otherwise.
+  :returns: true if the module should be registered, false otherwise.
 
 .. c:function:: evaluate(void)
 
   Similar to check() function but at runtime: this function is called for each IDLE module after evey state machine update
   and it should check whether a module is now ready to be start (ie: init should be called on this module).
   
-  :returns: true (not-0) if module is now ready to be started, else 0.
+  :returns: true if module is now ready to be started, else false.
   
 .. c:function:: receive(msg, userdata)
 
-  Poll callback, called when any event is ready on module's fd or when a PubSub message is received by a module.
+  Poll callback, called when any event is ready on module's fd or when a PubSub message is received by a module. |br|
+  Use msg->is_pubsub to decide which internal message should be read (ie: pubsub_msg_t or fd_msg_t).
   
-  :param: :c:type:`const msg_t *` msg: pointer to msg_t struct.
+  :param: :c:type:`const msg_t * const` msg: pointer to msg_t struct.
   :param: :c:type:`const void *` userdata: pointer to userdata as set by m_set_userdata.
 
 .. c:function:: destroy(void)
 
-  Destroys module, called automatically at module deregistration. Please note that module's fd is automatically closed.
+  Destroys module, called automatically at module deregistration. Please note that module's fds set as autoclose will be closed.
