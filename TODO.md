@@ -6,7 +6,7 @@
 - [x] module_stop can be called on PAUSED modules too!
 - [x] Document module states! (STOP is same as IDLE; IDLE means it is registered but still never started. STOPPED it means it is registered, was started and was stopped.)
 
-- [ ] Release 3.0.1
+- [x] Set O_CLOEXEC flag in non-linux poll implementation for both pipe and kqueue
 
 ## 3.1.0
 

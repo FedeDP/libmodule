@@ -11,8 +11,9 @@ add_executable(ModuleTest ${SOURCES})
 add_dependencies(ModuleTest ModuleTest)
 add_test(ModuleTest ModuleTest)
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    find_package(Valgrind REQUIRED)
+find_package(Valgrind)
+if(VALGRIND_FOUND)
+    message(STATUS "Tests will be checked with valgrind.")
     add_test(ModuleTest_valgrind valgrind
          --error-exitcode=1 --read-var-info=yes
          --leak-check=full --show-leak-kinds=all
