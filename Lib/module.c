@@ -2,6 +2,7 @@
 #include "poll_priv.h"
 #include <string.h>
 #include <stdarg.h>
+#include <errno.h>
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
@@ -12,6 +13,7 @@ static int tell_if(void *data, void *m);
 static pubsub_msg_t *create_pubsub_msg(const unsigned char *message, const self_t *sender, const char *topic, enum msg_type type, const size_t size);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
 static int manage_fds(module *mod, m_context *c, int flag, int stop);
+static int _poll_set_new_evt(module_poll_t *t, m_context *c, int flag);
 static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str);
 static module_ret_code stop(const self_t *self, const enum module_states mask, const char *err_str, int stop);
 
@@ -196,7 +198,7 @@ module_ret_code module_register_fd(const self_t *self, const int fd, const bool 
 
     /* If a fd is registered at runtime, start polling on it */
     if (module_is(self, RUNNING)) {
-        int ret = poll_set_new_evt(tmp, c, ADD);
+        int ret = _poll_set_new_evt(tmp, c, ADD);
         return !ret ? MOD_OK : MOD_ERR;
     }
     return MOD_OK;
@@ -216,7 +218,7 @@ module_ret_code module_deregister_fd(const self_t *self, const int fd) {
             *tmp = (*tmp)->prev;
             /* If a fd is deregistered for a RUNNING module, stop polling on it */
             if (module_is(self, RUNNING)) {
-                ret = poll_set_new_evt(t, c, RM);
+                ret = _poll_set_new_evt(t, c, RM);
             }
             if (t->autoclose) {
                 close(t->fd);
@@ -445,8 +447,21 @@ static int manage_fds(module *mod, m_context *c, int flag, int stop) {
         if (flag == RM && stop) {
             ret = module_deregister_fd(&mod->self, t->fd);
         } else {
-            ret = poll_set_new_evt(t, c, flag);
+            ret = _poll_set_new_evt(t, c, flag);
         }
+    }
+    return ret;
+}
+
+/* 
+ * Just a call to poll_set_new_evt + some filtering:
+ * STDIN_FILENO returns EPERM but it is actually pollable
+ */
+static int _poll_set_new_evt(module_poll_t *t, m_context *c, int flag) {
+    int ret = poll_set_new_evt(t, c, flag);
+    /* Workaround for STDIN_FILENO */
+    if (ret == -1 && t->fd == STDIN_FILENO && errno == EPERM) {
+        ret = 0;
     }
     return ret;
 }

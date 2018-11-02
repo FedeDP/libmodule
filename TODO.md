@@ -6,7 +6,11 @@
 - [x] module_stop can be called on PAUSED modules too!
 - [x] Document module states! (STOP is same as IDLE; IDLE means it is registered but still never started. STOPPED it means it is registered, was started and was stopped.)
 
-- [x] Set O_CLOEXEC flag in non-linux poll implementation for both pipe and kqueue
+- [x] Set FD_CLOEXEC flag in non-linux poll implementation for both pipe and kqueue
+
+- [x] Fix CMakeLists to runt tests even if valgrind could not be found
+
+- [ ] Fix tests on osx? module_(de)register_fd fails
 
 ## 3.1.0
 
