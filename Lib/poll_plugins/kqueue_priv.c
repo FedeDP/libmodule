@@ -25,9 +25,11 @@ int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
     struct kevent *_ev = (struct kevent *)tmp->ev;
     EV_SET(_ev, tmp->fd, EVFILT_READ, f, 0, 0, (void *)tmp);
     int ret = kevent(c->fd, _ev, 1, NULL, 0, NULL);
-    /* Workaround for STDIN_FILENO: it returns EINVAL but it is actually pollable */
-    if (ret == -1 && tmp->fd == STDIN_FILENO && errno == EINVAL) {
-        ret = 0;
+    /* Workaround for STDIN_FILENO: it returns EINVAL on add, and ENOENT on remove but it is actually pollable */
+    if (ret == -1 && tmp->fd == STDIN_FILENO) {
+        if ((f == EV_ADD && errno == EINVAL) || (f == EV_DELETE && errno == ENOENT)) {
+            ret = 0;
+        }
     }
     return ret;
 }
