@@ -4,11 +4,16 @@
 #include <sys/time.h>
 
 int poll_create(void) {
+    int fd;
 #ifdef __APPLE__
-    return kqueue();
-#else
-    return kqueue1(O_CLOEXEC);
+    fd = kqueue();
+#ifdef O_CLOEXEC
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
 #endif
+#else
+    fd = kqueue1(O_CLOEXEC);
+#endif
+    return fd;
 }
 
 int poll_set_data(void **_ev) {
@@ -63,6 +68,9 @@ int _pipe(int fd[2]) {
                 flags = 0;
             }
             fcntl(fd[i], F_SETFL, flags | O_NONBLOCK);
+#ifdef O_CLOEXEC
+            fcntl(fd[i], F_SETFD, FD_CLOEXEC);
+#endif
         }
     }
     return ret;
