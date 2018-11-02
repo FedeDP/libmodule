@@ -16,7 +16,12 @@ int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
     struct epoll_event *ev = (struct epoll_event *)tmp->ev;
     ev->data.ptr = tmp;
     ev->events = EPOLLIN;
-    return epoll_ctl(c->fd, f, tmp->fd, (struct epoll_event *)tmp->ev);
+    int ret = epoll_ctl(c->fd, f, tmp->fd, (struct epoll_event *)tmp->ev);
+    /* Workaround for STDIN_FILENO: it returns EPERM but it is actually pollable */
+    if (ret == -1 && tmp->fd == STDIN_FILENO && errno == EPERM) {
+        ret = 0;
+    }
+    return ret;
 }
 
 int poll_init_pevents(void **pevents, int max_events) {

@@ -24,7 +24,12 @@ int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
     int f = flag == ADD ? EV_ADD : EV_DELETE;
     struct kevent *_ev = (struct kevent *)tmp->ev;
     EV_SET(_ev, tmp->fd, EVFILT_READ, f, 0, 0, (void *)tmp);
-    return kevent(c->fd, _ev, 1, NULL, 0, NULL);
+    int ret = kevent(c->fd, _ev, 1, NULL, 0, NULL);
+    /* Workaround for STDIN_FILENO: it returns EINVAL but it is actually pollable */
+    if (ret == -1 && tmp->fd == STDIN_FILENO && errno == EINVAL) {
+        ret = 0;
+    }
+    return ret;
 }
 
 int poll_init_pevents(void **pevents, int max_events) {

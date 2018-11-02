@@ -3,6 +3,7 @@
 #include "module_cmn.h"
 #include "module_priv.h"
 #include <fcntl.h>
+#include <errno.h>
 
 /* Useful macros to smooth away differences between supported OS */
 enum op_type { ADD, RM };
