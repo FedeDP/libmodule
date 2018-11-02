@@ -459,6 +459,7 @@ static int manage_fds(module *mod, m_context *c, int flag, int stop) {
  */
 static int _poll_set_new_evt(module_poll_t *t, m_context *c, int flag) {
     int ret = poll_set_new_evt(t, c, flag);
+    printf("Ret: %d, errno: %d\n", ret, errno);
     /* Workaround for STDIN_FILENO */
     if (ret == -1 && t->fd == STDIN_FILENO && errno == EPERM) {
         ret = 0;

@@ -7,9 +7,7 @@ int poll_create(void) {
     int fd;
 #ifdef __APPLE__
     fd = kqueue();
-// #ifdef FD_CLOEXEC
     fcntl(fd, F_SETFD, FD_CLOEXEC);
-// #endif
 #else
     fd = kqueue1(O_CLOEXEC);
 #endif
@@ -68,9 +66,7 @@ int _pipe(int fd[2]) {
                 flags = 0;
             }
             fcntl(fd[i], F_SETFL, flags | O_NONBLOCK);
-// #ifdef FD_CLOEXEC
             fcntl(fd[i], F_SETFD, FD_CLOEXEC);
-// #endif
         }
     }
     return ret;

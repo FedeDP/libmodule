@@ -10,7 +10,8 @@
 
 - [x] Fix CMakeLists to runt tests even if valgrind could not be found
 
-- [ ] Fix tests on osx? module_(de)register_fd fails
+- [ ] Fix tests on osx? module_register_fd fails
+- [x] Special handling of STDIN_FILENO in poll_set_new_evt: it returns EPERM but it is actually pollable.
 
 ## 3.1.0
 
