@@ -1,18 +1,3 @@
-## 3.0.1
-
-- [x] Shouldn't module_deregister_fd() remove it from epoll too if module is running?
-- [x] When deregistering, actually call stop() on STOPPED modules too!
-- [x] PAUSED module should still be delivered PubSub messages, but they will only receive them as soon as they get resumed (thus RUNNING state).
-- [x] module_stop can be called on PAUSED modules too!
-- [x] Document module states! (STOP is same as IDLE; IDLE means it is registered but still never started. STOPPED it means it is registered, was started and was stopped.)
-
-- [x] Set FD_CLOEXEC flag in non-linux poll implementation for both pipe and kqueue
-
-- [x] Fix CMakeLists to runt tests even if valgrind could not be found
-
-- [x] Fix tests on osx? module_register_fd fails
-- [x] Special handling of STDIN_FILENO in poll_set_new_evt: it returns EPERM but it is actually pollable.
-
 ## 3.1.0
 
 - [ ] self_t will hold a pointer to module *
