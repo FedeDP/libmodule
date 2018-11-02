@@ -18,6 +18,8 @@ if(VALGRIND_FOUND)
          --error-exitcode=1 --read-var-info=yes
          --leak-check=full --show-leak-kinds=all
          ./ModuleTest)
+else()
+    message(STATUS "Tests won't be checked with valgrind.")
 endif()
 
 target_link_libraries(ModuleTest cmocka module)
