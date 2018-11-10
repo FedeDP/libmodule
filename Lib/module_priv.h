@@ -24,8 +24,8 @@
 
 #define GET_MOD(self) \
     MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
-    GET_CTX(self->ctx) \
-    CTX_GET_MOD(self->name, c)
+    GET_CTX(self->ctx); \
+    CTX_GET_MOD(self->name, c);
 
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \

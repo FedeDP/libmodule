@@ -1,8 +1,21 @@
 ## 3.1.0
 
-- [ ] self_t will hold a pointer to module *
+### Generic
+- [ ] add a MOD_LOG_ASSERT and use that in eg: stop() and start() functions
+- [ ] Add readme mention of Clightd, project that is using libmodule
+- [ ] Expose module_map_{create/put/get/destroy} through a module_map.h header?
+
+### Improvements
+- [ ] self_t will hold a pointer to module and to its context
+- [ ] Store module name in module struct (strdup'd)
+- [ ] Store context name in m_context (strdup'd)
+- [ ] Use them as hashmap key without strudpping again
+- [ ] hashmap_put to take additional "bool key_strdup" param
 - [ ] insert self_t into context->modules, instead of module
-- [ ] this way we avoid modules hashmap and GET_MOD etc etc is way faster (no hashmap lookup)
+- [ ] this way GET_MOD etc etc are way faster (no context and modules hashmap lookup)
+
+### Fixes
+- [ ] Move call to "destroy()" callback after module and self_t destruction; this way no more libmodule things can be called on that being-destroyed module
 
 - [ ] Release 3.1.0
 

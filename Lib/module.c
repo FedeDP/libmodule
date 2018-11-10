@@ -117,7 +117,7 @@ module_ret_code module_deregister(const self_t **self) {
     flush_pubsub_msg(tmp, mod);
     
     stop(*self, RUNNING | IDLE | PAUSED | STOPPED, "Failed to stop module.", 1);
-    
+
     mod->hook.destroy();
     /* Remove the module from the context */
     hashmap_remove(c->modules, tmp->name);
