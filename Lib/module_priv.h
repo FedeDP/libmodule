@@ -1,7 +1,7 @@
 #include <assert.h>
-#include "hashmap.h"
 #include <stdlib.h>
 #include <unistd.h>
+#include "module_map.h"
 
 #define MOD_ASSERT(cond, msg, ret) if(!cond) { fprintf(stderr, "%s\n", msg); return ret; }
 
@@ -14,12 +14,12 @@
 #define GET_CTX(name) \
     MOD_ASSERT(name, "NULL ctx.", MOD_ERR); \
     m_context *c = NULL; \
-    hashmap_get(ctx, (char *)name, (void **)&c); \
+    module_map_get(ctx, (char *)name, (void **)&c); \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
 
 #define CTX_GET_MOD(name, ctx) \
     module *mod = NULL; \
-    hashmap_get(ctx->modules, (char *)name, (void **)&mod); \
+    module_map_get(ctx->modules, (char *)name, (void **)&mod); \
     MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
 #define GET_MOD(self) \
@@ -53,7 +53,7 @@ typedef struct {
     enum module_states state;             // module's state
     self_t self;                          // module's info available to external world
     module_poll_t *fds;                   // module's fds to be polled
-    map_t subscriptions;                  // module's subscriptions
+    map_t *subscriptions;                 // module's subscriptions
     int pubsub_fd[2];                     // In and Out pipe for pubsub msg
 } module;
 
@@ -64,10 +64,10 @@ typedef struct {
     int fd;
     int num_fds;                          // number of fds in this context
     log_cb logger;
-    map_t modules;
+    map_t *modules;
     void *pevents;
     int max_events;
-    map_t topics;
+    map_t *topics;
 } m_context;
 
 int evaluate_module(void *data, void *m);
@@ -76,5 +76,5 @@ int flush_pubsub_msg(void *data, void *m);
 void destroy_pubsub_msg(pubsub_msg_t *m);
 char *mem_strdup(const char *s);
 
-extern map_t ctx;
+extern map_t *ctx;
 extern memalloc_hook memhook;

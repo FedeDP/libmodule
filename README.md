@@ -31,7 +31,8 @@ As I can only test on linux with epoll though, you are advised that other plugin
 ## Is there any documentation?
 
 Yes, it is availabe at [readthedocs](http://libmodule.readthedocs.io/en/latest/).  
-You have some nice examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.
+You have some nice examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.  
+To see a real project using libmodule, check [Clightd](https://github.com/FedeDP/Clightd).
 
 ## Travis CI
 

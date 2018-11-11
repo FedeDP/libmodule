@@ -1,4 +1,4 @@
-#include "hashmap.h"
+#include "module_map.h"
 #include "poll_priv.h"
 #include <string.h>
 
@@ -9,24 +9,24 @@
 typedef struct _hashmap_element {
     const char *key;
     int in_use;
-    any_t data;
-} hashmap_element;
+    void *data;
+} map_elem;
 
 /* 
  * A hashmap has some maximum size and current size,
  * as well as the data to hold. 
  */
-typedef struct _hashmap_map {
+struct _map {
     int table_size;
     int size;
-    hashmap_element *data;
-} hashmap_map;
+    map_elem *data;
+};
 
 static unsigned long crc32(const unsigned char *s, unsigned int len);
-static unsigned int hashmap_hash_int(hashmap_map *m, const char *keystring);
-static int hashmap_hash(map_t in, const char* key);
-static int hashmap_rehash(map_t in);
-static int _hashmap_put(map_t in, const char *key, any_t value);
+static unsigned int hashmap_hash_int(const map_t *m, const char *keystring);
+static int hashmap_hash(map_t *m, const char* key);
+static int hashmap_rehash(map_t *m);
+static int _hashmap_put(map_t *m, const char *key, void *value);
 
 static unsigned long crc32_tab[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
@@ -86,15 +86,15 @@ static unsigned long crc32_tab[] = {
 /*
  * Return an empty hashmap, or NULL on failure.
  */
-map_t hashmap_new(void) {
-    hashmap_map *m = memhook._malloc(sizeof(hashmap_map));
+map_t *module_map_new(void) {
+    map_t *m = memhook._malloc(sizeof(map_t));
     if (m) {
-        m->data = memhook._calloc(INITIAL_SIZE, sizeof(hashmap_element));
+        m->data = memhook._calloc(INITIAL_SIZE, sizeof(map_elem));
         if (m->data) {
             m->table_size = INITIAL_SIZE;
             m->size = 0;
         } else {
-            hashmap_free(m);
+            module_map_free(m);
             m = NULL;
         }
     }
@@ -115,7 +115,7 @@ static unsigned long crc32(const unsigned char *s, unsigned int len) {
 /*
  * Hashing function for a string
  */
-static unsigned int hashmap_hash_int(hashmap_map *m, const char *keystring) {
+static unsigned int hashmap_hash_int(const map_t *m, const char *keystring) {
     unsigned long key = crc32((unsigned char*)(keystring), strlen(keystring));
 
     /* Robert Jenkins' 32 bit Mix Function */
@@ -138,9 +138,7 @@ static unsigned int hashmap_hash_int(hashmap_map *m, const char *keystring) {
  * Return the integer of the location in data
  * to store the point to the item, or MAP_FULL.
  */
-static int hashmap_hash(map_t in, const char *key) {
-    hashmap_map *m = (hashmap_map *)in;
-
+static int hashmap_hash(map_t *m, const char *key) {
     /* If full, return immediately */
     if (m->size >= m->table_size / 2) {
         return MAP_FULL;
@@ -162,16 +160,15 @@ static int hashmap_hash(map_t in, const char *key) {
 /*
  * Doubles the size of the hashmap, and rehashes all the elements
  */
-static int hashmap_rehash(map_t in) {
+static int hashmap_rehash(map_t *m) {
     /* Setup the new elements */
-    hashmap_map *m = (hashmap_map *) in;
-    hashmap_element *temp = memhook._calloc(2 * m->table_size, sizeof(hashmap_element));
+    map_elem *temp = memhook._calloc(2 * m->table_size, sizeof(map_elem));
     if (!temp) {
         return MAP_OMEM;
     }
 
     /* Update the array */
-    hashmap_element *curr = m->data;
+    map_elem *curr = m->data;
     m->data = temp;
 
     /* Update the size */
@@ -194,20 +191,22 @@ static int hashmap_rehash(map_t in) {
 /*
  * Add a pointer to the hashmap with some strdupped key
  */
-int hashmap_put(map_t in, const char *key, any_t value) {
-    return _hashmap_put(in, mem_strdup(key), value);
+module_map_code module_map_put(map_t *m, const char *key, void *value) {
+    MOD_ASSERT(m, "NULL map.", MAP_ERR);
+    MOD_ASSERT(key, "NULL key.", MAP_ERR);
+    MOD_ASSERT(value, "NULL value.", MAP_ERR);
+    
+    return _hashmap_put(m, mem_strdup(key), value);
 }
 
-static int _hashmap_put(map_t in, const char *key, any_t value) {
-    hashmap_map *m = (hashmap_map *) in;
-
+static int _hashmap_put(map_t *m, const char *key, void *value) {
     /* Find a place to put our value */
-    int index = hashmap_hash(in, key);
+    int index = hashmap_hash(m, key);
     while (index == MAP_FULL) {
-        if (hashmap_rehash(in) == MAP_OMEM) {
+        if (hashmap_rehash(m) == MAP_OMEM) {
             return MAP_OMEM;
         }
-        index = hashmap_hash(in, key);
+        index = hashmap_hash(m, key);
     }
     
     /* Set the data */
@@ -221,9 +220,10 @@ static int _hashmap_put(map_t in, const char *key, any_t value) {
 /*
  * Get your pointer out of the hashmap with a key
  */
-int hashmap_get(map_t in, const char *key, any_t *arg) {
-    hashmap_map *m = (hashmap_map *) in;
-
+module_map_code module_map_get(const map_t *m, const char *key, void **arg) {
+    MOD_ASSERT(m, "NULL map.", MAP_ERR);
+    MOD_ASSERT(key, "NULL key.", MAP_ERR);
+    
     /* Find data location */
     int curr = hashmap_hash_int(m, key);
 
@@ -245,11 +245,12 @@ int hashmap_get(map_t in, const char *key, any_t *arg) {
  * additional any_t argument is passed to the function as its first
  * argument and the hashmap element is the second.
  */
-int hashmap_iterate(map_t in, PFany f, any_t item) {
-    hashmap_map* m = (hashmap_map*) in;
+module_map_code module_map_iterate(map_t *m, const map_cb f, void *item) {
+    MOD_ASSERT(m, "NULL map.", MAP_ERR);
+    MOD_ASSERT(f, "NULL callback.", MAP_ERR);
 
     /* On empty hashmap, return immediately */
-    if (hashmap_length(m) <= 0) {
+    if (module_map_length(m) <= 0) {
         return MAP_MISSING;
     }
 
@@ -257,7 +258,7 @@ int hashmap_iterate(map_t in, PFany f, any_t item) {
     int status = MAP_OK;
     for (int i = 0; i < m->table_size && status == MAP_OK; i++) {
         if (m->data[i].in_use) {
-            any_t data = (any_t) (m->data[i].data);
+            void *data = m->data[i].data;
             status = f(item, data);
         }
     }
@@ -267,9 +268,10 @@ int hashmap_iterate(map_t in, PFany f, any_t item) {
 /*
  * Remove an element with that key from the map
  */
-int hashmap_remove(map_t in, const char *key) {
-    hashmap_map *m = (hashmap_map *) in;
-
+module_map_code module_map_remove(map_t *m, const char *key) {
+    MOD_ASSERT(m, "NULL map.", MAP_ERR);
+    MOD_ASSERT(key, "NULL key.", MAP_ERR);
+    
     /* Find key */
     int curr = hashmap_hash_int(m, key);
 
@@ -294,17 +296,20 @@ int hashmap_remove(map_t in, const char *key) {
 }
 
 /* Deallocate the hashmap */
-void hashmap_free(map_t in) {
-    hashmap_map* m = (hashmap_map*) in;
+module_map_code module_map_free(map_t *m) {
+    MOD_ASSERT(m, "NULL map.", MAP_ERR);
+    
     for (int i = 0; i < m->table_size; i++) {
         memhook._free((void *)m->data[i].key);
     }
     memhook._free(m->data);
     memhook._free(m);
+    return MAP_OK;
 }
 
 /* Return the length of the hashmap */
-int hashmap_length(map_t in) {
-    hashmap_map* m = (hashmap_map *) in;
-    return m ? m->size : 0;
+int module_map_length(const map_t *m) {
+    MOD_ASSERT(m, "NULL map.", MAP_ERR);
+    
+    return m->size;
 }

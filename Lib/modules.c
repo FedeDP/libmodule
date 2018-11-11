@@ -5,18 +5,18 @@ static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *context);
 
-map_t ctx;
+map_t *ctx;
 memalloc_hook memhook;
 
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     modules_set_memalloc_hook(NULL);
-    ctx = hashmap_new();
+    ctx = module_map_new();
 }
 
 static void modules_destroy(void) {
     MODULE_DEBUG("Destroying libmodule.\n");
-    hashmap_free(ctx);
+    module_map_free(ctx);
 }
 
 module_ret_code modules_set_memalloc_hook(const memalloc_hook *hook) {
@@ -99,7 +99,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
         tell_system_pubsub_msg(c, LOOP_STOPPED, NULL);
         
         /* Flush pubsub msg to avoid memleaks */
-        hashmap_iterate(c->modules, flush_pubsub_msg, NULL);
+        module_map_iterate(c->modules, flush_pubsub_msg, NULL);
         poll_destroy_pevents(&c->pevents, &c->max_events);
         c->looping = false;
         return c->quit_code;
@@ -109,7 +109,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
 }
 
 static void evaluate_new_state(m_context *context) {
-    hashmap_iterate(context->modules, evaluate_module, NULL);
+    module_map_iterate(context->modules, evaluate_module, NULL);
 }
 
 module_ret_code modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) {

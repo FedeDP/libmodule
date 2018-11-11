@@ -377,6 +377,34 @@ void test_module_publish(void **state) {
     assert_true(ret == MOD_OK);
 }
 
+void test_module_broadcast_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_broadcast(NULL, "hi!", strlen("hi!"));
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_broadcast_NULL_msg(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_broadcast(self, NULL, strlen("hi!"));
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_broadcast_wrong_size(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_broadcast(self, "hi!", -1);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_broadcast(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_broadcast(self, "hi!", strlen("hi!"));
+    assert_true(ret == MOD_OK);
+}
+
 void test_register_topic_NULL_topic(void **state) {
     (void) state; /* unused */
     

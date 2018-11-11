@@ -17,6 +17,7 @@ Welcome to libmodule's documentation!
    src/pubsub
    src/module
    src/modules
+   src/map
 
 Indices and tables
 ==================
