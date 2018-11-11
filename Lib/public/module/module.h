@@ -38,10 +38,12 @@ _public_ module_ret_code module_deregister_topic(const self_t *self, const char 
 _public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
 _public_ module_ret_code module_unsubscribe(const self_t *self, const char *topic);
 _public_ module_ret_code module_tell(const self_t *self, const char *recipient, const unsigned char *message,
-                                     const ssize_t size);
+                                        const ssize_t size);
 _public_ module_ret_code module_reply(const self_t *self, const self_t *sender, const unsigned char *message,
-                                      const ssize_t size);
+                                        const ssize_t size);
 _public_ module_ret_code module_publish(const self_t *self, const char *topic, const unsigned char *message,
+                                        const ssize_t size);
+_public_ module_ret_code module_broadcast(const self_t *self, const unsigned char *message,
                                         const ssize_t size);
 
 #ifdef __cplusplus

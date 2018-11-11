@@ -164,7 +164,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
   Publish a message on a topic.
     
-  :param topic: topic on which publish message. NULL to broadcast message to all modules in same context. Note that only topic creator can publish message on topic.
+  :param topic: topic on which publish message. Note that only topic creator can publish message on topic.
   :param msg: actual data to be published.
   :param size: size of data to be published.
   :type topic: :c:type:`const char *`
@@ -173,7 +173,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_broadcast(msg, size)
 
-  Broadcast a message in module's context. Same as calling m_publish(NULL, msg).
+  Broadcast a message in module's context.
     
   :param msg: data to be delivered to all modules in a context.
   :param size: size of data to be delivered.
@@ -418,10 +418,21 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   Publish a message on a topic.
 
   :param self: pointer to module's handler
-  :param topic: topic on which publish message. NULL to broadcast message to all modules in same context. Note that only topic creator can publish message on topic.
+  :param topic: topic on which publish message. Note that only topic creator can publish message on topic.
   :param msg: actual data to be published.
   :param size: size of data to be published.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
+  :type msg: :c:type:`const unsigned char *`
+  :type size: :c:type:`const ssize_t`
+  
+.. c:function:: module_broadcast(self, msg, size)
+
+  Broadcast a message to all modules inside context.
+
+  :param self: pointer to module's handler
+  :param msg: actual data to be published.
+  :param size: size of data to be published.
+  :type self: :c:type:`const self_t *`
   :type msg: :c:type:`const unsigned char *`
   :type size: :c:type:`const ssize_t`

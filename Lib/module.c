@@ -11,6 +11,8 @@ static void default_logger(const self_t *self, const char *fmt, va_list args, co
 static int tell_if(void *data, void *m);
 static pubsub_msg_t *create_pubsub_msg(const unsigned char *message, const self_t *sender, const char *topic, enum msg_type type, const size_t size);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
+static module_ret_code publish_msg(const self_t *self, const char *topic, 
+                                   const unsigned char *message, const ssize_t size);
 static int manage_fds(module *mod, m_context *c, int flag, int stop);
 static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str);
 static module_ret_code stop(const self_t *self, const enum module_states mask, const char *err_str, int stop);
@@ -117,8 +119,7 @@ module_ret_code module_deregister(const self_t **self) {
     flush_pubsub_msg(tmp, mod);
     
     stop(*self, RUNNING | IDLE | PAUSED | STOPPED, "Failed to stop module.", 1);
-
-    mod->hook.destroy();
+    
     /* Remove the module from the context */
     hashmap_remove(c->modules, tmp->name);
     /* Remove context without modules */
@@ -129,7 +130,16 @@ module_ret_code module_deregister(const self_t **self) {
     memhook._free((void *)tmp->name);
     memhook._free((void *)tmp->ctx);
     *self = NULL;
+
+    /*
+     * Call destroy once self is NULL 
+     * (ie: no more libmodule operations can be called on this handler) 
+     */
+    mod->hook.destroy();
+
+    /* Finally free module */
     memhook._free(mod);
+    
     return MOD_OK;
 }
 
@@ -406,12 +416,13 @@ module_ret_code module_reply(const self_t *self, const self_t *sender, const uns
     return module_tell(self, sender->name, message, size);
 }
 
-module_ret_code module_publish(const self_t *self, const char *topic, const unsigned char *message, const ssize_t size) {
+static module_ret_code publish_msg(const self_t *self, const char *topic, 
+                                   const unsigned char *message, const ssize_t size) {
     MOD_ASSERT(message, "NULL message.", MOD_ERR);
     MOD_ASSERT((size > 0), "Wrong message size.", MOD_ERR);
-    
+
     GET_MOD(self);
-    
+
     void *tmp = NULL;
     /* 
      * Only module that registered a topic can publish on the topic.
@@ -422,6 +433,16 @@ module_ret_code module_publish(const self_t *self, const char *topic, const unsi
         return tell_pubsub_msg(&m, NULL, c);
     }
     return MOD_ERR;
+}
+
+module_ret_code module_publish(const self_t *self, const char *topic, const unsigned char *message, const ssize_t size) {
+    MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
+
+   return publish_msg(self, topic, message, size);
+}
+
+module_ret_code module_broadcast(const self_t *self, const unsigned char *message, const ssize_t size) {
+    return publish_msg(self, NULL, message, size);
 }
 
 /** Module state getters **/

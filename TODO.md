@@ -13,9 +13,10 @@
 - [ ] hashmap_put to take additional "bool key_strdup" param
 - [ ] insert self_t into context->modules, instead of module
 - [ ] this way GET_MOD etc etc are way faster (no context and modules hashmap lookup)
+- [x] add a module_broadcast fucntion
 
 ### Fixes
-- [ ] Move call to "destroy()" callback after module and self_t destruction; this way no more libmodule things can be called on that being-destroyed module
+- [x] Move call to "destroy()" callback after module and self_t destruction; this way no more libmodule things can be called on that being-destroyed module
 
 - [ ] Release 3.1.0
 

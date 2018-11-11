@@ -352,12 +352,8 @@ void test_module_publish_NULL_msg(void **state) {
 void test_module_publish_NULL_topic(void **state) {
     (void) state; /* unused */
     
-    /* 
-     * module_publish with NULL topic is same as 
-     * broadcast message to all modules in same ctx
-     */
     module_ret_code ret = module_publish(self, NULL, "hi!", strlen("hi!"));
-    assert_true(ret == MOD_OK);
+    assert_false(ret == MOD_OK);
 }
 
 void test_module_publish_nonexistent_topic(void **state) {
