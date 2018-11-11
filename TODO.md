@@ -16,6 +16,8 @@
 
 ### Fixes
 - [x] Move call to "destroy()" callback after module and self_t destruction; this way no more libmodule things can be called on that being-destroyed module
+- [x] Fix poll loop to manage EINTR/EAGAIN interrupt signals
+- [x] Properly check poll_set_data call in module.c
 
 ### Tests
 - [x] Add module_broadcast test

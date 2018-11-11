@@ -150,9 +150,9 @@ static void default_logger(const self_t *self, const char *fmt, va_list args, co
 
 int evaluate_module(void *data, void *m) {
     module *mod = (module *)m;
-    if (module_is(&mod->self, IDLE) 
+    if (module_is(&mod->self, IDLE)
         && mod->hook.evaluate()) {
-            
+
         mod->hook.init();
         module_start(&mod->self);
     }
@@ -193,23 +193,28 @@ module_ret_code module_register_fd(const self_t *self, const int fd, const bool 
     MOD_ASSERT((fd >= 0), "Wrong fd.", MOD_ERR);
 
     module_poll_t *tmp = memhook._malloc(sizeof(module_poll_t));
-    MOD_ASSERT(tmp, "Failed to malloc.", MOD_ERR);
-
-    tmp->fd = fd;
-    tmp->autoclose = autoclose;
-    tmp->userptr = userptr;
-    poll_set_data(&tmp->ev);
-    tmp->prev = mod->fds;
-    tmp->self = (self_t *)self;
-    mod->fds = tmp;
-    c->num_fds++;
-
-    /* If a fd is registered at runtime, start polling on it */
-    if (module_is(self, RUNNING)) {
-        int ret = poll_set_new_evt(tmp, c, ADD);
-        return !ret ? MOD_OK : MOD_ERR;
+    if (tmp) {
+        if (poll_set_data(&tmp->ev) == MOD_OK) {
+            tmp->fd = fd;
+            tmp->autoclose = autoclose;
+            tmp->userptr = userptr;
+            tmp->prev = mod->fds;
+            tmp->self = (self_t *)self;
+            mod->fds = tmp;
+            c->num_fds++;
+            /* If a fd is registered at runtime, start polling on it */
+            int ret = 0;
+            if (module_is(self, RUNNING)) {
+                ret = poll_set_new_evt(tmp, c, ADD);
+            }
+            return !ret ? MOD_OK : MOD_ERR;
+        } else {
+            memhook._free(tmp);
+        }
+    } else {
+        fprintf(stderr, "Failed to malloc.\n");
     }
-    return MOD_OK;
+    return MOD_ERR;
 }
 
 /* Linearly searching for fd */

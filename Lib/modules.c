@@ -1,5 +1,6 @@
 #include "modules.h"
 #include "poll_priv.h"
+#include <string.h>
 
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
@@ -64,35 +65,48 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
 
         while (!c->quit) {
             int nfds = poll_wait(c->fd, c->max_events, c->pevents);
-            MOD_ASSERT((nfds > 0), "Context loop error.", MOD_ERR);
             for (int i = 0; i < nfds; i++) {
                 module_poll_t *p = poll_recv(i, c->pevents);
-                MOD_ASSERT(p, "Context loop error.", MOD_ERR);
-                CTX_GET_MOD(p->self->name, c);
+                if (p) {
+                    CTX_GET_MOD(p->self->name, c);
 
-                msg_t msg;
-                fd_msg_t fd_msg;
+                    msg_t msg;
+                    fd_msg_t fd_msg;
 
-                if (p->fd == mod->pubsub_fd[0]) {
-                    /* Received on pubsub interface */
-                    *(bool *)&msg.is_pubsub = true;
-                    read(p->fd, (void **)&msg.pubsub_msg, sizeof(pubsub_msg_t *));
+                    if (p->fd == mod->pubsub_fd[0]) {
+                        /* Received on pubsub interface */
+                        *(bool *)&msg.is_pubsub = true;
+                        read(p->fd, (void **)&msg.pubsub_msg, sizeof(pubsub_msg_t *));
+                    } else {
+                        /* Received from FD */
+                        *(bool *)&msg.is_pubsub = false;
+                        *(int *)&fd_msg.fd = p->fd;
+                        fd_msg.userptr = p->userptr;
+                        *(fd_msg_t **)&msg.fd_msg = &fd_msg;
+                    }
+
+                    mod->hook.recv(&msg, mod->userdata);
+
+                    /* Properly free pubsub msg */
+                    if (p->fd == mod->pubsub_fd[0]) {
+                        destroy_pubsub_msg((pubsub_msg_t *)msg.pubsub_msg);
+                    }
                 } else {
-                    /* Received from FD */
-                    *(bool *)&msg.is_pubsub = false;
-                    *(int *)&fd_msg.fd = p->fd;
-                    fd_msg.userptr = p->userptr;
-                    *(fd_msg_t **)&msg.fd_msg = &fd_msg;
-                }
-
-                mod->hook.recv(&msg, mod->userdata);
-
-                /* Properly free pubsub msg */
-                if (p->fd == mod->pubsub_fd[0]) {
-                    destroy_pubsub_msg((pubsub_msg_t *)msg.pubsub_msg);
+                    /* Forward error to below handling code */
+                    errno = ENXIO;
+                    nfds = -1;
                 }
             }
-            evaluate_new_state(c);
+
+            if (nfds > 0) {
+                evaluate_new_state(c);
+            } else if (nfds < 0) {
+                if (errno != EINTR && errno != EAGAIN) {
+                    fprintf(stderr, "Module loop error: %s.\n", strerror(errno));
+                    c->quit = true;
+                    c->quit_code = errno;
+                }
+            }
         }
 
         /* Tell every module that loop is stopped */
@@ -104,7 +118,6 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
         c->looping = false;
         return c->quit_code;
     }
-    MODULE_DEBUG("Failed to malloc.\n");
     return MOD_ERR;
 }
 
