@@ -3,9 +3,11 @@
 ### Generic
 - [x] Add readme mention of Clightd, project that is using libmodule
 - [x] Expose module_map_{create/put/get/destroy} through a module_map.h header?
+- [x] Rename module_map_* to map_*
 
 ### Improvements
 - [x] add a module_broadcast function
+- [x] map_put to take additional "bool key_strdup" param
 
 ### Fixes
 - [x] Move call to "destroy()" callback after module and self_t destruction; this way no more libmodule things can be called on that being-destroyed module
@@ -29,7 +31,6 @@
 - [ ] Store module name in module struct (strdup'd)
 - [ ] Store context name in m_context (strdup'd)
 - [ ] Use them as hashmap key without strudpping again
-- [ ] hashmap_put to take additional "bool key_strdup" param
 - [ ] insert self_t into context->modules, instead of module
 - [ ] this way GET_MOD etc etc are way faster (no context and modules hashmap lookup)
 

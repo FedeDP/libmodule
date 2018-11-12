@@ -1,6 +1,6 @@
 #include "test_module.h"
 #include "test_modules.h"
-#include "test_module_map.h"
+#include "test_map.h"
 
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -122,12 +122,12 @@ int main(void) {
         cmocka_unit_test(test_modules_ctx_set_logger_no_ctx), // here context is already destroyed
         cmocka_unit_test(test_modules_ctx_quit_no_loop), // here context is already destroyed
         
-        /* Test module_map API */
-        cmocka_unit_test(test_module_map_put),
-        cmocka_unit_test(test_module_map_get),
-        cmocka_unit_test(test_module_map_length),
-        cmocka_unit_test(test_module_map_remove),
-        cmocka_unit_test(test_module_map_free)
+        /* Test hashmap API */
+        cmocka_unit_test(test_map_put),
+        cmocka_unit_test(test_map_get),
+        cmocka_unit_test(test_map_length),
+        cmocka_unit_test(test_map_remove),
+        cmocka_unit_test(test_map_free)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

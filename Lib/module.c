@@ -30,9 +30,9 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
      
     (*context)->logger = default_logger;
     
-    (*context)->modules = module_map_new();
-    (*context)->topics = module_map_new();
-    if ((*context)->topics && (*context)->modules && module_map_put(ctx, ctx_name, *context) == MAP_OK) {
+    (*context)->modules = map_new();
+    (*context)->topics = map_new();
+    if ((*context)->topics && (*context)->modules && map_put(ctx, ctx_name, *context, true) == MAP_OK) {
         return MOD_OK;
     }
     
@@ -43,16 +43,16 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
 
 static void destroy_ctx(const char *ctx_name, m_context *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", ctx_name);
-    module_map_free(context->modules);
-    module_map_free(context->topics);
+    map_free(context->modules);
+    map_free(context->topics);
     poll_close(context->fd, &context->pevents, &context->max_events);
     memhook._free(context);
-    module_map_remove(ctx, ctx_name);
+    map_remove(ctx, ctx_name);
 }
 
 static m_context *check_ctx(const char *ctx_name) {
     m_context *context = NULL;
-    module_map_get(ctx, ctx_name, (void **)&context); \
+    map_get(ctx, ctx_name, (void **)&context); \
     if (!context) {
         init_ctx(ctx_name, &context);
     }
@@ -83,7 +83,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     MOD_ASSERT(context, "Failed to create context.", MOD_ERR);
     
     module *mod = NULL;
-    module_map_get(context->modules, name, (void **)&mod);
+    map_get(context->modules, name, (void **)&mod);
     MOD_ASSERT(!mod, "Module with same name already registered in context.", MOD_ERR);
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
@@ -92,13 +92,13 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     MOD_ASSERT(mod, "Failed to malloc.", MOD_ERR);
     
     *mod = (module) {{ 0 }};
-    if (module_map_put(context->modules, name, mod) == MAP_OK) {
+    if (map_put(context->modules, name, mod, true) == MAP_OK) {
         mod->hook = *hook;
         mod->state = IDLE;
         mod->self.name = mem_strdup(name);
         mod->self.ctx = mem_strdup(ctx_name);
         mod->fds = NULL;
-        mod->subscriptions = module_map_new();
+        mod->subscriptions = map_new();
         *self = &mod->self;
         evaluate_module(NULL, mod);
         return MOD_OK;
@@ -121,12 +121,12 @@ module_ret_code module_deregister(const self_t **self) {
     stop(*self, RUNNING | IDLE | PAUSED | STOPPED, "Failed to stop module.", 1);
     
     /* Remove the module from the context */
-    module_map_remove(c->modules, tmp->name);
+    map_remove(c->modules, tmp->name);
     /* Remove context without modules */
-    if (module_map_length(c->modules) == 0) {
+    if (map_length(c->modules) == 0) {
         destroy_ctx(tmp->ctx, c);
     }
-    module_map_free(mod->subscriptions);
+    map_free(mod->subscriptions);
     memhook._free((void *)tmp->name);
     memhook._free((void *)tmp->ctx);
     *self = NULL;
@@ -279,8 +279,8 @@ module_ret_code module_register_topic(const self_t *self, const char *topic) {
     GET_MOD(self);
     void *tmp = NULL;
     
-    if (module_map_get(c->topics, topic, (void **)&tmp) == MAP_MISSING) {
-        if (module_map_put(c->topics, topic, mod) == MAP_OK) {
+    if (map_get(c->topics, topic, (void **)&tmp) == MAP_MISSING) {
+        if (map_put(c->topics, topic, mod, true) == MAP_OK) {
             tell_system_pubsub_msg(c, TOPIC_REGISTERED, topic);
             return MOD_OK;
         }
@@ -294,8 +294,8 @@ module_ret_code module_deregister_topic(const self_t *self, const char *topic) {
     void *tmp = NULL;
     
     /* Only same mod which registered topic can deregister it */
-    if (module_map_get(c->topics, topic, (void **)&tmp) == MAP_OK && tmp == mod) {
-        if (module_map_remove(c->topics, topic) == MAP_OK) {
+    if (map_get(c->topics, topic, (void **)&tmp) == MAP_OK && tmp == mod) {
+        if (map_remove(c->topics, topic) == MAP_OK) {
             tell_system_pubsub_msg(c, TOPIC_DEREGISTERED, topic);
             return MOD_OK;
         }
@@ -309,10 +309,10 @@ module_ret_code module_subscribe(const self_t *self, const char *topic) {
     void *tmp = NULL;
     
     /* If topic exists and we are not already subscribed */
-    if (module_map_get(c->topics, topic, (void **)&tmp) == MAP_OK && 
-        module_map_get(mod->subscriptions, topic, (void **)&tmp) == MAP_MISSING) {
+    if (map_get(c->topics, topic, (void **)&tmp) == MAP_OK && 
+        map_get(mod->subscriptions, topic, (void **)&tmp) == MAP_MISSING) {
         /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
-        if (module_map_put(mod->subscriptions, topic, mod) == MAP_OK) {
+        if (map_put(mod->subscriptions, topic, mod, true) == MAP_OK) {
             return MOD_OK;
         }
     }
@@ -324,8 +324,8 @@ module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
     GET_MOD(self);
     void *tmp = NULL;
     
-    if (module_map_get(c->topics, topic, (void **)&tmp) == MAP_OK && 
-        module_map_remove(mod->subscriptions, topic) == MAP_OK) {
+    if (map_get(c->topics, topic, (void **)&tmp) == MAP_OK && 
+        map_remove(mod->subscriptions, topic) == MAP_OK) {
         return MOD_OK;
     }
     return MOD_ERR;
@@ -366,7 +366,7 @@ static int tell_if(void *data, void *m) {
      * topic is null or this module is subscribed to topic 
      */
     if (module_is(&mod->self, RUNNING | PAUSED) && (msg->type != USER || !msg->topic || 
-        module_map_get(mod->subscriptions, msg->topic, (void **)&tmp) == MAP_OK)) {
+        map_get(mod->subscriptions, msg->topic, (void **)&tmp) == MAP_OK)) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->self.name);
         
@@ -398,7 +398,7 @@ static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *
     if (mod) {
         tell_if(m, mod);
     } else {
-        module_map_iterate(c->modules, tell_if, m);
+        map_iterate(c->modules, tell_if, m);
     }
     return MOD_OK;
 }
@@ -433,7 +433,7 @@ static module_ret_code publish_msg(const self_t *self, const char *topic,
      * Only module that registered a topic can publish on the topic.
      * Moreover, a publish can only be made on existent topic.
      */
-    if (!topic || (module_map_get(c->topics, topic, (void **)&tmp) == MAP_OK && tmp == mod)) {
+    if (!topic || (map_get(c->topics, topic, (void **)&tmp) == MAP_OK && tmp == mod)) {
         pubsub_msg_t m = { .topic = topic, .message = message, .sender = self, .type = USER, .size = size };
         return tell_pubsub_msg(&m, NULL, c);
     }

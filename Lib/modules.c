@@ -12,12 +12,12 @@ memalloc_hook memhook;
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     modules_set_memalloc_hook(NULL);
-    ctx = module_map_new();
+    ctx = map_new();
 }
 
 static void modules_destroy(void) {
     MODULE_DEBUG("Destroying libmodule.\n");
-    module_map_free(ctx);
+    map_free(ctx);
 }
 
 module_ret_code modules_set_memalloc_hook(const memalloc_hook *hook) {
@@ -113,7 +113,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
         tell_system_pubsub_msg(c, LOOP_STOPPED, NULL);
         
         /* Flush pubsub msg to avoid memleaks */
-        module_map_iterate(c->modules, flush_pubsub_msg, NULL);
+        map_iterate(c->modules, flush_pubsub_msg, NULL);
         poll_destroy_pevents(&c->pevents, &c->max_events);
         c->looping = false;
         return c->quit_code;
@@ -122,7 +122,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
 }
 
 static void evaluate_new_state(m_context *context) {
-    module_map_iterate(context->modules, evaluate_module, NULL);
+    map_iterate(context->modules, evaluate_module, NULL);
 }
 
 module_ret_code modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) {
