@@ -1,9 +1,9 @@
 #pragma once
 
-#include "module_cmn.h"
 #include "module_priv.h"
-#include <fcntl.h>
 #include <errno.h>
+#include <string.h>
+#include <fcntl.h>
 
 /* Useful macros to smooth away differences between supported OS */
 enum op_type { ADD, RM };
@@ -16,4 +16,3 @@ int poll_wait(int fd, int max_events, void *pevents);
 module_poll_t *poll_recv(int idx, void *pevents);
 int poll_destroy_pevents(void **pevents, int *max_events);
 int poll_close(int fd, void **pevents, int *max_events);
-int _pipe(int fd[2]);

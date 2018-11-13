@@ -23,26 +23,26 @@ void test_map_put(void **state) {
     
     ret = map_put(my_map, "key", &val, false);
     assert_true(ret == MAP_OK);
+    assert_true(map_has_key(my_map, "key"));
 }
 
 void test_map_get(void **state) {
     (void) state; /* unused */
-    int *value;
     
     /* NULL map */
-    map_ret_code ret = map_get(NULL, "key", (void **)&value);
-    assert_false(ret == MAP_OK);
+    int *value = map_get(NULL, "key");
+    assert_null(value);
     
     /* NULL key */
-    ret = map_get(my_map, NULL, (void **)&value);
-    assert_false(ret == MAP_OK);
+    value = map_get(my_map, NULL);
+    assert_null(value);
     
     /* Unhexistent key */
-    ret = map_get(my_map, "keykey", (void **)&value);
-    assert_false(ret == MAP_OK);
+    value = map_get(my_map, "keykey");
+    assert_null(value);
     
-    ret = map_get(my_map, "key", (void **)&value);
-    assert_true(ret == MAP_OK);
+    value = map_get(my_map, "key");
+    assert_non_null(value);
     assert_int_equal(*value, 5);
 }
 

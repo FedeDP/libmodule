@@ -1,6 +1,4 @@
-#include <assert.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include "map.h"
 
 #define MOD_ASSERT(cond, msg, ret) if(!cond) { fprintf(stderr, "%s\n", msg); return ret; }
@@ -13,13 +11,11 @@
 
 #define GET_CTX(name) \
     MOD_ASSERT(name, "NULL ctx.", MOD_ERR); \
-    m_context *c = NULL; \
-    map_get(ctx, (char *)name, (void **)&c); \
+    m_context *c = map_get(ctx, (char *)name); \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
 
 #define CTX_GET_MOD(name, ctx) \
-    module *mod = NULL; \
-    map_get(ctx->modules, (char *)name, (void **)&mod); \
+    module *mod = map_get(ctx->modules, (char *)name); \
     MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
 #define GET_MOD(self) \

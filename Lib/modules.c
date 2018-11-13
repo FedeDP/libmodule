@@ -1,6 +1,5 @@
 #include "modules.h"
 #include "poll_priv.h"
-#include <string.h>
 
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);

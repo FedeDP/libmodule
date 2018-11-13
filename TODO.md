@@ -4,16 +4,19 @@
 - [x] Add readme mention of Clightd, project that is using libmodule
 - [x] Expose module_map_{create/put/get/destroy} through a module_map.h header?
 - [x] Rename module_map_* to map_*
+- [x] Drop GNU_SOURCE and pipe2 call, unifying pipe()
 
 ### Improvements
 - [x] add a module_broadcast function
 - [x] map_put to take additional "bool key_strdup" param
+- [x] Add a map_has_key function + use it where needed
 
 ### Fixes
 - [x] Move call to "destroy()" callback after module and self_t destruction; this way no more libmodule things can be called on that being-destroyed module
 - [x] Fix poll loop to manage EINTR/EAGAIN interrupt signals
 - [x] Properly check poll_set_data call in module.c
 - [x] pkg-config cflags should use as includdir /usr/include and not /usr/include/module
+- [x] in map_rehash avoid changing needs_free value
 
 ### Tests
 - [x] Add module_broadcast test
@@ -21,6 +24,9 @@
 
 ### Doc
 - [x] Add module_map API documentation
+
+### Porting
+- [x] Add support for libkqueue -> this will let libmodule build on solaris and windows too
 
 - [ ] Release 3.1.0
 

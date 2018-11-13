@@ -1,11 +1,10 @@
 #include "module.h"
 #include "poll_priv.h"
-#include <string.h>
-#include <stdarg.h>
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(const char *ctx_name, m_context *context);
 static m_context *check_ctx(const char *ctx_name);
+static int _pipe(module *mod);
 static module_ret_code init_pubsub_fd(module *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata);
 static int tell_if(void *data, void *m);
@@ -51,16 +50,30 @@ static void destroy_ctx(const char *ctx_name, m_context *context) {
 }
 
 static m_context *check_ctx(const char *ctx_name) {
-    m_context *context = NULL;
-    map_get(ctx, ctx_name, (void **)&context); \
+    m_context *context = map_get(ctx, ctx_name);
     if (!context) {
         init_ctx(ctx_name, &context);
     }
     return context;
 }
 
+static int _pipe(module *mod) {
+    int ret = pipe(mod->pubsub_fd);
+    if (ret == 0) {
+        for (int i = 0; i < 2; i++) {
+            int flags = fcntl(mod->pubsub_fd[i], F_GETFL, 0);
+            if (flags == -1) {
+                flags = 0;
+            }
+            fcntl(mod->pubsub_fd[i], F_SETFL, flags | O_NONBLOCK);
+            fcntl(mod->pubsub_fd[i], F_SETFD, FD_CLOEXEC);
+        }
+    }
+    return ret;
+}
+
 static module_ret_code init_pubsub_fd(module *mod) {
-    if (_pipe(mod->pubsub_fd) == 0) {
+    if (_pipe(mod) == 0) {
         if (module_register_fd(&mod->self, mod->pubsub_fd[0], true, NULL) == MOD_OK) {
             return MOD_OK;
         }
@@ -82,8 +95,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     m_context *context = check_ctx(ctx_name);
     MOD_ASSERT(context, "Failed to create context.", MOD_ERR);
     
-    module *mod = NULL;
-    map_get(context->modules, name, (void **)&mod);
+    module *mod = map_get(context->modules, name);
     MOD_ASSERT(!mod, "Module with same name already registered in context.", MOD_ERR);
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
@@ -277,9 +289,8 @@ char *mem_strdup(const char *s) {
 module_ret_code module_register_topic(const self_t *self, const char *topic) {
     MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
     GET_MOD(self);
-    void *tmp = NULL;
     
-    if (map_get(c->topics, topic, (void **)&tmp) == MAP_MISSING) {
+    if (!map_has_key(c->topics, topic)) {
         if (map_put(c->topics, topic, mod, true) == MAP_OK) {
             tell_system_pubsub_msg(c, TOPIC_REGISTERED, topic);
             return MOD_OK;
@@ -291,10 +302,10 @@ module_ret_code module_register_topic(const self_t *self, const char *topic) {
 module_ret_code module_deregister_topic(const self_t *self, const char *topic) {
     MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
     GET_MOD(self);
-    void *tmp = NULL;
+    void *tmp = map_get(c->topics, topic); // NULL if key is not present
     
     /* Only same mod which registered topic can deregister it */
-    if (map_get(c->topics, topic, (void **)&tmp) == MAP_OK && tmp == mod) {
+    if (tmp == mod) {
         if (map_remove(c->topics, topic) == MAP_OK) {
             tell_system_pubsub_msg(c, TOPIC_DEREGISTERED, topic);
             return MOD_OK;
@@ -306,11 +317,9 @@ module_ret_code module_deregister_topic(const self_t *self, const char *topic) {
 module_ret_code module_subscribe(const self_t *self, const char *topic) {
     MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
     GET_MOD(self);
-    void *tmp = NULL;
     
     /* If topic exists and we are not already subscribed */
-    if (map_get(c->topics, topic, (void **)&tmp) == MAP_OK && 
-        map_get(mod->subscriptions, topic, (void **)&tmp) == MAP_MISSING) {
+    if (map_has_key(c->topics, topic) && !map_has_key(mod->subscriptions, topic)) {
         /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
         if (map_put(mod->subscriptions, topic, mod, true) == MAP_OK) {
             return MOD_OK;
@@ -322,10 +331,8 @@ module_ret_code module_subscribe(const self_t *self, const char *topic) {
 module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
     MOD_ASSERT(topic, "NULL topic.", MOD_ERR);
     GET_MOD(self);
-    void *tmp = NULL;
     
-    if (map_get(c->topics, topic, (void **)&tmp) == MAP_OK && 
-        map_remove(mod->subscriptions, topic) == MAP_OK) {
+    if (map_remove(mod->subscriptions, topic) == MAP_OK) {
         return MOD_OK;
     }
     return MOD_ERR;
@@ -358,7 +365,6 @@ int flush_pubsub_msg(void *data, void *m) {
 static int tell_if(void *data, void *m) {
     module *mod = (module *)m;
     const pubsub_msg_t *msg = (pubsub_msg_t *)data;
-    void *tmp = NULL;
 
     /* 
      * Only if mod is actually running or paused and 
@@ -366,7 +372,7 @@ static int tell_if(void *data, void *m) {
      * topic is null or this module is subscribed to topic 
      */
     if (module_is(&mod->self, RUNNING | PAUSED) && (msg->type != USER || !msg->topic || 
-        map_get(mod->subscriptions, msg->topic, (void **)&tmp) == MAP_OK)) {
+        map_has_key(mod->subscriptions, msg->topic))) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->self.name);
         
@@ -433,7 +439,7 @@ static module_ret_code publish_msg(const self_t *self, const char *topic,
      * Only module that registered a topic can publish on the topic.
      * Moreover, a publish can only be made on existent topic.
      */
-    if (!topic || (map_get(c->topics, topic, (void **)&tmp) == MAP_OK && tmp == mod)) {
+    if (!topic || ((tmp = map_get(c->topics, topic)) && tmp == mod)) {
         pubsub_msg_t m = { .topic = topic, .message = message, .sender = self, .type = USER, .size = size };
         return tell_pubsub_msg(&m, NULL, c);
     }

@@ -15,7 +15,7 @@ if(BUILD_TESTS)
     if (CMOCKA_FOUND)
         enable_testing()
         add_subdirectory(tests)
-        message(STATUS "Building tests.")
+        message(STATUS "Tests building enabled.")
     else()
         message(WARNING "Missing cmocka.")
     endif()
@@ -23,14 +23,14 @@ endif()
 
 if(BUILD_SAMPLES)
      add_subdirectory(Samples)
-     message(STATUS "Building examples.")
+     message(STATUS "Examples building enabled.")
 endif()
 
 if(BUILD_DOCS)
     find_package(Sphinx)
     if(SPHINX_FOUND)
         add_subdirectory(docs)
-        message(STATUS "Building docs.")
+        message(STATUS "Docs building enabled.")
     else()
         message(WARNING "Missing sphinx.")
     endif()
@@ -44,6 +44,7 @@ file(GLOB SOURCES Lib/*.c)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(SOURCES ${SOURCES} Lib/poll_plugins/epoll_priv.c)
 else()
+    find_package(Kqueue REQUIRED)
     set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
 endif()
 
@@ -65,9 +66,13 @@ set_target_properties(
 )
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security") 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -D_GNU_SOURCE -fvisibility=hidden")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -fvisibility=hidden")
 
-target_include_directories(${PROJECT_NAME} PRIVATE Lib/ Lib/public/module/)
+# KQUEUE_INCLUDE_DIRS will be empty where native epoll/kqueue are supported
+target_include_directories(${PROJECT_NAME} PRIVATE Lib/ Lib/public/module/ ${KQUEUE_INCLUDE_DIRS})
+
+# KQUEUE_LIBRARIES will be empty where native epoll/kqueue are supported
+target_link_libraries(${PROJECT_NAME} ${KQUEUE_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

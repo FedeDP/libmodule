@@ -62,16 +62,25 @@ Where not specified, these functions return a map_ret_code.
   :type val: :c:type:`void *`
   :type dupkey: :c:type:`const bool`
 
-.. c:function:: map_get(m, key, arg)
+.. c:function:: map_get(m, key)
 
   Get an hashmap value.
 
   :param m: pointer to map_t
   :param key: key for this value
-  :param arg: pointer where to store data pointer extracted from map
   :type m: :c:type:`map_t *`
   :type key: :c:type:`const char *`
-  :type arg: :c:type:`void **`
+  :returns: void pointer to value.
+  
+.. c:function:: map_has_key(m, key)
+
+  Check if key exists in map.
+
+  :param m: pointer to map_t
+  :param key: desired key
+  :type m: :c:type:`map_t *`
+  :type key: :c:type:`const char *`
+  :returns: true if key exists, false otherwise.
   
 .. c:function:: map_remove(m, key)
 

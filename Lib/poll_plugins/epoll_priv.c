@@ -50,7 +50,3 @@ int poll_close(int fd, void **pevents, int *max_events) {
     poll_destroy_pevents(pevents, max_events);
     return close(fd);
 }
-
-int _pipe(int fd[2]) {
-    return pipe2(fd, O_NONBLOCK | O_CLOEXEC);
-}

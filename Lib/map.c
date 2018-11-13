@@ -9,7 +9,7 @@
 typedef struct _hashmap_element {
     const char *key;
     bool in_use;
-    bool need_free;
+    bool needs_free;
     void *data;
 } map_elem;
 
@@ -27,6 +27,7 @@ static unsigned long crc32(const unsigned char *s, unsigned int len);
 static unsigned int hashmap_hash_int(const map_t *m, const char *keystring);
 static int hashmap_hash(map_t *m, const char* key);
 static map_ret_code hashmap_rehash(map_t *m);
+static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bool needs_free);
 
 static unsigned long crc32_tab[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
@@ -177,11 +178,10 @@ static map_ret_code hashmap_rehash(map_t *m) {
     m->size = 0;
 
     /* Rehash the elements */
-    int status = MAP_OK;
+    map_ret_code status = MAP_OK;
     for (int i = 0; i < old_size && status == MAP_OK; i++) {
         if (curr[i].in_use) {
-            /* Internal hashmap_put to avoid re-mallocing already malloc'd keys */
-            status = map_put(m, curr[i].key, curr[i].data, false);
+            status = hashmap_put(m, curr[i].key, curr[i].data, curr[i].needs_free);
         }
     }
     memhook._free(curr);
@@ -197,6 +197,11 @@ map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey) 
     MOD_ASSERT(value, "NULL value.", MAP_ERR);
     
     /* Find a place to put our value */
+    return hashmap_put(m, dupkey ? mem_strdup(key) : key, value, dupkey);
+}
+
+static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bool needs_free) {
+    /* Find a place to put our value */
     int index = hashmap_hash(m, key);
     while (index == MAP_FULL) {
         if (hashmap_rehash(m) == MAP_OMEM) {
@@ -207,9 +212,9 @@ map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey) 
     
     /* Set the data */
     m->data[index].data = value;
-    m->data[index].key = dupkey ? mem_strdup(key) : key;
+    m->data[index].key = key;
     m->data[index].in_use = true;
-    m->data[index].need_free = dupkey;
+    m->data[index].needs_free = needs_free;
     m->size++;
     return MAP_OK;
 }
@@ -217,9 +222,15 @@ map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey) 
 /*
  * Get your pointer out of the hashmap with a key
  */
-map_ret_code map_get(const map_t *m, const char *key, void **arg) {
-    MOD_ASSERT(m, "NULL map.", MAP_ERR);
-    MOD_ASSERT(key, "NULL key.", MAP_ERR);
+void *map_get(const map_t *m, const char *key) {
+    if (!m) {
+        fprintf(stderr, "NULL map.\n");
+        return NULL;
+    }
+    if (!key) {
+        fprintf(stderr, "NULL key.\n");
+        return NULL;
+    }
     
     /* Find data location */
     int curr = hashmap_hash_int(m, key);
@@ -227,14 +238,15 @@ map_ret_code map_get(const map_t *m, const char *key, void **arg) {
     /* Linear probing, if necessary */
     for (int i = 0; i< MAX_CHAIN_LENGTH; i++) {
         if (m->data[curr].in_use && !strcmp(m->data[curr].key, key)) {
-            *arg = (m->data[curr].data);
-            return MAP_OK;
+            return m->data[curr].data;
         }
         curr = (curr + 1) % m->table_size;
     }
-    
-    *arg = NULL;
-    return MAP_MISSING;
+    return NULL;
+}
+
+bool map_has_key(const map_t *m, const char *key) {
+    return map_get(m, key) != NULL;
 }
 
 /*
@@ -278,11 +290,11 @@ map_ret_code map_remove(map_t *m, const char *key) {
             /* Blank out the fields */
             m->data[curr].in_use = false;
             m->data[curr].data = NULL;
-            if (m->data[curr].need_free) {
+            if (m->data[curr].needs_free) {
                 memhook._free((void *)m->data[curr].key);
             }
             m->data[curr].key = NULL;
-            m->data[curr].need_free = false;
+            m->data[curr].needs_free = false;
 
             /* Reduce the size */
             m->size--;
@@ -300,7 +312,7 @@ map_ret_code map_free(map_t *m) {
     MOD_ASSERT(m, "NULL map.", MAP_ERR);
     
     for (int i = 0; i < m->table_size; i++) {
-        if (m->data[i].need_free) {
+        if (m->data[i].needs_free) {
             memhook._free((void *)m->data[i].key);
         }
     }
