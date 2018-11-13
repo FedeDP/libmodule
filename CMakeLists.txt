@@ -44,7 +44,13 @@ file(GLOB SOURCES Lib/*.c)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(SOURCES ${SOURCES} Lib/poll_plugins/epoll_priv.c)
 else()
-    find_package(Kqueue REQUIRED)
+    include(CheckFunctionExists)
+    check_function_exists(kqueue KQUEUE_IN_LIBC)
+    if(NOT KQUEUE_IN_LIBC)
+        find_package(Kqueue REQUIRED)
+    else()
+        set(KQUEUE_LIBRARIES "")
+    endif()
     set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
 endif()
 
@@ -68,8 +74,7 @@ set_target_properties(
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security") 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -fvisibility=hidden")
 
-# KQUEUE_INCLUDE_DIRS will be empty where native epoll/kqueue are supported
-target_include_directories(${PROJECT_NAME} PRIVATE Lib/ Lib/public/module/ ${KQUEUE_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE Lib/ Lib/public/module/)
 
 # KQUEUE_LIBRARIES will be empty where native epoll/kqueue are supported
 target_link_libraries(${PROJECT_NAME} ${KQUEUE_LIBRARIES})
