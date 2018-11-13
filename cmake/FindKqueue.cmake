@@ -14,4 +14,3 @@ find_package_handle_standard_args(kqueue DEFAULT_MSG
     KQUEUE_INCLUDE_DIRS
     THREADS_FOUND
 )
-

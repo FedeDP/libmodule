@@ -8,7 +8,7 @@
 Libmodule is a C library targeting linux aiming to let developers easily create modular C projects in a way which is both simple and elegant.  
 You will write less code, focusing on what really matters.  
 
-**Please note that the library actually builds and works on macOS and BSD too.** See [Portability](https://github.com/FedeDP/libmodule#is-it-portable).
+**Please note that libmodule actually builds and works on macOS and BSD too, and probably other.** See [Portability](https://github.com/FedeDP/libmodule#is-it-portable).
 
 ## Is this an event loop or an actor lib?
 
@@ -20,13 +20,15 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 ## Is it portable?
 
 Yes, it is. Non-portable code is actually [compile-time-plugins](https://github.com/FedeDP/libmodule/tree/master/Lib/poll_plugins) based.  
-On linux, libmodule's internal loop will use epoll, while on BSD and MacOS kqueue will be used.  
-The downside is that any poll plugin must have epoll-like interface. This is a choice: I find epoll-like APIs to be much more powerful and enjoyable to use.  
+On linux, libmodule's internal loop will use epoll, while on BSD and MacOS it will use kqueue.  
+On other OS, cmake will fallback at looking for [libkqueue](https://github.com/mheily/libkqueue), a drop-in replacement for kqueue.  
+Unfortunately, I am not able to test builds on other OS, and I could only check that libmodule can be built on Linux through libkqueue.  
+If you wish to have libmodule working on your OS, please open an issue or (better) send a PR.  
 Finally, it heavily relies upon gcc attributes that may or may not be available for your compiler.  
-Builds on supported platforms are tested through [travis](https://github.com/FedeDP/libmodule#travis-ci).
+Linux and osx builds are tested through [travis](https://github.com/FedeDP/libmodule#travis-ci).
 
 As I can only test on linux with epoll though, you are advised that other plugins may break or have weird bugs.  
-*If anyone is interested in step up and test libmodule on non-linux platforms, I'd be very thankful*.  
+*If anyone is interested in step up and test/maintain libmodule on non-linux platforms, I'd be very thankful*.  
 
 ## Is there any documentation?
 
@@ -55,7 +57,6 @@ So I thought that writing a library to achieve those same abstractions in a clea
 ## Build dep and how to build
 
 You only need cmake to build libmodule; it does not depend upon external software.  
-Libmodule includes an [hashmap](https://github.com/petewarden/c_hashmap) implementation provided by Pete Warden (thank you!).  
 To build, you only need to issue:
 
     $ mkdir build

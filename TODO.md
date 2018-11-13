@@ -28,6 +28,8 @@
 ### Porting
 - [x] Add support for libkqueue -> this will let libmodule build on solaris and windows too
 
+- [x] Update readme (multi platform + libkqueue mention)
+
 - [ ] Release 3.1.0
 
 ## 3.2.0

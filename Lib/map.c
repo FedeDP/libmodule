@@ -1,12 +1,15 @@
-#include "map.h"
+/*
+ * hashmap implementation provided by Pete Warden (thank you!)
+ * https://github.com/petewarden/c_hashmap
+ */
+
 #include "poll_priv.h"
-#include <string.h>
 
 #define INITIAL_SIZE        256
 #define MAX_CHAIN_LENGTH    8
 
 /* We need to keep keys and values */
-typedef struct _hashmap_element {
+typedef struct {
     const char *key;
     bool in_use;
     bool needs_free;
