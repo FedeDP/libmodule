@@ -10,6 +10,7 @@
 - [x] add a module_broadcast function
 - [x] map_put to take additional "bool key_strdup" param
 - [x] Add a map_has_key function + use it where needed
+- [x] Avoid MOD_ASSERT spamming in release mode
 
 ### Fixes
 - [x] Move call to "destroy()" callback after module and self_t destruction; this way no more libmodule things can be called on that being-destroyed module

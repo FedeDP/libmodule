@@ -1,7 +1,11 @@
 #include <stdlib.h>
 #include "map.h"
 
-#define MOD_ASSERT(cond, msg, ret) if(!cond) { fprintf(stderr, "%s\n", msg); return ret; }
+#ifndef NDEBUG
+    #define MOD_ASSERT(cond, msg, ret) if (!cond) { fprintf(stderr, "%s\n", msg); return ret; }
+#else
+    #define MOD_ASSERT(cond, msg, ret) if (!cond) { return ret; }
+#endif
 
 #ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule: "); printf
