@@ -11,8 +11,8 @@
 - [ ] Release
 
 ## 3.2.0
-- [ ] Actually implement a queue for module_become/unbecome
-- [ ] Expose queue through a queue.h public header
+- [ ] Actually implement a stack for module_become/unbecome
+- [ ] Expose stack through a stack.h public header
 - [ ] Expose a list.h too? And use it for module's fds?
 
 ## 4.0.0 (?)
