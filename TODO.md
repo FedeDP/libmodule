@@ -31,9 +31,9 @@
 
 - [x] Update readme (multi platform + libkqueue mention)
 
-- [ ] Release 3.1.0
+- [ ] Release
 
-## 3.2.0
+## 3.1.1
 
 ### Improvements
 - [ ] self_t will hold a pointer to module and to its context
@@ -43,7 +43,20 @@
 - [ ] insert self_t into context->modules, instead of module
 - [ ] this way GET_MOD etc etc are way faster (no context and modules hashmap lookup)
 
-- [ ] Release 3.2.0
+- [ ] Release
+
+## 3.2.0
+- [ ] Actually implement a queue for module_become/unbecome
+- [ ] Expose queue through a queue.h public header
+- [ ] Expose a list.h too? And use it for module's fds?
+
+## 4.0.0 (?)
+- [ ] Prevent other modules from using a module's self_t (as received eg from a PubSub message)
+Idea: for each self_t passed as first parameter, check that its address is same as self_t stored in module (?), eg: 
+    module_register_fd(self_t **self, ...) { if (self != (*self)->module->trusted_self) { return MOD_NO_PERM; }
+
+- [ ] All API should go through self_t, eg: self_t *recipient = module_ref("foo"); module_tell(self, recipient, ...);
+- [ ] Add a module_new_msg(.data=..., .topic=..., ) (https://github.com/mcinglis/c-style#use-structs-to-name-functions-optional-arguments)
 
 ## Ideas
 
