@@ -1,0 +1,23 @@
+image: freebsd
+packages:
+  - cmocka
+  - valgrind
+  - cmake
+sources:
+  - https://github.com/FedeDP/libmodule
+tasks:
+  - prepare: |
+      cd libmodule
+      mkdir build
+      cd build
+      cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true ../
+  - build: |
+      cd libmodule/build
+      make
+  - test: |
+      cd libmodule/build
+      ctest -V
+triggers:
+  - action: email
+    condition: failure
+    to: "<nierro92@gmail.com>"
