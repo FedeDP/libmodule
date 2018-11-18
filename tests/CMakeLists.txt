@@ -22,4 +22,5 @@ else()
     message(STATUS "Tests won't be checked with valgrind.")
 endif()
 
+target_include_directories(ModuleTest PRIVATE ${CMOCKA_INCLUDE_DIR})
 target_link_libraries(ModuleTest cmocka module)
