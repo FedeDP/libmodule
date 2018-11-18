@@ -40,7 +40,7 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_iterate(m, fn, userptr)
 
-  Iterate an hashmap.
+  Iterate an hashmap until MAP_OK is returned (or end of hashmap is reached). Returns MAP_MISSING if map is NULL.
 
   :param m: pointer to map_t
   :param fn: callback to be called
