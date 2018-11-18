@@ -1,6 +1,6 @@
 # Libmodule
 
-[![Build Status](https://travis-ci.org/FedeDP/libmodule.svg?branch=master)](https://travis-ci.org/FedeDP/libmodule)
+[![builds.sr.ht status](https://builds.sr.ht/~fededp/libmodule.svg)](https://builds.sr.ht/~fededp/libmodule?)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3526dd92b6d84370b072bfadfc7da632)](https://www.codacy.com/app/FedeDP/libmodule?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FedeDP/libmodule&amp;utm_campaign=Badge_Grade)
 [![Documentation Status](https://readthedocs.org/projects/libmodule/badge/?version=latest)](http://libmodule.readthedocs.io/en/latest/?badge=latest)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -26,7 +26,6 @@ Unfortunately, I am not able to test builds on other OS: I could only check that
 *If anyone is interested in step up and test/maintain libmodule on non-linux platforms, I'd be very thankful*.  
 
 Finally, it heavily relies upon gcc attributes that may or may not be available for your compiler.  
-Linux and osx builds are tested through [travis](https://github.com/FedeDP/libmodule#travis-ci).
 
 ## Is there any documentation?
 
@@ -34,11 +33,10 @@ Yes, it is availabe at [readthedocs](http://libmodule.readthedocs.io/en/latest/)
 You have some nice examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.  
 To see a real project using libmodule, check [Clightd](https://github.com/FedeDP/Clightd).
 
-## Travis CI
+## CI
 
-Libmodule, samples and tests builds are tested with both gcc and clang on [travis](https://travis-ci.org/FedeDP/libmodule) on supported platforms.  
-Moreover, tests are executed too; on linux, tests are also valgrind checked.  
-Unfortunately macOS reported weird memleaks about cmocka, so valgrind-check had to be disabled there.
+Libmodule, samples and tests builds are tested on [builds.sr.ht](https://builds.sr.ht/~fededp/libmodule) on linux and freebsd.  
+Moreover, tests are executed and valgrind checked too.  
 
 ## What is a module, anyway?
 

@@ -8,6 +8,9 @@
 - [ ] insert self_t into context->modules, instead of module
 - [ ] this way GET_MOD etc etc are way faster (no context and modules hashmap lookup)
 
+### CI
+- [x] Switch to builds.sr.ht
+
 - [ ] Release
 
 ## 3.2.0
