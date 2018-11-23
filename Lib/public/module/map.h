@@ -5,7 +5,8 @@
 /** Module hashmap interface **/
 
 typedef enum {
-    MAP_ERR = -4,
+    MAP_WRONG_PARAM = -5,
+    MAP_ERR,
     MAP_MISSING,
     MAP_FULL,
     MAP_OMEM,

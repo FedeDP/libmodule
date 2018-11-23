@@ -7,42 +7,52 @@
     #define MOD_ASSERT(cond, msg, ret) if (!cond) { return ret; }
 #endif
 
+#define MOD_ALLOC_ASSERT(cond)  MOD_ASSERT(cond, "Failed to malloc.", MOD_NO_MEM);
+#define MOD_PARAM_ASSERT(cond)  MOD_ASSERT((cond), #cond, MOD_WRONG_PARAM);
+
 #ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule: "); printf
 #else
     #define MODULE_DEBUG (void)
 #endif
 
-#define GET_CTX(name) \
+/* Finds a ctx inside our global map, given its name */
+#define FIND_CTX(name) \
     MOD_ASSERT(name, "NULL ctx.", MOD_ERR); \
     m_context *c = map_get(ctx, (char *)name); \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
 
+/* Convenience macro to retrieve self->ctx + doing some checks */
+#define GET_CTX(self) \
+    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
+    m_context *c = self->ctx; \
+    MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
+
+/* Convenience macro to retrieve a module from a context, given its name */
 #define CTX_GET_MOD(name, ctx) \
     module *mod = map_get(ctx->modules, (char *)name); \
     MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
+/* Convenience macro to retrieve self->mod + doing some checks */
 #define GET_MOD(self) \
     MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
-    GET_CTX(self->ctx); \
-    CTX_GET_MOD(self->name, c);
+    module *mod = self->mod; \
+    MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
+/*
+ * Convenience macro to retrieve self->mod + doing some checks 
+ * + checking if its state matches required state 
+ */
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
-    if (!module_is(self, state)) { return MOD_WRONG_STATE; }
-
-/* Struct that holds self module informations, static to each module */
-struct _self {
-    const char *name;                     // module's name
-    const char *ctx;                      // module's ctx 
-};
+    MOD_ASSERT(module_is(self, state), "Wrong module state.", MOD_WRONG_STATE);
 
 typedef struct _poll_t {
     int fd;
     bool autoclose;
     void *ev;
     const void *userptr;
-    const self_t *self;                   // ptr needed to map a fd to a self_t in epoll
+    const struct _self *self;                   // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
 } module_poll_t;
 
@@ -51,24 +61,32 @@ typedef struct {
     userhook hook;                        // module's user defined callbacks
     const void *userdata;                 // module's user defined data
     enum module_states state;             // module's state
-    self_t self;                          // module's info available to external world
+    const char *name;                     // module's name
     module_poll_t *fds;                   // module's fds to be polled
     map_t *subscriptions;                 // module's subscriptions
     int pubsub_fd[2];                     // In and Out pipe for pubsub msg
+    const struct _self *self;             // pointer to self (and thus context)
 } module;
 
 typedef struct {
+    const char *name;
     bool quit;
     uint8_t quit_code;
     bool looping;
     int fd;
-    int num_fds;                          // number of fds in this context
+    int num_fds;
     log_cb logger;
     map_t *modules;
     void *pevents;
     int max_events;
     map_t *topics;
 } m_context;
+
+/* Struct that holds self module informations, static to each module */
+struct _self {
+    module *mod;                    // module's mod
+    m_context *ctx;                 // module's ctx 
+};
 
 int evaluate_module(void *data, void *m);
 module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic);

@@ -40,16 +40,16 @@ module_ret_code modules_set_memalloc_hook(const memalloc_hook *hook) {
 }
 
 module_ret_code modules_ctx_set_logger(const char *ctx_name, const log_cb logger) {
-    MOD_ASSERT(logger, "NULL logger.", MOD_ERR);
-    GET_CTX(ctx_name);
+    MOD_PARAM_ASSERT(logger);
+    FIND_CTX(ctx_name);
     
     c->logger = logger;
     return MOD_OK;
 }
 
 module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_events) {
-    MOD_ASSERT((max_events > 0), "max_events parameter must be > 0.", MOD_ERR);
-    GET_CTX(ctx_name);
+    MOD_PARAM_ASSERT(max_events > 0);
+    FIND_CTX(ctx_name);
     MOD_ASSERT((c->num_fds > 0), "No fds to loop on.", MOD_ERR);
     MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
 
@@ -66,12 +66,12 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
             int nfds = poll_wait(c->fd, c->max_events, c->pevents);
             for (int i = 0; i < nfds; i++) {
                 module_poll_t *p = poll_recv(i, c->pevents);
-                if (p) {
-                    CTX_GET_MOD(p->self->name, c);
-
+                if (p && p->self && p->self->mod) {
+                    module *mod = p->self->mod;
+                    
                     msg_t msg;
                     fd_msg_t fd_msg;
-
+                    
                     if (p->fd == mod->pubsub_fd[0]) {
                         /* Received on pubsub interface */
                         *(bool *)&msg.is_pubsub = true;
@@ -125,7 +125,7 @@ static void evaluate_new_state(m_context *context) {
 }
 
 module_ret_code modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) {
-    GET_CTX(ctx_name);
+    FIND_CTX(ctx_name);
     
     if (c->looping) {
         c->quit = true;

@@ -195,9 +195,9 @@ static map_ret_code hashmap_rehash(map_t *m) {
  * Add a pointer to the hashmap with strdupped key if dupkey is true
  */
 map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey) {
-    MOD_ASSERT(m, "NULL map.", MAP_ERR);
-    MOD_ASSERT(key, "NULL key.", MAP_ERR);
-    MOD_ASSERT(value, "NULL value.", MAP_ERR);
+    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
+    MOD_ASSERT(key, "NULL key.", MAP_WRONG_PARAM);
+    MOD_ASSERT(value, "NULL value.", MAP_WRONG_PARAM);
     
     /* Find a place to put our value */
     return hashmap_put(m, dupkey ? mem_strdup(key) : key, value, dupkey);
@@ -226,14 +226,8 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bo
  * Get your pointer out of the hashmap with a key
  */
 void *map_get(const map_t *m, const char *key) {
-    if (!m) {
-        fprintf(stderr, "NULL map.\n");
-        return NULL;
-    }
-    if (!key) {
-        fprintf(stderr, "NULL key.\n");
-        return NULL;
-    }
+    MOD_ASSERT(m, "NULL map.", NULL);
+    MOD_ASSERT(key, "NULL key.", NULL);
     
     /* Find data location */
     int curr = hashmap_hash_int(m, key);
@@ -258,8 +252,8 @@ bool map_has_key(const map_t *m, const char *key) {
  * argument and the hashmap element is the second.
  */
 map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
-    MOD_ASSERT(m, "NULL map.", MAP_ERR);
-    MOD_ASSERT(fn, "NULL callback.", MAP_ERR);
+    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
+    MOD_ASSERT(fn, "NULL callback.", MAP_WRONG_PARAM);
 
     /* On empty hashmap, return immediately */
     if (map_length(m) <= 0) {
@@ -281,8 +275,8 @@ map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
  * Remove an element with that key from the map
  */
 map_ret_code map_remove(map_t *m, const char *key) {
-    MOD_ASSERT(m, "NULL map.", MAP_ERR);
-    MOD_ASSERT(key, "NULL key.", MAP_ERR);
+    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
+    MOD_ASSERT(key, "NULL key.", MAP_WRONG_PARAM);
     
     /* Find key */
     int curr = hashmap_hash_int(m, key);
@@ -312,7 +306,7 @@ map_ret_code map_remove(map_t *m, const char *key) {
 
 /* Deallocate the hashmap */
 map_ret_code map_free(map_t *m) {
-    MOD_ASSERT(m, "NULL map.", MAP_ERR);
+    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
     
     for (int i = 0; i < m->table_size; i++) {
         if (m->data[i].needs_free) {
@@ -326,7 +320,6 @@ map_ret_code map_free(map_t *m) {
 
 /* Return the length of the hashmap */
 int map_length(const map_t *m) {
-    MOD_ASSERT(m, "NULL map.", MAP_ERR);
-    
+    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
     return m->size;
 }

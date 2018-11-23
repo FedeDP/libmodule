@@ -1,12 +1,15 @@
 ## 3.1.1
 
-### Improvements
-- [ ] self_t will hold a pointer to module and to its context
-- [ ] Store module name in module struct (strdup'd)
-- [ ] Store context name in m_context (strdup'd)
-- [ ] Use them as hashmap key without strudpping again
-- [ ] insert self_t into context->modules, instead of module
-- [ ] this way GET_MOD etc etc are way faster (no context and modules hashmap lookup)
+### Performance improvements
+- [x] self_t will hold a pointer to module and to its context
+- [x] Store module name in module struct (strdup'd)
+- [x] Store context name in m_context (strdup'd)
+- [x] Use them as hashmap key without strudpping again
+
+### Api improvements
+- [x] Add new MOD_NO_MEM error code
+- [x] Add new MOD_WRONG_PARAM error code
+- [x] Add new MAP_WRONG_PARAM error code
 
 ### CI
 - [x] Switch to builds.sr.ht
