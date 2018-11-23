@@ -50,7 +50,7 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, const log_cb logger
 module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_events) {
     MOD_PARAM_ASSERT(max_events > 0);
     FIND_CTX(ctx_name);
-    MOD_ASSERT((c->num_fds > 0), "No fds to loop on.", MOD_ERR);
+    MOD_ASSERT(c->num_fds > 0, "No fds to loop on.", MOD_ERR);
     MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
 
     if (poll_init_pevents(&c->pevents, max_events) == MOD_OK) {

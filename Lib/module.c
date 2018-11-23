@@ -25,7 +25,7 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     **context = (m_context) {0};
     
     (*context)->fd = poll_create();
-    MOD_ASSERT(((*context)->fd >= 0), "Failed to create context fd.", MOD_ERR);
+    MOD_ASSERT((*context)->fd >= 0, "Failed to create context fd.", MOD_ERR);
      
     (*context)->logger = default_logger;
     

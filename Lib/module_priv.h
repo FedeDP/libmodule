@@ -2,13 +2,13 @@
 #include "map.h"
 
 #ifndef NDEBUG
-    #define MOD_ASSERT(cond, msg, ret) if (!cond) { fprintf(stderr, "%s\n", msg); return ret; }
+    #define MOD_ASSERT(cond, msg, ret) if (!(cond)) { fprintf(stderr, "%s\n", msg); return ret; }
 #else
-    #define MOD_ASSERT(cond, msg, ret) if (!cond) { return ret; }
+    #define MOD_ASSERT(cond, msg, ret) if (!(cond)) { return ret; }
 #endif
 
 #define MOD_ALLOC_ASSERT(cond)  MOD_ASSERT(cond, "Failed to malloc.", MOD_NO_MEM);
-#define MOD_PARAM_ASSERT(cond)  MOD_ASSERT((cond), #cond, MOD_WRONG_PARAM);
+#define MOD_PARAM_ASSERT(cond)  MOD_ASSERT(cond, #cond, MOD_WRONG_PARAM);
 
 #ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule: "); printf

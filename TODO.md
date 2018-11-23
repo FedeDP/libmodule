@@ -6,8 +6,6 @@
 - [x] Store context name in m_context (strdup'd)
 - [x] Use them as hashmap key without strudpping again
 
-- [ ] Remove cycle between self and module: module shouldn't have a pointer to self.
-
 ### Api improvements
 - [x] Add new MOD_NO_MEM error code
 - [x] Add new MOD_WRONG_PARAM error code
@@ -21,7 +19,6 @@
 ## 3.2.0
 - [ ] Actually implement a stack for module_become/unbecome
 - [ ] Expose stack through a stack.h public header
-- [ ] Expose a list.h too? And use it for module's fds?
 
 ## 4.0.0 (?)
 - [ ] Prevent other modules from using a module's self_t (as received eg from a PubSub message)
