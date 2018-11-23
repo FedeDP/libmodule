@@ -14,7 +14,8 @@ Map structures
 .. code::
 
     typedef enum {
-        MAP_ERR = -4,
+        MAP_WRONG_PARAM = -5,
+        MAP_ERR,
         MAP_MISSING,
         MAP_FULL,
         MAP_OMEM,
@@ -70,7 +71,7 @@ Where not specified, these functions return a map_ret_code.
   :param key: key for this value
   :type m: :c:type:`map_t *`
   :type key: :c:type:`const char *`
-  :returns: void pointer to value.
+  :returns: void pointer to value, on NULL on error.
   
 .. c:function:: map_has_key(m, key)
 

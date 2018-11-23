@@ -6,6 +6,8 @@
 - [x] Store context name in m_context (strdup'd)
 - [x] Use them as hashmap key without strudpping again
 
+- [ ] Remove cycle between self and module: module shouldn't have a pointer to self.
+
 ### Api improvements
 - [x] Add new MOD_NO_MEM error code
 - [x] Add new MOD_WRONG_PARAM error code

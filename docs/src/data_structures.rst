@@ -87,7 +87,9 @@ Return Codes
 .. code::
 
     typedef enum {
-        MOD_WRONG_STATE = -6,
+        MOD_WRONG_PARAM = -8,
+        MOD_NO_MEM,
+        MOD_WRONG_STATE,
         MOD_NO_PARENT,
         MOD_NO_CTX,
         MOD_NO_MOD,
