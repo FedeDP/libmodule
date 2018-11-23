@@ -84,8 +84,8 @@ typedef struct {
 
 /* Struct that holds self module informations, static to each module */
 struct _self {
-    module *mod;                    // module's mod
-    m_context *ctx;                 // module's ctx 
+    module *const mod;                    // self's mod
+    m_context *const ctx;                 // self's ctx 
 };
 
 int evaluate_module(void *data, void *m);

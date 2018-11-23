@@ -115,8 +115,8 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
         mod->subscriptions = map_new();
         *self = memhook._malloc(sizeof(self_t));
         self_t *s = (self_t *)*self;
-        s->mod = mod;
-        s->ctx = context;
+        *((module **)&s->mod) = mod;
+        *((m_context **)&s->ctx) = context;
         mod->self = s;
         evaluate_module(NULL, mod);
         return MOD_OK;
