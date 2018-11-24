@@ -400,7 +400,9 @@ static int tell_if(void *data, void *m) {
         MODULE_DEBUG("Telling a message to %s.\n", mod->name);
         
         pubsub_msg_t *mm = create_pubsub_msg(msg->message, msg->sender, msg->topic, msg->type, msg->size);
-        write(mod->pubsub_fd[1], &mm, sizeof(pubsub_msg_t *));
+        if (write(mod->pubsub_fd[1], &mm, sizeof(pubsub_msg_t *)) != sizeof(pubsub_msg_t *)) {
+            MODULE_DEBUG("Failed to write message for %s: %s\n", mod->name, strerror(errno));
+        }
     }
     return MAP_OK;
 }

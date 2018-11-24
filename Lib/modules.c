@@ -75,7 +75,10 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
                     if (p->fd == mod->pubsub_fd[0]) {
                         /* Received on pubsub interface */
                         *(bool *)&msg.is_pubsub = true;
-                        read(p->fd, (void **)&msg.pubsub_msg, sizeof(pubsub_msg_t *));
+                        if (read(p->fd, (void **)&msg.pubsub_msg, sizeof(pubsub_msg_t *)) != sizeof(pubsub_msg_t *)) {
+                            MODULE_DEBUG("Failed to read message for %s: %s\n", mod->name, strerror(errno));
+                            *((pubsub_msg_t **)&msg.pubsub_msg) = NULL;
+                        }
                     } else {
                         /* Received from FD */
                         *(bool *)&msg.is_pubsub = false;
@@ -84,17 +87,19 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
                         *(fd_msg_t **)&msg.fd_msg = &fd_msg;
                     }
 
-                    /* If module is using some different receive function, honor it. */
-                    recv_cb cb = stack_peek(mod->recvs);
-                    if (!cb) {
-                        /* Fallback to module default receive */
-                        cb = mod->hook.recv;
-                    }
-                    cb(&msg, mod->userdata);
+                    if (!msg.is_pubsub || msg.pubsub_msg) {
+                        /* If module is using some different receive function, honor it. */
+                        recv_cb cb = stack_peek(mod->recvs);
+                        if (!cb) {
+                            /* Fallback to module default receive */
+                            cb = mod->hook.recv;
+                        }
+                        cb(&msg, mod->userdata);
 
-                    /* Properly free pubsub msg */
-                    if (p->fd == mod->pubsub_fd[0]) {
-                        destroy_pubsub_msg((pubsub_msg_t *)msg.pubsub_msg);
+                        /* Properly free pubsub msg */
+                        if (msg.is_pubsub) {
+                            destroy_pubsub_msg((pubsub_msg_t *)msg.pubsub_msg);
+                        }
                     }
                 } else {
                     /* Forward error to below handling code */
