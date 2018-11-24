@@ -84,7 +84,13 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
                         *(fd_msg_t **)&msg.fd_msg = &fd_msg;
                     }
 
-                    mod->hook.recv(&msg, mod->userdata);
+                    /* If module is using some different receive function, honor it. */
+                    recv_cb cb = stack_peek(mod->recvs);
+                    if (!cb) {
+                        /* Fallback to module default receive */
+                        cb = mod->hook.recv;
+                    }
+                    cb(&msg, mod->userdata);
 
                     /* Properly free pubsub msg */
                     if (p->fd == mod->pubsub_fd[0]) {

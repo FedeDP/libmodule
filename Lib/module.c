@@ -113,6 +113,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
         mod->state = IDLE;
         mod->fds = NULL;
         mod->subscriptions = map_new();
+        mod->recvs = stack_new();
         *self = memhook._malloc(sizeof(self_t));
         self_t *s = (self_t *)*self;
         *((module **)&s->mod) = mod;
@@ -144,6 +145,7 @@ module_ret_code module_deregister(const self_t **self) {
         destroy_ctx(tmp->ctx);
     }
     map_free(mod->subscriptions);
+    stack_free(mod->recvs);
     memhook._free((self_t *)*self);
     *self = NULL;
     mod->self = NULL;
@@ -181,8 +183,19 @@ module_ret_code module_become(const self_t *self, const recv_cb new_recv) {
     MOD_PARAM_ASSERT(new_recv);
     GET_MOD_IN_STATE(self, RUNNING);
     
-    mod->hook.recv = new_recv;
-    return MOD_OK;
+    if (stack_push(mod->recvs, new_recv, false) == STACK_OK) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+module_ret_code module_unbecome(const self_t *self) {
+    GET_MOD_IN_STATE(self, RUNNING);
+    
+    if (stack_pop(mod->recvs) == STACK_OK) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
 }
 
 module_ret_code module_log(const self_t *self, const char *fmt, ...) {

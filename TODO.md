@@ -1,6 +1,7 @@
 ## 3.2.0
-- [ ] Actually implement a stack for module_become/unbecome
-- [ ] Expose stack through a stack.h public header
+- [x] Actually implement a stack for module_become/unbecome
+- [x] Expose stack through a stack.h public header
+- [x] Add test + doc for stack
 
 ## 4.0.0 (?)
 - [ ] Prevent other modules from using a module's self_t (as received eg from a PubSub message)

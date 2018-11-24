@@ -3,7 +3,7 @@
    <br />
 
 Libmodule Map API
-==============
+=================
 
 Libmodule offers an easy to use hashmap implementation, provided by <module/map.h> header. |br|
 It is used internally to store context's modules and modules' subscriptions/topics. |br|
@@ -22,7 +22,7 @@ Map structures
         MAP_OK
     } map_ret_code;
 
-    /* Callback for module_map_iterate */
+    /* Callback for map_iterate */
     typedef map_ret_code (*map_cb)(void *, void *);
 
     /* Incomplete struct declaration for hashmap */
@@ -41,7 +41,7 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_iterate(m, fn, userptr)
 
-  Iterate an hashmap until MAP_OK is returned (or end of hashmap is reached). Returns MAP_MISSING if map is NULL.
+  Iterate an hashmap calling cb on each element until MAP_OK is returned (or end of hashmap is reached). Returns MAP_MISSING if map is NULL.
 
   :param m: pointer to map_t
   :param fn: callback to be called
@@ -105,4 +105,4 @@ Where not specified, these functions return a map_ret_code.
 
   :param m: pointer to map_t
   :type m: :c:type:`map_t *`
-  :returns: map length or a module_map_code if any error happens (map_t is null).
+  :returns: map length or a map_ret_code if any error happens (map_t is null).

@@ -254,14 +254,10 @@ bool map_has_key(const map_t *m, const char *key) {
 map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
     MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
     MOD_ASSERT(fn, "NULL callback.", MAP_WRONG_PARAM);
-
-    /* On empty hashmap, return immediately */
-    if (map_length(m) <= 0) {
-        return MAP_MISSING;
-    }
+    MOD_ASSERT(map_length(m) > 0, "Empty map.", MAP_MISSING);
 
     /* Linear probing */
-    int status = MAP_OK;
+    map_ret_code status = MAP_OK;
     for (int i = 0; i < m->table_size && status == MAP_OK; i++) {
         if (m->data[i].in_use) {
             void *data = m->data[i].data;

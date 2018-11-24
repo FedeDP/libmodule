@@ -18,6 +18,7 @@ Welcome to libmodule's documentation!
    src/module
    src/modules
    src/map
+   src/stack
 
 Indices and tables
 ==================

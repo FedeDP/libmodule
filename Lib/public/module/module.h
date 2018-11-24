@@ -23,6 +23,7 @@ _public_ module_ret_code module_stop(const self_t *self);
 
 /* Module generic functions */
 _public_ module_ret_code module_become(const self_t *self, const recv_cb new_recv);
+_public_ module_ret_code module_unbecome(const self_t *self);
 _public_ module_ret_code module_log(const self_t *self, const char *fmt, ...);
 _public_ module_ret_code module_set_userdata(const self_t *self, const void *userdata);
 _public_ module_ret_code module_register_fd(const self_t *self, const int fd, const bool autoclose, const void *userptr);

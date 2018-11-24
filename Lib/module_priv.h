@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "map.h"
+#include "stack.h"
 
 #ifndef NDEBUG
     #define MOD_ASSERT(cond, msg, ret) if (!(cond)) { fprintf(stderr, "%s\n", msg); return ret; }
@@ -59,6 +60,7 @@ typedef struct _poll_t {
 /* Struct that holds data for each module */
 typedef struct {
     userhook hook;                        // module's user defined callbacks
+    stack_t *recvs;
     const void *userdata;                 // module's user defined data
     enum module_states state;             // module's state
     const char *name;                     // module's name

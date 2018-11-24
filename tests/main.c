@@ -1,6 +1,7 @@
 #include "test_module.h"
 #include "test_modules.h"
 #include "test_map.h"
+#include "test_stack.h"
 
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -127,7 +128,14 @@ int main(void) {
         cmocka_unit_test(test_map_get),
         cmocka_unit_test(test_map_length),
         cmocka_unit_test(test_map_remove),
-        cmocka_unit_test(test_map_free)
+        cmocka_unit_test(test_map_free),
+        
+        /* Test Stack API */
+        cmocka_unit_test(test_stack_push),
+        cmocka_unit_test(test_stack_peek),
+        cmocka_unit_test(test_stack_length),
+        cmocka_unit_test(test_stack_pop),
+        cmocka_unit_test(test_stack_free)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
