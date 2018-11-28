@@ -52,7 +52,8 @@ So I thought that writing a library to achieve those same abstractions in a clea
 
 ## Build dep and how to build
 
-You only need cmake to build libmodule; it does not depend upon external software.  
+You only need cmake to build libmodule on Linux and BSD/osx; it does not depend upon external software.  
+On other platforms, you will need [libkqueue](https://github.com/mheily/libkqueue) too.  
 To build, you only need to issue:
 
     $ mkdir build
