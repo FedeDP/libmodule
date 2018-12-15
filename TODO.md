@@ -1,12 +1,11 @@
-## 3.2.0
-- [x] Actually implement a stack for module_become/unbecome
-- [x] Expose stack through a stack.h public header
-- [x] Add test + doc for stack
-
-## 4.0.0 (?)
+## 4.0.0
 - [ ] Prevent other modules from using a module's self_t (as received eg from a PubSub message)
 Idea: for each self_t passed as first parameter, check that its address is same as self_t stored in module (?), eg: 
     module_register_fd(self_t **self, ...) { if (self != (*self)->module->trusted_self) { return MOD_NO_PERM; }
+
+Another idea: module_ref returns a new self_t* with a "bool is_ref=true"; then we only need to check that is_ref is false.
+module_ref should then return a new self_t* object, add it to a list in module with its number of refs. Module should clean all its reference when leaving.
+module_unref should remove an element from list and decrement num_refs counter.
 
 - [ ] All API should go through self_t, eg: self_t *recipient = module_ref("foo"); module_tell(self, recipient, ...);
 - [ ] Add a module_new_msg(.data=..., .topic=..., ) (https://github.com/mcinglis/c-style#use-structs-to-name-functions-optional-arguments)
