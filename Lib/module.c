@@ -5,25 +5,26 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context);
 static void destroy_ctx(m_context *context);
 static m_context *check_ctx(const char *ctx_name);
 static int _pipe(module *mod);
-static module_ret_code init_pubsub_fd(const self_t *self);
+static module_ret_code init_pubsub_fd(module *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata);
+static module_ret_code _register_fd(module *mod, const int fd, const bool autoclose, const void *userptr);
+static module_ret_code _deregister_fd(module *mod, const int fd);
 static int tell_if(void *data, void *m);
 static pubsub_msg_t *create_pubsub_msg(const unsigned char *message, const self_t *sender, const char *topic, enum msg_type type, const size_t size);
 static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c);
-static module_ret_code publish_msg(const self_t *self, const char *topic, 
+static module_ret_code publish_msg(const module *mod, const char *topic, 
                                    const unsigned char *message, const ssize_t size);
-static int manage_fds(const self_t *self, m_context *c, int flag, int stop);
-static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str);
-static module_ret_code stop(const self_t *self, const enum module_states mask, const char *err_str, int stop);
+static inline _pure_ bool _module_is(const module *mod, const enum module_states st);
+static int manage_fds(module *mod, m_context *c, const int flag, const bool stop);
+static module_ret_code start(module *mod, const char *err_str);
+static module_ret_code stop(module *mod, const char *err_str, const bool stop);
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
-    *context = memhook._malloc(sizeof(m_context));
+    *context = memhook._calloc(1, sizeof(m_context));
     MOD_ALLOC_ASSERT(*context);
-    
-    **context = (m_context) {0};
-    
+        
     (*context)->fd = poll_create();
     MOD_ASSERT((*context)->fd >= 0, "Failed to create context fd.", MOD_ERR);
      
@@ -32,7 +33,7 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     (*context)->modules = map_new();
     (*context)->topics = map_new();
     (*context)->name = mem_strdup(ctx_name);
-    if ((*context)->topics && (*context)->modules && map_put(ctx, (*context)->name, *context, false) == MAP_OK) {
+    if ((*context)->topics && (*context)->modules && map_put(ctx, (*context)->name, *context, false, false) == MAP_OK) {
         return MOD_OK;
     }
     
@@ -74,10 +75,9 @@ static int _pipe(module *mod) {
     return ret;
 }
 
-static module_ret_code init_pubsub_fd(const self_t *self) {
-    GET_MOD(self);
+static module_ret_code init_pubsub_fd(module *mod) {
     if (_pipe(mod) == 0) {
-        if (module_register_fd(self, mod->pubsub_fd[0], true, NULL) == MOD_OK) {
+        if (_register_fd(mod, mod->pubsub_fd[0], true, NULL) == MOD_OK) {
             return MOD_OK;
         }
         close(mod->pubsub_fd[0]);
@@ -103,27 +103,66 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
     
-    module *mod = memhook._malloc(sizeof(module));
+    module *mod = memhook._calloc(1, sizeof(module));
     MOD_ALLOC_ASSERT(mod);
     
-    *mod = (module) {{ 0 }};
-    mod->name = mem_strdup(name);
-    if (map_put(context->modules, mod->name, mod, false) == MAP_OK) {
+    module_ret_code ret = MOD_NO_MEM;
+    /* Let us gladly jump out with break on error */
+    while (true) {
+        mod->name = mem_strdup(name);
+        if (!mod->name) {
+            break;
+        }
+        
         mod->hook = *hook;
         mod->state = IDLE;
         mod->fds = NULL;
+        
         mod->subscriptions = map_new();
+        if (!mod->subscriptions) {
+            break;
+        }
+        
         mod->recvs = stack_new();
+        if (!mod->recvs) {
+            break;
+        }
+        
+        /* External handler */
         *self = memhook._malloc(sizeof(self_t));
+        if (!*self) {
+            break;
+        }
+        
         self_t *s = (self_t *)*self;
         *((module **)&s->mod) = mod;
         *((m_context **)&s->ctx) = context;
-        mod->self = s;
-        evaluate_module(NULL, mod);
-        return MOD_OK;
+        *((bool *)&s->is_ref) = false;
+        
+        /* Internal reference */
+        mod->self = memhook._malloc(sizeof(self_t));
+        if (!mod->self) {
+            break;
+        }
+        
+        *((module **)&mod->self->mod) = mod;
+        *((m_context **)&mod->self->ctx) = context;
+        *((bool *)&mod->self->is_ref) = true;
+        
+        if (map_put(context->modules, mod->name, mod, false, false) == MAP_OK) {
+            evaluate_module(NULL, mod);
+            return MOD_OK;
+        }
+        ret = MOD_ERR;
+        break;
     }
+    memhook._free((char *)mod->name);
+    memhook._free((self_t *)*self);
+    memhook._free((self_t *)mod->self);
+    map_free(mod->subscriptions);
+    stack_free(mod->recvs);
     memhook._free(mod);
-    return MOD_ERR;
+    return ret;
 }
 
 module_ret_code module_deregister(const self_t **self) {
@@ -136,7 +175,7 @@ module_ret_code module_deregister(const self_t **self) {
     /* Free all unread pubsub msg for this module */
     flush_pubsub_msg(tmp, mod);
     
-    stop(*self, RUNNING | IDLE | PAUSED | STOPPED, "Failed to stop module.", 1);
+    stop(mod, "Failed to stop module.", 1);
     
     /* Remove the module from the context */
     map_remove(tmp->ctx->modules, mod->name);
@@ -146,8 +185,13 @@ module_ret_code module_deregister(const self_t **self) {
     }
     map_free(mod->subscriptions);
     stack_free(mod->recvs);
+    
+    /* Destroy external handler */
     memhook._free((self_t *)*self);
     *self = NULL;
+    
+    /* Destroy module reference */
+    memhook._free((self_t *)mod->self);
     mod->self = NULL;
 
     /*
@@ -170,11 +214,11 @@ static void default_logger(const self_t *self, const char *fmt, va_list args, co
 
 int evaluate_module(void *data, void *m) {
     module *mod = (module *)m;
-    if (module_is(mod->self, IDLE)
+    if (_module_is(mod, IDLE)
         && mod->hook.evaluate()) {
         
         mod->hook.init();
-        module_start(mod->self);
+        start(mod, "Failed to start module.");
     }
     return MAP_OK;
 }
@@ -198,7 +242,7 @@ module_ret_code module_unbecome(const self_t *self) {
     return MOD_ERR;
 }
 
-module_ret_code module_log(const self_t *self, const char *fmt, ...) {
+module_ret_code _pure_ module_log(const self_t *self, const char *fmt, ...) {
     GET_MOD(self);
     GET_CTX(self);
     
@@ -220,27 +264,22 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
  * Append this fd to our list of fds and 
  * if module is in RUNNING state, start listening on its events 
  */
-module_ret_code module_register_fd(const self_t *self, const int fd, const bool autoclose, const void *userptr) {
-    MOD_PARAM_ASSERT(fd >= 0);
-    
-    GET_MOD(self);
-    GET_CTX(self);
-
+static module_ret_code _register_fd(module *mod, const int fd, const bool autoclose, const void *userptr) {
     module_poll_t *tmp = memhook._malloc(sizeof(module_poll_t));
     MOD_ALLOC_ASSERT(tmp);
-      
+    
     if (poll_set_data(&tmp->ev) == MOD_OK) {
         tmp->fd = fd;
         tmp->autoclose = autoclose;
         tmp->userptr = userptr;
         tmp->prev = mod->fds;
-        tmp->self = (self_t *)self;
+        tmp->self = mod->self;
         mod->fds = tmp;
-        c->num_fds++;
+        mod->self->ctx->num_fds++;
         /* If a fd is registered at runtime, start polling on it */
         int ret = 0;
-        if (module_is(self, RUNNING)) {
-            ret = poll_set_new_evt(tmp, c, ADD);
+        if (_module_is(mod, RUNNING)) {
+            ret = poll_set_new_evt(tmp, mod->self->ctx, ADD);
         }
         return !ret ? MOD_OK : MOD_ERR;
     }
@@ -248,14 +287,15 @@ module_ret_code module_register_fd(const self_t *self, const int fd, const bool 
     return MOD_ERR;
 }
 
-/* Linearly searching for fd */
-module_ret_code module_deregister_fd(const self_t *self, const int fd) {
+module_ret_code module_register_fd(const self_t *self, const int fd, const bool autoclose, const void *userptr) {
     MOD_PARAM_ASSERT(fd >= 0);
-    
     GET_MOD(self);
-    GET_CTX(self);
-    MOD_ASSERT(mod->fds, "No fd registered in this module.", MOD_ERR);
-    
+
+    return _register_fd(mod, fd, autoclose, userptr);
+}
+
+/* Linearly searching for fd */
+static module_ret_code _deregister_fd(module *mod, const int fd) {
     module_poll_t **tmp = &mod->fds;
     
     int ret = 0;
@@ -264,15 +304,15 @@ module_ret_code module_deregister_fd(const self_t *self, const int fd) {
             module_poll_t *t = *tmp;
             *tmp = (*tmp)->prev;
             /* If a fd is deregistered for a RUNNING module, stop polling on it */
-            if (module_is(self, RUNNING)) {
-                ret = poll_set_new_evt(t, c, RM);
+            if (_module_is(mod, RUNNING)) {
+                ret = poll_set_new_evt(t, mod->self->ctx, RM);
             }
             if (t->autoclose) {
                 close(t->fd);
             }
             memhook._free(t->ev);
             memhook._free(t);
-            c->num_fds--;
+            mod->self->ctx->num_fds--;
             return !ret ? MOD_OK : MOD_ERR;
         }
         tmp = &(*tmp)->prev;
@@ -280,15 +320,27 @@ module_ret_code module_deregister_fd(const self_t *self, const int fd) {
     return MOD_ERR;
 }
 
-module_ret_code module_get_name(const self_t *self, char **name) {
+module_ret_code module_deregister_fd(const self_t *self, const int fd) {
+    MOD_PARAM_ASSERT(fd >= 0);
     GET_MOD(self);
+    MOD_ASSERT(mod->fds, "No fd registered in this module.", MOD_ERR);
+    
+    return _deregister_fd(mod, fd);
+}
+
+module_ret_code module_get_name(const self_t *self, char **name) {
+    GET_MOD_PURE(self);
     *name = mem_strdup(mod->name);
+    
+    MOD_ALLOC_ASSERT(*name);
     return MOD_OK;
 }
 
 module_ret_code module_get_context(const self_t *self, char **ctx) {
-    GET_CTX(self);
+    GET_CTX_PURE(self);
     *ctx = mem_strdup(c->name);
+    
+    MOD_ALLOC_ASSERT(*ctx);
     return MOD_OK;
 }
 
@@ -306,13 +358,25 @@ char *mem_strdup(const char *s) {
 
 /** Actor-like PubSub interface **/
 
+module_ret_code module_ref(const self_t *self, const char *name, const self_t **modref) {
+    MOD_PARAM_ASSERT(name);
+    MOD_PARAM_ASSERT(modref);
+    MOD_PARAM_ASSERT(!*modref);
+
+    GET_CTX(self);
+    CTX_GET_MOD(name, c);
+    
+    *modref = mod->self;
+    return MOD_OK;
+}
+
 module_ret_code module_register_topic(const self_t *self, const char *topic) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     GET_CTX(self);
     
     if (!map_has_key(c->topics, topic)) {
-        if (map_put(c->topics, topic, mod, true) == MAP_OK) {
+        if (map_put(c->topics, topic, mod, true, false) == MAP_OK) {
             tell_system_pubsub_msg(c, TOPIC_REGISTERED, topic);
             return MOD_OK;
         }
@@ -324,8 +388,8 @@ module_ret_code module_deregister_topic(const self_t *self, const char *topic) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     GET_CTX(self);
-    void *tmp = map_get(c->topics, topic); // NULL if key is not present
     
+    void *tmp = map_get(c->topics, topic); // NULL if key is not present
     /* Only same mod which registered topic can deregister it */
     if (tmp == mod) {
         if (map_remove(c->topics, topic) == MAP_OK) {
@@ -344,7 +408,7 @@ module_ret_code module_subscribe(const self_t *self, const char *topic) {
     /* If topic exists and we are not already subscribed */
     if (map_has_key(c->topics, topic) && !map_has_key(mod->subscriptions, topic)) {
         /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
-        if (map_put(mod->subscriptions, topic, mod, true) == MAP_OK) {
+        if (map_put(mod->subscriptions, topic, mod, true, false) == MAP_OK) {
             return MOD_OK;
         }
     }
@@ -394,13 +458,13 @@ static int tell_if(void *data, void *m) {
      * it is a SYSTEM message or
      * topic is null or this module is subscribed to topic 
      */
-    if (module_is(mod->self, RUNNING | PAUSED) && (msg->type != USER || !msg->topic || 
+    if (_module_is(mod, RUNNING | PAUSED) && (msg->type != USER || !msg->topic || 
         map_has_key(mod->subscriptions, msg->topic))) {
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->name);
         
         pubsub_msg_t *mm = create_pubsub_msg(msg->message, msg->sender, msg->topic, msg->type, msg->size);
-        if (write(mod->pubsub_fd[1], &mm, sizeof(pubsub_msg_t *)) != sizeof(pubsub_msg_t *)) {
+        if (!mm || write(mod->pubsub_fd[1], &mm, sizeof(pubsub_msg_t *)) != sizeof(pubsub_msg_t *)) {
             MODULE_DEBUG("Failed to write message for %s: %s\n", mod->name, strerror(errno));
         }
     }
@@ -434,31 +498,25 @@ static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *
     return MOD_OK;
 }
 
-module_ret_code module_tell(const self_t *self, const char *recipient, const unsigned char *message, 
+module_ret_code module_tell(const self_t *self, const self_t *recipient, const unsigned char *message, 
                             const ssize_t size) {
-    MOD_PARAM_ASSERT(self);
+    GET_MOD(self);
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
     MOD_PARAM_ASSERT(recipient);
-    
-    GET_CTX(self);
-    CTX_GET_MOD(recipient, c);
+    /* only same ctx modules can talk */
+    MOD_PARAM_ASSERT(self->ctx == recipient->ctx);
 
-    pubsub_msg_t m = { .topic = NULL, .message = message, .sender = self, .type = USER, .size = size };
-    return tell_pubsub_msg(&m, mod, c);
+    pubsub_msg_t m = { .topic = NULL, .message = message, .sender = mod->self, .type = USER, .size = size };
+    return tell_pubsub_msg(&m, recipient->mod, recipient->ctx);
 }
 
-module_ret_code module_reply(const self_t *self, const self_t *sender, const unsigned char *message, const ssize_t size) {
-    return module_tell(self, sender->mod->name, message, size);
-}
-
-static module_ret_code publish_msg(const self_t *self, const char *topic, 
+static module_ret_code publish_msg(const module *mod, const char *topic, 
                                    const unsigned char *message, const ssize_t size) {
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
 
-    GET_MOD(self);
-    GET_CTX(self);
+    GET_CTX_PURE(mod->self);
 
     void *tmp = NULL;
     /* 
@@ -466,7 +524,7 @@ static module_ret_code publish_msg(const self_t *self, const char *topic,
      * Moreover, a publish can only be made on existent topic.
      */
     if (!topic || ((tmp = map_get(c->topics, topic)) && tmp == mod)) {
-        pubsub_msg_t m = { .topic = topic, .message = message, .sender = self, .type = USER, .size = size };
+        pubsub_msg_t m = { .topic = topic, .message = message, .sender = mod->self, .type = USER, .size = size };
         return tell_pubsub_msg(&m, NULL, c);
     }
     return MOD_ERR;
@@ -474,28 +532,32 @@ static module_ret_code publish_msg(const self_t *self, const char *topic,
 
 module_ret_code module_publish(const self_t *self, const char *topic, const unsigned char *message, const ssize_t size) {
     MOD_PARAM_ASSERT(topic);
-
-    return publish_msg(self, topic, message, size);
+    GET_MOD(self);
+    
+    return publish_msg(mod, topic, message, size);
 }
 
 module_ret_code module_broadcast(const self_t *self, const unsigned char *message, const ssize_t size) {
-    return publish_msg(self, NULL, message, size);
+    GET_MOD(self);
+    
+    return publish_msg(mod, NULL, message, size);
 }
 
 /** Module state getters **/
 
-/* Define states getters */
-bool module_is(const self_t *self, const enum module_states st) {
-    GET_MOD(self);
-    
+static inline bool _module_is(const module *mod, const enum module_states st) {
     return mod->state & st;
+}
+
+bool module_is(const self_t *self, const enum module_states st) {
+    GET_MOD_PURE(self);
+
+    return _module_is(mod, st);
 }
 
 /** Module state setters **/
 
-static int manage_fds(const self_t *self, m_context *c, int flag, int stop) {
-    GET_MOD(self);
-    
+static int manage_fds(module *mod, m_context *c, const int flag, const bool stop) {    
     module_poll_t *tmp = mod->fds;
     int ret = 0;
     
@@ -503,7 +565,7 @@ static int manage_fds(const self_t *self, m_context *c, int flag, int stop) {
         module_poll_t *t = tmp;
         tmp = tmp->prev;
         if (flag == RM && stop) {
-            ret = module_deregister_fd(self, t->fd);
+            ret = _deregister_fd(mod, t->fd);
         } else {
             ret = poll_set_new_evt(t, c, flag);
         }
@@ -511,33 +573,32 @@ static int manage_fds(const self_t *self, m_context *c, int flag, int stop) {
     return ret;
 }
 
-static module_ret_code start(const self_t *self, const enum module_states mask, const char *err_str) {
-    GET_MOD_IN_STATE(self, mask);
-    GET_CTX(self);
+static module_ret_code start(module *mod, const char *err_str) {
+    GET_CTX_PURE(mod->self);
 
     /* 
      * Starting module for the first time
      * or after it was stopped.
-     * Properly add back its pubsub fds
+     * Properly add back its pubsub fds.
      */
-    if (mask & IDLE) {
-        if (init_pubsub_fd(self) != MOD_OK) {
+    if (!_module_is(mod, PAUSED)) {
+        /* THIS IS NOT A RESUME */
+        if (init_pubsub_fd(mod) != MOD_OK) {
             return MOD_ERR;
         }
     }
 
-    int ret = manage_fds(self, c, ADD, 0);
+    int ret = manage_fds(mod, c, ADD, false);
     MOD_ASSERT(!ret, err_str, MOD_ERR);
 
     mod->state = RUNNING;
     return MOD_OK;
 }
 
-static module_ret_code stop(const self_t *self, const enum module_states mask, const char *err_str, int stop) {
-    GET_MOD_IN_STATE(self, mask);
-    GET_CTX(self);
+static module_ret_code stop(module *mod, const char *err_str, const bool stop) {
+    GET_CTX_PURE(mod->self);
     
-    int ret = manage_fds(self, c, RM, stop);
+    int ret = manage_fds(mod, c, RM, stop);
     MOD_ASSERT(!ret, err_str, MOD_ERR);
     
     mod->state = stop ? STOPPED : PAUSED;
@@ -554,17 +615,25 @@ static module_ret_code stop(const self_t *self, const enum module_states mask, c
 }
 
 module_ret_code module_start(const self_t *self) {
-    return start(self, IDLE | STOPPED, "Failed to start module.");
+    GET_MOD_IN_STATE(self, IDLE | STOPPED);
+    
+    return start(mod, "Failed to start module.");
 }
 
 module_ret_code module_pause(const self_t *self) {
-    return stop(self, RUNNING, "Failed to pause module.", 0);
+    GET_MOD_IN_STATE(self, RUNNING);
+    
+    return stop(mod, "Failed to pause module.", false);
 }
 
 module_ret_code module_resume(const self_t *self) {
-    return start(self, PAUSED, "Failed to resume module.");
+    GET_MOD_IN_STATE(self, PAUSED);
+    
+    return start(mod, "Failed to resume module.");
 }
 
 module_ret_code module_stop(const self_t *self) {
-    return stop(self, RUNNING | PAUSED, "Failed to stop module.", 1);
+    GET_MOD_IN_STATE(self, RUNNING | PAUSED);
+    
+    return stop(mod, "Failed to stop module.", true);
 }

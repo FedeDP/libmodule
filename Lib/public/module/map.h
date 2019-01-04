@@ -25,10 +25,11 @@ extern "C"{
 
 _public_ map_t *map_new(void);
 _public_ map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr);
-_public_ map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey);
+_public_ map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey, const bool autofree);
 _public_ void *map_get(const map_t *m, const char *key);
 _public_ bool map_has_key(const map_t *m, const char *key);
 _public_ map_ret_code map_remove(map_t *m, const char *key);
+_public_ map_ret_code map_clear(map_t *m);
 _public_ map_ret_code map_free(map_t *m);
 _public_ int map_length(const map_t *m);
 

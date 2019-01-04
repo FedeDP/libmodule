@@ -2,14 +2,14 @@
 
    <br />
 
-Libmodule Map API
-=================
+Map API
+=======
 
 Libmodule offers an easy to use hashmap implementation, provided by <module/map.h> header. |br|
 It is used internally to store context's modules and modules' subscriptions/topics. |br|
 
-Map structures
---------------
+Structures
+----------
 
 .. code::
 
@@ -28,8 +28,8 @@ Map structures
     /* Incomplete struct declaration for hashmap */
     typedef struct _map map_t;
 
-Map API
--------
+API
+---
 
 Where not specified, these functions return a map_ret_code.
 
@@ -50,7 +50,7 @@ Where not specified, these functions return a map_ret_code.
   :type fn: :c:type:`const map_cb`
   :type userptr: :c:type:`void *`
   
-.. c:function:: map_put(m, key, val, dupkey)
+.. c:function:: map_put(m, key, val, dupkey, autofree)
 
   Put a value inside hashmap. Note that if dupkey is true, key will be strdupped; it will also be automatically freed upon deletion.
 
@@ -58,10 +58,12 @@ Where not specified, these functions return a map_ret_code.
   :param key: key for this value
   :param val: value to be put inside map
   :param dupkey: whether to strdup key
+  :param autofree: whether to automatically free val upon map_remove/map_clear/map_free
   :type m: :c:type:`map_t *`
   :type key: :c:type:`const char *`
   :type val: :c:type:`void *`
   :type dupkey: :c:type:`const bool`
+  :type autofree: :c:type:`const bool`
 
 .. c:function:: map_get(m, key)
 
@@ -92,9 +94,16 @@ Where not specified, these functions return a map_ret_code.
   :type m: :c:type:`map_t *`
   :type key: :c:type:`const char *`
   
+.. c:function:: map_clear(m)
+
+  Clears a map object by deleting any object inside map, and eventually freeing it too if marked with autofree.
+
+  :param s: pointer to map_t
+  :type s: :c:type:`map_t *`
+  
 .. c:function:: map_free(m)
 
-  Free a map object.
+  Free a map object (it internally calls map_clear too).
 
   :param m: pointer to map_t
   :type m: :c:type:`map_t *`

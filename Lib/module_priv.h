@@ -23,22 +23,36 @@
     m_context *c = map_get(ctx, (char *)name); \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
 
-/* Convenience macro to retrieve self->ctx + doing some checks */
-#define GET_CTX(self) \
+/* 
+ * Convenience macro to retrieve self->ctx + doing some checks.
+ * Skip reference check for pure functions.
+ */
+#define _GET_CTX(self, pure) \
     MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
+    MOD_ASSERT(!self->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
     m_context *c = self->ctx; \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
+
+#define GET_CTX(self)       _GET_CTX(self, false)
+#define GET_CTX_PURE(self)  _GET_CTX(self, true)
 
 /* Convenience macro to retrieve a module from a context, given its name */
 #define CTX_GET_MOD(name, ctx) \
     module *mod = map_get(ctx->modules, (char *)name); \
     MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
-/* Convenience macro to retrieve self->mod + doing some checks */
-#define GET_MOD(self) \
+/* 
+ * Convenience macro to retrieve self->mod + doing some checks.
+ * Skip reference check for pure functions.
+ */
+#define _GET_MOD(self, pure) \
     MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
+    MOD_ASSERT(!self->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
     module *mod = self->mod; \
     MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
+
+#define GET_MOD(self)         _GET_MOD(self, false)
+#define GET_MOD_PURE(self)    _GET_MOD(self, true)
 
 /*
  * Convenience macro to retrieve self->mod + doing some checks 
@@ -46,21 +60,21 @@
  */
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
-    MOD_ASSERT(module_is(self, state), "Wrong module state.", MOD_WRONG_STATE);
+    MOD_ASSERT(_module_is(mod, state), "Wrong module state.", MOD_WRONG_STATE);
 
 typedef struct _poll_t {
     int fd;
     bool autoclose;
     void *ev;
     const void *userptr;
-    const struct _self *self;                   // ptr needed to map a fd to a self_t in epoll
+    const struct _self *self;             // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
 } module_poll_t;
 
 /* Struct that holds data for each module */
 typedef struct {
     userhook hook;                        // module's user defined callbacks
-    stack_t *recvs;
+    stack_t *recvs;                       // Stack of recv functions for module_become/unbecome
     const void *userdata;                 // module's user defined data
     enum module_states state;             // module's state
     const char *name;                     // module's name
@@ -87,7 +101,8 @@ typedef struct {
 /* Struct that holds self module informations, static to each module */
 struct _self {
     module *const mod;                    // self's mod
-    m_context *const ctx;                 // self's ctx 
+    m_context *const ctx;                 // self's ctx
+    const bool is_ref;                    // is this a reference?
 };
 
 int evaluate_module(void *data, void *m);

@@ -2,14 +2,14 @@
 
    <br />
 
-Libmodule Stack API
-===================
+Stack API
+=========
 
 Libmodule offers an easy to use stack implementation, provided by <module/stack.h> header. |br|
 It is used internally to store module's stack for become/unbecome methods. |br|
 
-Stack structures
-----------------
+Structures
+----------
 
 .. code::
 
@@ -27,8 +27,8 @@ Stack structures
     /* Incomplete struct declaration for stack */
     typedef struct _stack stack_t;
 
-Stack API
----------
+API
+---
 
 Where not specified, these functions return a stack_ret_code.
 
@@ -55,7 +55,7 @@ Where not specified, these functions return a stack_ret_code.
 
   :param s: pointer to stack_t
   :param val: value to be put inside stack
-  :param autofree: whether to autofree val on stack_free
+  :param autofree: whether to autofree val upon stack_pop/stack_clear/stack_free
   :type s: :c:type:`stack_t *`
   :type val: :c:type:`void *`
   :type autofree: :c:type:`const bool`
@@ -75,10 +75,17 @@ Where not specified, these functions return a stack_ret_code.
   :param s: pointer to stack_t
   :type s: :c:type:`stack_t *`
   :returns: void pointer to value, on NULL on error.
+
+.. c:function:: stack_clear(s)
+
+  Clears a stack object by deleting any object inside stack, and eventually freeing it too if marked with autofree.
+
+  :param s: pointer to stack_t
+  :type s: :c:type:`stack_t *`
   
 .. c:function:: stack_free(s)
 
-  Free a stack object.
+  Free a stack object (it internally calls stack_clear too).
 
   :param s: pointer to stack_t
   :type s: :c:type:`stack_t *`

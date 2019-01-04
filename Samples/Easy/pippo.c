@@ -8,6 +8,8 @@
     #include <signal.h>
 #endif
 
+static const self_t *doggo;
+
 /* 
  * Declare and automagically initialize 
  * this module as soon as program starts.
@@ -46,6 +48,9 @@ static void init(void) {
     
     /* Add stdin fd */
     m_register_fd(STDIN_FILENO, 0, NULL);
+    
+    /* Get Doggo module reference */
+    m_ref("Doggo", &doggo);
 }
 
 /* 
@@ -99,7 +104,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'c':
                 m_log("Doggo, come here!\n");
-                m_tell_str("Doggo", "ComeHere");
+                m_tell_str(doggo, "ComeHere");
                 break;
             case 'q':
                 m_log("I have to go now!\n");
@@ -141,19 +146,19 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'p':
                 m_log("Doggo, let's play a bit!\n");
-                m_tell_str("Doggo", "LetsPlay");
+                m_tell_str(doggo, "LetsPlay");
                 break;
             case 's':
                 m_log("Doggo, you should sleep a bit!\n");
-                m_tell_str("Doggo", "LetsSleep");
+                m_tell_str(doggo, "LetsSleep");
                 break;
             case 'f':
                 m_log("Doggo, you want some of these?\n");
-                m_tell_str("Doggo", "LetsEat");
+                m_tell_str(doggo, "LetsEat");
                 break;
             case 'w':
                 m_log("Doggo, wake up!\n");
-                m_tell_str("Doggo", "WakeUp");
+                m_tell_str(doggo, "WakeUp");
                 break;
             case 'q':
                 m_log("I have to go now!\n");

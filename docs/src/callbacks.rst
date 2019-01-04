@@ -2,7 +2,7 @@
 
    <br />
 
-Module callbacks
+Callbacks
 ================
 
 Every module needs 5 functions that must be defined by developer. |br|

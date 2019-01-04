@@ -1,5 +1,5 @@
-Libmodule Data Structures
-=========================
+Data Structures
+===============
 
 Macros
 ------

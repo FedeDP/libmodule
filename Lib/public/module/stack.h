@@ -27,6 +27,7 @@ _public_ stack_ret_code stack_iterate(const stack_t *s, const stack_cb fn, void 
 _public_ stack_ret_code stack_push(stack_t *s, void *data, bool autofree);
 _public_ void *stack_pop(stack_t *s);
 _public_ void *stack_peek(const stack_t *s);
+_public_ stack_ret_code stack_clear(stack_t *s);
 _public_ stack_ret_code stack_free(stack_t *s);
 _public_ int stack_length(const stack_t *s);
 

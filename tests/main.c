@@ -80,9 +80,14 @@ int main(void) {
         /* Now topic has been registered, subscribe should work */
         cmocka_unit_test(test_module_subscribe),
         
+        /* Test module ref */
+        cmocka_unit_test(test_module_ref_NULL_name),
+        cmocka_unit_test(test_module_ref_unexhistent_name),
+        cmocka_unit_test(test_module_ref_NULL_ref),
+        cmocka_unit_test(test_module_ref),
+        
         /* Test module tell */
         cmocka_unit_test(test_module_tell_NULL_recipient),
-        cmocka_unit_test(test_module_tell_unhexistent_recipient),
         cmocka_unit_test(test_module_tell_NULL_self),
         cmocka_unit_test(test_module_tell_NULL_msg),
         cmocka_unit_test(test_module_tell_wrong_size),
@@ -128,6 +133,7 @@ int main(void) {
         cmocka_unit_test(test_map_get),
         cmocka_unit_test(test_map_length),
         cmocka_unit_test(test_map_remove),
+        cmocka_unit_test(test_map_clear),
         cmocka_unit_test(test_map_free),
         
         /* Test Stack API */

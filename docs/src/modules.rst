@@ -2,8 +2,8 @@
 
    <br />
    
-Modules
-=======
+Modules API
+===========
 
 Modules API denotes libmodule interface functions to manage context loop. |br|
 Like Module API, it has an easy, single-context API. Moreover, it has an equivalent multi-context API. |br|
@@ -18,8 +18,9 @@ Moreover, there is a single function that is common to every context (thus does 
   :param hook: new memory management hook.
   :type hook: :c:type:`const memalloc_hook *`
 
-Modules easy API
-----------------
+Easy API
+--------
+
 Modules easy API should be used in conjunction with :ref:`module_easy`. |br|
 It abstracts all of libmodule internals mechanisms to provide an easy-to-use and simple API. It can be found in <module/modules_easy.h> header.
 
@@ -49,8 +50,9 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
   :param quit_code: exit code that should be returned by modules_loop.
   :type quit_code: :c:type:`const uint8_t`
   
-Modules multi-context API
--------------------------
+Multi-context API
+-----------------
+
 Modules multi-context API let you manage your contexts in a very simple way. It is exposed by <module/modules.h> header. |br|
 It exposes very similar functions to single-context API (again, single-context is only a particular case of multi-context), that now take a "context_name" parameter.
   

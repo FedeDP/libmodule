@@ -64,12 +64,22 @@ void test_stack_pop(void **state) {
     assert_non_null(ptr);
     assert_int_equal(*(int *)ptr, 2);
     
-    ptr = stack_pop(my_st);
-    assert_non_null(ptr);
-    assert_int_equal(*(int *)ptr, 1);
+    int len = stack_length(my_st);
+    assert_int_equal(len, 1); // one element left
 }
 
-
+void test_stack_clear(void **state) {
+    (void) state; /* unused */
+    
+    stack_ret_code ret = stack_clear(NULL);
+    assert_false(ret == STACK_OK);
+    
+    ret = stack_clear(my_st);
+    assert_true(ret == STACK_OK);
+    
+    int len = stack_length(my_st);
+    assert_int_equal(len, 0);
+}
 
 void test_stack_free(void **state) {
     (void) state; /* unused */

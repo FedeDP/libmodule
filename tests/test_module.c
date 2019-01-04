@@ -12,6 +12,7 @@ static void recv(const msg_t *msg, const void *userdata);
 static void destroy(void);
 
 const self_t *self = NULL;
+const self_t *testSelf = NULL;
 
 void test_module_register_NULL_name(void **state) {
     (void) state; /* unused */
@@ -292,6 +293,34 @@ void test_module_subscribe(void **state) {
     assert_true(ret == MOD_OK);
 }
 
+void test_module_ref_NULL_name(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_ref(self, NULL, &testSelf);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_ref_unexhistent_name(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_ref(self, "testName2", &testSelf);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_ref_NULL_ref(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_ref(self, "testName2", NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_ref(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_ref(self, "testName", &testSelf);
+    assert_true(ret == MOD_OK);
+}
+
 void test_module_tell_NULL_recipient(void **state) {
     (void) state; /* unused */
     
@@ -299,39 +328,31 @@ void test_module_tell_NULL_recipient(void **state) {
     assert_false(ret == MOD_OK);
 }
 
-void test_module_tell_unhexistent_recipient(void **state) {
-    (void) state; /* unused */
-    
-    module_ret_code ret = module_tell(self, "testName2", "hi!", strlen("hi!"));
-    assert_false(ret == MOD_OK);
-}
-
-
 void test_module_tell_NULL_self(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(NULL, "testName", "hi!", strlen("hi!"));
+    module_ret_code ret = module_tell(NULL, testSelf, "hi!", strlen("hi!"));
     assert_false(ret == MOD_OK);
 }
 
 void test_module_tell_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(self, "testName", NULL, 10);
+    module_ret_code ret = module_tell(self, testSelf, NULL, 10);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_tell_wrong_size(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(self, "testName", "hi!", -1);
+    module_ret_code ret = module_tell(self, testSelf, "hi!", -1);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_tell(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(self, "testName", "hi!", strlen("hi!"));
+    module_ret_code ret = module_tell(self, testSelf, "hi!", strlen("hi!"));
     assert_true(ret == MOD_OK);
 }
 

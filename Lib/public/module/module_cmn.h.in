@@ -24,6 +24,8 @@
 #define _dtor0_     __attribute__((destructor (110)))
 #define _dtor1_     __attribute__((destructor (111)))
 
+#define _pure_      __attribute__((pure))
+
 #define _weak_      __attribute__((weak))
 #define _public_    __attribute__ ((visibility("default")))
 
@@ -95,7 +97,8 @@ typedef struct {
 
 /* Module return codes */
 typedef enum {
-    MOD_WRONG_PARAM = -8,
+    MOD_REF_ERR = -9,
+    MOD_WRONG_PARAM,
     MOD_NO_MEM,
     MOD_WRONG_STATE,
     MOD_NO_PARENT,

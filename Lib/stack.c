@@ -12,12 +12,7 @@ struct _stack {
 };
 
 stack_t *stack_new(void) {
-    stack_t *s = memhook._malloc(sizeof(stack_t));
-    if (s) {
-        s->len = 0;
-        s->data = NULL;
-    }
-    return s;
+    return memhook._calloc(1, sizeof(stack_t));
 }
 
 stack_ret_code stack_iterate(const stack_t *s, const stack_cb fn, void *userptr) {
@@ -69,7 +64,7 @@ void *stack_peek(const stack_t *s) {
     return s->data->userptr; // return most recent element data
 }
 
-stack_ret_code stack_free(stack_t *s) {
+stack_ret_code stack_clear(stack_t *s) {
     MOD_ASSERT(s, "NULL stack.", STACK_WRONG_PARAM);
     
     stack_elem *elem = NULL;
@@ -80,8 +75,15 @@ stack_ret_code stack_free(stack_t *s) {
             memhook._free(data);
         }
     }
-    free(s);
     return STACK_OK;
+}
+
+stack_ret_code stack_free(stack_t *s) {
+    stack_ret_code ret = stack_clear(s);
+    if (ret == STACK_OK) {
+        free(s);
+    }
+    return ret;
 }
 
 int stack_length(const stack_t *s) {

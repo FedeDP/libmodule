@@ -2,16 +2,16 @@
 
    <br />
    
-Module
-======
+Module API
+==========
 
 Module API denotes libmodule interface functions to manage each module lifecycle. |br|
 It is splitted in two APIs.
 
 .. _module_easy:    
 
-Module easy API
----------------
+Easy API
+--------
 
 Module easy API consists of a single-context-multi-modules set of macros. It can be found in <module/module_easy.h>. |br|
 These macros make it easy and transparent to developer all of the module's internal mechanisms, providing a very simple way to use libmodule. |br|
@@ -109,6 +109,15 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :type fmt: :c:type:`const char *` 
   :type args: :c:type:`variadic`
   
+.. c:macro:: m_ref(name, modref)
+
+  Takes a reference from another module; it can be used in pubsub messaging to tell a message to it. It must not be freed.
+    
+  :param name: name of a module.
+  :param modref: variable that holds reference to module
+  :type name: :c:type:`const char *` 
+  :type modref: :c:type:`const self_t **`
+  
 .. c:macro:: m_register_topic(topic)
 
   Registers a new topic in module's context.
@@ -144,19 +153,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param recipient: module to whom deliver the message.
   :param msg: actual data to be sent.
   :param size: size of data to be sent.
-  :type recipient: :c:type:`const char *`
-  :type msg: :c:type:`const unsigned char *`
-  :type size: :c:type:`const ssize_t`
-  
-    
-.. c:macro:: m_reply(sender, msg, size)
-
-  Reply to a received message.
-    
-  :param sender: module which sent us a message.
-  :param msg: actual data to be sent.
-  :param size: size of data to be sent.
-  :type sender: :c:type:`const self_t *`
+  :type recipient: :c:type:`const self_t *`
   :type msg: :c:type:`const unsigned char *`
   :type size: :c:type:`const ssize_t`
   
@@ -186,17 +183,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
     
   :param recipient: module to whom deliver the message.
   :param msg: message to be sent.
-  :type recipient: :c:type:`const char *`
-  :type msg: :c:type:`const char *`
-
-    
-.. c:macro:: m_reply_str(sender, msg)
-
-  Reply to a received message with a string. Size is automatically computed through strlen.
-    
-  :param sender: module which sent us a message.
-  :param msg: message to be sent.
-  :type sender: :c:type:`const self_t *`
+  :type recipient: :c:type:`const self_t *`
   :type msg: :c:type:`const char *`
   
 .. c:macro:: m_publish_str(topic, msg)
@@ -217,8 +204,8 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
 .. _module_complex:    
   
-Module Complex API
-------------------
+Complex API
+-----------
 
 Complex (probably better to say less-easy) API consists of `Module easy API`_ internally used functions. It can be found in <module/module.h> header. |br|
 Sometime you may avoid using easy API; eg: if you wish to use same source file for different modules, or if you wish to manually register a module. |br|
@@ -351,6 +338,17 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type fmt: :c:type:`const char *`
   :type args: :c:type:`variadic`
   
+.. c:function:: module_ref(self, name, modref)
+
+  Takes a reference from another module; it can be used in pubsub messaging to tell a message to it. It must not be freed.
+    
+  :param self: pointer to module's handler
+  :param name: name of a module.
+  :param modref: variable that holds reference to module
+  :type self: :c:type:`const self_t *`
+  :type name: :c:type:`const char *` 
+  :type modref: :c:type:`const self_t **`
+  
 .. c:function:: module_register_topic(self, topic)
 
   Registers a new topic in module's context.
@@ -396,20 +394,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param msg: actual data to be sent.
   :param size: size of data to be sent.
   :type self: :c:type:`const self_t *`
-  :type recipient: :c:type:`const char *`
-  :type msg: :c:type:`const unsigned char *`
-  :type size: :c:type:`const ssize_t`
-  
-.. c:function:: module_reply(self, sender, msg, size)
-
-  Reply to a received message.
-    
-  :param self: pointer to module's handler
-  :param sender: module which sent us a message.
-  :param msg: actual data to be sent.
-  :param size: size of data to be sent.
-  :type self: :c:type:`const self_t *`
-  :type sender: :c:type:`const self_t *`
+  :type recipient: :c:type:`const self_t *`
   :type msg: :c:type:`const unsigned char *`
   :type size: :c:type:`const ssize_t`
   

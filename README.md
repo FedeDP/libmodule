@@ -10,12 +10,11 @@ You will write less code, focusing on what really matters.
 
 **Please note that libmodule actually builds and works on macOS and BSD too, and probably other.** See [Portability](https://github.com/FedeDP/libmodule#is-it-portable).
 
-## Is this an event loop or an actor lib?
+## What is this?
 
-It stands somewhere in the middle, trying to mix the 2 concepts.  
-It does not provide any faciliting to build an event loop; it does provide its own event loop though.  
-You may find some/lots of similarities between a libmodule's *Module* and an Actor.  
+Libmodule offers a small and simple implementation of an actor library.  
 Indeed, libmodule was heavily inspired by my own actor library experience with [akka](https://akka.io/) for its API.  
+A module is an Actor that can listen on socket events too.  
 
 ## Is it portable?
 

@@ -12,7 +12,8 @@
 typedef struct {
     const char *key;
     bool in_use;
-    bool needs_free;
+    bool key_needs_free;
+    bool val_needs_free;
     void *data;
 } map_elem;
 
@@ -30,7 +31,7 @@ static unsigned long crc32(const unsigned char *s, unsigned int len);
 static unsigned int hashmap_hash_int(const map_t *m, const char *keystring);
 static int hashmap_hash(map_t *m, const char* key);
 static map_ret_code hashmap_rehash(map_t *m);
-static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bool needs_free);
+static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bool needs_free, const bool autofree);
 
 static unsigned long crc32_tab[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
@@ -91,7 +92,7 @@ static unsigned long crc32_tab[] = {
  * Return an empty hashmap, or NULL on failure.
  */
 map_t *map_new(void) {
-    map_t *m = memhook._malloc(sizeof(map_t));
+    map_t *m = memhook._calloc(1, sizeof(map_t));
     if (m) {
         m->data = memhook._calloc(INITIAL_SIZE, sizeof(map_elem));
         if (m->data) {
@@ -184,7 +185,7 @@ static map_ret_code hashmap_rehash(map_t *m) {
     map_ret_code status = MAP_OK;
     for (int i = 0; i < old_size && status == MAP_OK; i++) {
         if (curr[i].in_use) {
-            status = hashmap_put(m, curr[i].key, curr[i].data, curr[i].needs_free);
+            status = hashmap_put(m, curr[i].key, curr[i].data, curr[i].key_needs_free, curr[i].val_needs_free);
         }
     }
     memhook._free(curr);
@@ -194,16 +195,16 @@ static map_ret_code hashmap_rehash(map_t *m) {
 /*
  * Add a pointer to the hashmap with strdupped key if dupkey is true
  */
-map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey) {
+map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey, const bool autofree) {
     MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
     MOD_ASSERT(key, "NULL key.", MAP_WRONG_PARAM);
     MOD_ASSERT(value, "NULL value.", MAP_WRONG_PARAM);
     
     /* Find a place to put our value */
-    return hashmap_put(m, dupkey ? mem_strdup(key) : key, value, dupkey);
+    return hashmap_put(m, dupkey ? mem_strdup(key) : key, value, dupkey, autofree);
 }
 
-static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bool needs_free) {
+static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bool needs_free, const bool autofree) {
     /* Find a place to put our value */
     int index = hashmap_hash(m, key);
     while (index == MAP_FULL) {
@@ -217,7 +218,8 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bo
     m->data[index].data = value;
     m->data[index].key = key;
     m->data[index].in_use = true;
-    m->data[index].needs_free = needs_free;
+    m->data[index].key_needs_free = needs_free;
+    m->data[index].val_needs_free = autofree;
     m->size++;
     return MAP_OK;
 }
@@ -267,6 +269,26 @@ map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
     return status;
 }
 
+static void clear_elem(map_t *m, const int idx) {
+    /* Blank out the fields */
+    m->data[idx].in_use = false;
+    
+    if (m->data[idx].key_needs_free) {
+        memhook._free((void *)m->data[idx].key);
+    }
+    m->data[idx].key = NULL;
+    m->data[idx].key_needs_free = false;
+    
+    if (m->data[idx].val_needs_free) {
+        memhook._free((void *)m->data[idx].data);
+    }
+    m->data[idx].data = NULL;
+    m->data[idx].val_needs_free = false;
+    
+    /* Reduce the size */
+    m->size--;
+}
+
 /*
  * Remove an element with that key from the map
  */
@@ -280,17 +302,7 @@ map_ret_code map_remove(map_t *m, const char *key) {
     /* Linear probing, if necessary */
     for(int i = 0; i < MAX_CHAIN_LENGTH; i++) {
         if (m->data[curr].in_use && !strcmp(m->data[curr].key, key)) {
-            /* Blank out the fields */
-            m->data[curr].in_use = false;
-            m->data[curr].data = NULL;
-            if (m->data[curr].needs_free) {
-                memhook._free((void *)m->data[curr].key);
-            }
-            m->data[curr].key = NULL;
-            m->data[curr].needs_free = false;
-
-            /* Reduce the size */
-            m->size--;
+            clear_elem(m, curr);
             return MAP_OK;
         }
         curr = (curr + 1) % m->table_size;
@@ -300,18 +312,26 @@ map_ret_code map_remove(map_t *m, const char *key) {
     return MAP_MISSING;
 }
 
-/* Deallocate the hashmap */
-map_ret_code map_free(map_t *m) {
+/* Remove all elements from map */
+map_ret_code map_clear(map_t *m) {
     MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
     
     for (int i = 0; i < m->table_size; i++) {
-        if (m->data[i].needs_free) {
-            memhook._free((void *)m->data[i].key);
+        if (m->data[i].in_use) {
+            clear_elem(m, i);
         }
     }
-    memhook._free(m->data);
-    memhook._free(m);
     return MAP_OK;
+}
+
+/* Deallocate the hashmap (it clears it too) */
+map_ret_code map_free(map_t *m) {
+    map_ret_code ret = map_clear(m);
+    if (ret == MAP_OK) {
+        memhook._free(m->data);
+        memhook._free(m);
+    }
+    return ret;
 }
 
 /* Return the length of the hashmap */
