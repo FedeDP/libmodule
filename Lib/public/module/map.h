@@ -2,7 +2,7 @@
 
 #include "module_cmn.h"
 
-/** Module hashmap interface **/
+/** Hashmap interface **/
 
 typedef enum {
     MAP_WRONG_PARAM = -5,

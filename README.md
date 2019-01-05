@@ -14,6 +14,11 @@ You will write less code, focusing on what really matters.
 
 Libmodule offers a small and simple implementation of an actor library.  
 Indeed, libmodule was heavily inspired by my own actor library experience with [akka](https://akka.io/) for its API.  
+
+
+## What is a module, anyway?
+
+Unsurprisingly, module is the core concept of libmodule architecture.  
 A module is an Actor that can listen on socket events too.  
 
 ## Is it portable?
@@ -36,12 +41,6 @@ To see a real project using libmodule, check [Clightd](https://github.com/FedeDP
 
 Libmodule, samples and tests builds are tested on [builds.sr.ht](https://builds.sr.ht/~fededp/libmodule) on linux and freebsd.  
 Moreover, tests are executed and valgrind checked too.  
-
-## What is a module, anyway?
-
-Unsurprisingly, module is the core concept of libmodule architecture.  
-It can be somewhat seen as a class, and shares lots of concepts with an Actor.  
-It helps you to write standard and clean projects with small units, so called modules, whose job should be self-contained.  
 
 ## But...why?
 
