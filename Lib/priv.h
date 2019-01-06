@@ -105,10 +105,16 @@ struct _self {
     const bool is_ref;                    // is this a reference?
 };
 
+/* Defined in module.c */
+_pure_ bool _module_is(const module *mod, const enum module_states st);
 int evaluate_module(void *data, void *m);
+
+/* Defined in pubsub.c */
 module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic);
 int flush_pubsub_msg(void *data, void *m);
 void destroy_pubsub_msg(pubsub_msg_t *m);
+
+/* Defined in priv.c */
 char *mem_strdup(const char *s);
 
 extern map_t *ctx;

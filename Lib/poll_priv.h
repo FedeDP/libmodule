@@ -1,6 +1,6 @@
 #pragma once
 
-#include "module_priv.h"
+#include "priv.h"
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
