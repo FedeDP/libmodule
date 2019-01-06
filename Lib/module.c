@@ -102,13 +102,13 @@ static module_ret_code _register_fd(module *mod, const int fd, const bool autocl
         tmp->autoclose = autoclose;
         tmp->userptr = userptr;
         tmp->prev = mod->fds;
-        tmp->self = mod->self;
+        tmp->self = &mod->self;
         mod->fds = tmp;
-        mod->self->ctx->num_fds++;
+        mod->self.ctx->num_fds++;
         /* If a fd is registered at runtime, start polling on it */
         int ret = 0;
         if (_module_is(mod, RUNNING)) {
-            ret = poll_set_new_evt(tmp, mod->self->ctx, ADD);
+            ret = poll_set_new_evt(tmp, mod->self.ctx, ADD);
         }
         return !ret ? MOD_OK : MOD_ERR;
     }
@@ -127,14 +127,14 @@ static module_ret_code _deregister_fd(module *mod, const int fd) {
             *tmp = (*tmp)->prev;
             /* If a fd is deregistered for a RUNNING module, stop polling on it */
             if (_module_is(mod, RUNNING)) {
-                ret = poll_set_new_evt(t, mod->self->ctx, RM);
+                ret = poll_set_new_evt(t, mod->self.ctx, RM);
             }
             if (t->autoclose) {
                 close(t->fd);
             }
             memhook._free(t->ev);
             memhook._free(t);
-            mod->self->ctx->num_fds--;
+            mod->self.ctx->num_fds--;
             return !ret ? MOD_OK : MOD_ERR;
         }
         tmp = &(*tmp)->prev;
@@ -159,7 +159,7 @@ static int manage_fds(module *mod, m_context *c, const int flag, const bool stop
 }
 
 static module_ret_code start(module *mod, const char *err_str) {
-    GET_CTX_PURE(mod->self);
+    GET_CTX_PURE((&mod->self));
     
     /* 
      * Starting module for the first time
@@ -181,7 +181,7 @@ static module_ret_code start(module *mod, const char *err_str) {
 }
 
 static module_ret_code stop(module *mod, const char *err_str, const bool stop) {
-    GET_CTX_PURE(mod->self);
+    GET_CTX_PURE((&mod->self));
     
     int ret = manage_fds(mod, c, RM, stop);
     MOD_ASSERT(!ret, err_str, MOD_ERR);
@@ -269,14 +269,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
         *((bool *)&s->is_ref) = false;
         
         /* Internal reference */
-        mod->self = memhook._malloc(sizeof(self_t));
-        if (!mod->self) {
-            break;
-        }
-        
-        *((module **)&mod->self->mod) = mod;
-        *((m_context **)&mod->self->ctx) = context;
-        *((bool *)&mod->self->is_ref) = true;
+        memcpy((self_t *)&mod->self, &((self_t){ mod, context, true }), sizeof(self_t));
         
         if (map_put(context->modules, mod->name, mod, false, false) == MAP_OK) {
             evaluate_module(NULL, mod);
@@ -287,7 +280,6 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     }
     memhook._free((char *)mod->name);
     memhook._free((self_t *)*self);
-    memhook._free((self_t *)mod->self);
     map_free(mod->subscriptions);
     stack_free(mod->recvs);
     memhook._free(mod);
@@ -318,10 +310,6 @@ module_ret_code module_deregister(const self_t **self) {
     /* Destroy external handler */
     memhook._free((self_t *)*self);
     *self = NULL;
-    
-    /* Destroy module reference */
-    memhook._free((self_t *)mod->self);
-    mod->self = NULL;
 
     /*
      * Call destroy once self is NULL 

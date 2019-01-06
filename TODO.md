@@ -23,7 +23,7 @@ module_ref should then return a new self_t* object, add it to a stack in module.
 - [x] Update libmodule API doc
 - [x] State in doc when you can use a module ref for normal functions (eg: module_is)
 
-- [ ] Each module's self should be a static (non-pointer) variable (to avoid user freeing it)?
+- [x] Each module's self should be a static (non-pointer) variable (to avoid user freeing it)?
 
 ### Generic
 - [x] Use attribute pure where needed

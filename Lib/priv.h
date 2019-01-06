@@ -3,19 +3,15 @@
 #include "stack.h"
 
 #ifndef NDEBUG
-    #define MOD_ASSERT(cond, msg, ret) if (!(cond)) { fprintf(stderr, "%s\n", msg); return ret; }
-#else
-    #define MOD_ASSERT(cond, msg, ret) if (!(cond)) { return ret; }
-#endif
-
-#define MOD_ALLOC_ASSERT(cond)  MOD_ASSERT(cond, "Failed to malloc.", MOD_NO_MEM);
-#define MOD_PARAM_ASSERT(cond)  MOD_ASSERT(cond, #cond, MOD_WRONG_PARAM);
-
-#ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule: "); printf
 #else
     #define MODULE_DEBUG (void)
 #endif
+
+#define MOD_ASSERT(cond, msg, ret) if (!(cond)) { MODULE_DEBUG("%s\n", msg); return ret; }
+
+#define MOD_ALLOC_ASSERT(cond)  MOD_ASSERT(cond, "Failed to malloc.", MOD_NO_MEM);
+#define MOD_PARAM_ASSERT(cond)  MOD_ASSERT(cond, #cond, MOD_WRONG_PARAM);
 
 /* Finds a ctx inside our global map, given its name */
 #define FIND_CTX(name) \
@@ -62,6 +58,16 @@
     GET_MOD(self); \
     MOD_ASSERT(_module_is(mod, state), "Wrong module state.", MOD_WRONG_STATE);
 
+typedef struct _module module;
+typedef struct _context m_context;
+/* Struct that holds self module informations, static to each module */
+struct _self {
+    module *const mod;                    // self's mod
+    m_context *const ctx;                 // self's ctx
+    const bool is_ref;                    // is this a reference?
+};
+
+/* List that matches fds with selfs */
 typedef struct _poll_t {
     int fd;
     bool autoclose;
@@ -72,7 +78,7 @@ typedef struct _poll_t {
 } module_poll_t;
 
 /* Struct that holds data for each module */
-typedef struct {
+struct _module {
     userhook hook;                        // module's user defined callbacks
     stack_t *recvs;                       // Stack of recv functions for module_become/unbecome
     const void *userdata;                 // module's user defined data
@@ -81,10 +87,11 @@ typedef struct {
     module_poll_t *fds;                   // module's fds to be polled
     map_t *subscriptions;                 // module's subscriptions
     int pubsub_fd[2];                     // In and Out pipe for pubsub msg
-    const struct _self *self;             // pointer to self (and thus context)
-} module;
+    const self_t self;                    // pointer to self (and thus context)
+};
 
-typedef struct {
+/* Struct that holds data for each context */
+struct _context {
     const char *name;
     bool quit;
     uint8_t quit_code;
@@ -96,13 +103,6 @@ typedef struct {
     void *pevents;
     int max_events;
     map_t *topics;
-} m_context;
-
-/* Struct that holds self module informations, static to each module */
-struct _self {
-    module *const mod;                    // self's mod
-    m_context *const ctx;                 // self's ctx
-    const bool is_ref;                    // is this a reference?
 };
 
 /* Defined in module.c */

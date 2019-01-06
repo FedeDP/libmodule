@@ -58,7 +58,7 @@ static module_ret_code publish_msg(const module *mod, const char *topic,
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
     
-    GET_CTX_PURE(mod->self);
+    GET_CTX_PURE((&mod->self));
     
     void *tmp = NULL;
     /* 
@@ -66,7 +66,7 @@ static module_ret_code publish_msg(const module *mod, const char *topic,
      * Moreover, a publish can only be made on existent topic.
      */
     if (!topic || ((tmp = map_get(c->topics, topic)) && tmp == mod)) {
-        pubsub_msg_t m = { .topic = topic, .message = message, .sender = mod->self, .type = USER, .size = size };
+        pubsub_msg_t m = { .topic = topic, .message = message, .sender = &mod->self, .type = USER, .size = size };
         return tell_pubsub_msg(&m, NULL, c);
     }
     return MOD_ERR;
@@ -108,7 +108,7 @@ module_ret_code module_ref(const self_t *self, const char *name, const self_t **
     GET_CTX(self);
     CTX_GET_MOD(name, c);
     
-    *modref = mod->self;
+    *modref = &mod->self;
     return MOD_OK;
 }
 
@@ -181,7 +181,7 @@ module_ret_code module_tell(const self_t *self, const self_t *recipient, const u
     /* only same ctx modules can talk */
     MOD_PARAM_ASSERT(self->ctx == recipient->ctx);
 
-    pubsub_msg_t m = { .topic = NULL, .message = message, .sender = mod->self, .type = USER, .size = size };
+    pubsub_msg_t m = { .topic = NULL, .message = message, .sender = &mod->self, .type = USER, .size = size };
     return tell_pubsub_msg(&m, recipient->mod, recipient->ctx);
 }
 
