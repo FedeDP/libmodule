@@ -19,6 +19,12 @@ static void modules_destroy(void) {
     map_free(ctx);
 }
 
+static void evaluate_new_state(m_context *context) {
+    map_iterate(context->modules, evaluate_module, NULL);
+}
+
+/** Public API **/
+
 module_ret_code modules_set_memalloc_hook(const memalloc_hook *hook) {
     if (hook) {
         MOD_ASSERT(hook->_malloc, "NULL malloc fn.", MOD_ERR);
@@ -129,10 +135,6 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
         return c->quit_code;
     }
     return MOD_ERR;
-}
-
-static void evaluate_new_state(m_context *context) {
-    map_iterate(context->modules, evaluate_module, NULL);
 }
 
 module_ret_code modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) {

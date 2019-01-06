@@ -11,6 +11,8 @@ struct _stack {
     stack_elem *data;
 };
 
+/** Public API **/
+
 stack_t *stack_new(void) {
     return memhook._calloc(1, sizeof(stack_t));
 }

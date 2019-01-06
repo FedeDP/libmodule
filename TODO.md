@@ -14,13 +14,16 @@ module_ref should then return a new self_t* object, add it to a stack in module.
 
 -> this leads to better performance too (no more hashmap lookups for module_tell)
 
-- [ ] Better arrange code in module.c (ie: above internal API, below exposed API)
-- [ ] Split module.c into module_pubsub.c and module_generic.c
+- [x] Better arrange code in module.c (ie: above internal API, below exposed API)
+- [ ] Split module.c into module_pubsub.c and module_generic.c (?)
+- [ ] Add a module_priv.c with various common (priv) functions?
 - [ ] Better macros naming (eg: GET_MOD_PURE etc etc...)
 
 - [x] Add new tests for module_ref!
 - [x] Update libmodule API doc
 - [x] State in doc when you can use a module ref for normal functions (eg: module_is)
+
+- [ ] Each module's self should be a static (non-pointer) variable (to avoid user freeing it)?
 
 ### Generic
 - [x] Use attribute pure where needed

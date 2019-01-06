@@ -88,6 +88,218 @@ static module_ret_code init_pubsub_fd(module *mod) {
     return MOD_ERR;
 }
 
+static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
+    printf("[%s]|%s|: ", self->ctx->name, self->mod->name);
+    vprintf(fmt, args);
+}
+
+/* 
+ * Append this fd to our list of fds and 
+ * if module is in RUNNING state, start listening on its events 
+ */
+static module_ret_code _register_fd(module *mod, const int fd, const bool autoclose, const void *userptr) {
+    module_poll_t *tmp = memhook._malloc(sizeof(module_poll_t));
+    MOD_ALLOC_ASSERT(tmp);
+    
+    if (poll_set_data(&tmp->ev) == MOD_OK) {
+        tmp->fd = fd;
+        tmp->autoclose = autoclose;
+        tmp->userptr = userptr;
+        tmp->prev = mod->fds;
+        tmp->self = mod->self;
+        mod->fds = tmp;
+        mod->self->ctx->num_fds++;
+        /* If a fd is registered at runtime, start polling on it */
+        int ret = 0;
+        if (_module_is(mod, RUNNING)) {
+            ret = poll_set_new_evt(tmp, mod->self->ctx, ADD);
+        }
+        return !ret ? MOD_OK : MOD_ERR;
+    }
+    memhook._free(tmp);
+    return MOD_ERR;
+}
+
+/* Linearly searching for fd */
+static module_ret_code _deregister_fd(module *mod, const int fd) {
+    module_poll_t **tmp = &mod->fds;
+    
+    int ret = 0;
+    while (*tmp) {
+        if ((*tmp)->fd == fd) {
+            module_poll_t *t = *tmp;
+            *tmp = (*tmp)->prev;
+            /* If a fd is deregistered for a RUNNING module, stop polling on it */
+            if (_module_is(mod, RUNNING)) {
+                ret = poll_set_new_evt(t, mod->self->ctx, RM);
+            }
+            if (t->autoclose) {
+                close(t->fd);
+            }
+            memhook._free(t->ev);
+            memhook._free(t);
+            mod->self->ctx->num_fds--;
+            return !ret ? MOD_OK : MOD_ERR;
+        }
+        tmp = &(*tmp)->prev;
+    }
+    return MOD_ERR;
+}
+
+static int tell_if(void *data, void *m) {
+    module *mod = (module *)m;
+    const pubsub_msg_t *msg = (pubsub_msg_t *)data;
+
+    /* 
+     * Only if mod is actually running or paused and 
+     * it is a SYSTEM message or
+     * topic is null or this module is subscribed to topic 
+     */
+    if (_module_is(mod, RUNNING | PAUSED) && (msg->type != USER || !msg->topic || 
+        map_has_key(mod->subscriptions, msg->topic))) {
+        
+        MODULE_DEBUG("Telling a message to %s.\n", mod->name);
+        
+        pubsub_msg_t *mm = create_pubsub_msg(msg->message, msg->sender, msg->topic, msg->type, msg->size);
+        if (!mm || write(mod->pubsub_fd[1], &mm, sizeof(pubsub_msg_t *)) != sizeof(pubsub_msg_t *)) {
+            MODULE_DEBUG("Failed to write message for %s: %s\n", mod->name, strerror(errno));
+        }
+    }
+    return MAP_OK;
+}
+
+static pubsub_msg_t *create_pubsub_msg(const unsigned char *message, const self_t *sender, const char *topic, 
+                                       enum msg_type type, const size_t size) {
+    pubsub_msg_t *m = memhook._malloc(sizeof(pubsub_msg_t));
+    if (m) {
+        m->message = message;
+        m->sender = sender;
+        m->topic = mem_strdup(topic);
+        *(int *)&m->type = type;
+        *(size_t *)&m->size = size;
+    }
+    return m;
+}
+
+static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
+    if (mod) {
+        tell_if(m, mod);
+    } else {
+        map_iterate(c->modules, tell_if, m);
+    }
+    return MOD_OK;
+}
+
+static inline bool _module_is(const module *mod, const enum module_states st) {
+    return mod->state & st;
+}
+
+static int manage_fds(module *mod, m_context *c, const int flag, const bool stop) {    
+    module_poll_t *tmp = mod->fds;
+    int ret = 0;
+    
+    while (tmp && !ret) {
+        module_poll_t *t = tmp;
+        tmp = tmp->prev;
+        if (flag == RM && stop) {
+            ret = _deregister_fd(mod, t->fd);
+        } else {
+            ret = poll_set_new_evt(t, c, flag);
+        }
+    }
+    return ret;
+}
+
+static module_ret_code start(module *mod, const char *err_str) {
+    GET_CTX_PURE(mod->self);
+    
+    /* 
+     * Starting module for the first time
+     * or after it was stopped.
+     * Properly add back its pubsub fds.
+     */
+    if (!_module_is(mod, PAUSED)) {
+        /* THIS IS NOT A RESUME */
+        if (init_pubsub_fd(mod) != MOD_OK) {
+            return MOD_ERR;
+        }
+    }
+    
+    int ret = manage_fds(mod, c, ADD, false);
+    MOD_ASSERT(!ret, err_str, MOD_ERR);
+    
+    mod->state = RUNNING;
+    return MOD_OK;
+}
+
+static module_ret_code stop(module *mod, const char *err_str, const bool stop) {
+    GET_CTX_PURE(mod->self);
+    
+    int ret = manage_fds(mod, c, RM, stop);
+    MOD_ASSERT(!ret, err_str, MOD_ERR);
+    
+    mod->state = stop ? STOPPED : PAUSED;
+    /*
+     * When module gets stopped, its write-end pubsub fd is closed too 
+     * Read-end is already closed by stop().
+     */
+    if (stop && mod->pubsub_fd[1] != -1) {
+        close(mod->pubsub_fd[1]);
+        mod->pubsub_fd[0] = -1;
+        mod->pubsub_fd[1] = -1;
+    }
+    return MOD_OK;
+}
+
+/** Private API **/
+
+int evaluate_module(void *data, void *m) {
+    module *mod = (module *)m;
+    if (_module_is(mod, IDLE) && mod->hook.evaluate()) {
+        mod->hook.init();
+        start(mod, "Failed to start module.");
+    }
+    return MAP_OK;
+}
+
+char *mem_strdup(const char *s) {
+    char *new = NULL;
+    if (s) {
+        const int len = strlen(s) + 1;
+        new = memhook._malloc(len);
+        if (new) {
+            memcpy(new, s, len);
+        }
+    }
+    return new;
+}
+
+int flush_pubsub_msg(void *data, void *m) {
+    module *mod = (module *)m;
+    pubsub_msg_t *mm = NULL;
+    
+    while (read(mod->pubsub_fd[0], &mm, sizeof(pubsub_msg_t *)) == sizeof(pubsub_msg_t *)) {
+        /* 
+         * Actually tell msg ONLY if we are not deregistering module, 
+         * ie: we are stopping looping on the context. 
+         */
+        if (!data) {
+            MODULE_DEBUG("Flushing pubsub message for module '%s'.\n", mod->name);
+            const msg_t msg = { .is_pubsub = 1, .pubsub_msg = mm };
+            mod->hook.recv(&msg, mod->userdata);
+        }
+        destroy_pubsub_msg(mm);
+    }
+    return 0;
+}
+
+void destroy_pubsub_msg(pubsub_msg_t *m) {
+    memhook._free((char *)m->topic);
+    memhook._free(m);
+}
+
+/** Public API **/
+
 module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, const userhook *hook) {
     MOD_PARAM_ASSERT(name);
     MOD_PARAM_ASSERT(ctx_name);
@@ -207,22 +419,6 @@ module_ret_code module_deregister(const self_t **self) {
     return MOD_OK;
 }
 
-static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
-    printf("[%s]|%s|: ", self->ctx->name, self->mod->name);
-    vprintf(fmt, args);
-}
-
-int evaluate_module(void *data, void *m) {
-    module *mod = (module *)m;
-    if (_module_is(mod, IDLE)
-        && mod->hook.evaluate()) {
-        
-        mod->hook.init();
-        start(mod, "Failed to start module.");
-    }
-    return MAP_OK;
-}
-
 module_ret_code module_become(const self_t *self, const recv_cb new_recv) {
     MOD_PARAM_ASSERT(new_recv);
     GET_MOD_IN_STATE(self, RUNNING);
@@ -260,64 +456,11 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
     return MOD_OK;
 }
 
-/* 
- * Append this fd to our list of fds and 
- * if module is in RUNNING state, start listening on its events 
- */
-static module_ret_code _register_fd(module *mod, const int fd, const bool autoclose, const void *userptr) {
-    module_poll_t *tmp = memhook._malloc(sizeof(module_poll_t));
-    MOD_ALLOC_ASSERT(tmp);
-    
-    if (poll_set_data(&tmp->ev) == MOD_OK) {
-        tmp->fd = fd;
-        tmp->autoclose = autoclose;
-        tmp->userptr = userptr;
-        tmp->prev = mod->fds;
-        tmp->self = mod->self;
-        mod->fds = tmp;
-        mod->self->ctx->num_fds++;
-        /* If a fd is registered at runtime, start polling on it */
-        int ret = 0;
-        if (_module_is(mod, RUNNING)) {
-            ret = poll_set_new_evt(tmp, mod->self->ctx, ADD);
-        }
-        return !ret ? MOD_OK : MOD_ERR;
-    }
-    memhook._free(tmp);
-    return MOD_ERR;
-}
-
 module_ret_code module_register_fd(const self_t *self, const int fd, const bool autoclose, const void *userptr) {
     MOD_PARAM_ASSERT(fd >= 0);
     GET_MOD(self);
 
     return _register_fd(mod, fd, autoclose, userptr);
-}
-
-/* Linearly searching for fd */
-static module_ret_code _deregister_fd(module *mod, const int fd) {
-    module_poll_t **tmp = &mod->fds;
-    
-    int ret = 0;
-    while (*tmp) {
-        if ((*tmp)->fd == fd) {
-            module_poll_t *t = *tmp;
-            *tmp = (*tmp)->prev;
-            /* If a fd is deregistered for a RUNNING module, stop polling on it */
-            if (_module_is(mod, RUNNING)) {
-                ret = poll_set_new_evt(t, mod->self->ctx, RM);
-            }
-            if (t->autoclose) {
-                close(t->fd);
-            }
-            memhook._free(t->ev);
-            memhook._free(t);
-            mod->self->ctx->num_fds--;
-            return !ret ? MOD_OK : MOD_ERR;
-        }
-        tmp = &(*tmp)->prev;
-    }
-    return MOD_ERR;
 }
 
 module_ret_code module_deregister_fd(const self_t *self, const int fd) {
@@ -342,18 +485,6 @@ module_ret_code module_get_context(const self_t *self, char **ctx) {
     
     MOD_ALLOC_ASSERT(*ctx);
     return MOD_OK;
-}
-
-char *mem_strdup(const char *s) {
-    char *new = NULL;
-    if (s) {
-        const int len = strlen(s) + 1;
-        new = memhook._malloc(len);
-        if (new) {
-            memcpy(new, s, len);
-        }
-    }
-    return new;
 }
 
 /** Actor-like PubSub interface **/
@@ -430,74 +561,6 @@ module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const c
     return tell_pubsub_msg(&m, NULL, c);
 }
 
-int flush_pubsub_msg(void *data, void *m) {
-    module *mod = (module *)m;
-    pubsub_msg_t *mm = NULL;
-    
-    while (read(mod->pubsub_fd[0], &mm, sizeof(pubsub_msg_t *)) == sizeof(pubsub_msg_t *)) {
-        /* 
-         * Actually tell msg ONLY if we are not deregistering module, 
-         * ie: we are stopping looping on the context. 
-         */
-        if (!data) {
-            MODULE_DEBUG("Flushing pubsub message for module '%s'.\n", mod->name);
-            const msg_t msg = { .is_pubsub = 1, .pubsub_msg = mm };
-            mod->hook.recv(&msg, mod->userdata);
-        }
-        destroy_pubsub_msg(mm);
-    }
-    return 0;
-}
-
-static int tell_if(void *data, void *m) {
-    module *mod = (module *)m;
-    const pubsub_msg_t *msg = (pubsub_msg_t *)data;
-
-    /* 
-     * Only if mod is actually running or paused and 
-     * it is a SYSTEM message or
-     * topic is null or this module is subscribed to topic 
-     */
-    if (_module_is(mod, RUNNING | PAUSED) && (msg->type != USER || !msg->topic || 
-        map_has_key(mod->subscriptions, msg->topic))) {
-        
-        MODULE_DEBUG("Telling a message to %s.\n", mod->name);
-        
-        pubsub_msg_t *mm = create_pubsub_msg(msg->message, msg->sender, msg->topic, msg->type, msg->size);
-        if (!mm || write(mod->pubsub_fd[1], &mm, sizeof(pubsub_msg_t *)) != sizeof(pubsub_msg_t *)) {
-            MODULE_DEBUG("Failed to write message for %s: %s\n", mod->name, strerror(errno));
-        }
-    }
-    return MAP_OK;
-}
-
-static pubsub_msg_t *create_pubsub_msg(const unsigned char *message, const self_t *sender, const char *topic, 
-                                       enum msg_type type, const size_t size) {
-    pubsub_msg_t *m = memhook._malloc(sizeof(pubsub_msg_t));
-    if (m) {
-        m->message = message;
-        m->sender = sender;
-        m->topic = mem_strdup(topic);
-        *(int *)&m->type = type;
-        *(size_t *)&m->size = size;
-    }
-    return m;
-}
-
-void destroy_pubsub_msg(pubsub_msg_t *m) {
-    memhook._free((char *)m->topic);
-    memhook._free(m);
-}
-
-static module_ret_code tell_pubsub_msg(pubsub_msg_t *m, module *mod, m_context *c) {
-    if (mod) {
-        tell_if(m, mod);
-    } else {
-        map_iterate(c->modules, tell_if, m);
-    }
-    return MOD_OK;
-}
-
 module_ret_code module_tell(const self_t *self, const self_t *recipient, const unsigned char *message, 
                             const ssize_t size) {
     GET_MOD(self);
@@ -545,10 +608,6 @@ module_ret_code module_broadcast(const self_t *self, const unsigned char *messag
 
 /** Module state getters **/
 
-static inline bool _module_is(const module *mod, const enum module_states st) {
-    return mod->state & st;
-}
-
 bool module_is(const self_t *self, const enum module_states st) {
     GET_MOD_PURE(self);
 
@@ -556,63 +615,6 @@ bool module_is(const self_t *self, const enum module_states st) {
 }
 
 /** Module state setters **/
-
-static int manage_fds(module *mod, m_context *c, const int flag, const bool stop) {    
-    module_poll_t *tmp = mod->fds;
-    int ret = 0;
-    
-    while (tmp && !ret) {
-        module_poll_t *t = tmp;
-        tmp = tmp->prev;
-        if (flag == RM && stop) {
-            ret = _deregister_fd(mod, t->fd);
-        } else {
-            ret = poll_set_new_evt(t, c, flag);
-        }
-    }
-    return ret;
-}
-
-static module_ret_code start(module *mod, const char *err_str) {
-    GET_CTX_PURE(mod->self);
-
-    /* 
-     * Starting module for the first time
-     * or after it was stopped.
-     * Properly add back its pubsub fds.
-     */
-    if (!_module_is(mod, PAUSED)) {
-        /* THIS IS NOT A RESUME */
-        if (init_pubsub_fd(mod) != MOD_OK) {
-            return MOD_ERR;
-        }
-    }
-
-    int ret = manage_fds(mod, c, ADD, false);
-    MOD_ASSERT(!ret, err_str, MOD_ERR);
-
-    mod->state = RUNNING;
-    return MOD_OK;
-}
-
-static module_ret_code stop(module *mod, const char *err_str, const bool stop) {
-    GET_CTX_PURE(mod->self);
-    
-    int ret = manage_fds(mod, c, RM, stop);
-    MOD_ASSERT(!ret, err_str, MOD_ERR);
-    
-    mod->state = stop ? STOPPED : PAUSED;
-    /*
-     * When module gets stopped, its write-end pubsub fd is closed too 
-     * Read-end is already closed by stop().
-     */
-    if (stop && mod->pubsub_fd[1] != -1) {
-        close(mod->pubsub_fd[1]);
-        mod->pubsub_fd[0] = -1;
-        mod->pubsub_fd[1] = -1;
-    }
-    return MOD_OK;
-}
 
 module_ret_code module_start(const self_t *self) {
     GET_MOD_IN_STATE(self, IDLE | STOPPED);

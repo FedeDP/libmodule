@@ -89,24 +89,6 @@ static unsigned long crc32_tab[] = {
 };
 
 /*
- * Return an empty hashmap, or NULL on failure.
- */
-map_t *map_new(void) {
-    map_t *m = memhook._calloc(1, sizeof(map_t));
-    if (m) {
-        m->data = memhook._calloc(INITIAL_SIZE, sizeof(map_elem));
-        if (m->data) {
-            m->table_size = INITIAL_SIZE;
-            m->size = 0;
-        } else {
-            map_free(m);
-            m = NULL;
-        }
-    }
-    return m;
-}
-
-/*
  * Returns a 32-bit CRC of the contents of the buffer. 
  */
 static unsigned long crc32(const unsigned char *s, unsigned int len) {
@@ -192,18 +174,6 @@ static map_ret_code hashmap_rehash(map_t *m) {
     return status;
 }
 
-/*
- * Add a pointer to the hashmap with strdupped key if dupkey is true
- */
-map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey, const bool autofree) {
-    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
-    MOD_ASSERT(key, "NULL key.", MAP_WRONG_PARAM);
-    MOD_ASSERT(value, "NULL value.", MAP_WRONG_PARAM);
-    
-    /* Find a place to put our value */
-    return hashmap_put(m, dupkey ? mem_strdup(key) : key, value, dupkey, autofree);
-}
-
 static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bool needs_free, const bool autofree) {
     /* Find a place to put our value */
     int index = hashmap_hash(m, key);
@@ -222,6 +192,59 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bo
     m->data[index].val_needs_free = autofree;
     m->size++;
     return MAP_OK;
+}
+
+static void clear_elem(map_t *m, const int idx) {
+    /* Blank out the fields */
+    m->data[idx].in_use = false;
+    
+    if (m->data[idx].key_needs_free) {
+        memhook._free((void *)m->data[idx].key);
+    }
+    m->data[idx].key = NULL;
+    m->data[idx].key_needs_free = false;
+    
+    if (m->data[idx].val_needs_free) {
+        memhook._free((void *)m->data[idx].data);
+    }
+    m->data[idx].data = NULL;
+    m->data[idx].val_needs_free = false;
+    
+    /* Reduce the size */
+    m->size--;
+}
+
+/** Public API **/
+
+/*
+ * Return an empty hashmap, or NULL on failure.
+ */
+map_t *map_new(void) {
+    map_t *m = memhook._calloc(1, sizeof(map_t));
+    if (m) {
+        m->data = memhook._calloc(INITIAL_SIZE, sizeof(map_elem));
+        if (m->data) {
+            m->table_size = INITIAL_SIZE;
+            m->size = 0;
+        } else {
+            map_free(m);
+            m = NULL;
+        }
+    }
+    return m;
+}
+
+
+/*
+ * Add a pointer to the hashmap with strdupped key if dupkey is true
+ */
+map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey, const bool autofree) {
+    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
+    MOD_ASSERT(key, "NULL key.", MAP_WRONG_PARAM);
+    MOD_ASSERT(value, "NULL value.", MAP_WRONG_PARAM);
+    
+    /* Find a place to put our value */
+    return hashmap_put(m, dupkey ? mem_strdup(key) : key, value, dupkey, autofree);
 }
 
 /*
@@ -267,26 +290,6 @@ map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
         }
     }
     return status;
-}
-
-static void clear_elem(map_t *m, const int idx) {
-    /* Blank out the fields */
-    m->data[idx].in_use = false;
-    
-    if (m->data[idx].key_needs_free) {
-        memhook._free((void *)m->data[idx].key);
-    }
-    m->data[idx].key = NULL;
-    m->data[idx].key_needs_free = false;
-    
-    if (m->data[idx].val_needs_free) {
-        memhook._free((void *)m->data[idx].data);
-    }
-    m->data[idx].data = NULL;
-    m->data[idx].val_needs_free = false;
-    
-    /* Reduce the size */
-    m->size--;
 }
 
 /*
