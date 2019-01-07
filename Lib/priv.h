@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdlib.h>
 #include "map.h"
 #include "stack.h"
@@ -113,6 +115,7 @@ int evaluate_module(void *data, void *m);
 module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic);
 int flush_pubsub_msg(void *data, void *m);
 void destroy_pubsub_msg(pubsub_msg_t *m);
+void run_pubsub_cb(module *mod, const msg_t *msg);
 
 /* Defined in priv.c */
 char *mem_strdup(const char *s);

@@ -85,8 +85,8 @@ int flush_pubsub_msg(void *data, void *m) {
          */
         if (!data) {
             MODULE_DEBUG("Flushing pubsub message for module '%s'.\n", mod->name);
-            const msg_t msg = { .is_pubsub = 1, .pubsub_msg = mm };
-            mod->hook.recv(&msg, mod->userdata);
+            const msg_t msg = { .is_pubsub = true, .pubsub_msg = mm };
+            run_pubsub_cb(mod, &msg);
         }
         destroy_pubsub_msg(mm);
     }
@@ -96,6 +96,17 @@ int flush_pubsub_msg(void *data, void *m) {
 void destroy_pubsub_msg(pubsub_msg_t *m) {
     memhook._free((char *)m->topic);
     memhook._free(m);
+}
+
+
+void run_pubsub_cb(module *mod, const msg_t *msg) {
+    /* If module is using some different receive function, honor it. */
+    recv_cb cb = stack_peek(mod->recvs);
+    if (!cb) {
+        /* Fallback to module default receive */
+        cb = mod->hook.recv;
+    }
+    cb(msg, mod->userdata);
 }
 
 /** Public API **/

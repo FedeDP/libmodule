@@ -31,11 +31,7 @@ module_ret_code modules_set_memalloc_hook(const memalloc_hook *hook) {
         MOD_ASSERT(hook->_realloc, "NULL realloc fn.", MOD_ERR);
         MOD_ASSERT(hook->_calloc, "NULL calloc fn.", MOD_ERR);
         MOD_ASSERT(hook->_free, "NULL free fn.", MOD_ERR);
-
-        memhook._malloc = hook->_malloc;
-        memhook._realloc = hook->_realloc;
-        memhook._calloc = hook->_calloc;
-        memhook._free = hook->_free;
+        memcpy(&memhook, hook, sizeof(memalloc_hook));
     } else {
         memhook._malloc = malloc;
         memhook._realloc = realloc;
@@ -94,13 +90,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
                     }
 
                     if (!msg.is_pubsub || msg.pubsub_msg) {
-                        /* If module is using some different receive function, honor it. */
-                        recv_cb cb = stack_peek(mod->recvs);
-                        if (!cb) {
-                            /* Fallback to module default receive */
-                            cb = mod->hook.recv;
-                        }
-                        cb(&msg, mod->userdata);
+                        run_pubsub_cb(mod, &msg);
 
                         /* Properly free pubsub msg */
                         if (msg.is_pubsub) {
@@ -127,9 +117,10 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
 
         /* Tell every module that loop is stopped */
         tell_system_pubsub_msg(c, LOOP_STOPPED, NULL);
-        
+
         /* Flush pubsub msg to avoid memleaks */
         map_iterate(c->modules, flush_pubsub_msg, NULL);
+
         poll_destroy_pevents(&c->pevents, &c->max_events);
         c->looping = false;
         return c->quit_code;
@@ -139,12 +130,9 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
 
 module_ret_code modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) {
     FIND_CTX(ctx_name);
-    
-    if (c->looping) {
-        c->quit = true;
-        c->quit_code = quit_code;
-        return MOD_OK;
-    }
-    MODULE_DEBUG("Context not looping.\n");
-    return MOD_ERR;
+    MOD_ASSERT(c->looping, "Context not looping.", MOD_ERR);
+       
+    c->quit = true;
+    c->quit_code = quit_code;
+    return MOD_OK;
 }

@@ -2,8 +2,8 @@
 
    <br />
 
-Module Lifecycle
-================
+Lifecycle
+=========
 
 Easy API
 --------

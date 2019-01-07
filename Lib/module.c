@@ -243,7 +243,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
             break;
         }
         
-        mod->hook = *hook;
+        memcpy(&mod->hook, hook, sizeof(userhook));
         mod->state = IDLE;
         mod->fds = NULL;
         

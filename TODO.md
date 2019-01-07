@@ -42,6 +42,9 @@ module_ref should then return a new self_t* object, add it to a stack in module.
 - [x] Fix issue in map_new if m->data calloc fails: map object was not memsetted to 0; it would lead to a crash when map_free was called
 - [x] Update doc!
 
+### Fix
+- [x] Actually honor current module's callback when flushing pubsub messages
+
 ### Examples
 - [x] Update examples!
 
