@@ -30,6 +30,8 @@ module_ref should then return a new self_t* object, add it to a stack in module.
 - [x] Use attribute format where needed
 - [x] Use calloc where needed
 - [x] Module register should avoid memleaks when it fails with NOMEM.
+- [x] Added modules_ctx_loop test
+- [x] Added module pubsub recv test
 
 ### Stack API
 - [x] Add _clear function

@@ -106,6 +106,9 @@ int main(void) {
         cmocka_unit_test(test_module_broadcast_wrong_size),
         cmocka_unit_test(test_module_broadcast),
         
+        /* We have now 3 messages waiting for us (tell, publish, broadcast). Check. */
+        cmocka_unit_test(test_modules_ctx_loop),
+        
         /* Test module topic deregister */
         cmocka_unit_test(test_deregister_topic_NULL_topic),
         cmocka_unit_test(test_deregister_topic_NULL_self),

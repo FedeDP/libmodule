@@ -1,5 +1,6 @@
 #include "test_module.h"
 #include <module/module.h>
+#include <module/modules.h>
 #include <unistd.h>
 #include <sys/stat.h> 
 #include <fcntl.h>
@@ -352,7 +353,7 @@ void test_module_tell_wrong_size(void **state) {
 void test_module_tell(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(self, testSelf, "hi!", strlen("hi!"));
+    module_ret_code ret = module_tell(self, testSelf, "hi1!", strlen("hi!"));
     assert_true(ret == MOD_OK);
 }
 
@@ -394,7 +395,7 @@ void test_module_publish_wrong_size(void **state) {
 void test_module_publish(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_publish(self, "topic", "hi!", strlen("hi!"));
+    module_ret_code ret = module_publish(self, "topic", "hi2!", strlen("hi!"));
     assert_true(ret == MOD_OK);
 }
 
@@ -422,7 +423,7 @@ void test_module_broadcast_wrong_size(void **state) {
 void test_module_broadcast(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_broadcast(self, "hi!", strlen("hi!"));
+    module_ret_code ret = module_broadcast(self, "hi3!", strlen("hi!"));
     assert_true(ret == MOD_OK);
 }
 
@@ -479,7 +480,13 @@ static bool evaluate(void) {
 }
 
 static void recv(const msg_t *msg, const void *userdata) {
-    
+    static int ctr = 0;
+    if (msg->is_pubsub && msg->pubsub_msg->type == USER) {
+        ctr++;
+        if (!strcmp((char *)msg->pubsub_msg->message, "hi3!")) {
+            modules_ctx_quit(CTX, ctr);
+        }
+    }
 }
 
 static void destroy(void) {
