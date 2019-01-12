@@ -6,7 +6,7 @@ int poll_create(void) {
 }
 
 int poll_set_data(void **_ev) {
-    *_ev = memhook._malloc(sizeof(struct epoll_event));
+    *_ev = memhook._calloc(1, sizeof(struct epoll_event));
     MOD_ALLOC_ASSERT(*_ev);
     return MOD_OK;
 }
