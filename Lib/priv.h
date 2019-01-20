@@ -21,6 +21,7 @@
     m_context *c = map_get(ctx, (char *)name); \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
 
+#define GET_CTX_PRIV(self)  m_context *c = self->ctx
 /* 
  * Convenience macro to retrieve self->ctx + doing some checks.
  * Skip reference check for pure functions.
@@ -28,9 +29,10 @@
 #define _GET_CTX(self, pure) \
     MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
     MOD_ASSERT(!self->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
-    m_context *c = self->ctx; \
+    GET_CTX_PRIV(self); \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
 
+/* Convenience macros for exposed API */
 #define GET_CTX(self)       _GET_CTX(self, false)
 #define GET_CTX_PURE(self)  _GET_CTX(self, true)
 
@@ -39,6 +41,7 @@
     module *mod = map_get(ctx->modules, (char *)name); \
     MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
+#define GET_MOD_PRIV(self) module *mod = self->mod
 /* 
  * Convenience macro to retrieve self->mod + doing some checks.
  * Skip reference check for pure functions.
@@ -46,9 +49,10 @@
 #define _GET_MOD(self, pure) \
     MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
     MOD_ASSERT(!self->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
-    module *mod = self->mod; \
+    GET_MOD_PRIV(self); \
     MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
+/* Convenience macros for exposed API */
 #define GET_MOD(self)         _GET_MOD(self, false)
 #define GET_MOD_PURE(self)    _GET_MOD(self, true)
 

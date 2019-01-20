@@ -58,7 +58,7 @@ static module_ret_code publish_msg(const module *mod, const char *topic,
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
     
-    GET_CTX_PURE((&mod->self));
+    GET_CTX_PRIV((&mod->self));
     
     void *tmp = NULL;
     /* 
@@ -73,6 +73,11 @@ static module_ret_code publish_msg(const module *mod, const char *topic,
 }
 
 /** Private API **/
+
+module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic) {
+    pubsub_msg_t m = { .topic = topic, .sender = NULL, .message = NULL, .type = type, .size = 0 };
+    return tell_pubsub_msg(&m, NULL, c);
+}
 
 int flush_pubsub_msg(void *data, void *m) {
     module *mod = (module *)m;
@@ -176,11 +181,6 @@ module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
         return MOD_OK;
     }
     return MOD_ERR;
-}
-
-module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic) {
-    pubsub_msg_t m = { .topic = topic, .sender = NULL, .message = NULL, .type = type, .size = 0 };
-    return tell_pubsub_msg(&m, NULL, c);
 }
 
 module_ret_code module_tell(const self_t *self, const self_t *recipient, const unsigned char *message, 

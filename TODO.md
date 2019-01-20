@@ -17,7 +17,7 @@ module_ref should then return a new self_t* object, add it to a stack in module.
 - [x] Better arrange code in module.c (ie: above internal API, below exposed API)
 - [x] Split module.c into module_pubsub.c and module_generic.c (?)
 - [x] Add a module_priv.c with various common (priv) functions?
-- [ ] Better macros naming (eg: GET_MOD_PURE etc etc...)
+- [x] Better macros naming (eg: GET_MOD_PURE etc etc...)
 
 - [x] Add new tests for module_ref!
 - [x] Update libmodule API doc

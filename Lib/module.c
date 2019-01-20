@@ -159,7 +159,7 @@ static int manage_fds(module *mod, m_context *c, const int flag, const bool stop
 }
 
 static module_ret_code start(module *mod, const char *err_str) {
-    GET_CTX_PURE((&mod->self));
+    GET_CTX_PRIV((&mod->self));
     
     /* 
      * Starting module for the first time
@@ -181,7 +181,7 @@ static module_ret_code start(module *mod, const char *err_str) {
 }
 
 static module_ret_code stop(module *mod, const char *err_str, const bool stop) {
-    GET_CTX_PURE((&mod->self));
+    GET_CTX_PRIV((&mod->self));
     
     int ret = manage_fds(mod, c, RM, stop);
     MOD_ASSERT(!ret, err_str, MOD_ERR);
