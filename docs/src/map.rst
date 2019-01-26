@@ -99,7 +99,7 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_clear(m)
 
-  Clears a map object by deleting any object inside map, and eventually freeing it too if marked with autofree. Note that map dtor (if any) will be set to NULL too.
+  Clears a map object by deleting any object inside map, and eventually freeing it too if marked with autofree.
 
   :param s: pointer to map_t
   :type s: :c:type:`map_t *`

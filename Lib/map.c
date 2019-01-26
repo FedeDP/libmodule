@@ -329,7 +329,6 @@ map_ret_code map_clear(map_t *m) {
             clear_elem(m, i);
         }
     }
-    m->dtor = NULL;
     return MAP_OK;
 }
 

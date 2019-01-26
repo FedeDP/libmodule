@@ -82,7 +82,6 @@ stack_ret_code stack_clear(stack_t *s) {
             }
         }
     }
-    s->dtor = NULL;
     return STACK_OK;
 }
 

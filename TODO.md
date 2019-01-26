@@ -1,6 +1,6 @@
 ## 4.1.0
 - [ ] PoisonPill message to automatically stop another module?
-- [ ] In stack_clear and map_clear, avoid unsetting dtor
+- [x] In stack_clear and map_clear, avoid unsetting dtor
 
 ## Ideas
 - [ ] Let contexts talk together? Eg: broadcast(msg, bool global) to send a message to all modules in every context; module_publish message in another context? etc etc

@@ -81,7 +81,7 @@ Where not specified, these functions return a stack_ret_code.
 
 .. c:function:: stack_clear(s)
 
-  Clears a stack object by deleting any object inside stack, and eventually freeing it too if marked with autofree. Note that stack dtor (if any) will be set to NULL too.
+  Clears a stack object by deleting any object inside stack, and eventually freeing it too if marked with autofree.
 
   :param s: pointer to stack_t
   :type s: :c:type:`stack_t *`
