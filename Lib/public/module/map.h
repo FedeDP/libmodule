@@ -16,6 +16,9 @@ typedef enum {
 /* Callback for map_iterate */
 typedef map_ret_code (*map_cb)(void *, void *);
 
+/* Fn for map_set_dtor */
+typedef map_ret_code (*map_dtor)(void *);
+
 /* Incomplete struct declaration for hashmap */
 typedef struct _map map_t;
 
@@ -32,6 +35,7 @@ _public_ map_ret_code map_remove(map_t *m, const char *key);
 _public_ map_ret_code map_clear(map_t *m);
 _public_ map_ret_code map_free(map_t *m);
 _public_ int map_length(const map_t *m);
+_public_ map_ret_code map_set_dtor(map_t *m, map_dtor fn);
 
 #ifdef __cplusplus
 }

@@ -24,6 +24,9 @@ Structures
 
     /* Callback for map_iterate */
     typedef map_ret_code (*map_cb)(void *, void *);
+    
+    /* Fn for map_set_dtor */
+    typedef map_ret_code (*map_dtor)(void *);
 
     /* Incomplete struct declaration for hashmap */
     typedef struct _map map_t;
@@ -52,7 +55,7 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_put(m, key, val, dupkey, autofree)
 
-  Put a value inside hashmap. Note that if dupkey is true, key will be strdupped; it will also be automatically freed upon deletion.
+  Put a value inside hashmap. Note that if dupkey is true, key will be strdupped and its lifetime will be managed by libmodule.
 
   :param m: pointer to map_t
   :param key: key for this value
@@ -96,7 +99,7 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_clear(m)
 
-  Clears a map object by deleting any object inside map, and eventually freeing it too if marked with autofree.
+  Clears a map object by deleting any object inside map, and eventually freeing it too if marked with autofree. Note that map dtor (if any) will be set to NULL too.
 
   :param s: pointer to map_t
   :type s: :c:type:`map_t *`
@@ -115,3 +118,12 @@ Where not specified, these functions return a map_ret_code.
   :param m: pointer to map_t
   :type m: :c:type:`map_t *`
   :returns: map length or a map_ret_code if any error happens (map_t is null).
+  
+.. c:function:: map_set_dtor(m, fn)
+
+  Set a function to be called upon data deletion for autofree elements.
+
+  :param m: pointer to map_t
+  :param fn: pointer dtor callback
+  :type m: :c:type:`map_t *`
+  :type fn: :c:type:`map_dtor`

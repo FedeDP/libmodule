@@ -8,6 +8,7 @@ typedef struct _elem {
 
 struct _stack {
     int len;
+    stack_dtor dtor;
     stack_elem *data;
 };
 
@@ -74,9 +75,14 @@ stack_ret_code stack_clear(stack_t *s) {
         const bool autofree = elem->autofree;
         void *data = stack_pop(s);
         if (autofree) {
-            memhook._free(data);
+            if (s->dtor) {
+                s->dtor(data);
+            } else {
+                memhook._free(data);
+            }
         }
     }
+    s->dtor = NULL;
     return STACK_OK;
 }
 
@@ -90,6 +96,11 @@ stack_ret_code stack_free(stack_t *s) {
 
 int stack_length(const stack_t *s) {
     MOD_ASSERT(s, "NULL stack.", STACK_WRONG_PARAM);
-    
     return s->len;
+}
+
+stack_ret_code stack_set_dtor(stack_t *s, stack_dtor fn) {
+    MOD_ASSERT(s, "NULL stack.", STACK_WRONG_PARAM);
+    s->dtor = fn;
+    return STACK_OK;
 }

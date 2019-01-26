@@ -23,6 +23,9 @@ Structures
 
     /* Callback for stack_iterate */
     typedef stack_ret_code (*stack_cb)(void *, void *);
+    
+    /* Fn for stack_set_dtor */
+    typedef stack_ret_code(*stack_dtor)(void *);
 
     /* Incomplete struct declaration for stack */
     typedef struct _stack stack_t;
@@ -78,7 +81,7 @@ Where not specified, these functions return a stack_ret_code.
 
 .. c:function:: stack_clear(s)
 
-  Clears a stack object by deleting any object inside stack, and eventually freeing it too if marked with autofree.
+  Clears a stack object by deleting any object inside stack, and eventually freeing it too if marked with autofree. Note that stack dtor (if any) will be set to NULL too.
 
   :param s: pointer to stack_t
   :type s: :c:type:`stack_t *`
@@ -98,3 +101,11 @@ Where not specified, these functions return a stack_ret_code.
   :type s: :c:type:`stack_t *`
   :returns: stack length or a stack_ret_code if any error happens (stack_t is null).
 
+.. c:function:: stack_set_dtor(s, fn)
+
+  Set a function to be called upon data deletion for autofree elements.
+
+  :param s: pointer to stack_t
+  :param fn: pointer dtor callback
+  :type s: :c:type:`stack_t *`
+  :type fn: :c:type:`stack_dtor`

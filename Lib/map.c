@@ -25,6 +25,7 @@ struct _map {
     int table_size;
     int size;
     map_elem *data;
+    map_dtor dtor;
 };
 
 static unsigned long crc32(const unsigned char *s, unsigned int len);
@@ -205,7 +206,11 @@ static void clear_elem(map_t *m, const int idx) {
     m->data[idx].key_needs_free = false;
     
     if (m->data[idx].val_needs_free) {
-        memhook._free((void *)m->data[idx].data);
+        if (m->dtor) {
+            m->dtor(m->data[idx].data);
+        } else {
+            memhook._free((void *)m->data[idx].data);
+        }
     }
     m->data[idx].data = NULL;
     m->data[idx].val_needs_free = false;
@@ -324,6 +329,7 @@ map_ret_code map_clear(map_t *m) {
             clear_elem(m, i);
         }
     }
+    m->dtor = NULL;
     return MAP_OK;
 }
 
@@ -341,4 +347,10 @@ map_ret_code map_free(map_t *m) {
 int map_length(const map_t *m) {
     MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
     return m->size;
+}
+
+map_ret_code map_set_dtor(map_t *m, map_dtor fn) {
+    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
+    m->dtor = fn;
+    return MAP_OK;
 }

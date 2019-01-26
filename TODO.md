@@ -37,12 +37,14 @@ module_ref should then return a new self_t* object, add it to a stack in module.
 - [x] Add _clear function
 - [x] Add tests!
 - [x] Update doc!
+- [x] Offer a stack_set_dtor() API to offer a callback to free each item when autofree is true
 
 ### Map API
 - [x] Add _clear function
 - [x] Add tests!
 - [x] Fix issue in map_new if m->data calloc fails: map object was not memsetted to 0; it would lead to a crash when map_free was called
 - [x] Update doc!
+- [x] Offer a map_set_dtor() to offer a callback to free each item when autofree is true
 
 ### Fix
 - [x] Actually honor current module's callback when flushing pubsub messages
@@ -54,7 +56,6 @@ module_ref should then return a new self_t* object, add it to a stack in module.
 
 ## 4.1.0
 - [ ] PoisonPill message to automatically stop another module?
-- [ ] Expose a queue and use it for internally storing each module's fds
 
 ## Ideas
 - [ ] Let contexts talk together? Eg: broadcast(msg, bool global) to send a message to all modules in every context; module_publish message in another context? etc etc

@@ -13,7 +13,10 @@ typedef enum {
 } stack_ret_code;
 
 /* Callback for stack_iterate */
-typedef stack_ret_code (*stack_cb)(void *, void *);
+typedef stack_ret_code(*stack_cb)(void *, void *);
+
+/* Fn for stack_set_dtor */
+typedef stack_ret_code(*stack_dtor)(void *);
 
 /* Incomplete struct declaration for stack */
 typedef struct _stack stack_t;
@@ -30,6 +33,7 @@ _public_ void *stack_peek(const stack_t *s);
 _public_ stack_ret_code stack_clear(stack_t *s);
 _public_ stack_ret_code stack_free(stack_t *s);
 _public_ int stack_length(const stack_t *s);
+_public_ stack_ret_code stack_set_dtor(stack_t *s, stack_dtor fn);
 
 #ifdef __cplusplus
 }
