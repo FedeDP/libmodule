@@ -68,7 +68,7 @@ Installation - Red Hat
 ----------------------
 
     $ cpack3 -G RPM
-    
+
 And finally install generated RPM package.
 
 Installation - Debian

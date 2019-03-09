@@ -23,4 +23,4 @@ else()
 endif()
 
 target_include_directories(ModuleTest PRIVATE ${CMOCKA_INCLUDE_DIR})
-target_link_libraries(ModuleTest ${CMOCKA_LIBRARIES} module)
+target_link_libraries(ModuleTest ${CMOCKA_LIBRARIES} ${PROJECT_NAME})

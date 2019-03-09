@@ -87,7 +87,8 @@ include_directories(Lib Lib/public/module)
 add_library(${PROJECT_NAME} ${LIBRARY_TYPE} ${SOURCES})
 
 set_target_properties(
-    ${PROJECT_NAME} PROPERTIES PREFIX ""
+    ${PROJECT_NAME} PROPERTIES 
+    PREFIX ""
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
     PUBLIC_HEADER "${PUBLIC_H}"
