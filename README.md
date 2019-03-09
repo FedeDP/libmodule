@@ -56,12 +56,27 @@ To build, you only need to issue:
 
     $ mkdir build
     $ cd build
-    $ cmake ../
+    $ cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib ../
     $ make
 
-If you wish to install, then you only need:
+Installation - Generic OS
+-------------------------
 
     # make install
+
+Installation - Red Hat
+----------------------
+
+    $ cpack3 -G RPM
+    
+And finally install generated RPM package.
+
+Installation - Debian
+---------------------
+
+    $ cpack -G DEB
+
+And finally install generated DEB package.
 
 Libmodule will install a pkg-config script too: use it to link libmodule in your projects, or use "-lmodule" linker flag.  
 Please note that in order to test examples, there is no need to install the library.
