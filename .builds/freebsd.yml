@@ -1,7 +1,7 @@
 image: freebsd/latest
 packages:
   - cmocka
-  - valgrind
+  #- valgrind
   - cmake
 sources:
   - https://github.com/FedeDP/libmodule
@@ -14,9 +14,9 @@ tasks:
   - build: |
       cd libmodule/build
       make
-  #- test: |
-      #cd libmodule/build
-      #ctest -V
+  - test: |
+      cd libmodule/build
+      ctest -V
 triggers:
   - action: email
     condition: failure

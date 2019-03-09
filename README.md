@@ -39,7 +39,7 @@ To see a real project using libmodule, check [Clightd](https://github.com/FedeDP
 
 ## CI
 
-Libmodule, samples and tests builds are tested on [builds.sr.ht](https://builds.sr.ht/~fededp/libmodule) on linux and freebsd.  
+Libmodule, samples and tests builds are tested on [builds.sr.ht](https://builds.sr.ht/~fededp/libmodule) on archlinux, ubuntu, fedora and freebsd.  
 Moreover, tests are executed and valgrind checked too.  
 
 ## But...why?
@@ -67,7 +67,7 @@ Installation - Generic OS
 Installation - Red Hat
 ----------------------
 
-    $ cpack3 -G RPM
+    $ cpack -G RPM
 
 And finally install generated RPM package.
 

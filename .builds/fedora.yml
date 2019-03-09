@@ -4,6 +4,7 @@ packages:
   - valgrind
   - cmake
   - gcc-c++
+  - rpm-build
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:
@@ -20,7 +21,7 @@ tasks:
       ctest -V
   - build_pkg: |
       cd libmodule/build
-      cpack3 -G RPM
+      cpack -G RPM
 triggers:
   - action: email
     condition: failure

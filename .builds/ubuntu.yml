@@ -19,7 +19,7 @@ tasks:
       ctest -V
   - build_pkg: |
       cd libmodule/build
-      cpack3 -G DEB
+      cpack -G DEB
 triggers:
   - action: email
     condition: failure
