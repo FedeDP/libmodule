@@ -88,11 +88,11 @@ static void A_recv(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'c':
                 module_log(selfA, "Doggo, come here!\n");
-                module_tell(selfA, selfB, "ComeHere", strlen("ComeHere"));
+                module_tell(selfA, selfB, (unsigned char *)"ComeHere", strlen("ComeHere"));
                 break;
             case 'q':
                 module_log(selfA, "I have to go now!\n");
-                module_publish(selfA, "leaving", "ByeBye", strlen("ByeBye"));
+                module_publish(selfA, "leaving", (unsigned char *)"ByeBye", strlen("ByeBye"));
                 modules_ctx_quit("test", 0);
                 break;
             default:
@@ -118,23 +118,23 @@ static void A_recv_ready(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'p':
                 module_log(selfA, "Doggo, let's play a bit!\n");
-                module_tell(selfA, selfB, "LetsPlay", strlen("LetsPlay"));
+                module_tell(selfA, selfB, (unsigned char *)"LetsPlay", strlen("LetsPlay"));
                 break;
             case 's':
                 module_log(selfA, "Doggo, you should sleep a bit!\n");
-                module_tell(selfA, selfB, "LetsSleep", strlen("LetsSleep"));
+                module_tell(selfA, selfB, (unsigned char *)"LetsSleep", strlen("LetsSleep"));
                 break;
             case 'f':
                 module_log(selfA, "Doggo, you want some of these?\n");
-                module_tell(selfA, selfB, "LetsEat", strlen("LetsEat"));
+                module_tell(selfA, selfB, (unsigned char *)"LetsEat", strlen("LetsEat"));
                 break;
             case 'w':
                 module_log(selfA, "Doggo, wake up!\n");
-                module_tell(selfA, selfB, "WakeUp", strlen("WakeUp"));
+                module_tell(selfA, selfB, (unsigned char *)"WakeUp", strlen("WakeUp"));
                 break;
             case 'q':
                 module_log(selfA, "I have to go now!\n");
-                module_publish(selfA, "leaving", "ByeBye", strlen("ByeBye"));
+                module_publish(selfA, "leaving", (unsigned char *)"ByeBye", strlen("ByeBye"));
                 modules_ctx_quit("test", 0);
                 break;
             default:
@@ -156,7 +156,7 @@ static void B_recv(const msg_t *msg, const void *userdata) {
             case USER:
                 if (!strcmp((char *)msg->pubsub_msg->message, "ComeHere")) {
                     module_log(selfB, "Running...\n");
-                    module_tell(selfB, msg->pubsub_msg->sender, "BauBau", strlen("BauBau"));
+                    module_tell(selfB, msg->pubsub_msg->sender, (unsigned char *)"BauBau", strlen("BauBau"));
                 } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsPlay")) {
                     module_log(selfB, "BauBau BauuBauuu!\n");
                 } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsEat")) {
