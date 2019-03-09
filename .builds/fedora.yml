@@ -1,8 +1,9 @@
-image: freebsd/latest
+image: fedora/latest
 packages:
-  - cmocka
+  - libcmocka-devel
   - valgrind
   - cmake
+  - gcc-c++
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:
@@ -14,9 +15,12 @@ tasks:
   - build: |
       cd libmodule/build
       make
-  #- test: |
-      #cd libmodule/build
-      #ctest -V
+  - test: |
+      cd libmodule/build
+      ctest -V
+  - build_pkg: |
+      cd libmodule/build
+      cpack3 -G RPM
 triggers:
   - action: email
     condition: failure

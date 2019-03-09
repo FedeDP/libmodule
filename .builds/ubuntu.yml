@@ -1,6 +1,6 @@
-image: freebsd/latest
+image: ubuntu/latest
 packages:
-  - cmocka
+  - libcmocka-dev
   - valgrind
   - cmake
 sources:
@@ -14,9 +14,12 @@ tasks:
   - build: |
       cd libmodule/build
       make
-  #- test: |
-      #cd libmodule/build
-      #ctest -V
+  - test: |
+      cd libmodule/build
+      ctest -V
+  - build_pkg: |
+      cd libmodule/build
+      cpack3 -G DEB
 triggers:
   - action: email
     condition: failure
