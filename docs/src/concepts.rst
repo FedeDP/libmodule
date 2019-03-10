@@ -45,4 +45,4 @@ Libmodule offers an internal loop, started with modules_ctx_loop(); note that ea
 Moreover, you can even easily integrate it into your own loop: modules_ctx_get_fd() will retrieve a pollable fd and POLLIN events will be raised whenever a new message is available. |br|
 Remember that before starting your loop, modules_ctx_dispatch() should be called, to dispatch initial "LoopStarted" messages to each module. |br|
 Then, whenever POLLIN data is available on libmodule's fd, you only need to call modules_ctx_dispatch() again. |br|
-Finally, remember to close libmodule's fd retrieved through modules_ctx_get_fd(). |br|
+Finally, remember to close() libmodule's fd retrieved through modules_ctx_get_fd(). |br|

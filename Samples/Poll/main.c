@@ -16,14 +16,13 @@ int main() {
     int ret = 0;
     int fd = 0;
     
-    /* Get default context fd */
-    if (modules_get_fd(&fd) != MOD_OK) {
-        /* No context! */
+    /* Initial dispatch */
+    if (modules_dispatch(&ret) != MOD_OK) {
         return 1;
     }
     
-    /* Initial dispatch */
-    if (modules_dispatch(&ret) != MOD_OK) {
+    /* Get default context fd */
+    if (modules_get_fd(&fd) != MOD_OK) {
         return 1;
     }
     
