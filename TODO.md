@@ -4,7 +4,7 @@
 - [x] Add an API to integrate module loop inside another loop
 - [x] modules_get_fd(const char *ctx)
 - [x] modules_dispatch(ctx)
-- [ ] Update Doc
+- [x] Update Doc
 - [ ] Add tests?
 
 ### Fixes

@@ -50,6 +50,20 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
   :param quit_code: exit code that should be returned by modules_loop.
   :type quit_code: :c:type:`const uint8_t`
   
+.. c:macro:: modules_get_fd(fd)
+
+  Retrieve internal libmodule's events loop fd. Useful to integrate libmodule's loop inside client's own loop.
+  
+  :param fd: pointer in which to store libmodule's fd
+  :type fd: :c:type:`int *`
+  
+.. c:macro:: modules_dispatch(ret)
+
+  Dispatch libmodule's messages. Useful when libmodule's loop is integrated inside an external loop.
+  
+  :param ret: ret >= 0 and MOD_OK returned -> number of dispatched messages. ret >= 0 and MOD_ERR returned -> loop has been quitted by a modules_quit() code, thus it returns quit_code. Ret < 0 and MOD_ERR returned: an error happened.
+  :type ret: :c:type:`int *`
+  
 Multi-context API
 -----------------
 
@@ -90,3 +104,20 @@ It exposes very similar functions to single-context API (again, single-context i
   :type ctx_name: :c:type:`const char *`
   :type quit_code: :c:type:`const uint8_t`
 
+.. c:function:: modules_ctx_get_fd(ctx_name, fd)
+
+  Retrieve internal libmodule's events loop fd. Useful to integrate libmodule's loop inside client's own loop.
+  
+  :param ctx_name: context name.
+  :param fd: pointer in which to store libmodule's fd
+  :type ctx_name: :c:type:`const char *`
+  :type fd: :c:type:`int *`
+  
+.. c:function:: modules_ctx_dispatch(ctx_name, ret)
+
+  Dispatch libmodule's messages. Useful when libmodule's loop is integrated inside an external loop.
+  
+  :param ctx_name: context name.
+  :param ret: ret >= 0 and MOD_OK returned -> number of dispatched messages. ret >= 0 and MOD_ERR returned -> loop has been quitted by a modules_quit() code, thus it returns quit_code. Ret < 0 and MOD_ERR returned: an error happened.
+  :type ctx_name: :c:type:`const char *`
+  :type ret: :c:type:`int *`

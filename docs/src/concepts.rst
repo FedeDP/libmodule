@@ -37,3 +37,11 @@ This macro firstly creates a "myCtx" context, then a "test" module using same MO
 Indeed, MODULE macro is only a particular case of MODULE_CTX macro, where myCtx is automatically setted to "default". |br|
 This makes sense, as you can expect: single context API is a multi context API with only 1 context. |br|
 Modules can only see and reach (through PubSub messaging) other modules from same context. |br|
+
+Loop
+----
+
+Libmodule offers an internal loop, started with modules_ctx_loop(). Each context has its own loop. |br|
+Moreover, you can even easily integrate it into your own loop: modules_ctx_get_fd() will retrieve a pollable fd and POLLIN events will be raised whenever a new message is available. |br|
+Remember that right after modules_get_fd(), modules_ctx_dispatch() should be called, to dispatch initial "LoopStarted" messages to each module. |br|
+Then, whenever POLLIN data is available on libmodule's fd, you only need to call modules_ctx_dispatch() again. |br|
