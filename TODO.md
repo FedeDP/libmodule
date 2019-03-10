@@ -1,15 +1,14 @@
 ## 4.1.0
 
 ### New features
-- [ ] Add an API to integrate module loop inside another loop
-- [ ] modules_get_fd(const char *ctx)
-- [ ] int num = modules_dispatch(ctx)
-- [ ] fd should not be closed by client app (offer an api to close it?)
+- [x] Add an API to integrate module loop inside another loop
+- [x] modules_get_fd(const char *ctx)
+- [x] modules_dispatch(ctx)
 - [ ] Update Doc
+- [ ] Add tests?
 
 ### Fixes
 - [x] In stack_clear and map_clear, avoid unsetting dtor
-- [ ] Fix bsd build!
 
 ## Ideas
 - [ ] Let contexts talk together? Eg: broadcast(msg, bool global) to send a message to all modules in every context; module_publish message in another context? etc etc
