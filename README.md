@@ -3,7 +3,7 @@
 [![builds.sr.ht status](https://builds.sr.ht/~fededp/libmodule.svg)](https://builds.sr.ht/~fededp/libmodule?)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3526dd92b6d84370b072bfadfc7da632)](https://www.codacy.com/app/FedeDP/libmodule?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FedeDP/libmodule&amp;utm_campaign=Badge_Grade)
 [![Documentation Status](https://readthedocs.org/projects/libmodule/badge/?version=latest)](http://libmodule.readthedocs.io/en/latest/?badge=latest)
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Libmodule is a C library targeting linux aiming to let developers easily create modular C projects in a way which is both simple and elegant.  
 You will write less code, focusing on what really matters.  
@@ -14,7 +14,6 @@ You will write less code, focusing on what really matters.
 
 Libmodule offers a small and simple implementation of an actor library.  
 Indeed, libmodule was heavily inspired by my own actor library experience with [akka](https://akka.io/) for its API.  
-
 
 ## What is a module, anyway?
 
@@ -82,4 +81,3 @@ Libmodule will install a pkg-config script too: use it to link libmodule in your
 Please note that in order to test examples, there is no need to install the library.
 
 For Archlinux users, Libmodule is available on [AUR](https://aur.archlinux.org/packages/libmodule/).
-
