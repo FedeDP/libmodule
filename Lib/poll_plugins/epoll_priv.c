@@ -30,8 +30,8 @@ int poll_init_pevents(void **pevents, int max_events) {
     return MOD_OK;
 }
 
-int poll_wait(int fd, int max_events, void *pevents) {
-    return epoll_wait(fd, (struct epoll_event *) pevents, max_events, -1);
+int poll_wait(int fd, int max_events, void *pevents, int timeout) {
+    return epoll_wait(fd, (struct epoll_event *) pevents, max_events, timeout);
 }
 
 module_poll_t *poll_recv(int idx, void *pevents) {

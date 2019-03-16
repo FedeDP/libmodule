@@ -120,6 +120,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -fvisibility=hidden")
 # Packaging support
 # THANKS to libkqueue CMakeLists.txt for packaging support :)
 #
+SET(CPACK_SET_DESTDIR "on")
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
@@ -129,38 +130,24 @@ set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 #
 #  Metadata common to all packaging systems
 #
+set(CPACK_PACKAGE_CONTACT "Federico Di Pierro <nierro92@gmail.com>")
+set(CPACK_PACKAGE_DESCRIPTION "Libmodule offers a small and simple implementation of an actor library, aiming at letting developers easily create modular C projects in a way which is both simple and elegant.")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Small and simple implementation of an actor library for C.")
-set(CPACK_COMPONENT_MAIN_DESCRIPTION "Libmodule offers a small and simple implementation of an actor library, aiming at letting developers easily create modular C projects in a way which is both simple and elegant.")
-set(CPACK_COMPONENT_DEVEL_DESCRIPTION "Development files for ${PROJECT_NAME}-${PROJECT_VERSION}")
 
 #
 #  RPM Specific configuration
 #
-set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0")
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_URL "https://github.com/FedeDP/libmodule")
-
-set(CPACK_RPM_MAIN_PACKAGE_GROUP "System Environment/Libraries")
-set(CPACK_RPM_MAIN_PACKAGE_DESCRIPTION ${CPACK_COMPONENT_MAIN_DESCRIPTION})
-
-set(CPACK_RPM_DEVEL_PACKAGE_GROUP "Development/Libraries")
-set(CPACK_RPM_DEVEL_PACKAGE_SUMMARY ${CPACK_COMPONENT_DEVEL_DESCRIPTION})
-set(CPACK_RPM_DEVEL_PACKAGE_REQUIRES "${CPACK_PACKAGE_NAME} = %{version}-%{release}")
-
-set(CPACK_RPM_COMPONENT_INSTALL OFF)            # Enable component based packaging (generate multiple packages)
-set(CPACK_RPM_FILE_NAME RPM-DEFAULT)            # Use rpmbuild's package naming scheme
+set(CPACK_RPM_PACKAGE_GROUP "System Environment/Libraries")
+set(CPACK_RPM_PACKAGE_DESCRIPTION ${CPACK_PACKAGE_DESCRIPTION})
+set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
 
 #
 #  DEB Specific configuration
 #
-set(CPACK_DEBIAN_MAIN_PACKAGE_NAME "${CPACK_PACKAGE_NAME}")
-set(CPACK_DEBIAN_MAIN_PACKAGE_SECTION "libs")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Federico Di Pierro <nierro92@gmail.com>")
-
-set(CPACK_DEBIAN_DEVEL_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-dev")
-set(CPACK_DEBIAN_DEVEL_PACKAGE_SECTION "libdevel")
-set(CPACK_DEBIAN_DEVEL_PACKAGE_DEPENDS "${CPACK_PACKAGE_NAME} (= ${PROJECT_VERSION})")
-
-set(CPACK_DEB_COMPONENT_INSTALL OFF)            # Enable component based packaging (generate multiple packages)
-set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)         # Use default Debian package naming scheme
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/FedeDP/libmodule")
+set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 
 include(CPack)

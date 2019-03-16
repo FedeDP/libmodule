@@ -5,7 +5,7 @@
 - [x] modules_get_fd(const char *ctx)
 - [x] modules_dispatch(ctx)
 - [x] Update Doc
-- [ ] Add tests?
+- [x] Avoid waiting undefinitely when calling modules_dispatch if no POLLIN data is ready
 
 ### Fixes
 - [x] In stack_clear and map_clear, avoid unsetting dtor

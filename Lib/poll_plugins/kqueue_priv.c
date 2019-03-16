@@ -33,8 +33,10 @@ int poll_init_pevents(void **pevents, int max_events) {
     return MOD_OK;
 }
 
-int poll_wait(int fd, int max_events, void *pevents) {
-    return kevent(fd, NULL, 0, (struct kevent *)pevents, max_events, NULL);
+int poll_wait(int fd, int max_events, void *pevents, int timeout) {
+    struct timespec t = {0};
+    t.tv_sec = timeout;
+    return kevent(fd, NULL, 0, (struct kevent *)pevents, max_events, timeout >= 0 ? &t : NULL);
 }
 
 module_poll_t *poll_recv(int idx, void *pevents) {

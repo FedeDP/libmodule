@@ -5,7 +5,7 @@ static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *c);
 static module_ret_code loop_start(m_context *c, const int max_events);
-static int recv_events(m_context *c);
+static int recv_events(m_context *c, int timeout);
 static int loop_stop(m_context *c);
 
 map_t *ctx;
@@ -39,8 +39,8 @@ static module_ret_code loop_start(m_context *c, const int max_events) {
     return MOD_ERR;
 }
 
-static int recv_events(m_context *c) {
-    int nfds = poll_wait(c->fd, c->max_events, c->pevents);
+static int recv_events(m_context *c, int timeout) {
+    int nfds = poll_wait(c->fd, c->max_events, c->pevents, timeout);
     for (int i = 0; i < nfds; i++) {
         module_poll_t *p = poll_recv(i, c->pevents);
         if (p && p->self && p->self->mod) {
@@ -140,7 +140,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
 
     if (loop_start(c, max_events) == MOD_OK) {
         while (!c->quit) {
-            recv_events(c);
+            recv_events(c, -1);
         }
         return loop_stop(c);
     }
@@ -184,7 +184,7 @@ module_ret_code modules_ctx_dispatch(const char *ctx_name, int *ret) {
         return MOD_ERR; 
     }
     
-    /* Recv new events */
-    *ret = recv_events(c);
+    /* Recv new events, no timeout */
+    *ret = recv_events(c, 0);
     return *ret >= 0 ? MOD_OK : MOD_ERR;
 }
