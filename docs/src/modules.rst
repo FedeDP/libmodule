@@ -59,7 +59,7 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
   
 .. c:macro:: modules_dispatch(ret)
 
-  Dispatch libmodule's messages. Useful when libmodule's loop is integrated inside an external loop.
+  Dispatch libmodule's messages. Useful when libmodule's loop is integrated inside an external loop. This is a non-blocking function (ie: if no data is available to be dispatched, it will return).
   
   :param ret: ret >= 0 and MOD_OK returned -> number of dispatched messages. ret >= 0 and MOD_ERR returned -> loop has been quitted by a modules_quit() code, thus it returns quit_code. Ret < 0 and MOD_ERR returned: an error happened.
   :type ret: :c:type:`int *`
@@ -115,7 +115,7 @@ It exposes very similar functions to single-context API (again, single-context i
   
 .. c:function:: modules_ctx_dispatch(ctx_name, ret)
 
-  Dispatch libmodule's messages. Useful when libmodule's loop is integrated inside an external loop.
+  Dispatch libmodule's messages. Useful when libmodule's loop is integrated inside an external loop. This is a non-blocking function (ie: if no data is available to be dispatched, it will return).
   
   :param ctx_name: context name.
   :param ret: ret >= 0 and MOD_OK returned -> number of dispatched messages. ret >= 0 and MOD_ERR returned -> loop has been quitted by a modules_quit() code, thus it returns quit_code. Ret < 0 and MOD_ERR returned: an error happened.
