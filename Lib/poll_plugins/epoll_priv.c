@@ -11,7 +11,7 @@ int poll_set_data(void **_ev) {
     return MOD_OK;
 }
 
-int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
+int poll_set_new_evt(module_poll_t *tmp, m_context *c, const enum op_type flag) {
     int f = flag == ADD ? EPOLL_CTL_ADD : EPOLL_CTL_DEL;
     struct epoll_event *ev = (struct epoll_event *)tmp->ev;
     ev->data.ptr = tmp;
@@ -24,17 +24,17 @@ int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
     return ret;
 }
 
-int poll_init_pevents(void **pevents, int max_events) {
+int poll_init_pevents(void **pevents, const int max_events) {
     *pevents = memhook._calloc(max_events, sizeof(struct epoll_event));
     MOD_ALLOC_ASSERT(*pevents);
     return MOD_OK;
 }
 
-int poll_wait(int fd, int max_events, void *pevents, int timeout) {
+int poll_wait(const int fd, const int max_events, void *pevents, const int timeout) {
     return epoll_wait(fd, (struct epoll_event *) pevents, max_events, timeout);
 }
 
-module_poll_t *poll_recv(int idx, void *pevents) {
+module_poll_t *poll_recv(const int idx, void *pevents) {
     struct epoll_event *pev = (struct epoll_event *) pevents;
     return (module_poll_t *)pev[idx].data.ptr;
 }
@@ -46,7 +46,7 @@ int poll_destroy_pevents(void **pevents, int *max_events) {
     return MOD_OK;
 }
 
-int poll_close(int fd, void **pevents, int *max_events) {
+int poll_close(const int fd, void **pevents, int *max_events) {
     poll_destroy_pevents(pevents, max_events);
     return close(fd);
 }

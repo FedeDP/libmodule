@@ -15,7 +15,7 @@ int poll_set_data(void **_ev) {
     return MOD_OK;
 }
 
-int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
+int poll_set_new_evt(module_poll_t *tmp, m_context *c, const enum op_type flag) {
     int f = flag == ADD ? EV_ADD : EV_DELETE;
     struct kevent *_ev = (struct kevent *)tmp->ev;
     EV_SET(_ev, tmp->fd, EVFILT_READ, f, 0, 0, (void *)tmp);
@@ -27,19 +27,19 @@ int poll_set_new_evt(module_poll_t *tmp, m_context *c, enum op_type flag) {
     return ret;
 }
 
-int poll_init_pevents(void **pevents, int max_events) {
+int poll_init_pevents(void **pevents, const int max_events) {
     *pevents = memhook._calloc(max_events, sizeof(struct kevent));
     MOD_ALLOC_ASSERT(*pevents);
     return MOD_OK;
 }
 
-int poll_wait(int fd, int max_events, void *pevents, int timeout) {
+int poll_wait(const int fd, const int max_events, void *pevents, const int timeout) {
     struct timespec t = {0};
     t.tv_sec = timeout;
     return kevent(fd, NULL, 0, (struct kevent *)pevents, max_events, timeout >= 0 ? &t : NULL);
 }
 
-module_poll_t *poll_recv(int idx, void *pevents) {
+module_poll_t *poll_recv(const int idx, void *pevents) {
     struct kevent *pev = (struct kevent *)pevents;
     if (pev[idx].flags & EV_ERROR) {
         return NULL;
@@ -54,7 +54,7 @@ int poll_destroy_pevents(void **pevents, int *max_events) {
     return MOD_OK;
 }
 
-int poll_close(int fd, void **pevents, int *max_events) {
+int poll_close(const int fd, void **pevents, int *max_events) {
     poll_destroy_pevents(pevents, max_events);
     return close(fd);
 }
