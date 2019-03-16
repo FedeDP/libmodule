@@ -5,14 +5,9 @@
 [![Documentation Status](https://readthedocs.org/projects/libmodule/badge/?version=latest)](http://libmodule.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Libmodule is a C library targeting linux aiming to let developers easily create modular C projects in a way which is both simple and elegant.  
-You will write less code, focusing on what really matters.  
-
-**Please note that libmodule actually builds and works on macOS and BSD too, and probably other.** See [Portability](https://github.com/FedeDP/libmodule#is-it-portable).
-
 ## What is this?
 
-Libmodule offers a small and simple implementation of an actor library.  
+Libmodule offers a small and simple C implementation of an actor library that aims to let developers easily create modular C projects in a way which is both simple and elegant.  
 Indeed, libmodule was heavily inspired by my own actor library experience with [akka](https://akka.io/) for its API.  
 
 ## What is a module, anyway?
@@ -81,3 +76,8 @@ Libmodule will install a pkg-config script too: use it to link libmodule in your
 Please note that in order to test examples, there is no need to install the library.
 
 For Archlinux users, Libmodule is available on [AUR](https://aur.archlinux.org/packages/libmodule/).
+
+## License
+Libmodule is made available with a MIT license to encourage people to actually try it out and maybe use it inside their project, no matter if open or closed source.  
+
+*Are you using libmodule in your project? Please let me know and I will gladly list it here.*
