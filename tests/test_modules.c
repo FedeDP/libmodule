@@ -77,3 +77,27 @@ void test_modules_ctx_loop(void **state) {
     module_ret_code ret = modules_ctx_loop(CTX);
     assert_true(ret == 3);
 }
+
+void test_modules_ctx_dispatch_NULL_param(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = modules_ctx_dispatch(CTX, NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_modules_ctx_dispatch_NULL_ctx(void **state) {
+    (void) state; /* unused */
+    
+    int r;
+    module_ret_code ret = modules_ctx_dispatch(NULL, &r);
+    assert_false(ret == MOD_OK);
+}
+
+void test_modules_ctx_dispatch(void **state) {
+    (void) state; /* unused */
+    
+    int r;
+    module_ret_code ret = modules_ctx_dispatch(CTX, &r);
+    assert_true(ret == MOD_OK);
+    assert_true(r == 0); // number of messages dispatched
+}

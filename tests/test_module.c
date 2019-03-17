@@ -210,6 +210,24 @@ void test_module_become(void **state) {
     assert_true(ret == MOD_OK);
 }
 
+void test_module_unbecome_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_unbecome(NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_unbecome(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_unbecome(self);
+    assert_true(ret == MOD_OK);
+    
+    /* We don't have any more recv in stack */
+    ret = module_unbecome(self);
+    assert_false(ret == MOD_OK);
+}
+
 void test_module_add_wrong_fd(void **state) {
     (void) state; /* unused */
     

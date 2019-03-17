@@ -9,6 +9,10 @@
 
 ### Fixes
 - [x] In stack_clear and map_clear, avoid unsetting dtor
+- [x] Fixed module_unbecome check (stack_pop return code) that would make it always return MOD_ERR
+
+### Tests
+- [x] Add module_unbecome and module_dispatch tests
 
 ## Ideas
 - [ ] Let contexts talk together? Eg: broadcast(msg, bool global) to send a message to all modules in every context; module_publish message in another context? etc etc

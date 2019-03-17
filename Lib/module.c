@@ -337,7 +337,7 @@ module_ret_code module_become(const self_t *self, const recv_cb new_recv) {
 module_ret_code module_unbecome(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
-    if (stack_pop(mod->recvs) == STACK_OK) {
+    if (stack_pop(mod->recvs) != NULL) {
         return MOD_OK;
     }
     return MOD_ERR;

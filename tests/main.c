@@ -58,6 +58,10 @@ int main(void) {
         cmocka_unit_test(test_module_become_NULL_func),
         cmocka_unit_test(test_module_become),
         
+        /* Test module unbecome */
+        cmocka_unit_test(test_module_unbecome_NULL_self),
+        cmocka_unit_test(test_module_unbecome),
+        
         /* Test fd add/rm */
         cmocka_unit_test(test_module_add_wrong_fd),
         cmocka_unit_test(test_module_add_fd_NULL_self),
@@ -108,6 +112,11 @@ int main(void) {
         
         /* We have now 3 messages waiting for us (tell, publish, broadcast). Check. */
         cmocka_unit_test(test_modules_ctx_loop),
+        
+        /* We have 0 messages now */
+        cmocka_unit_test(test_modules_ctx_dispatch_NULL_param),
+        cmocka_unit_test(test_modules_ctx_dispatch_NULL_ctx),
+        cmocka_unit_test(test_modules_ctx_dispatch),
         
         /* Test module topic deregister */
         cmocka_unit_test(test_deregister_topic_NULL_topic),

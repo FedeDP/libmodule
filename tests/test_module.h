@@ -24,6 +24,8 @@ void test_module_set_userdata(void **state);
 void test_module_become_NULL_self(void **state);
 void test_module_become_NULL_func(void **state);
 void test_module_become(void **state);
+void test_module_unbecome_NULL_self(void **state);
+void test_module_unbecome(void **state);
 void test_module_add_wrong_fd(void **state);
 void test_module_add_fd_NULL_self(void **state);
 void test_module_add_fd(void **state);
