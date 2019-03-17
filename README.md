@@ -53,6 +53,8 @@ To build, you only need to issue:
     $ cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib ../
     $ make
 
+*Note that libmodule can also be built as static library, by passing -DSTATIC_MODULE=true parameter to cmake.*
+
 Installation - Generic OS
 -------------------------
 
