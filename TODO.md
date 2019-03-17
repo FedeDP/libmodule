@@ -1,19 +1,3 @@
-## 4.1.0
-
-### New features
-- [x] Add an API to integrate module loop inside another loop
-- [x] modules_get_fd(const char *ctx)
-- [x] modules_dispatch(ctx)
-- [x] Update Doc
-- [x] Avoid waiting undefinitely when calling modules_dispatch if no POLLIN data is ready
-
-### Fixes
-- [x] In stack_clear and map_clear, avoid unsetting dtor
-- [x] Fixed module_unbecome check (stack_pop return code) that would make it always return MOD_ERR
-
-### Tests
-- [x] Add module_unbecome and module_dispatch tests
-
 ## Ideas
 - [ ] Let contexts talk together? Eg: broadcast(msg, bool global) to send a message to all modules in every context; module_publish message in another context? etc etc
 
