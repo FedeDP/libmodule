@@ -1,6 +1,3 @@
-## 4.1.1
-- [ ] Configure PKGBUILD and docs/conf.py version
-
 ## 4.2.0
 
 ### Submodules
@@ -12,3 +9,4 @@
 
 ## Ideas
 - [ ] Let contexts talk together? Eg: broadcast(msg, bool global) to send a message to all modules in every context; module_publish message in another context? etc etc
+- [ ] Akka-persistence like message store? (ie: store all messages and replay them)
