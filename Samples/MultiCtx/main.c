@@ -2,6 +2,10 @@
 #include <module/module.h>
 #include <pthread.h>
 #include <stdlib.h>
+#ifdef __linux__
+    #include <signal.h>
+    #include <bits/sigaction.h>
+#endif
 
 static void *loop(void *param);
 
@@ -17,7 +21,20 @@ static void logger(const self_t *self, const char *fmt, va_list args, const void
     }
 }
 
+void setup_signals(void) {
+#ifdef __linux__
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+#endif
+}
+
 int main() {
+    /* Properly block signals (that are received by mod "B" on ctx2) */
+    setup_signals();
+    
     /* Our 2 contexts names */
     char *ctx1 = "FirstCtx";
     char *ctx2 = "SecondCtx";

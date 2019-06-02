@@ -1,5 +1,15 @@
 ## 4.2.0
 
+### Generic 
+- [x] Avoid calling evaluate_module when registering a new module. Call evaluate_module on each module when loop_start() is called.
+- [x] Fix default values for pubsub_fd[] for each module
+- [x] Update tests (module_start should now be called upon registering)
+- [x] Fix MultiCtx sample (signalfd multithread crazyness)
+- [x] Update doc (changed behaviours!)
+- [x] Drop mcontext -> num_fds
+
+## 4.3.0
+
 ### Submodules
 - [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);
 - [ ] SUBMODULE SHOULD BE STARTED later (after all MODULES) -> ctor3 (this way it'll support only level 1 submodules though (ie: a submodule cannot have submodules))

@@ -22,8 +22,8 @@ For every module, check() function will be called; if and only if that function 
 An unregistered module is just dead code; none of its functions will ever be called. |br|
 Once a module is registered, it will be initially set to an IDLE state. Idle means that the module is not started yet, thus it cannot receive any PubSub msg nor any event from fds. |br|
 
-Right after module's registration, its evaluate() function will be called, trying to start the module right after it was registered. |br|
-Evaluate will be then called at each state machine change, for each idle module. |br|
+As soon as its context starts looping, a module's evaluate() function will be called, trying to start it right away. |br|
+Evaluate() will be then called at each state machine change, for each idle module. |br|
 
 As soon as module's evaluate() returns true, the module is started. It means its init() function is finally called and its state is set to RUNNING. |br|
 A single module can poll on multiple fds: just call module_register_fd() multiple times. |br|

@@ -104,7 +104,6 @@ static module_ret_code _register_fd(module *mod, const int fd, const bool autocl
         tmp->prev = mod->fds;
         tmp->self = &mod->self;
         mod->fds = tmp;
-        mod->self.ctx->num_fds++;
         /* If a fd is registered at runtime, start polling on it */
         int ret = 0;
         if (_module_is(mod, RUNNING)) {
@@ -116,7 +115,7 @@ static module_ret_code _register_fd(module *mod, const int fd, const bool autocl
     return MOD_ERR;
 }
 
-/* Linearly searching for fd */
+/* Linear search for fd */
 static module_ret_code _deregister_fd(module *mod, const int fd) {
     module_poll_t **tmp = &mod->fds;
     
@@ -134,7 +133,6 @@ static module_ret_code _deregister_fd(module *mod, const int fd) {
             }
             memhook._free(t->ev);
             memhook._free(t);
-            mod->self.ctx->num_fds--;
             return !ret ? MOD_OK : MOD_ERR;
         }
         tmp = &(*tmp)->prev;
@@ -205,12 +203,12 @@ bool _module_is(const module *mod, const enum module_states st) {
     return mod->state & st;
 }
 
-
 int evaluate_module(void *data, void *m) {
     module *mod = (module *)m;
     if (_module_is(mod, IDLE) && mod->hook.evaluate()) {
-        mod->hook.init();
-        start(mod, "Failed to start module.");
+        if (start(mod, "Failed to start module.") == MOD_OK) {
+            mod->hook.init();
+        }
     }
     return MAP_OK;
 }
@@ -272,7 +270,8 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
         memcpy((self_t *)&mod->self, &((self_t){ mod, context, true }), sizeof(self_t));
         
         if (map_put(context->modules, mod->name, mod, false, false) == MAP_OK) {
-            evaluate_module(NULL, mod);
+            mod->pubsub_fd[0] = -1;
+            mod->pubsub_fd[1] = -1;
             return MOD_OK;
         }
         ret = MOD_ERR;
@@ -296,7 +295,7 @@ module_ret_code module_deregister(const self_t **self) {
     /* Free all unread pubsub msg for this module */
     flush_pubsub_msg(tmp, mod);
     
-    stop(mod, "Failed to stop module.", 1);
+    stop(mod, "Failed to stop module.", true);
     
     /* Remove the module from the context */
     map_remove(tmp->ctx->modules, mod->name);

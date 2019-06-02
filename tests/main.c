@@ -36,6 +36,8 @@ int main(void) {
         cmocka_unit_test(test_modules_ctx_quit_no_loop),
         
         /* Test module state setters */
+        cmocka_unit_test(test_module_start_NULL_self),
+        cmocka_unit_test(test_module_start),
         cmocka_unit_test(test_module_pause_NULL_self),
         cmocka_unit_test(test_module_pause),
         cmocka_unit_test(test_module_resume_NULL_self),

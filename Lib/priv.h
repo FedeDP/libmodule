@@ -103,7 +103,6 @@ struct _context {
     uint8_t quit_code;
     bool looping;
     int fd;
-    int num_fds;
     log_cb logger;
     map_t *modules;
     void *pevents;

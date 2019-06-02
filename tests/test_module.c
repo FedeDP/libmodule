@@ -57,7 +57,7 @@ void test_module_register(void **state) {
     module_ret_code ret = module_register("testName", CTX, &self, &hook);
     assert_true(ret == MOD_OK);
     assert_non_null(self);
-    assert_true(module_is(self, RUNNING));
+    assert_true(module_is(self, IDLE));
 }
 
 void test_module_register_already_registered(void **state) {
@@ -67,7 +67,7 @@ void test_module_register_already_registered(void **state) {
     module_ret_code ret = module_register("testName", CTX, &self, &hook);
     assert_false(ret == MOD_OK);
     assert_non_null(self);
-    assert_true(module_is(self, RUNNING));
+    assert_true(module_is(self, IDLE));
 }
 
 void test_module_register_same_name(void **state) {

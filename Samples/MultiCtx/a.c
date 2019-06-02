@@ -36,7 +36,7 @@ static void init(void) {
     timerValue.it_value.tv_sec = 1;
     timerValue.it_interval.tv_sec = 1;
     timerfd_settime(fd, 0, &timerValue, NULL);
-    m_register_fd(fd, 1, NULL);
+    m_register_fd(fd, true, NULL);
 #endif
 }
 

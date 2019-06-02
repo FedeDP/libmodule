@@ -5,8 +5,9 @@ static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *c);
 static module_ret_code loop_start(m_context *c, const int max_events);
-static int recv_events(m_context *c, int timeout);
 static int loop_stop(m_context *c);
+static inline int loop_quit(m_context *c, const uint8_t quit_code);
+static int recv_events(m_context *c, int timeout);
 
 map_t *ctx;
 memalloc_hook memhook;
@@ -31,12 +32,34 @@ static module_ret_code loop_start(m_context *c, const int max_events) {
         c->looping = true;
         c->quit_code = 0;
         c->max_events = max_events;
-        
-        /* Tell every module that loop is started */
+
+        /* Eventually start any IDLE module */
+        evaluate_new_state(c);
+
+        /* Tell every RUNNING module that loop is started */
         tell_system_pubsub_msg(c, LOOP_STARTED, NULL);
         return MOD_OK;
     }
     return MOD_ERR;
+}
+
+static int loop_stop(m_context *c) {
+    /* Tell every module that loop is stopped */
+    tell_system_pubsub_msg(c, LOOP_STOPPED, NULL);
+
+    /* Flush pubsub msg to avoid memleaks */
+    map_iterate(c->modules, flush_pubsub_msg, NULL);
+
+    poll_destroy_pevents(&c->pevents, &c->max_events);
+    c->looping = false;
+    c->quit = false;
+    return c->quit_code;
+}
+
+static inline int loop_quit(m_context *c, const uint8_t quit_code) {
+    c->quit = true;
+    c->quit_code = quit_code;
+    return MOD_OK;
 }
 
 static int recv_events(m_context *c, int timeout) {
@@ -84,26 +107,12 @@ static int recv_events(m_context *c, int timeout) {
     } else if (nfds < 0) {
         if (errno != EINTR && errno != EAGAIN) {
             fprintf(stderr, "Module loop error: %s.\n", strerror(errno));
-            c->quit = true;
-            c->quit_code = errno;
+            loop_quit(c, errno);
         } else {
             nfds = 0; // return < 0 only for real errors
         }
     }
     return nfds;
-}
-
-static int loop_stop(m_context *c) {
-    /* Tell every module that loop is stopped */
-    tell_system_pubsub_msg(c, LOOP_STOPPED, NULL);
-    
-    /* Flush pubsub msg to avoid memleaks */
-    map_iterate(c->modules, flush_pubsub_msg, NULL);
-    
-    poll_destroy_pevents(&c->pevents, &c->max_events);
-    c->looping = false;
-    c->quit = false;
-    return c->quit_code;
 }
 
 /** Public API **/
@@ -135,7 +144,6 @@ module_ret_code modules_ctx_set_logger(const char *ctx_name, const log_cb logger
 module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_events) {
     MOD_PARAM_ASSERT(max_events > 0);
     FIND_CTX(ctx_name);
-    MOD_ASSERT(c->num_fds > 0, "No fds to loop on.", MOD_ERR);
     MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
 
     if (loop_start(c, max_events) == MOD_OK) {
@@ -151,9 +159,7 @@ module_ret_code modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) 
     FIND_CTX(ctx_name);
     MOD_ASSERT(c->looping, "Context not looping.", MOD_ERR);
        
-    c->quit = true;
-    c->quit_code = quit_code;
-    return MOD_OK;
+    return loop_quit(c, quit_code);
 }
 
 module_ret_code modules_ctx_get_fd(const char *ctx_name, int *fd) {

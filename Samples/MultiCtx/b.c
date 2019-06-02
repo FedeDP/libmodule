@@ -3,6 +3,7 @@
 #ifdef __linux__
     #include <sys/signalfd.h>
     #include <signal.h>
+    #include <bits/sigaction.h>
 #endif
 #include <unistd.h>
 
@@ -28,14 +29,12 @@ static void module_pre_start(void) {
 static void init(void) {
 #ifdef __linux__
     sigset_t mask;
-    
     sigemptyset(&mask);
     sigaddset(&mask, SIGINT);
     sigaddset(&mask, SIGTERM);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
     
-    int fd = signalfd(-1, &mask, 0);
-    m_register_fd(fd, 1, NULL);
+    int fd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
+    m_register_fd(fd, true, NULL);
 #endif
 }
 
@@ -63,7 +62,7 @@ static bool evaluate(void) {
 
 /*
  * Destroyer function, called at module unload (at end of program).
- * Note that module's FD is automatically closed for you.
+ * Note that module's FD is automatically closed for you if autoclose is set when registering it.
  */
 static void destroy(void) {
     

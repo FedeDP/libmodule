@@ -82,7 +82,7 @@ module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const c
 int flush_pubsub_msg(void *data, void *m) {
     module *mod = (module *)m;
     pubsub_msg_t *mm = NULL;
-    
+
     while (read(mod->pubsub_fd[0], &mm, sizeof(pubsub_msg_t *)) == sizeof(pubsub_msg_t *)) {
         /* 
          * Actually tell msg ONLY if we are not deregistering module, 
