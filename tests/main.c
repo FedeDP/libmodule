@@ -51,6 +51,10 @@ int main(void) {
         cmocka_unit_test(test_module_log_NULL_self),
         cmocka_unit_test(test_module_log),
         
+        /* Test module dumper */
+        cmocka_unit_test(test_module_dump_NULL_self),
+        cmocka_unit_test(test_module_dump),
+        
         /* Test module set userdata */
         cmocka_unit_test(test_module_set_userdata_NULL_self),
         cmocka_unit_test(test_module_set_userdata),

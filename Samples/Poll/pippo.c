@@ -104,11 +104,11 @@ static void receive(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'c':
                 m_log("Doggo, come here!\n");
-                m_tell_str(doggo, "ComeHere");
+                m_tell_str(doggo, "ComeHere", false);
                 break;
             case 'q':
                 m_log("I have to go now!\n");
-                m_publish_str("leaving", "ByeBye");
+                m_publish_str("leaving", "ByeBye", false);
                 modules_quit(0);
                 break;
             default:
@@ -146,23 +146,23 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'p':
                 m_log("Doggo, let's play a bit!\n");
-                m_tell_str(doggo, "LetsPlay");
+                m_tell_str(doggo, "LetsPlay", false);
                 break;
             case 's':
                 m_log("Doggo, you should sleep a bit!\n");
-                m_tell_str(doggo, "LetsSleep");
+                m_tell_str(doggo, "LetsSleep", false);
                 break;
             case 'f':
                 m_log("Doggo, you want some of these?\n");
-                m_tell_str(doggo, "LetsEat");
+                m_tell_str(doggo, "LetsEat", false);
                 break;
             case 'w':
                 m_log("Doggo, wake up!\n");
-                m_tell_str(doggo, "WakeUp");
+                m_tell_str(doggo, "WakeUp", false);
                 break;
             case 'q':
                 m_log("I have to go now!\n");
-                m_publish_str("leaving", "ByeBye");
+                m_publish_str("leaving", "ByeBye", false);
                 modules_quit(0);
                 break;
             default:

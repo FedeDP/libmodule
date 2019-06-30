@@ -14,6 +14,8 @@ add_executable(SharedSrc ${SHAREDSRC_SRC})
 add_executable(Cpp ${CPP_SRC})
 add_executable(Poll ${POLL_SRC})
 
+add_library("testmod" SHARED testModule.c)
+
 target_link_libraries(Easy ${PROJECT_NAME})
 target_link_libraries(MultiCtx ${PROJECT_NAME} pthread)
 target_link_libraries(SharedSrc ${PROJECT_NAME})

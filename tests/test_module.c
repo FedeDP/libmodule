@@ -12,7 +12,7 @@ static bool evaluate(void);
 static void recv(const msg_t *msg, const void *userdata);
 static void destroy(void);
 
-const self_t *self = NULL;
+self_t *self = NULL;
 const self_t *testSelf = NULL;
 
 void test_module_register_NULL_name(void **state) {
@@ -73,7 +73,7 @@ void test_module_register_already_registered(void **state) {
 void test_module_register_same_name(void **state) {
     (void) state; /* unused */
     
-    const self_t *self2 = NULL;
+    self_t *self2 = NULL;
     
     userhook hook = (userhook) { init, evaluate, recv, destroy };
     module_ret_code ret = module_register("testName", CTX, &self2, &hook);
@@ -111,6 +111,10 @@ void test_module_pause(void **state) {
     module_ret_code ret = module_pause(self);
     assert_true(ret == MOD_OK);
     assert_true(module_is(self, PAUSED));
+    
+    /* Test module_tell for paused modules */
+    ret = module_tell(self, self, (unsigned char *)"Paused!", strlen("Paused!"), false);
+    assert_true(ret == MOD_OK);
 }
 
 void test_module_resume_NULL_self(void **state) {
@@ -172,6 +176,20 @@ void test_module_log(void **state) {
     (void) state; /* unused */
     
     module_ret_code ret = module_log(self, "Hi\n");
+    assert_true(ret == MOD_OK);
+}
+
+void test_module_dump_NULL_self(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_dump(NULL);
+    assert_false(ret == MOD_OK);
+}
+
+void test_module_dump(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = module_dump(self);
     assert_true(ret == MOD_OK);
 }
 
@@ -343,105 +361,106 @@ void test_module_ref(void **state) {
 void test_module_tell_NULL_recipient(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(self, NULL, (unsigned char *)"hi!", strlen("hi!"));
+    module_ret_code ret = module_tell(self, NULL, (unsigned char *)"hi!", strlen("hi!"), false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_tell_NULL_self(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(NULL, testSelf, (unsigned char *)"hi!", strlen("hi!"));
+    module_ret_code ret = module_tell(NULL, testSelf, (unsigned char *)"hi!", strlen("hi!"), false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_tell_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(self, testSelf, NULL, 10);
+    module_ret_code ret = module_tell(self, testSelf, NULL, 10, false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_tell_wrong_size(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(self, testSelf, (unsigned char *)"hi!", -1);
+    module_ret_code ret = module_tell(self, testSelf, (unsigned char *)"hi!", -1, false);
     assert_false(ret == MOD_OK);
 }
 
+/* Test automatic free of message too! */
 void test_module_tell(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_tell(self, testSelf, (unsigned char *)"hi1!", strlen("hi!"));
+    module_ret_code ret = module_tell(self, testSelf, (unsigned char *)strdup("hi1!"), strlen("hi!"), true);
     assert_true(ret == MOD_OK);
 }
 
 void test_module_publish_NULL_self(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_publish(NULL, "topic", (unsigned char *)"hi!", strlen("hi!"));
+    module_ret_code ret = module_publish(NULL, "topic", (unsigned char *)"hi!", strlen("hi!"), false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_publish_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_publish(self, "topic", NULL, 10);
+    module_ret_code ret = module_publish(self, "topic", NULL, 10, false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_publish_NULL_topic(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_publish(self, NULL, (unsigned char *)"hi!", strlen("hi!"));
+    module_ret_code ret = module_publish(self, NULL, (unsigned char *)"hi!", strlen("hi!"), false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_publish_nonexistent_topic(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_publish(self, "topic", (unsigned char *)"hi!", strlen("hi!"));
+    module_ret_code ret = module_publish(self, "topic", (unsigned char *)"hi!", strlen("hi!"), false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_publish_wrong_size(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_publish(self, "topic", (unsigned char *)"hi!", -1);
+    module_ret_code ret = module_publish(self, "topic", (unsigned char *)"hi!", -1, false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_publish(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_publish(self, "topic", (unsigned char *)"hi2!", strlen("hi!"));
+    module_ret_code ret = module_publish(self, "topic", (unsigned char *)"hi2!", strlen("hi!"), false);
     assert_true(ret == MOD_OK);
 }
 
 void test_module_broadcast_NULL_self(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_broadcast(NULL, (unsigned char *)"hi!", strlen("hi!"));
+    module_ret_code ret = module_broadcast(NULL, (unsigned char *)"hi!", strlen("hi!"), false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_broadcast_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_broadcast(self, NULL, strlen("hi!"));
+    module_ret_code ret = module_broadcast(self, NULL, strlen("hi!"), false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_broadcast_wrong_size(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_broadcast(self, (unsigned char *)"hi!", -1);
+    module_ret_code ret = module_broadcast(self, (unsigned char *)"hi!", -1, false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_broadcast(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_broadcast(self, (unsigned char *)"hi3!", strlen("hi!"));
+    module_ret_code ret = module_broadcast(self, (unsigned char *)"hi3!", strlen("hi!"), false);
     assert_true(ret == MOD_OK);
 }
 

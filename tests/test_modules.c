@@ -4,14 +4,12 @@
 #include <stdlib.h>
 
 static void logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
-    char *name = NULL, *context = NULL;
+    const char *name = NULL, *context = NULL;
     if (module_get_name(self, &name) == MOD_OK && 
         module_get_context(self, &context) == MOD_OK) {
         
         printf("%s@%s:\t*", name, context);
         vprintf(fmt, args);
-        free(name);
-        free(context);
     }
 }
 
@@ -98,6 +96,12 @@ void test_modules_ctx_dispatch(void **state) {
     
     int r;
     module_ret_code ret = modules_ctx_dispatch(CTX, &r);
+    assert_true(ret == MOD_OK && r == 0);  // number of messages dispatched
+    
+    ret = modules_ctx_quit(CTX, 0);
     assert_true(ret == MOD_OK);
-    assert_true(r == 0); // number of messages dispatched
+    
+    
+    ret = modules_ctx_dispatch(CTX, &r);
+    assert_true(ret == MOD_ERR);
 }

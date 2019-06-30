@@ -14,7 +14,7 @@ typedef enum {
 } map_ret_code;
 
 /* Callback for map_iterate */
-typedef map_ret_code (*map_cb)(void *, void *);
+typedef map_ret_code (*map_cb)(void *, const char *, void *);
 
 /* Fn for map_set_dtor */
 typedef map_ret_code (*map_dtor)(void *);

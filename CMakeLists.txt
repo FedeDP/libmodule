@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.3.2)
 
-project(libmodule VERSION 4.2.0 LANGUAGES C CXX)
+project(libmodule VERSION 5.0.0 LANGUAGES C CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE Release)
@@ -99,7 +99,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE Lib/ Lib/public/module/)
 #
 # KQUEUE_LIBRARIES will be empty where native epoll/kqueue are supported
 #
-target_link_libraries(${PROJECT_NAME} ${KQUEUE_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${KQUEUE_LIBRARIES} dl)
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

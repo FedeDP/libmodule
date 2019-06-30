@@ -1,5 +1,6 @@
 #include "module.h"
 #include "poll_priv.h"
+#include <dlfcn.h> // dlopen
 
 /** Generic module interface **/
 
@@ -14,6 +15,7 @@ static module_ret_code _deregister_fd(module *mod, const int fd);
 static int manage_fds(module *mod, m_context *c, const int flag, const bool stop);
 static module_ret_code start(module *mod, const char *err_str);
 static module_ret_code stop(module *mod, const char *err_str, const bool stop);
+static int subscribtions_dump(void *data, const char *key, void *value);
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
@@ -28,8 +30,12 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     
     (*context)->modules = map_new();
     (*context)->topics = map_new();
-    (*context)->name = mem_strdup(ctx_name);
-    if ((*context)->topics && (*context)->modules && map_put(ctx, (*context)->name, *context, false, false) == MAP_OK) {
+    (*context)->loaded = map_new();
+    
+    (*context)->name = ctx_name;
+    if ((*context)->topics && (*context)->modules && (*context)->loaded &&
+        map_put(ctx, (*context)->name, *context, false, false) == MAP_OK) {
+        
         return MOD_OK;
     }
     
@@ -42,9 +48,9 @@ static void destroy_ctx(m_context *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", context->name);
     map_free(context->modules);
     map_free(context->topics);
+    map_free(context->loaded);
     poll_close(context->fd, &context->pevents, &context->max_events);
     map_remove(ctx, context->name);
-    memhook._free((char *)context->name);
     memhook._free(context);
 }
 
@@ -173,13 +179,25 @@ static module_ret_code start(module *mod, const char *err_str) {
     
     int ret = manage_fds(mod, c, ADD, false);
     MOD_ASSERT(!ret, err_str, MOD_ERR);
-    
+        
     mod->state = RUNNING;
+    tell_system_pubsub_msg(c, MODULE_STARTED, &mod->self, NULL);
     return MOD_OK;
 }
 
 static module_ret_code stop(module *mod, const char *err_str, const bool stop) {
     GET_CTX_PRIV((&mod->self));
+    
+    if (stop) {
+        /* 
+         * Free all unread pubsub msg for this module.
+         * We need to do this every time module gets stopped,
+         * as if it is stopped and restarted multiple times,
+         * we will close and reopen its pubsub_fds,
+         * thus we are not able to retrieve its old messages anymore.
+         */
+        flush_pubsub_msg(mod, NULL, mod);        
+    }
     
     int ret = manage_fds(mod, c, RM, stop);
     MOD_ASSERT(!ret, err_str, MOD_ERR);
@@ -194,7 +212,16 @@ static module_ret_code stop(module *mod, const char *err_str, const bool stop) {
         mod->pubsub_fd[0] = -1;
         mod->pubsub_fd[1] = -1;
     }
+    
+    tell_system_pubsub_msg(c, MODULE_STOPPED, &mod->self, NULL);
     return MOD_OK;
+}
+
+static int subscribtions_dump(void *data, const char *key, void *value) {
+    const self_t *self = (self_t *) data;
+    
+    module_log(self, "-> %s: %p\n", key, value);
+    return MAP_OK;
 }
 
 /** Private API **/
@@ -203,8 +230,8 @@ bool _module_is(const module *mod, const enum module_states st) {
     return mod->state & st;
 }
 
-int evaluate_module(void *data, void *m) {
-    module *mod = (module *)m;
+map_ret_code evaluate_module(void *data, const char *key, void *value) {
+    module *mod = (module *)value;
     if (_module_is(mod, IDLE) && mod->hook.evaluate()) {
         if (start(mod, "Failed to start module.") == MOD_OK) {
             mod->hook.init();
@@ -215,7 +242,7 @@ int evaluate_module(void *data, void *m) {
 
 /** Public API **/
 
-module_ret_code module_register(const char *name, const char *ctx_name, const self_t **self, const userhook *hook) {
+module_ret_code module_register(const char *name, const char *ctx_name, self_t **self, const userhook *hook) {
     MOD_PARAM_ASSERT(name);
     MOD_PARAM_ASSERT(ctx_name);
     MOD_PARAM_ASSERT(self);
@@ -236,10 +263,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     module_ret_code ret = MOD_NO_MEM;
     /* Let us gladly jump out with break on error */
     while (true) {
-        mod->name = mem_strdup(name);
-        if (!mod->name) {
-            break;
-        }
+        mod->name = name;
         
         memcpy(&mod->hook, hook, sizeof(userhook));
         mod->state = IDLE;
@@ -261,13 +285,11 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
             break;
         }
         
-        self_t *s = (self_t *)*self;
-        *((module **)&s->mod) = mod;
-        *((m_context **)&s->ctx) = context;
-        *((bool *)&s->is_ref) = false;
+        /* External owner reference */
+        memcpy(*self, &((self_t){ mod, context, false }), sizeof(self_t));
         
-        /* Internal reference */
-        memcpy((self_t *)&mod->self, &((self_t){ mod, context, true }), sizeof(self_t));
+        /* Internal reference used as sender for pubsub messages */
+        memcpy(&mod->self, &((self_t){ mod, context, true }), sizeof(self_t));
         
         if (map_put(context->modules, mod->name, mod, false, false) == MAP_OK) {
             mod->pubsub_fd[0] = -1;
@@ -277,7 +299,6 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
         ret = MOD_ERR;
         break;
     }
-    memhook._free((char *)mod->name);
     memhook._free((self_t *)*self);
     map_free(mod->subscriptions);
     stack_free(mod->recvs);
@@ -285,20 +306,18 @@ module_ret_code module_register(const char *name, const char *ctx_name, const se
     return ret;
 }
 
-module_ret_code module_deregister(const self_t **self) {
+module_ret_code module_deregister(self_t **self) {
     MOD_PARAM_ASSERT(self);
     
     self_t *tmp = (self_t *) *self;
     GET_MOD(tmp);
     MODULE_DEBUG("Deregistering module '%s'.\n", mod->name);
     
-    /* Free all unread pubsub msg for this module */
-    flush_pubsub_msg(tmp, mod);
-    
     stop(mod, "Failed to stop module.", true);
     
     /* Remove the module from the context */
     map_remove(tmp->ctx->modules, mod->name);
+            
     /* Remove context without modules */
     if (map_length(tmp->ctx->modules) == 0) {
         destroy_ctx(tmp->ctx);
@@ -307,7 +326,7 @@ module_ret_code module_deregister(const self_t **self) {
     stack_free(mod->recvs);
     
     /* Destroy external handler */
-    memhook._free((self_t *)*self);
+    memhook._free(tmp);
     *self = NULL;
 
     /*
@@ -317,10 +336,57 @@ module_ret_code module_deregister(const self_t **self) {
     mod->hook.destroy();
 
     /* Finally free module */
-    memhook._free((char *)mod->name);
     memhook._free(mod);
-    
+            
     return MOD_OK;
+}
+
+module_ret_code module_load(const char *module_path, const char *mod_name, const char *ctx_name) {
+    MOD_PARAM_ASSERT(module_path);
+    MOD_PARAM_ASSERT(mod_name);
+    MOD_PARAM_ASSERT(ctx_name);
+
+    void *handle = dlopen(module_path, RTLD_NOW);
+    if (!handle) {
+        MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
+        return MOD_ERR;
+    }
+    
+    /* 
+     * Check this after as ctx may be created by loaded module.
+     * Check that: 
+     * 1) requested ctx exists (or has been created)
+     * 2) requested module has been created in requested ctx
+     */
+    m_context *c = map_get(ctx, (char *)ctx_name);
+    if (!c) {
+        dlclose(handle);
+        return MOD_NO_CTX;
+    }
+    
+    module *mod = map_get(c->modules, (char *)mod_name);
+    if (!mod) {
+        dlclose(handle);
+        return MOD_NO_MOD;
+    }
+
+    if (map_put(c->loaded, mod_name, handle, false, false) == MAP_OK) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+module_ret_code module_unload(const char *mod_name, char *ctx_name) {
+    MOD_PARAM_ASSERT(mod_name);    
+    FIND_CTX(ctx_name);
+    
+    void *handle = map_get(c->loaded, mod_name);
+    if (handle) {
+        dlclose(handle);
+        map_remove(c->loaded, mod_name);
+        return MOD_OK;
+    }
+    return MOD_ERR;
 }
 
 module_ret_code module_become(const self_t *self, const recv_cb new_recv) {
@@ -342,7 +408,7 @@ module_ret_code module_unbecome(const self_t *self) {
     return MOD_ERR;
 }
 
-module_ret_code _pure_ module_log(const self_t *self, const char *fmt, ...) {
+module_ret_code module_log(const self_t *self, const char *fmt, ...) {
     GET_MOD(self);
     GET_CTX(self);
     
@@ -375,19 +441,17 @@ module_ret_code module_deregister_fd(const self_t *self, const int fd) {
     return _deregister_fd(mod, fd);
 }
 
-module_ret_code module_get_name(const self_t *self, char **name) {
+module_ret_code module_get_name(const self_t *self, const char **name) {
     GET_MOD_PURE(self);
-    *name = mem_strdup(mod->name);
     
-    MOD_ALLOC_ASSERT(*name);
+    *name = mod->name;
     return MOD_OK;
 }
 
-module_ret_code module_get_context(const self_t *self, char **ctx) {
+module_ret_code module_get_context(const self_t *self, const char **ctx) {
     GET_CTX_PURE(self);
-    *ctx = mem_strdup(c->name);
     
-    MOD_ALLOC_ASSERT(*ctx);
+    *ctx = c->name;
     return MOD_OK;
 }
 
@@ -397,6 +461,24 @@ bool module_is(const self_t *self, const enum module_states st) {
     GET_MOD_PURE(self);
 
     return _module_is(mod, st);
+}
+
+module_ret_code module_dump(const self_t *self) {
+    GET_MOD(self);
+
+    module_log(self, "* State: %u\n", mod->state);
+    module_log(self, "* Userdata: %p\n", mod->userdata);
+    module_log(self, "* Subscriptions:\n");
+    map_iterate(mod->subscriptions, subscribtions_dump, (void *)self);
+    module_log(self, "* Fds:\n");
+    module_poll_t *tmp = mod->fds;
+    while (tmp) {
+        if (tmp->fd != mod->pubsub_fd[0]) {
+            module_log(self, "-> Fd: %d Ac: %d Up: %p\n", tmp->fd, tmp->autoclose, tmp->userptr);
+        }
+        tmp = tmp->prev;
+    }
+    return MOD_OK;
 }
 
 /** Module state setters **/

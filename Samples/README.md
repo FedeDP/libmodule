@@ -14,7 +14,8 @@ Then you'll find executables in Samples folder (eg: libmodule/build/Samples)
 ## Easy example
 
 [Easy](https://github.com/FedeDP/libmodule/tree/master/Samples/Easy) example shows how to use simple, single-context libmodule API.  
-This is the simplest libmodule usage example, and it is self-explanatory.
+This is the simplest libmodule usage example, and it is self-explanatory.  
+Moreover, it runtime-loads another module, testModule.c (compiled as a shared object: testModule.so).  
 
 ## Shared source example
 

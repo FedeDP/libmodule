@@ -5,10 +5,10 @@
 
 #include "poll_priv.h"
 
-#define INITIAL_SIZE        256
-#define MAX_CHAIN_LENGTH    8
+#define MAP_PARAM_ASSERT(cond)  MOD_RET_ASSERT(cond, MAP_WRONG_PARAM);
+#define INITIAL_SIZE            256
+#define MAX_CHAIN_LENGTH        8
 
-/* We need to keep keys and values */
 typedef struct {
     const char *key;
     bool in_use;
@@ -184,7 +184,7 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bo
         }
         index = hashmap_hash(m, key);
     }
-    
+        
     /* Set the data */
     m->data[index].data = value;
     m->data[index].key = key;
@@ -244,9 +244,9 @@ map_t *map_new(void) {
  * Add a pointer to the hashmap with strdupped key if dupkey is true
  */
 map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey, const bool autofree) {
-    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
-    MOD_ASSERT(key, "NULL key.", MAP_WRONG_PARAM);
-    MOD_ASSERT(value, "NULL value.", MAP_WRONG_PARAM);
+    MAP_PARAM_ASSERT(m);
+    MAP_PARAM_ASSERT(key);
+    MAP_PARAM_ASSERT(value);
     
     /* Find a place to put our value */
     return hashmap_put(m, dupkey ? mem_strdup(key) : key, value, dupkey, autofree);
@@ -256,8 +256,8 @@ map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey, 
  * Get your pointer out of the hashmap with a key
  */
 void *map_get(const map_t *m, const char *key) {
-    MOD_ASSERT(m, "NULL map.", NULL);
-    MOD_ASSERT(key, "NULL key.", NULL);
+    MOD_ASSERT(key, "Null key.", NULL);
+    MOD_ASSERT(map_length(m) > 0, "Empty or NULL map.", NULL);
     
     /* Find data location */
     int curr = hashmap_hash_int(m, key);
@@ -276,22 +276,17 @@ bool map_has_key(const map_t *m, const char *key) {
     return map_get(m, key) != NULL;
 }
 
-/*
- * Iterate the function parameter over each element in the hashmap.  The
- * additional any_t argument is passed to the function as its first
- * argument and the hashmap element is the second.
- */
 map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
-    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
-    MOD_ASSERT(fn, "NULL callback.", MAP_WRONG_PARAM);
-    MOD_ASSERT(map_length(m) > 0, "Empty map.", MAP_MISSING);
-
+    MAP_PARAM_ASSERT(fn);
+    MOD_ASSERT(map_length(m) > 0, "Empty or NULL map.", MAP_MISSING);
+    
     /* Linear probing */
     map_ret_code status = MAP_OK;
     for (int i = 0; i < m->table_size && status == MAP_OK; i++) {
         if (m->data[i].in_use) {
+            const char *key = m->data[i].key;
             void *data = m->data[i].data;
-            status = fn(userptr, data);
+            status = fn(userptr, key, data);
         }
     }
     return status;
@@ -301,12 +296,12 @@ map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
  * Remove an element with that key from the map
  */
 map_ret_code map_remove(map_t *m, const char *key) {
-    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
-    MOD_ASSERT(key, "NULL key.", MAP_WRONG_PARAM);
+    MAP_PARAM_ASSERT(key);
+    MOD_ASSERT(map_length(m) > 0, "Empty or NULL map.", MAP_MISSING);
     
     /* Find key */
     int curr = hashmap_hash_int(m, key);
-
+    
     /* Linear probing, if necessary */
     for(int i = 0; i < MAX_CHAIN_LENGTH; i++) {
         if (m->data[curr].in_use && !strcmp(m->data[curr].key, key)) {
@@ -322,7 +317,7 @@ map_ret_code map_remove(map_t *m, const char *key) {
 
 /* Remove all elements from map */
 map_ret_code map_clear(map_t *m) {
-    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
+    MAP_PARAM_ASSERT(m);
     
     for (int i = 0; i < m->table_size; i++) {
         if (m->data[i].in_use) {
@@ -344,12 +339,14 @@ map_ret_code map_free(map_t *m) {
 
 /* Return the length of the hashmap */
 int map_length(const map_t *m) {
-    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
+    MAP_PARAM_ASSERT(m);
+    
     return m->size;
 }
 
 map_ret_code map_set_dtor(map_t *m, map_dtor fn) {
-    MOD_ASSERT(m, "NULL map.", MAP_WRONG_PARAM);
+    MAP_PARAM_ASSERT(m);
+    
     m->dtor = fn;
     return MAP_OK;
 }

@@ -64,7 +64,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         case USER:
             if (!strcmp((char *)msg->pubsub_msg->message, "ComeHere")) {
                 m_log("Running...\n");
-                m_tell_str(msg->pubsub_msg->sender, "BauBau");
+                m_tell_str(msg->pubsub_msg->sender, "BauBau", false);
             } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsPlay")) {
                 m_log("BauBau BauuBauuu!\n");
             } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsEat")) {
@@ -72,6 +72,9 @@ static void receive(const msg_t *msg, const void *userdata) {
             } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsSleep")) {
                 m_become(sleeping);
                 m_log("ZzzZzz...\n");
+                
+                /* Test runtime module loading */
+                module_load("./libtestmod.so", "Test", MODULE_DEFAULT_CTX);
             } else if (!strcmp((char *)msg->pubsub_msg->message, "ByeBye")) {
                 m_log("Sob...\n");
             } else if (!strcmp((char *)msg->pubsub_msg->message, "WakeUp")) {
@@ -89,12 +92,20 @@ static void receive(const msg_t *msg, const void *userdata) {
 }
 
 static void receive_sleeping(const msg_t *msg, const void *userdata) {
-    if (msg->is_pubsub && msg->pubsub_msg->type == USER) {
-        if (!strcmp((char *)msg->pubsub_msg->message, "WakeUp")) {
-            m_unbecome();
-            m_log("Yawn...\n");
-        } else {
-            m_log("ZzzZzz...\n");
+    if (msg->is_pubsub) {
+        if (msg->pubsub_msg->type == USER) {
+            if (!strcmp((char *)msg->pubsub_msg->message, "WakeUp")) {
+                m_unbecome();
+                m_dump();
+                m_log("Yawn...\n");
+            } else {
+                m_log("ZzzZzz...\n");
+            }
+        } else if (msg->pubsub_msg->type == MODULE_STARTED) {
+            /* A new module has been started */
+            const char *name = NULL;
+            module_get_name(msg->pubsub_msg->sender, &name);
+            m_log("Module '%s' has been started started.\n", name);
         }
     }
 }

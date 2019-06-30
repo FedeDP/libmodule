@@ -10,10 +10,12 @@
     #define MODULE_DEBUG (void)
 #endif
 
-#define MOD_ASSERT(cond, msg, ret) if (!(cond)) { MODULE_DEBUG("%s\n", msg); return ret; }
+#define MOD_ASSERT(cond, msg, ret)  if (!(cond)) { MODULE_DEBUG("%s\n", msg); return ret; }
 
-#define MOD_ALLOC_ASSERT(cond)  MOD_ASSERT(cond, "Failed to malloc.", MOD_NO_MEM);
-#define MOD_PARAM_ASSERT(cond)  MOD_ASSERT(cond, #cond, MOD_WRONG_PARAM);
+#define MOD_RET_ASSERT(cond, ret)   MOD_ASSERT(cond, "("#cond ") condition failed.", ret) 
+
+#define MOD_ALLOC_ASSERT(cond)      MOD_RET_ASSERT(cond, MOD_NO_MEM);
+#define MOD_PARAM_ASSERT(cond)      MOD_RET_ASSERT(cond, MOD_WRONG_PARAM);
 
 /* Finds a ctx inside our global map, given its name */
 #define FIND_CTX(name) \
@@ -66,11 +68,12 @@
 
 typedef struct _module module;
 typedef struct _context m_context;
+
 /* Struct that holds self module informations, static to each module */
 struct _self {
-    module *const mod;                    // self's mod
-    m_context *const ctx;                 // self's ctx
-    const bool is_ref;                    // is this a reference?
+    module *mod;                        // self's mod
+    m_context *ctx;                     // self's ctx
+    bool is_ref;                        // is this a reference?
 };
 
 /* List that matches fds with selfs */
@@ -79,9 +82,16 @@ typedef struct _poll_t {
     bool autoclose;
     void *ev;
     const void *userptr;
-    const struct _self *self;             // ptr needed to map a fd to a self_t in epoll
+    const struct _self *self;           // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
 } module_poll_t;
+
+/* Struct that holds pubsub messaging, private. It keeps reference count. */
+typedef struct {
+    pubsub_msg_t msg;
+    uint64_t refs;
+    bool autofree;
+} pubsub_priv_t;
 
 /* Struct that holds data for each module */
 struct _module {
@@ -93,7 +103,7 @@ struct _module {
     module_poll_t *fds;                   // module's fds to be polled
     map_t *subscriptions;                 // module's subscriptions
     int pubsub_fd[2];                     // In and Out pipe for pubsub msg
-    const self_t self;                    // pointer to self (and thus context)
+    self_t self;                          // pointer to self (and thus context)
 };
 
 /* Struct that holds data for each context */
@@ -108,17 +118,18 @@ struct _context {
     void *pevents;
     int max_events;
     map_t *topics;
+    map_t *loaded;
 };
 
 /* Defined in module.c */
 _pure_ bool _module_is(const module *mod, const enum module_states st);
-int evaluate_module(void *data, void *m);
+map_ret_code evaluate_module(void *data, const char *key, void *value);
 
 /* Defined in pubsub.c */
-module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const char *topic);
-int flush_pubsub_msg(void *data, void *m);
-void destroy_pubsub_msg(pubsub_msg_t *m);
-void run_pubsub_cb(module *mod, const msg_t *msg);
+module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, 
+                                       const self_t *sender, const char *topic);
+map_ret_code flush_pubsub_msg(void *data, const char *key, void *value);
+void run_pubsub_cb(module *mod, msg_t *msg);
 
 /* Defined in priv.c */
 char *mem_strdup(const char *s);

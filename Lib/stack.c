@@ -1,5 +1,7 @@
 #include "poll_priv.h"
 
+#define STACK_PARAM_ASSERT(cond)   MOD_RET_ASSERT(cond, STACK_WRONG_PARAM);
+
 typedef struct _elem {
     void *userptr;
     bool autofree;
@@ -19,9 +21,8 @@ stack_t *stack_new(void) {
 }
 
 stack_ret_code stack_iterate(const stack_t *s, const stack_cb fn, void *userptr) {
-    MOD_ASSERT(s, "NULL stack.", STACK_WRONG_PARAM);
-    MOD_ASSERT(fn, "NULL cb.", STACK_WRONG_PARAM);
-    MOD_ASSERT(stack_length(s) > 0, "Empty stack.", STACK_MISSING);
+    STACK_PARAM_ASSERT(fn);
+    MOD_ASSERT(stack_length(s) > 0, "Empty or NULL stack.", STACK_MISSING);
     
     stack_ret_code status = STACK_OK;
     stack_elem *elem = s->data;
@@ -33,8 +34,8 @@ stack_ret_code stack_iterate(const stack_t *s, const stack_cb fn, void *userptr)
 }
 
 stack_ret_code stack_push(stack_t *s, void *data, bool autofree) {
-    MOD_ASSERT(s, "NULL stack.", STACK_WRONG_PARAM);
-    MOD_ASSERT(data, "NULL data.", STACK_WRONG_PARAM);
+    STACK_PARAM_ASSERT(s);
+    STACK_PARAM_ASSERT(data);
     
     stack_elem *elem = memhook._malloc(sizeof(stack_elem));
     if (elem) {
@@ -49,8 +50,7 @@ stack_ret_code stack_push(stack_t *s, void *data, bool autofree) {
 }
 
 void *stack_pop(stack_t *s) {
-    MOD_ASSERT(s, "NULL stack.", NULL);
-    MOD_ASSERT(stack_length(s) > 0, "Empty stack.", NULL);
+    MOD_ASSERT(stack_length(s) > 0, "Empty or NULL stack.", NULL);
 
     stack_elem *elem = s->data;
     s->data = s->data->prev;
@@ -61,8 +61,7 @@ void *stack_pop(stack_t *s) {
 }
 
 void *stack_peek(const stack_t *s) {
-    MOD_ASSERT(s, "NULL stack.", NULL);
-    MOD_ASSERT(stack_length(s) > 0, "Empty stack.", NULL);
+    MOD_ASSERT(stack_length(s) > 0, "Empty or NULL stack.", NULL);
     
     return s->data->userptr; // return most recent element data
 }
@@ -94,12 +93,14 @@ stack_ret_code stack_free(stack_t *s) {
 }
 
 int stack_length(const stack_t *s) {
-    MOD_ASSERT(s, "NULL stack.", STACK_WRONG_PARAM);
+    STACK_PARAM_ASSERT(s);
+    
     return s->len;
 }
 
 stack_ret_code stack_set_dtor(stack_t *s, stack_dtor fn) {
-    MOD_ASSERT(s, "NULL stack.", STACK_WRONG_PARAM);
+    STACK_PARAM_ASSERT(s);
+    
     s->dtor = fn;
     return STACK_OK;
 }

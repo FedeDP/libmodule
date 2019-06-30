@@ -21,6 +21,13 @@ static void modules_init(void) {
 static void modules_destroy(void) {
     MODULE_DEBUG("Destroying libmodule.\n");
     map_free(ctx);
+    
+    /* 
+     * When module_load() loads any module, they'll get unloaded after modules_destroy(),
+     * when they're unlinked from program.
+     * Avoid dereferencing a freed ctx map then.
+     */
+    ctx = NULL; 
 }
 
 static void evaluate_new_state(m_context *c) {
@@ -37,7 +44,7 @@ static module_ret_code loop_start(m_context *c, const int max_events) {
         evaluate_new_state(c);
 
         /* Tell every RUNNING module that loop is started */
-        tell_system_pubsub_msg(c, LOOP_STARTED, NULL);
+        tell_system_pubsub_msg(c, LOOP_STARTED, NULL, NULL);
         return MOD_OK;
     }
     return MOD_ERR;
@@ -45,7 +52,7 @@ static module_ret_code loop_start(m_context *c, const int max_events) {
 
 static int loop_stop(m_context *c) {
     /* Tell every module that loop is stopped */
-    tell_system_pubsub_msg(c, LOOP_STOPPED, NULL);
+    tell_system_pubsub_msg(c, LOOP_STOPPED, NULL, NULL);
 
     /* Flush pubsub msg to avoid memleaks */
     map_iterate(c->modules, flush_pubsub_msg, NULL);
@@ -71,29 +78,27 @@ static int recv_events(m_context *c, int timeout) {
             
             msg_t msg;
             fd_msg_t fd_msg;
+            pubsub_priv_t *ps_msg;
             
             if (p->fd == mod->pubsub_fd[0]) {
                 /* Received on pubsub interface */
-                *(bool *)&msg.is_pubsub = true;
-                if (read(p->fd, (void **)&msg.pubsub_msg, sizeof(pubsub_msg_t *)) != sizeof(pubsub_msg_t *)) {
+                msg.is_pubsub = true;
+                if (read(p->fd, (void **)&ps_msg, sizeof(pubsub_priv_t *)) != sizeof(pubsub_priv_t *)) {
                     MODULE_DEBUG("Failed to read message for %s: %s\n", mod->name, strerror(errno));
-                    *((pubsub_msg_t **)&msg.pubsub_msg) = NULL;
+                    msg.pubsub_msg = NULL;
+                } else {
+                    msg.pubsub_msg = &ps_msg->msg;
                 }
             } else {
                 /* Received from FD */
-                *(bool *)&msg.is_pubsub = false;
-                *(int *)&fd_msg.fd = p->fd;
+                msg.is_pubsub = false;
+                fd_msg.fd = p->fd;
                 fd_msg.userptr = p->userptr;
-                *(fd_msg_t **)&msg.fd_msg = &fd_msg;
+                msg.fd_msg = &fd_msg;
             }
             
             if (!msg.is_pubsub || msg.pubsub_msg) {
                 run_pubsub_cb(mod, &msg);
-                
-                /* Properly free pubsub msg */
-                if (msg.is_pubsub) {
-                    destroy_pubsub_msg((pubsub_msg_t *)msg.pubsub_msg);
-                }
             }
         } else {
             /* Forward error to below handling code */

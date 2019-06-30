@@ -19,6 +19,8 @@ void test_module_start_NULL_self(void **state);
 void test_module_start(void **state);
 void test_module_log_NULL_self(void **state);
 void test_module_log(void **state);
+void test_module_dump_NULL_self(void **state);
+void test_module_dump(void **state);
 void test_module_set_userdata_NULL_self(void **state);
 void test_module_set_userdata(void **state);
 void test_module_become_NULL_self(void **state);
