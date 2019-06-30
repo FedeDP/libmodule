@@ -4,25 +4,32 @@
 - [x] avoid strdupping topic when creating pubsub_msg_t
 - [x] Only use one pubsub msg for every module, instead of  creating one for each recipient
 - [x] Keep a reference count for each "sent" pubsub msg: when it reaches 0 it means all recipients received the message, and then in can be freed
-- [x] Add an autofree field to module_tell/module_pubsub that automatically frees sent data when last recipient receives it [DOCUMENT]
+- [x] Add an autofree field to module_tell/module_pubsub that automatically frees sent data when last recipient receives it
 - [x] Avoid strdupping module's name and ctx's name
-- [x] Avoid any allocation inside library and ALWAYS TRUST USER POINTER as core rule [DOCUMENT]
+- [x] Avoid any allocation inside library and ALWAYS TRUST USER POINTER as core rule
 - [x] Add a self() alias to _self
-- [x] module_subscribe/unsubscribe should return OK if already subscribed/not subscribed [DOCUMENT]
-- [x] Add new System messages: MODULE_STARTED/STOPPED [DOCUMENT]
-- [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves [DOCUMENT]
+- [x] module_subscribe/unsubscribe should return OK if already subscribed/not subscribed
+- [x] Add new System messages: MODULE_STARTED/STOPPED
+- [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves
 - [x] Test pubsub messagging for paused modules
 - [x] Fix memleaks!
 
 ### Generic
-- [x] Add some diagnostic API, eg: modules_dump() (to dump each module's state) [DOCUMENT]
-- [x] Add a module_load/unload function, to load a module from a compiled object at runtime [DOCUMENT]
+- [x] Add some diagnostic API, eg: module_dump() (to dump each module's state)
+- [x] Add a module_load/unload function, to load a module from a compiled object at runtime
 - [ ] simplify interface for module_load/unload? ie: module_load(path, ctx_name)
 - [x] Add test.so build to Easy example
 - [x] Re-evaluate module_register/deregister parameters (ie: self_t should not be a const!)
 
 ### Doc
-- [ ] Update API doc -> module_dump/load/unload(), new module_tell/publish(broadcast) parameter...
+- [x] module_dump
+- [x] module_subscribe/unsubscribe
+- [x] self()
+- [x] module_register/deregister
+- [ ] module_load/unload
+- [x] module_tell/publish/broadcast
+- [x] MODULE_STARTED/MODULE_STOPPED new sysmessages
+- [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves
 - [ ] Add a new page about trusting pointers
 
 ### Samples

@@ -39,6 +39,12 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :type name: :c:type:`const char *` 
   :type ctxName: :c:type:`const char *` 
   :returns: void
+  
+.. c:macro:: self()
+  
+  Returns _self variable for the module.
+  
+  :returns: :c:type:`const self_t *`
 
 .. c:macro:: m_is(state)
 
@@ -66,10 +72,10 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_become(new_recv)
 
-  Change receive callback to receive_new_recv
+  Change receive callback to receive_$(new_recv)
     
   :param new_recv: new module's receive callback; the function has prefix \receive_ concatenated with new_recv
-  :type new_recv: untyped
+  :type new_recv: :c:type:`const recv_cb`
 
 .. c:macro:: m_unbecome(void)
 
@@ -109,6 +115,10 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :type fmt: :c:type:`const char *` 
   :type args: :c:type:`variadic`
   
+.. c:macro:: m_dump()
+
+  Dump current module's state. Diagnostic API.
+  
 .. c:macro:: m_ref(name, modref)
 
   Takes a reference from another module; it can be used in pubsub messaging to tell a message to it. It must not be freed.
@@ -134,48 +144,54 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_subscribe(topic)
 
-  Subscribes the module to a topic.
+  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_OK will be returned.
     
   :param topic: topic to which subscribe. Note that topic must be registered before.
   :type topic: :c:type:`const char *`
   
 .. c:macro:: m_unsubscribe(topic)
 
-  Unsubscribes the module from a topic.
+  Unsubscribes the module from a topic. If module is not subscribed to topic, MODULE_OK will be returned.
     
   :param topic: topic to which unsubscribe. Note that topic must be registered before.
   :type topic: :c:type:`const char *`
   
-.. c:macro:: m_tell(recipient, msg, size)
+.. c:macro:: m_tell(recipient, msg, size, autofree)
 
   Tell a message to another module.
     
   :param recipient: module to whom deliver the message.
   :param msg: actual data to be sent.
   :param size: size of data to be sent.
+  :param autofree: whether to autofree msg after last recipient's received it.
   :type recipient: :c:type:`const self_t *`
   :type msg: :c:type:`const unsigned char *`
   :type size: :c:type:`const ssize_t`
+  :type autofree: :c:type:`const bool`
   
-.. c:macro:: m_publish(topic, msg, size)
+.. c:macro:: m_publish(topic, msg, size, autofree)
 
   Publish a message on a topic.
     
   :param topic: topic on which publish message. Note that only topic creator can publish message on topic.
   :param msg: actual data to be published.
   :param size: size of data to be published.
+  :param autofree: whether to autofree msg after last recipient's received it.
   :type topic: :c:type:`const char *`
   :type msg: :c:type:`const unsigned char *`
   :type size: :c:type:`const ssize_t`
+  :type autofree: :c:type:`const bool`
   
-.. c:macro:: m_broadcast(msg, size)
+.. c:macro:: m_broadcast(msg, size, autofree)
 
   Broadcast a message in module's context.
     
   :param msg: data to be delivered to all modules in a context.
   :param size: size of data to be delivered.
+  :param autofree: whether to autofree msg after last recipient's received it.
   :type msg: :c:type:`const unsigned char *`
   :type size: :c:type:`const ssize_t`
+  :type autofree: :c:type:`const bool`
   
 .. c:macro:: m_tell_str(recipient, msg)
 
@@ -221,7 +237,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param hook: struct that holds this module's callbacks.
   :type name: :c:type:`const char *`
   :type ctx_name: :c:type:`const char *`
-  :type self: :c:type:`const self_t **`
+  :type self: :c:type:`self_t **`
   :type hook: :c:type:`const userhook *`
   
 .. c:function:: module_deregister(self)
@@ -229,7 +245,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   Deregister module
     
   :param self: pointer to module's handler. It is set to NULL after this call.
-  :type self: :c:type:`const self_t **`
+  :type self: :c:type:`self_t **`
   
 .. c:function:: module_is(self, state)
 
@@ -311,7 +327,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
 
 .. c:function:: module_get_name(self, name)
 
-  Get module's name from his self pointer.
+  Get module's name from his self pointer
     
   :param self: pointer to module's handler
   :param name: pointer to storage for module's name. Note that this must be freed by user.
@@ -329,7 +345,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_log(self, fmt, args)
 
-  Module's logger
+  Logger function for this module. Call it the same way you'd call printf
     
   :param self: pointer to module's handler
   :param fmt: log's format.
@@ -337,6 +353,13 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type self: :c:type:`const self_t *`
   :type fmt: :c:type:`const char *`
   :type args: :c:type:`variadic`
+  
+.. c:function:: module_dump(self)
+
+  Dump current module's state. Diagnostic API.
+  
+  :param self: pointer to module's handler
+  :type self: :c:type:`const self_t *`
   
 .. c:function:: module_ref(self, name, modref)
 
@@ -369,7 +392,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_subscribe(self, topic)
 
-  Subscribes the module to a topic.
+  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_OK will be returned.
     
   :param self: pointer to module's handler
   :param topic: topic to which subscribe. Note that topic must be registered before.
@@ -378,14 +401,14 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_unsubscribe(self, topic)
 
-  Unsubscribes the module from a topic.
+  Unsubscribes the module from a topic. If module is not subscribed to topic, MODULE_OK will be returned.
     
   :param self: pointer to module's handler
   :param topic: topic to which unsubscribe. Note that topic must be registered before.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
   
-.. c:function:: module_tell(self, recipient, msg, size)
+.. c:function:: module_tell(self, recipient, msg, size, autofree)
 
   Tell a message to another module.
     
@@ -393,12 +416,14 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param recipient: module to whom deliver the message.
   :param msg: actual data to be sent.
   :param size: size of data to be sent.
+  :param autofree: whether to autofree msg after last recipient's received it.
   :type self: :c:type:`const self_t *`
   :type recipient: :c:type:`const self_t *`
   :type msg: :c:type:`const unsigned char *`
   :type size: :c:type:`const ssize_t`
+  :type autofree: :c:type:`const bool`
   
-.. c:function:: module_publish(self, topic, msg, size)
+.. c:function:: module_publish(self, topic, msg, size, autofree)
 
   Publish a message on a topic.
 
@@ -406,18 +431,22 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param topic: topic on which publish message. Note that only topic creator can publish message on topic.
   :param msg: actual data to be published.
   :param size: size of data to be published.
+  :param autofree: whether to autofree msg after last recipient's received it.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
   :type msg: :c:type:`const unsigned char *`
   :type size: :c:type:`const ssize_t`
+  :type autofree: :c:type:`const bool`
   
-.. c:function:: module_broadcast(self, msg, size)
+.. c:function:: module_broadcast(self, msg, size, autofree)
 
   Broadcast a message to all modules inside context.
 
   :param self: pointer to module's handler
   :param msg: actual data to be published.
   :param size: size of data to be published.
+  :param autofree: whether to autofree msg after last recipient's received it.
   :type self: :c:type:`const self_t *`
   :type msg: :c:type:`const unsigned char *`
   :type size: :c:type:`const ssize_t`
+  :type autofree: :c:type:`const bool`

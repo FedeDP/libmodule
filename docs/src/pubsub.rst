@@ -26,9 +26,15 @@ Only module_is(), module_get_name/context() functions can be called passing as s
 System messages
 ---------------
 
-Beside USER messages (pubsub_msg_t.type), there are 4 system messages, with type respectively: LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED. |br|
-These pubsub messages are automatically sent by libmodule (note that sender will be NULL) when matching functions are called. |br|
-For example, you can use TOPIC_REGISTERED message (note that pubsub_msg_t.topic will be valued matching newly created topic) to subscribe to a topic as soon as it appears in current context.
+Beside USER messages (pubsub_msg_t.type), there are 6 system messages, respectively: LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED, MODULE_STARTED, MODULE_STOPPED. |br|
+These pubsub messages are automatically sent by libmodule when matching functions are called, eg: |br|
+* LOOP_STARTED(STOPPED) is sent whenever a loop starts(stops) looping. It is useful to actually start(stop) your pubsub messagging (eg: one module waits on LOOP_STARTED to send a pubsub message to another module, and so on...). It won't have any valued fields, except for type. |br|
+* TOPIC_(DE)REGISTERED message is sent when any module registers a topic; it is useful for other modules to (un)subscribe to it. |br|
+It will have valued type and topic fields; moreover, sender field will be set to module that (de)registered the topic. |br|
+* MODULE_STARTED(STOPPED) is sent whenever a module starts/resumes(stops/pauses). Again this is useful to inform other modules that a new module is available. |br|
+It will have valued type and sender fields; sender will be set to started(stopped) module.
+
+Finally, note that system messages with valued sender won't be sent to modules that actually generated the message.
 
 Notes
 -----
