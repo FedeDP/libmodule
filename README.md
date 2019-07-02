@@ -14,6 +14,63 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 
 Unsurprisingly, module is the core concept of libmodule architecture.  
 A module is an Actor that can listen on socket events too.  
+Frankly speaking, it is denoted by a MODULE() macro plus a bunch of callbacks, eg:
+```
+cat pippo.c
+
+#include <module/module_easy.h>
+#include <module/modules_easy.h>
+#include <string.h>
+#include <ctype.h>
+
+MODULE("Foo");
+
+static void init(void) {
+    m_register_fd(STDIN_FILENO, 0, NULL);
+}
+
+static bool check(void) {
+    return true;
+}
+
+static bool evaluate(void) {
+    return true;
+}
+
+static void destroy(void) {
+    
+}
+
+static void receive(const msg_t *msg, const void *userdata) {
+    if (!msg->is_pubsub) {
+        char c;
+        read(msg->fd_msg->fd, &c, sizeof(char));
+        switch (tolower(c)) {
+            case 'q':
+                m_log("Leaving...\n");
+                m_tell(self(), "ByeBye");
+                break;
+            default:
+                m_log("Pressed %c\n", c);
+                break;
+        }
+    } else if (msg->pubsub_msg->type == USER && 
+        !strcmp((char *)msg->pubsub_msg->message, "ByeBye")) {
+            
+        modules_quit(0);
+    }
+}
+```
+```
+cat main.c
+
+#include <module/modules_easy.h>
+
+int main() {
+    return modules_loop();
+}
+```
+In this example, a "Foo" module is created and will read chars from stdin until 'q' is pressed.
 
 ## Is it portable?
 

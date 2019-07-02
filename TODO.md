@@ -13,6 +13,7 @@
 - [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves
 - [x] Test pubsub messagging for paused modules
 - [x] Fix memleaks!
+- [x] Unsubscribe every module when a topic gets deregistered
 
 ### Generic
 - [x] Add some diagnostic API, eg: module_dump() (to dump each module's state)
@@ -30,6 +31,7 @@
 - [x] module_tell/publish/broadcast
 - [x] MODULE_STARTED/MODULE_STOPPED new sysmessages
 - [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves
+- [ ] Add doc for new deregister_topic behaviour (ie: it automatically unsubscribes any module subscribed)
 - [ ] Add a new page about trusting pointers
 
 ### Samples
@@ -38,6 +40,7 @@
 ### Test
 - [x] Fix tests
 - [x] add module_dump tests
+- [ ] Add test to new deregister_topic behaviour (ie: it automatically unsubscribes any module subscribed)
 
 ## 5.1.0
 

@@ -10,6 +10,7 @@ static void destroy_pubsub_msg(pubsub_priv_t *pubsub_msg);
 static module_ret_code tell_pubsub_msg(pubsub_priv_t *m, module *mod, m_context *c);
 static module_ret_code publish_msg(const module *mod, const char *topic, const unsigned char *message, 
                                    const ssize_t size, const bool autofree);
+static map_ret_code unsubscribe(void *data, const char *key, void *value);
 
 static map_ret_code tell_if(void *data, const char *key, void *value) {
     module *mod = (module *)value;
@@ -88,6 +89,16 @@ static module_ret_code publish_msg(const module *mod, const char *topic, const u
         return tell_pubsub_msg(m, NULL, c);
     }
     return MOD_ERR;
+}
+
+static map_ret_code unsubscribe(void *data, const char *key, void *value) {
+    module *mod = (module *)value;
+    const char *topic = (const char *)data;
+
+    if (map_has_key(mod->subscriptions, topic)) {
+        map_remove(mod->subscriptions, topic);
+    }
+    return MAP_OK;
 }
 
 /** Private API **/
@@ -169,6 +180,8 @@ module_ret_code module_deregister_topic(const self_t *self, const char *topic) {
     /* Only same mod which registered topic can deregister it */
     if (tmp == mod) {
         if (map_remove(c->topics, topic) == MAP_OK) {
+            /* Automatically unsubscribe any module subscribed to topic */
+            map_iterate(c->modules, unsubscribe, (void *)topic);
             tell_system_pubsub_msg(c, TOPIC_DEREGISTERED, self, topic);
             return MOD_OK;
         }
