@@ -15,6 +15,7 @@ MODULE("Doggo");
  * Use this to set some  global state needed eg: in check() function 
  */
 static void module_pre_start(void) {
+    printf("Press 'c' to start playing with your own doggo...\n");
 }
 
 /*
@@ -74,7 +75,7 @@ static void receive(const msg_t *msg, const void *userdata) {
                 m_log("ZzzZzz...\n");
                 
                 /* Test runtime module loading */
-                module_load("./libtestmod.so", "Test", MODULE_DEFAULT_CTX);
+                m_load("./libtestmod.so");
             } else if (!strcmp((char *)msg->pubsub_msg->message, "ByeBye")) {
                 m_log("Sob...\n");
             } else if (!strcmp((char *)msg->pubsub_msg->message, "WakeUp")) {

@@ -13,7 +13,7 @@ void modules_pre_start() {
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     /* 
      * Firstly, create our desired modules.
      * We will use "test" as new context name.

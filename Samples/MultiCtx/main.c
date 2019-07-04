@@ -29,7 +29,7 @@ void setup_signals(void) {
 #endif
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     /* Properly block signals (that are received by mod "B" on ctx2) */
     setup_signals();
     

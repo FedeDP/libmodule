@@ -42,7 +42,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: self()
   
-  Returns _self variable for the module.
+  Returns _self handler for the module.
   
   :returns: :c:type:`const self_t *`
 
@@ -383,7 +383,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_deregister_topic(self, topic)
 
-  Deregisters topic in module's context.
+  Deregisters topic in module's context. Note that deregistering a topic will not unsubscribe any module. Thus, if topic gets registered again, subscribed modules will start receiveing new publishes.
     
   :param self: pointer to module's handler
   :param topic: topic to be deregistered. Only topic creator can deregister a topic.

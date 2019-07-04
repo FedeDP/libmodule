@@ -12,10 +12,14 @@
 
 /* 
  * ctors order: 
- * 1) modules_pre_start()
- * 2) modules_init()
- * 3) each module_pre_start()
- * 4) each module ctor function
+ * 0) modules_pre_start()
+ * 1) modules_init()
+ * 2) each module_pre_start() (only module_easy API)
+ * 3) each module ctor function (only module_easy API)
+ * 
+ * dtors order:
+ * 1) each module's dtor function (only module_easy API)
+ * 0) modules_destroy()
  */
 #define _ctor0_     __attribute__((constructor (110)))
 #define _ctor1_     __attribute__((constructor (111)))
@@ -29,8 +33,8 @@
 #define _weak_      __attribute__((weak))
 #define _public_    __attribute__ ((visibility("default")))
 
-#define MODULE_DEFAULT_CTX  "default"
-#define MODULE_MAX_EVENTS   64
+#define MODULES_DEFAULT_CTX  "default"
+#define MODULES_MAX_EVENTS   64
 
 /** Structs types **/
 

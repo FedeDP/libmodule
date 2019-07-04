@@ -12,7 +12,7 @@ void modules_pre_start() {
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     int ret = 0;
     int fd = 0;
     

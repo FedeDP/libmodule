@@ -1,6 +1,9 @@
 #include "modules.h"
 #include "poll_priv.h"
+#include <pthread.h>
 
+static void *thread_loop(void *param);
+static map_ret_code main_loop(void *data, const char *key, void *value);
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *c);
@@ -11,6 +14,66 @@ static int recv_events(m_context *c, int timeout);
 
 map_t *ctx;
 memalloc_hook memhook;
+
+void modules_pre_start(void) {
+    MODULE_DEBUG("Pre-starting libmodule.");
+}
+
+static void *thread_loop(void *param) {
+    const char *key = (const char *)param;
+    
+    modules_ctx_loop_events(key, MODULES_MAX_EVENTS);
+    return NULL;
+}
+
+static map_ret_code main_loop(void *data, const char *key, void *value) {
+    pthread_t *th = *(pthread_t **)data;
+    if (th) {
+        static int i = 0;
+        pthread_create(&th[i++], NULL, thread_loop, (void *)key);
+        return MAP_OK;
+    }
+    *(char **)data = (char *)key;
+    return MAP_ERR;
+}
+
+/*
+ * This is an exported global weak symbol.
+ * It means that if a program does not implement any main(int, char *[]),
+ * this will be used by default.
+ *
+ * All it does is:
+ * if ctx_num > 1 -> allocating ctx_num pthreads and each of them will loop on its context
+ * else           -> just loops on only ctx on main thread 
+ */
+int main(int argc, char *argv[]) {
+    void *th = NULL;
+    
+    /* If there is more than 1 registered ctx, alloc as many pthreads as needed */
+    if (map_length(ctx) > 1) {
+        MODULE_DEBUG("Allocating %d pthreads.\n", map_length(ctx));
+        th = memhook._calloc(map_length(ctx), sizeof(pthread_t));
+    }
+    
+    /*
+     * main_loop returns MAP_ERR for single-ctx runs,
+     * where we only need a pointer to ctx key.
+     * Ugliness warning: passing a void** ptr that is either an array of pthreads
+     * or is just a space to point to single-ctx key.
+     */
+    if (map_iterate(ctx, main_loop, &th) == MAP_ERR) {
+        MODULE_DEBUG("Running in single ctx mode: '%s'\n", (const char *)th);
+        return modules_ctx_loop_events((const char *)th, MODULES_MAX_EVENTS);
+    }
+    
+    /* If more than 1 ctx is registered, we should join all threads */
+    MODULE_DEBUG("Waiting all threads.\n");
+    for (int i = 0; i < map_length(ctx); i++) {
+        pthread_join(((pthread_t *)th)[i], NULL);
+    }
+    memhook._free(th);
+    return MOD_OK;
+}
 
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
@@ -182,7 +245,7 @@ module_ret_code modules_ctx_dispatch(const char *ctx_name, int *ret) {
     if (!c->looping) {
         /* Ok, start now */
         *ret = 0;
-        return loop_start(c, MODULE_MAX_EVENTS);
+        return loop_start(c, MODULES_MAX_EVENTS);
     }
     
     if (c->quit) {

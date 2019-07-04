@@ -10,6 +10,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(GNUInstallDirs)
 
+find_package (Threads)
+
 #
 # Options
 #
@@ -99,7 +101,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE Lib/ Lib/public/module/)
 #
 # KQUEUE_LIBRARIES will be empty where native epoll/kqueue are supported
 #
-target_link_libraries(${PROJECT_NAME} ${KQUEUE_LIBRARIES} dl)
+target_link_libraries(${PROJECT_NAME} ${KQUEUE_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} dl)
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

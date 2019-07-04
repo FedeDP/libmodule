@@ -14,7 +14,7 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 
 Unsurprisingly, module is the core concept of libmodule architecture.  
 A module is an Actor that can listen on socket events too.  
-Frankly speaking, it is denoted by a MODULE() macro plus a bunch of callbacks, eg:
+Frankly speaking, it is denoted by a MODULE() macro plus a bunch of mandatory callbacks, eg:
 ```
 cat pippo.c
 
@@ -23,16 +23,18 @@ cat pippo.c
 #include <string.h>
 #include <ctype.h>
 
-MODULE("Foo");
+MODULE("Pippo");
 
 static void init(void) {
     m_register_fd(STDIN_FILENO, 0, NULL);
 }
 
+/* Should module be registered? */
 static bool check(void) {
     return true;
 }
 
+/* Should module be started? */
 static bool evaluate(void) {
     return true;
 }
@@ -61,16 +63,9 @@ static void receive(const msg_t *msg, const void *userdata) {
     }
 }
 ```
-```
-cat main.c
 
-#include <module/modules_easy.h>
-
-int main() {
-    return modules_loop();
-}
-```
-In this example, a "Foo" module is created and will read chars from stdin until 'q' is pressed.
+In this example, a "Pippo" module is created and will read chars from stdin until 'q' is pressed.  
+Note that it does not even need a main function, as libmodule already provides a default one (as a [weak, thus overridable, symbol](https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Function-Attributes.html)).  
 
 ## Is it portable?
 

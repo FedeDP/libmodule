@@ -21,9 +21,12 @@ static void _ctor3_ constructor(void) { \
 static void _dtor1_ destructor(void) { module_deregister((self_t **)&self()); } \
 static void _ctor2_ module_pre_start(void)
 
-#define MODULE(name) MODULE_CTX(name, MODULE_DEFAULT_CTX)
+#define MODULE(name) MODULE_CTX(name, MODULES_DEFAULT_CTX)
 
 /* Defines for easy API (with no need bothering with both _self and ctx) */
+#define m_load(path)                            module_load(path, MODULES_DEFAULT_CTX)
+#define m_unload(path)                          module_unload(path, MODULES_DEFAULT_CTX)
+
 #define m_is(state)                             module_is(self(), state)
 #define m_dump()                                module_dump(self())
 

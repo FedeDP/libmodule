@@ -9,7 +9,26 @@ Modules API denotes libmodule interface functions to manage context loop. |br|
 Like Module API, it has an easy, single-context API. Moreover, it has an equivalent multi-context API. |br|
 All these functions but modules_pre_start() return a :ref:`module_ret_code <module_ret_code>`. |br|
 
-Moreover, there is a single function that is common to every context (thus does not need ctx_name param). |br|
+Moreover, there are a bunch of functions that are common to every context (thus not needing ctx_name param). |br|
+
+.. _modules_pre_start:
+
+.. c:function:: modules_pre_start(void)
+
+  This function will be called by libmodule before doing anything else.
+  It can be useful to set some global state/read config that are needed to decide whether to start a module.
+  You only need to define this function and it will be automatically called by libmodule.
+  
+.. c:function:: main(argc, argv)
+
+  Libmodule's provide its own main implementation. This means that, on simplest cases, you'll only have to write your modules and compile linking to libmodule.
+  Libmodule's main() is quite simple: it just runs modules_ctx_loop() on every registered context (in different pthreads for multiple contexts).
+  Note that this is a weak symbol, thus it is obviously overridable by users.
+  
+  :param argc: number of cmdline arguments.
+  :param argv: cmdline arguments.
+  :type argc: :c:type:`int`
+  :type argv: :c:type:`char *[]`
 
 .. c:function:: modules_set_memalloc_hook(hook)
 
@@ -23,14 +42,6 @@ Easy API
 
 Modules easy API should be used in conjunction with :ref:`module_easy`. |br|
 It abstracts all of libmodule internals mechanisms to provide an easy-to-use and simple API. It can be found in <module/modules_easy.h> header.
-
-.. _modules_pre_start:
-
-.. c:function:: modules_pre_start(void)
-
-  This function will be called by libmodule before creating any module.
-  It can be useful to set some global state/read config that are needed to decide whether to start a module.
-  You only need to define this function and it will be automatically called by libmodule.
   
 .. c:macro:: modules_set_logger(logger)
 

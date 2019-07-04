@@ -15,7 +15,7 @@ static module_ret_code _deregister_fd(module *mod, const int fd);
 static int manage_fds(module *mod, m_context *c, const int flag, const bool stop);
 static module_ret_code start(module *mod, const char *err_str);
 static module_ret_code stop(module *mod, const char *err_str, const bool stop);
-static int subscribtions_dump(void *data, const char *key, void *value);
+static map_ret_code subscribtions_dump(void *data, const char *key, void *value);
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
@@ -217,7 +217,7 @@ static module_ret_code stop(module *mod, const char *err_str, const bool stop) {
     return MOD_OK;
 }
 
-static int subscribtions_dump(void *data, const char *key, void *value) {
+static map_ret_code subscribtions_dump(void *data, const char *key, void *value) {
     const self_t *self = (self_t *) data;
     
     module_log(self, "-> %s: %p\n", key, value);
@@ -341,10 +341,11 @@ module_ret_code module_deregister(self_t **self) {
     return MOD_OK;
 }
 
-module_ret_code module_load(const char *module_path, const char *mod_name, const char *ctx_name) {
+module_ret_code module_load(const char *module_path, const char *ctx_name) {
     MOD_PARAM_ASSERT(module_path);
-    MOD_PARAM_ASSERT(mod_name);
-    MOD_PARAM_ASSERT(ctx_name);
+    FIND_CTX(ctx_name);
+    
+    const int module_size = map_length(c->modules);
 
     void *handle = dlopen(module_path, RTLD_NOW);
     if (!handle) {
@@ -353,37 +354,26 @@ module_ret_code module_load(const char *module_path, const char *mod_name, const
     }
     
     /* 
-     * Check this after as ctx may be created by loaded module.
-     * Check that: 
-     * 1) requested ctx exists (or has been created)
-     * 2) requested module has been created in requested ctx
+     * Check that requested module has been created in requested ctx, 
+     * by looking at requested ctx number of modules
      */
-    m_context *c = map_get(ctx, (char *)ctx_name);
-    if (!c) {
+    if (module_size == map_length(c->modules) || // no new module registered in requested ctx
+        map_put(c->loaded, module_path, handle, false, false) != MAP_OK) {
+        
         dlclose(handle);
-        return MOD_NO_CTX;
+        return MOD_ERR;
     }
-    
-    module *mod = map_get(c->modules, (char *)mod_name);
-    if (!mod) {
-        dlclose(handle);
-        return MOD_NO_MOD;
-    }
-
-    if (map_put(c->loaded, mod_name, handle, false, false) == MAP_OK) {
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    return MOD_OK;
 }
 
-module_ret_code module_unload(const char *mod_name, char *ctx_name) {
-    MOD_PARAM_ASSERT(mod_name);    
+module_ret_code module_unload(const char *module_path, const char *ctx_name) {
+    MOD_PARAM_ASSERT(module_path);    
     FIND_CTX(ctx_name);
     
-    void *handle = map_get(c->loaded, mod_name);
-    if (handle) {
+    void *handle = map_get(c->loaded, module_path);
+    if (handle && map_remove(c->loaded, module_path) == MAP_OK) {
         dlclose(handle);
-        map_remove(c->loaded, mod_name);
+       
         return MOD_OK;
     }
     return MOD_ERR;

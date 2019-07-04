@@ -13,14 +13,23 @@
 - [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves
 - [x] Test pubsub messagging for paused modules
 - [x] Fix memleaks!
-- [x] Unsubscribe every module when a topic gets deregistered
+- [x] Unsubscribe shopuld not check if topic is registered in ctx as otherwise umsubscribing from a deregistered topic would not work.
 
 ### Generic
 - [x] Add some diagnostic API, eg: module_dump() (to dump each module's state)
 - [x] Add a module_load/unload function, to load a module from a compiled object at runtime
-- [ ] simplify interface for module_load/unload? ie: module_load(path, ctx_name)
+- [x] simplify interface for module_load/unload? ie: module_load(path, ctx_name)
 - [x] Add test.so build to Easy example
 - [x] Re-evaluate module_register/deregister parameters (ie: self_t should not be a const!)
+- [x] Provide a default (weak symbol) main() that just runs modules_ctx_loop() on any ctx it found
+- [x] Rename MODULE_DEFAULT_CTX and MODULE_MODULE_MAX_EVENTS to MODULES_*
+- [ ] Hide "const self_t *_self" variable in a function
+
+### Map API
+- [ ] Switch to https://github.com/DavidLeeds/hashmap; it is far better
+
+### Stack API
+- [ ] Support same "stack_iterator" as per new map API
 
 ### Doc
 - [x] module_dump
@@ -31,7 +40,7 @@
 - [x] module_tell/publish/broadcast
 - [x] MODULE_STARTED/MODULE_STOPPED new sysmessages
 - [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves
-- [ ] Add doc for new deregister_topic behaviour (ie: it automatically unsubscribes any module subscribed)
+- [x] Document main() weak symbol!
 - [ ] Add a new page about trusting pointers
 
 ### Samples
@@ -40,7 +49,6 @@
 ### Test
 - [x] Fix tests
 - [x] add module_dump tests
-- [ ] Add test to new deregister_topic behaviour (ie: it automatically unsubscribes any module subscribed)
 
 ## 5.1.0
 

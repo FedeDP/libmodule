@@ -15,6 +15,7 @@ MODULE("Doggo");
  * Use this to set some  global state needed eg: in check() function 
  */
 static void module_pre_start(void) {
+    printf("Press 'c' to start playing with your own doggo...\n");
 }
 
 /*
