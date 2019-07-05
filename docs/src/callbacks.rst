@@ -25,15 +25,12 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 
 .. c:function:: init(void)
 
-  Initializes module state; useful to call module_register_fd() for each fd this module should listen to. |br|
-  To create a non-pollable module, just avoid registering any fd. |br|
-  Non-pollable module acts much more similar to an actor, ie: they can only receive and send PubSub messages. |br|
-  Moreover this is the right place to eventually register any topic.
+  Initializes module state; useful to call module_register_fd() for each fd this module should listen to or to register any topic. |br|
+  Note that init() is only called first time module is started.
 
 .. c:function:: check(void)
 
-  Startup filter to check whether this module should be registered and managed by libmodule, |br|
-  as sometimes you may wish that not your modules are automatically started.
+  Startup filter to check whether this module should be registered and managed by libmodule. |br|
   
   :returns: true if the module should be registered, false otherwise.
 

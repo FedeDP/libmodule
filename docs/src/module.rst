@@ -45,6 +45,24 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   Returns _self handler for the module.
   
   :returns: :c:type:`const self_t *`
+  
+.. c:macro:: m_load(path)
+  
+  Attaches a new module from a .so file to "default" context. If module.so has a different context, this will be an error.
+  
+  :param path: shared object path.
+  :param ctx_name: module's context name.
+  :type path: :c:type:`const char *`
+  :type ctx_name: :c:type:`const char *`
+  
+.. c:macro:: m_unload(path)
+  
+  Detaches a module loaded from a .so file.
+  
+  :param path: shared object path.
+  :param ctx_name: module's context name.
+  :type path: :c:type:`const char *`
+  :type ctx_name: :c:type:`const char *`
 
 .. c:macro:: m_is(state)
 
@@ -246,6 +264,24 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
     
   :param self: pointer to module's handler. It is set to NULL after this call.
   :type self: :c:type:`self_t **`
+  
+.. c:function:: m_load(path, ctx_name)
+  
+  Attaches a new module from a .so file to ctx_name context. If module.so has a different context, this will be an error.
+  
+  :param path: shared object path.
+  :param ctx_name: module's context name.
+  :type path: :c:type:`const char *`
+  :type ctx_name: :c:type:`const char *`
+  
+.. c:function:: m_unload(path, ctx_name)
+  
+  Detaches a module loaded from a .so file.
+  
+  :param path: shared object path.
+  :param ctx_name: module's context name.
+  :type path: :c:type:`const char *`
+  :type ctx_name: :c:type:`const char *`
   
 .. c:function:: module_is(self, state)
 

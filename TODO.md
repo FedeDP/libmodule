@@ -23,25 +23,19 @@
 - [x] Re-evaluate module_register/deregister parameters (ie: self_t should not be a const!)
 - [x] Provide a default (weak symbol) main() that just runs modules_ctx_loop() on any ctx it found
 - [x] Rename MODULE_DEFAULT_CTX and MODULE_MODULE_MAX_EVENTS to MODULES_*
-- [ ] Hide "const self_t *_self" variable in a function
-
-### Map API
-- [ ] Switch to https://github.com/DavidLeeds/hashmap; it is far better
-
-### Stack API
-- [ ] Support same "stack_iterator" as per new map API
+- [x] Actually call init() callback first time module is started, even without passing from evaluate_module (thus without looping ctx)
 
 ### Doc
 - [x] module_dump
 - [x] module_subscribe/unsubscribe
 - [x] self()
 - [x] module_register/deregister
-- [ ] module_load/unload
+- [x] module_load/unload
 - [x] module_tell/publish/broadcast
 - [x] MODULE_STARTED/MODULE_STOPPED new sysmessages
 - [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves
 - [x] Document main() weak symbol!
-- [ ] Add a new page about trusting pointers
+- [x] Add a new page about trusting pointers
 
 ### Samples
 - [x] Fix samples

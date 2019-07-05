@@ -165,6 +165,9 @@ static int manage_fds(module *mod, m_context *c, const int flag, const bool stop
 static module_ret_code start(module *mod, const char *err_str) {
     GET_CTX_PRIV((&mod->self));
     
+    
+    const bool was_idle = _module_is(mod, IDLE);
+    
     /* 
      * Starting module for the first time
      * or after it was stopped.
@@ -181,6 +184,12 @@ static module_ret_code start(module *mod, const char *err_str) {
     MOD_ASSERT(!ret, err_str, MOD_ERR);
         
     mod->state = RUNNING;
+    
+    /* If this is first time module is started, call its init() callback */
+    if (was_idle) {
+        mod->hook.init();
+    }
+    
     tell_system_pubsub_msg(c, MODULE_STARTED, &mod->self, NULL);
     return MOD_OK;
 }
@@ -233,9 +242,7 @@ bool _module_is(const module *mod, const enum module_states st) {
 map_ret_code evaluate_module(void *data, const char *key, void *value) {
     module *mod = (module *)value;
     if (_module_is(mod, IDLE) && mod->hook.evaluate()) {
-        if (start(mod, "Failed to start module.") == MOD_OK) {
-            mod->hook.init();
-        }
+        start(mod, "Failed to start module.");
     }
     return MAP_OK;
 }

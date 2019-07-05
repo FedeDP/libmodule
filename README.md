@@ -16,13 +16,6 @@ Unsurprisingly, module is the core concept of libmodule architecture.
 A module is an Actor that can listen on socket events too.  
 Frankly speaking, it is denoted by a MODULE() macro plus a bunch of mandatory callbacks, eg:
 ```
-cat pippo.c
-
-#include <module/module_easy.h>
-#include <module/modules_easy.h>
-#include <string.h>
-#include <ctype.h>
-
 MODULE("Pippo");
 
 static void init(void) {

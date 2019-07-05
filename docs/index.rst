@@ -14,6 +14,7 @@ Welcome to libmodule's documentation!
    src/data_structures
    src/callbacks
    src/lifecycle
+   src/memory
    src/pubsub
    src/module
    src/modules

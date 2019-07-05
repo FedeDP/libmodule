@@ -28,9 +28,9 @@ _public_ module_ret_code module_stop(const self_t *self);
 /* Module generic functions */
 _public_ __attribute__((format (printf, 2, 3))) module_ret_code module_log(const self_t *self, const char *fmt, ...);
 _public_ module_ret_code module_dump(const self_t *self);
+_public_ module_ret_code module_set_userdata(const self_t *self, const void *userdata);
 
 /* Module fds functions */
-_public_ module_ret_code module_set_userdata(const self_t *self, const void *userdata);
 _public_ module_ret_code module_register_fd(const self_t *self, const int fd, const bool autoclose, const void *userptr);
 _public_ module_ret_code module_deregister_fd(const self_t *self, const int fd);
 

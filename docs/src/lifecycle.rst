@@ -51,7 +51,8 @@ As previously mentioned, a registered module, before being started, is in IDLE s
 IDLE state means that it has still no source of events; it won't receive any PubSub message and even if it registers any fd, they won't be polled. |br|
 When module is started, thus reaching RUNNING state, all its registered fds will start being polled; moreover, it can finally receive PubSub messages. Fds registered while in RUNNING state, are automatically polled. |br|
 If a module is PAUSED, it will stop polling on its fds and PubSub messages, but PubSub messages will still be queued on its write end of pipe. Thus, as soon as module is resumed, all PubSub messages received during PAUSED state will trigger receive() callback. |br|
-If a module gets STOPPED, it will stop polling on its fds and PubSub messages, and every autoclose fd will be closed. Moreover, all its registered fds are freed. STOPPED state is the same as IDLE state, but it means that module was started at least once. |br|
+If a module gets STOPPED, it will stop polling on its fds and PubSub messages, and every autoclose fd will be closed. Moreover, all its registered fds are freed and its enqueued pubsub messages are destroyed. |br|
+STOPPED state is the same as IDLE state, but it means that module was started at least once and module's init() callback has already been called. |br|
 
 module_start() needs to be called on a IDLE or STOPPED module. |br|
 module_pause() needs to be called on a RUNNING module. |br|
