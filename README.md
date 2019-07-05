@@ -16,6 +16,12 @@ Unsurprisingly, module is the core concept of libmodule architecture.
 A module is an Actor that can listen on socket events too.  
 Frankly speaking, it is denoted by a MODULE() macro plus a bunch of mandatory callbacks, eg:
 ```
+#include <module/module_easy.h>
+#include <module/modules_easy.h>
+#include <unistd.h>
+#include <string.h>
+#include <ctype.h>
+
 MODULE("Pippo");
 
 static void init(void) {
@@ -43,10 +49,12 @@ static void receive(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'q':
                 m_log("Leaving...\n");
-                m_tell(self(), "ByeBye");
+                m_tell_str(self(), "ByeBye", false);
                 break;
             default:
-                m_log("Pressed %c\n", c);
+                if (c != ' ' && c != '\n') {
+                    m_log("Pressed %c\n", c);
+                }
                 break;
         }
     } else if (msg->pubsub_msg->type == USER && 
