@@ -51,18 +51,14 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   Attaches a new module from a .so file to "default" context. If module.so has a different context, this will be an error.
   
   :param path: shared object path.
-  :param ctx_name: module's context name.
   :type path: :c:type:`const char *`
-  :type ctx_name: :c:type:`const char *`
   
 .. c:macro:: m_unload(path)
   
   Detaches a module loaded from a .so file.
   
   :param path: shared object path.
-  :param ctx_name: module's context name.
   :type path: :c:type:`const char *`
-  :type ctx_name: :c:type:`const char *`
 
 .. c:macro:: m_is(state)
 
