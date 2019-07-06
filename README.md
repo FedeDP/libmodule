@@ -66,7 +66,7 @@ static void receive(const msg_t *msg, const void *userdata) {
 ```
 
 In this example, a "Pippo" module is created and will read chars from stdin until 'q' is pressed.  
-Note that it does not even need a main function, as libmodule already provides a default one (as a [weak, thus overridable, symbol](https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Function-Attributes.html)).  
+Note that it does not even need a main function, as libmodule already provides a default one as a [weak, thus overridable, symbol](https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Function-Attributes.html).  
 
 ## Is it portable?
 
@@ -74,14 +74,13 @@ Yes, it is. Non-portable code is actually [compile-time-plugins](https://github.
 On linux, libmodule's internal loop will use epoll, while on BSD and MacOS it will use kqueue.  
 On other OS, cmake will fallback at looking for [libkqueue](https://github.com/mheily/libkqueue), a drop-in replacement for kqueue.  
 Unfortunately, I am not able to test builds on other OS: I could only check that libmodule can be built on Linux through libkqueue.  
-*If anyone is interested in step up and test/maintain libmodule on non-linux platforms, I'd be very thankful*.  
 
-Finally, it heavily relies upon gcc attributes that may or may not be available for your compiler.  
+Finally, it heavily relies upon gcc attributes that may or may not be available for your compiler.
 
 ## Is there any documentation?
 
 Yes, it is availabe at [readthedocs](http://libmodule.readthedocs.io/en/latest/).  
-You have some nice examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.  
+You have some simple examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.  
 To see a real project using libmodule, check [Clightd](https://github.com/FedeDP/Clightd).
 
 ## CI
@@ -93,7 +92,7 @@ Moreover, tests are executed and valgrind checked too.
 
 We all know OOP is not a solution to every problem and C is still a beautiful and much used language.  
 Still, I admit to love code modularity that OOP enforces; moreover, I realized that I was using same code abstractions over and over in my C projects (both side projects and at my job).  
-So I thought that writing a library to achieve those same abstractions in a cleaner and simpler way was the right thing to do.
+So I thought that writing a library to achieve those same abstractions in a cleaner and simpler way was the right thing to do and could help some other dev. 
 
 ## Build dep and how to build
 
