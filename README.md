@@ -15,7 +15,7 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 Unsurprisingly, module is the core concept of libmodule architecture.  
 A module is an Actor that can listen on socket events too.  
 Frankly speaking, it is denoted by a MODULE() macro plus a bunch of mandatory callbacks, eg:
-```
+```C
 #include <module/module_easy.h>
 #include <module/modules_easy.h>
 #include <unistd.h>
@@ -64,7 +64,6 @@ static void receive(const msg_t *msg, const void *userdata) {
     }
 }
 ```
-
 In this example, a "Pippo" module is created and will read chars from stdin until 'q' is pressed.  
 Note that it does not even need a main function, as libmodule already provides a default one as a [weak, thus overridable, symbol](https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Function-Attributes.html).  
 
