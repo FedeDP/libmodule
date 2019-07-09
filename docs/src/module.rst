@@ -261,7 +261,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param self: pointer to module's handler. It is set to NULL after this call.
   :type self: :c:type:`self_t **`
   
-.. c:function:: m_load(path, ctx_name)
+.. c:function:: module_load(path, ctx_name)
   
   Attaches a new module from a .so file to ctx_name context. If module.so has a different context, this will be an error.
   
@@ -270,14 +270,12 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type path: :c:type:`const char *`
   :type ctx_name: :c:type:`const char *`
   
-.. c:function:: m_unload(path, ctx_name)
+.. c:function:: module_unload(path)
   
   Detaches a module loaded from a .so file.
   
   :param path: shared object path.
-  :param ctx_name: module's context name.
   :type path: :c:type:`const char *`
-  :type ctx_name: :c:type:`const char *`
   
 .. c:function:: module_is(self, state)
 

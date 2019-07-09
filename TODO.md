@@ -24,6 +24,10 @@
 - [x] Provide a default (weak symbol) main() that just runs modules_ctx_loop() on any ctx it found
 - [x] Rename MODULE_DEFAULT_CTX and MODULE_MODULE_MAX_EVENTS to MODULES_*
 - [x] Actually call init() callback first time module is started, even without passing from evaluate_module (thus without looping ctx)
+- [x] module_load/unload should use RTLD_NOLOAD flag instead of yet another hashmap
+
+- [ ] Rename pubsub_msg to ps_msg inside msg_t?
+- [ ] Rename pubsub_msg_t to ps_msg_t?
 
 ### Doc
 - [x] module_dump

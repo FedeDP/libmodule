@@ -5,7 +5,7 @@
 #include "stack.h"
 
 #ifndef NDEBUG
-    #define MODULE_DEBUG printf("Libmodule: "); printf
+    #define MODULE_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
 #else
     #define MODULE_DEBUG (void)
 #endif
@@ -118,7 +118,6 @@ struct _context {
     void *pevents;
     int max_events;
     map_t *topics;
-    map_t *loaded;
 };
 
 /* Defined in module.c */

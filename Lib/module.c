@@ -30,10 +30,9 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     
     (*context)->modules = map_new();
     (*context)->topics = map_new();
-    (*context)->loaded = map_new();
     
     (*context)->name = ctx_name;
-    if ((*context)->topics && (*context)->modules && (*context)->loaded &&
+    if ((*context)->topics && (*context)->modules &&
         map_put(ctx, (*context)->name, *context, false, false) == MAP_OK) {
         
         return MOD_OK;
@@ -48,7 +47,6 @@ static void destroy_ctx(m_context *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", context->name);
     map_free(context->modules);
     map_free(context->topics);
-    map_free(context->loaded);
     poll_close(context->fd, &context->pevents, &context->max_events);
     map_remove(ctx, context->name);
     memhook._free(context);
@@ -364,25 +362,24 @@ module_ret_code module_load(const char *module_path, const char *ctx_name) {
      * Check that requested module has been created in requested ctx, 
      * by looking at requested ctx number of modules
      */
-    if (module_size == map_length(c->modules) || // no new module registered in requested ctx
-        map_put(c->loaded, module_path, handle, false, false) != MAP_OK) {
-        
+    if (module_size == map_length(c->modules)) { 
         dlclose(handle);
         return MOD_ERR;
     }
     return MOD_OK;
 }
 
-module_ret_code module_unload(const char *module_path, const char *ctx_name) {
+module_ret_code module_unload(const char *module_path) {
     MOD_PARAM_ASSERT(module_path);    
-    FIND_CTX(ctx_name);
     
-    void *handle = map_get(c->loaded, module_path);
-    if (handle && map_remove(c->loaded, module_path) == MAP_OK) {
+    void *handle = dlopen(module_path, RTLD_NOW | RTLD_NOLOAD);
+    if (handle) {
+        /* RTLD_NOLOAD does still increment refcounter... */
         dlclose(handle);
-       
+        dlclose(handle);
         return MOD_OK;
     }
+    MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
     return MOD_ERR;
 }
 

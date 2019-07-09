@@ -25,7 +25,7 @@ static void _ctor2_ module_pre_start(void)
 
 /* Defines for easy API (with no need bothering with both _self and ctx) */
 #define m_load(path)                            module_load(path, MODULES_DEFAULT_CTX)
-#define m_unload(path)                          module_unload(path, MODULES_DEFAULT_CTX)
+#define m_unload(path)                          module_unload(path) // just an alias
 
 #define m_is(state)                             module_is(self(), state)
 #define m_dump()                                module_dump(self())

@@ -14,7 +14,7 @@ _public_ module_ret_code module_deregister(self_t **self);
 
 /* External shared object module runtime loading */
 _public_ module_ret_code module_load(const char *module_path, const char *ctx_name);
-_public_ module_ret_code module_unload(const char *module_path, const char *ctx_name);
+_public_ module_ret_code module_unload(const char *module_path);
 
 /* Module state getters */
 _public_ _pure_ bool module_is(const self_t *self, const enum module_states st);
