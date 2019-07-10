@@ -25,16 +25,17 @@ Frankly speaking, it is denoted by a MODULE() macro plus a bunch of mandatory ca
 MODULE("Pippo");
 
 static void init(void) {
-    m_register_fd(STDIN_FILENO, 0, NULL);
+    /* Register STDIN fd, without autoclosing it at the end */
+    m_register_fd(STDIN_FILENO, false, NULL);
 }
 
-/* Should module be registered? */
 static bool check(void) {
+    /* Should module be registered? */
     return true;
 }
 
-/* Should module be started? */
 static bool evaluate(void) {
+    /* Should module be started? */
     return true;
 }
 

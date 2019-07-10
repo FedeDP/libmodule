@@ -28,6 +28,7 @@
 
 - [ ] Rename pubsub_msg to ps_msg inside msg_t?
 - [ ] Rename pubsub_msg_t to ps_msg_t?
+- [ ] module_get_name/ctx to return a strdup?
 
 ### Doc
 - [x] module_dump
