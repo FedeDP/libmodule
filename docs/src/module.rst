@@ -209,7 +209,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_tell_str(recipient, msg)
 
-  Tell a string message to another module. Size is automatically computed through strlen.
+  Tell a string message to another module. Size is automatically computed through strlen, and autofree is set to false.
     
   :param recipient: module to whom deliver the message.
   :param msg: message to be sent.
@@ -218,7 +218,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_publish_str(topic, msg)
 
-  Publish a string message on a topic. Size is automatically computed through strlen.
+  Publish a string message on a topic. Size is automatically computed through strlen, and autofree is set to false.
     
   :param topic: topic on which publish message. NULL to broadcast message to all modules in same context. Note that only topic creator can publish message on topic.
   :param msg: message to be published.
@@ -227,7 +227,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_broadcast_str(msg)
 
-  Broadcast a string message in module's context. Same as calling m_publish(NULL, msg). Size is automatically computed through strlen.
+  Broadcast a string message in module's context. Same as calling m_publish(NULL, msg). Size is automatically computed through strlen, and autofree is set to false.
 
   :param msg: message to be delivered to all modules in a context.
   :type msg: :c:type:`const char *`

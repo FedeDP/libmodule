@@ -65,7 +65,7 @@ static void receive(const msg_t *msg, const void *userdata) {
             case USER:
                 if (!strcmp((char *)msg->pubsub_msg->message, "ComeHere")) {
                     m_log("Running...\n");
-                    m_tell_str(msg->pubsub_msg->sender, "BauBau", false);
+                    m_tell_str(msg->pubsub_msg->sender, "BauBau");
                 } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsPlay")) {
                     m_log("BauBau BauuBauuu!\n");
                 } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsEat")) {

@@ -50,7 +50,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'q':
                 m_log("Leaving...\n");
-                m_tell_str(self(), "ByeBye", false);
+                m_tell_str(self(), "ByeBye");
                 break;
             default:
                 if (c != ' ' && c != '\n') {
