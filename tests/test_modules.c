@@ -4,13 +4,15 @@
 #include <stdlib.h>
 
 static void logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
-    const char *name = NULL, *context = NULL;
+    char *name = NULL, *context = NULL;
     if (module_get_name(self, &name) == MOD_OK && 
         module_get_context(self, &context) == MOD_OK) {
         
         printf("%s@%s:\t*", name, context);
         vprintf(fmt, args);
     }
+    free(name);
+    free(context);
 }
 
 void test_modules_ctx_set_logger_NULL_ctx(void **state) {
