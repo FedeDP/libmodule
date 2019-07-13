@@ -54,7 +54,7 @@ _public_ module_ret_code module_tell(const self_t *self, const self_t *recipient
 _public_ module_ret_code module_publish(const self_t *self, const char *topic, const void *message,
                                         const ssize_t size, const bool autofree);
 _public_ module_ret_code module_broadcast(const self_t *self, const void *message,
-                                          const ssize_t size, const bool autofree);
+                                          const ssize_t size, const bool autofree, bool global);
 
 #ifdef __cplusplus
 }

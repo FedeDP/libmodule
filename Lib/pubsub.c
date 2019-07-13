@@ -8,8 +8,9 @@ static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, c
                                enum msg_type type, const size_t size, const bool autofree);
 static void destroy_pubsub_msg(ps_priv_t *pubsub_msg);
 static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c);
+static map_ret_code tell_global(void *data, const char *key, void *value);
 static module_ret_code publish_msg(const module *mod, const char *topic, const void *message, 
-                                   const ssize_t size, const bool autofree);
+                                   const ssize_t size, const bool autofree, const bool global);
 
 static map_ret_code tell_if(void *data, const char *key, void *value) {
     module *mod = (module *)value;
@@ -71,8 +72,17 @@ static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c) 
     return MOD_OK;
 }
 
+static map_ret_code tell_global(void *data, const char *key, void *value) {
+    m_context *c = (m_context *)value;
+    ps_priv_t *msg = (ps_priv_t *)data;
+    
+    tell_pubsub_msg(msg, NULL, c);
+    return MAP_OK;
+}
+
+
 static module_ret_code publish_msg(const module *mod, const char *topic, const void *message, 
-                                   const ssize_t size, const bool autofree) {
+                                   const ssize_t size, const bool autofree, const bool global) {
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
     
@@ -85,7 +95,12 @@ static module_ret_code publish_msg(const module *mod, const char *topic, const v
      */
     if (!topic || ((tmp = map_get(c->topics, topic)) && tmp == mod)) {
         ps_priv_t *m = create_pubsub_msg(message, &mod->self, topic, USER, size, autofree);
-        return tell_pubsub_msg(m, NULL, c);
+        if (!global) {
+            return tell_pubsub_msg(m, NULL, c);
+        }
+        if (map_iterate(ctx, tell_global, m) == MAP_OK) {
+            return MOD_OK;
+        }
     }
     return MOD_ERR;
 }
@@ -221,12 +236,12 @@ module_ret_code module_publish(const self_t *self, const char *topic, const void
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     
-    return publish_msg(mod, topic, message, size, autofree);
+    return publish_msg(mod, topic, message, size, autofree, false);
 }
 
 module_ret_code module_broadcast(const self_t *self, const void *message, 
-                                 const ssize_t size, const bool autofree) {
+                                 const ssize_t size, const bool autofree, bool global) {
     GET_MOD(self);
     
-    return publish_msg(mod, NULL, message, size, autofree);
+    return publish_msg(mod, NULL, message, size, autofree, global);
 }

@@ -6,6 +6,7 @@
     #include <bits/sigaction.h>
 #endif
 #include <unistd.h>
+#include <string.h>
 
 static const char *myCtx = "SecondCtx";
 /* 
@@ -80,6 +81,7 @@ static void receive(const msg_t *msg, const void *userdata) {
             m_log("an error occurred while getting signalfd data.\n");
         }
         m_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
+        m_broadcast_str("Leave", true);
         modules_ctx_quit(myCtx, 0);
     }
 #endif

@@ -15,7 +15,7 @@
 - [x] Fix memleaks!
 - [x] Unsubscribe shopuld not check if topic is registered in ctx as otherwise umsubscribing from a deregistered topic would not work.
 - [x] pubsub interface should take "const void *" instead of "const unsigned char *" as data
-- [ ] Add a new parameter "bool global" to module_broadcast?
+- [x] Add a new parameter "bool global" to module_broadcast?
 - [x] Rename pubsub_msg to ps_msg inside msg_t
 - [x] Rename pubsub_msg_t to ps_msg_t
 - [x] Rename pubsub_priv_t to ps_priv_t

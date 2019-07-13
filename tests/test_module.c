@@ -439,28 +439,28 @@ void test_module_publish(void **state) {
 void test_module_broadcast_NULL_self(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_broadcast(NULL, (unsigned char *)"hi!", strlen("hi!"), false);
+    module_ret_code ret = module_broadcast(NULL, (unsigned char *)"hi!", strlen("hi!"), false, false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_broadcast_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_broadcast(self, NULL, strlen("hi!"), false);
+    module_ret_code ret = module_broadcast(self, NULL, strlen("hi!"), false, false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_broadcast_wrong_size(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_broadcast(self, (unsigned char *)"hi!", -1, false);
+    module_ret_code ret = module_broadcast(self, (unsigned char *)"hi!", -1, false, false);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_broadcast(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_broadcast(self, (unsigned char *)"hi3!", strlen("hi!"), false);
+    module_ret_code ret = module_broadcast(self, (unsigned char *)"hi3!", strlen("hi!"), false, false);
     assert_true(ret == MOD_OK);
 }
 

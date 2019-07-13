@@ -196,16 +196,18 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
   
-.. c:macro:: m_broadcast(msg, size, autofree)
+.. c:macro:: m_broadcast(msg, size, autofree, global)
 
-  Broadcast a message in module's context.
+  Broadcast a message.
     
   :param msg: data to be delivered to all modules in a context.
   :param size: size of data to be delivered.
   :param autofree: whether to autofree msg after last recipient's received it.
+  :param global: whether to broadcast to every context.
   :type msg: :c:type:`const void *`
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
+  :type global: :c:type:`const bool`
   
 .. c:macro:: m_tell_str(recipient, msg)
 
@@ -220,17 +222,19 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
   Publish a string message on a topic. Size is automatically computed through strlen, and autofree is set to false.
     
-  :param topic: topic on which publish message. NULL to broadcast message to all modules in same context. Note that only topic creator can publish message on topic.
+  :param topic: topic on which publish message. Note that only topic creator can publish message on topic.
   :param msg: message to be published.
   :type topic: :c:type:`const char *`
   :type msg: :c:type:`const char *`
   
-.. c:macro:: m_broadcast_str(msg)
+.. c:macro:: m_broadcast_str(msg, global)
 
-  Broadcast a string message in module's context. Same as calling m_publish(NULL, msg). Size is automatically computed through strlen, and autofree is set to false.
+  Broadcast a string message. Same as calling m_publish(NULL, msg). Size is automatically computed through strlen, and autofree is set to false.
 
   :param msg: message to be delivered to all modules in a context.
+  :param global: whether to broadcast to every context.
   :type msg: :c:type:`const char *`
+  :type global: :c:type:`const bool`
 
 .. _module_complex:    
   
@@ -468,15 +472,17 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
   
-.. c:function:: module_broadcast(self, msg, size, autofree)
+.. c:function:: module_broadcast(self, msg, size, autofree, global)
 
-  Broadcast a message to all modules inside context.
+  Broadcast a message.
 
   :param self: pointer to module's handler
-  :param msg: actual data to be published.
-  :param size: size of data to be published.
+  :param msg: data to be delivered to all modules in a context.
+  :param size: size of data to be delivered.
   :param autofree: whether to autofree msg after last recipient's received it.
+  :param global: whether to broadcast to every context.
   :type self: :c:type:`const self_t *`
   :type msg: :c:type:`const void *`
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
+  :type global: :c:type:`const bool`
