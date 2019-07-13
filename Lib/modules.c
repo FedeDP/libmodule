@@ -148,9 +148,9 @@ static int recv_events(m_context *c, int timeout) {
                 msg.is_pubsub = true;
                 if (read(p->fd, (void **)&ps_msg, sizeof(pubsub_priv_t *)) != sizeof(pubsub_priv_t *)) {
                     MODULE_DEBUG("Failed to read message for %s: %s\n", mod->name, strerror(errno));
-                    msg.pubsub_msg = NULL;
+                    msg.ps_msg = NULL;
                 } else {
-                    msg.pubsub_msg = &ps_msg->msg;
+                    msg.ps_msg = &ps_msg->msg;
                 }
             } else {
                 /* Received from FD */
@@ -160,7 +160,7 @@ static int recv_events(m_context *c, int timeout) {
                 msg.fd_msg = &fd_msg;
             }
             
-            if (!msg.is_pubsub || msg.pubsub_msg) {
+            if (!msg.is_pubsub || msg.ps_msg) {
                 run_pubsub_cb(mod, &msg);
             }
         } else {

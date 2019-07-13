@@ -53,7 +53,7 @@ typedef struct {
     ssize_t size;
     const self_t *sender;
     enum msg_type type;
-} pubsub_msg_t;
+} ps_msg_t;
 
 typedef struct {
     int fd;
@@ -64,7 +64,7 @@ typedef struct {
     bool is_pubsub;
     union {
         const fd_msg_t      *fd_msg;
-        const pubsub_msg_t  *pubsub_msg;
+        const ps_msg_t      *ps_msg;
     };
 } msg_t;
 

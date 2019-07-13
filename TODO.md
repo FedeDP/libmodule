@@ -15,6 +15,9 @@
 - [x] Fix memleaks!
 - [x] Unsubscribe shopuld not check if topic is registered in ctx as otherwise umsubscribing from a deregistered topic would not work.
 - [x] pubsub interface should take "const void *" instead of "const unsigned char *" as data
+- [ ] Add a new parameter "bool global" to module_broadcast?
+- [x] Rename pubsub_msg to ps_msg inside msg_t
+- [x] Rename pubsub_msg_t to ps_msg_t
 
 ### Generic
 - [x] Add some diagnostic API, eg: module_dump() (to dump each module's state)
@@ -26,9 +29,6 @@
 - [x] Rename MODULE_DEFAULT_CTX and MODULE_MODULE_MAX_EVENTS to MODULES_*
 - [x] Actually call init() callback first time module is started, even without passing from evaluate_module (thus without looping ctx)
 - [x] module_load/unload should use RTLD_NOLOAD flag instead of yet another hashmap
-
-- [ ] Rename pubsub_msg to ps_msg inside msg_t?
-- [ ] Rename pubsub_msg_t to ps_msg_t?
 - [x] module_get_name/ctx to return a strdup string
 
 ### Doc

@@ -25,15 +25,15 @@ Types
     enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
     /* PubSub message types */
-    enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED };
+    enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED, MODULE_STARTED, MODULE_STOPPED };
 
     typedef struct {
         const char *topic;
-        const unsigned char *message;
-        const ssize_t size;
+        const void *message;
+        ssize_t size;
         const self_t *sender;
-        const enum msg_type type;
-    } pubsub_msg_t;
+        enum msg_type type;
+    } ps_msg_t;
 
     typedef struct {
         const int fd;
@@ -41,10 +41,10 @@ Types
     } fd_msg_t;
 
     typedef struct {
-        const bool is_pubsub;
+        bool is_pubsub;
         union {
-            const fd_msg_t      *const fd_msg;
-            const pubsub_msg_t  *const pubsub_msg;
+            const fd_msg_t      *fd_msg;
+            const ps_msg_t      *ps_msg;
         };
     } msg_t;
 

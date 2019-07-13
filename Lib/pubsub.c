@@ -109,7 +109,7 @@ map_ret_code flush_pubsub_msg(void *data, const char *key, void *value) {
          */
         if (!data) {
             MODULE_DEBUG("Flushing pubsub message for module '%s'.\n", mod->name);
-            msg_t msg = { .is_pubsub = true, .pubsub_msg = &mm->msg };
+            msg_t msg = { .is_pubsub = true, .ps_msg = &mm->msg };
             run_pubsub_cb(mod, &msg);
         } else {
             destroy_pubsub_msg(mm);
@@ -128,7 +128,7 @@ void run_pubsub_cb(module *mod, msg_t *msg) {
     cb(msg, mod->userdata);
 
     if (msg->is_pubsub) {
-        destroy_pubsub_msg((pubsub_priv_t *)msg->pubsub_msg);
+        destroy_pubsub_msg((pubsub_priv_t *)msg->ps_msg);
     }
 }
 

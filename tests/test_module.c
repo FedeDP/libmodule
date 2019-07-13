@@ -518,9 +518,9 @@ static bool evaluate(void) {
 
 static void recv(const msg_t *msg, const void *userdata) {
     static int ctr = 0;
-    if (msg->is_pubsub && msg->pubsub_msg->type == USER) {
+    if (msg->is_pubsub && msg->ps_msg->type == USER) {
         ctr++;
-        if (!strcmp((char *)msg->pubsub_msg->message, "hi3!")) {
+        if (!strcmp((char *)msg->ps_msg->message, "hi3!")) {
             modules_ctx_quit(CTX, ctr);
         }
     }

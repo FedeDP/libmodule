@@ -88,7 +88,7 @@ typedef struct _poll_t {
 
 /* Struct that holds pubsub messaging, private. It keeps reference count. */
 typedef struct {
-    pubsub_msg_t msg;
+    ps_msg_t msg;
     uint64_t refs;
     bool autofree;
 } pubsub_priv_t;

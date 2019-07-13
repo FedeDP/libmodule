@@ -103,7 +103,7 @@ static void A_recv(const msg_t *msg, const void *userdata) {
                 break;
         }
     } else {
-        if (msg->pubsub_msg->type == USER  && !strcmp((char *)msg->pubsub_msg->message, "BauBau")) {
+        if (msg->ps_msg->type == USER  && !strcmp((char *)msg->ps_msg->message, "BauBau")) {
             module_become(selfA, A_recv_ready);
             module_log(selfA, "Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
@@ -152,27 +152,27 @@ static void A_recv_ready(const msg_t *msg, const void *userdata) {
  */
 static void B_recv(const msg_t *msg, const void *userdata) {
     if (msg->is_pubsub) {
-        switch (msg->pubsub_msg->type) {
+        switch (msg->ps_msg->type) {
             case USER:
-                if (!strcmp((char *)msg->pubsub_msg->message, "ComeHere")) {
+                if (!strcmp((char *)msg->ps_msg->message, "ComeHere")) {
                     module_log(selfB, "Running...\n");
-                    module_tell(selfB, msg->pubsub_msg->sender, (unsigned char *)"BauBau", strlen("BauBau"), false);
-                } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsPlay")) {
+                    module_tell(selfB, msg->ps_msg->sender, (unsigned char *)"BauBau", strlen("BauBau"), false);
+                } else if (!strcmp((char *)msg->ps_msg->message, "LetsPlay")) {
                     module_log(selfB, "BauBau BauuBauuu!\n");
-                } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsEat")) {
+                } else if (!strcmp((char *)msg->ps_msg->message, "LetsEat")) {
                     module_log(selfB, "Burp!\n");
-                } else if (!strcmp((char *)msg->pubsub_msg->message, "LetsSleep")) {
+                } else if (!strcmp((char *)msg->ps_msg->message, "LetsSleep")) {
                     module_become(selfB, B_recv_sleeping);
                     module_log(selfB, "ZzzZzz...\n");
-                } else if (!strcmp((char *)msg->pubsub_msg->message, "ByeBye")) {
+                } else if (!strcmp((char *)msg->ps_msg->message, "ByeBye")) {
                     module_log(selfB, "Sob...\n");
-                } else if (!strcmp((char *)msg->pubsub_msg->message, "WakeUp")) {
+                } else if (!strcmp((char *)msg->ps_msg->message, "WakeUp")) {
                     module_log(selfB, "???\n");
                 }
                 break;
             case TOPIC_REGISTERED:
                 /* Doggo should subscribe to "leaving" topic */
-                module_subscribe(selfB, msg->pubsub_msg->topic);
+                module_subscribe(selfB, msg->ps_msg->topic);
                 break;
             default:
                 break;
@@ -181,8 +181,8 @@ static void B_recv(const msg_t *msg, const void *userdata) {
 }
 
 static void B_recv_sleeping(const msg_t *msg, const void *userdata) {
-    if (msg->is_pubsub && msg->pubsub_msg->type == USER) {
-        if (!strcmp((char *)msg->pubsub_msg->message, "WakeUp")) {
+    if (msg->is_pubsub && msg->ps_msg->type == USER) {
+        if (!strcmp((char *)msg->ps_msg->message, "WakeUp")) {
             module_become(selfB, B_recv);
             module_log(selfB, "Yawn...\n");
         } else {
