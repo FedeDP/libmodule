@@ -18,6 +18,7 @@
 - [ ] Add a new parameter "bool global" to module_broadcast?
 - [x] Rename pubsub_msg to ps_msg inside msg_t
 - [x] Rename pubsub_msg_t to ps_msg_t
+- [x] Rename pubsub_priv_t to ps_priv_t
 
 ### Generic
 - [x] Add some diagnostic API, eg: module_dump() (to dump each module's state)

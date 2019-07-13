@@ -91,7 +91,7 @@ typedef struct {
     ps_msg_t msg;
     uint64_t refs;
     bool autofree;
-} pubsub_priv_t;
+} ps_priv_t;
 
 /* Struct that holds data for each module */
 struct _module {

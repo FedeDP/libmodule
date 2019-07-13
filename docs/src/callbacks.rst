@@ -44,7 +44,7 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 .. c:function:: receive(msg, userdata)
 
   Poll callback, called when any event is ready on module's fd or when a PubSub message is received by a module. |br|
-  Use msg->is_pubsub to decide which internal message should be read (ie: pubsub_msg_t or fd_msg_t).
+  Use msg->is_pubsub to decide which internal message should be read (ie: ps_msg_t or fd_msg_t).
   
   :param: :c:type:`const msg_t * const` msg: pointer to msg_t struct.
   :param: :c:type:`const void *` userdata: pointer to userdata as set by m_set_userdata.

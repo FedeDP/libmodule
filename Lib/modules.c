@@ -141,12 +141,12 @@ static int recv_events(m_context *c, int timeout) {
             
             msg_t msg;
             fd_msg_t fd_msg;
-            pubsub_priv_t *ps_msg;
+            ps_priv_t *ps_msg;
             
             if (p->fd == mod->pubsub_fd[0]) {
                 /* Received on pubsub interface */
                 msg.is_pubsub = true;
-                if (read(p->fd, (void **)&ps_msg, sizeof(pubsub_priv_t *)) != sizeof(pubsub_priv_t *)) {
+                if (read(p->fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
                     MODULE_DEBUG("Failed to read message for %s: %s\n", mod->name, strerror(errno));
                     msg.ps_msg = NULL;
                 } else {
