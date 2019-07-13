@@ -4,11 +4,11 @@
 /** Actor-like PubSub interface **/
 
 static map_ret_code tell_if(void *data, const char *key, void *value);
-static pubsub_priv_t *create_pubsub_msg(const unsigned char *message, const self_t *sender, const char *topic, 
+static pubsub_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
                                enum msg_type type, const size_t size, const bool autofree);
 static void destroy_pubsub_msg(pubsub_priv_t *pubsub_msg);
 static module_ret_code tell_pubsub_msg(pubsub_priv_t *m, module *mod, m_context *c);
-static module_ret_code publish_msg(const module *mod, const char *topic, const unsigned char *message, 
+static module_ret_code publish_msg(const module *mod, const char *topic, const void *message, 
                                    const ssize_t size, const bool autofree);
 
 static map_ret_code tell_if(void *data, const char *key, void *value) {
@@ -31,7 +31,7 @@ static map_ret_code tell_if(void *data, const char *key, void *value) {
     return MAP_OK;
 }
 
-static pubsub_priv_t *create_pubsub_msg(const unsigned char *message, const self_t *sender, const char *topic, 
+static pubsub_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
                                enum msg_type type, const size_t size, const bool autofree) {
     pubsub_priv_t *m = memhook._malloc(sizeof(pubsub_priv_t));
     if (m) {
@@ -71,7 +71,7 @@ static module_ret_code tell_pubsub_msg(pubsub_priv_t *m, module *mod, m_context 
     return MOD_OK;
 }
 
-static module_ret_code publish_msg(const module *mod, const char *topic, const unsigned char *message, 
+static module_ret_code publish_msg(const module *mod, const char *topic, const void *message, 
                                    const ssize_t size, const bool autofree) {
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
@@ -203,7 +203,7 @@ module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
     return MOD_ERR;
 }
 
-module_ret_code module_tell(const self_t *self, const self_t *recipient, const unsigned char *message, 
+module_ret_code module_tell(const self_t *self, const self_t *recipient, const void *message, 
                             const ssize_t size, const bool autofree) {
     GET_MOD(self);
     MOD_PARAM_ASSERT(message);
@@ -216,7 +216,7 @@ module_ret_code module_tell(const self_t *self, const self_t *recipient, const u
     return tell_pubsub_msg(m, recipient->mod, recipient->ctx);
 }
 
-module_ret_code module_publish(const self_t *self, const char *topic, const unsigned char *message, 
+module_ret_code module_publish(const self_t *self, const char *topic, const void *message, 
                                const ssize_t size, const bool autofree) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
@@ -224,7 +224,7 @@ module_ret_code module_publish(const self_t *self, const char *topic, const unsi
     return publish_msg(mod, topic, message, size, autofree);
 }
 
-module_ret_code module_broadcast(const self_t *self, const unsigned char *message, 
+module_ret_code module_broadcast(const self_t *self, const void *message, 
                                  const ssize_t size, const bool autofree) {
     GET_MOD(self);
     

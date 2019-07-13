@@ -14,6 +14,7 @@
 - [x] Test pubsub messagging for paused modules
 - [x] Fix memleaks!
 - [x] Unsubscribe shopuld not check if topic is registered in ctx as otherwise umsubscribing from a deregistered topic would not work.
+- [x] pubsub interface should take "const void *" instead of "const unsigned char *" as data
 
 ### Generic
 - [x] Add some diagnostic API, eg: module_dump() (to dump each module's state)
@@ -28,7 +29,7 @@
 
 - [ ] Rename pubsub_msg to ps_msg inside msg_t?
 - [ ] Rename pubsub_msg_t to ps_msg_t?
-- [ ] module_get_name/ctx to return a strdup?
+- [x] module_get_name/ctx to return a strdup string
 
 ### Doc
 - [x] module_dump

@@ -179,7 +179,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param size: size of data to be sent.
   :param autofree: whether to autofree msg after last recipient's received it.
   :type recipient: :c:type:`const self_t *`
-  :type msg: :c:type:`const unsigned char *`
+  :type msg: :c:type:`const void *`
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
   
@@ -192,7 +192,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param size: size of data to be published.
   :param autofree: whether to autofree msg after last recipient's received it.
   :type topic: :c:type:`const char *`
-  :type msg: :c:type:`const unsigned char *`
+  :type msg: :c:type:`const void *`
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
   
@@ -203,7 +203,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param msg: data to be delivered to all modules in a context.
   :param size: size of data to be delivered.
   :param autofree: whether to autofree msg after last recipient's received it.
-  :type msg: :c:type:`const unsigned char *`
+  :type msg: :c:type:`const void *`
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
   
@@ -449,7 +449,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param autofree: whether to autofree msg after last recipient's received it.
   :type self: :c:type:`const self_t *`
   :type recipient: :c:type:`const self_t *`
-  :type msg: :c:type:`const unsigned char *`
+  :type msg: :c:type:`const void *`
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
   
@@ -464,7 +464,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param autofree: whether to autofree msg after last recipient's received it.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
-  :type msg: :c:type:`const unsigned char *`
+  :type msg: :c:type:`const void *`
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
   
@@ -477,6 +477,6 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :param size: size of data to be published.
   :param autofree: whether to autofree msg after last recipient's received it.
   :type self: :c:type:`const self_t *`
-  :type msg: :c:type:`const unsigned char *`
+  :type msg: :c:type:`const void *`
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`

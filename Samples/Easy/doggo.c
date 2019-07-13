@@ -1,6 +1,7 @@
 #include <module/module_easy.h> 
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 static void receive_sleeping(const msg_t *msg, const void *userdata);
 
@@ -104,9 +105,10 @@ static void receive_sleeping(const msg_t *msg, const void *userdata) {
             }
         } else if (msg->pubsub_msg->type == MODULE_STARTED) {
             /* A new module has been started */
-            const char *name = NULL;
+            char *name = NULL;
             module_get_name(msg->pubsub_msg->sender, &name);
             m_log("Module '%s' has been started started.\n", name);
+            free(name);
         }
     }
 }

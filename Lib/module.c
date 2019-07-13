@@ -435,17 +435,19 @@ module_ret_code module_deregister_fd(const self_t *self, const int fd) {
     return _deregister_fd(mod, fd);
 }
 
-module_ret_code module_get_name(const self_t *self, const char **name) {
+module_ret_code module_get_name(const self_t *self, char **name) {
     GET_MOD_PURE(self);
     
-    *name = mod->name;
+    *name = mem_strdup(mod->name);
+    MOD_ALLOC_ASSERT(*name);
     return MOD_OK;
 }
 
-module_ret_code module_get_context(const self_t *self, const char **ctx) {
+module_ret_code module_get_context(const self_t *self, char **ctx) {
     GET_CTX_PURE(self);
     
-    *ctx = c->name;
+    *ctx = mem_strdup(c->name);
+    MOD_ALLOC_ASSERT(*ctx);
     return MOD_OK;
 }
 

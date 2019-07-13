@@ -34,9 +34,9 @@ _public_ module_ret_code module_set_userdata(const self_t *self, const void *use
 _public_ module_ret_code module_register_fd(const self_t *self, const int fd, const bool autoclose, const void *userptr);
 _public_ module_ret_code module_deregister_fd(const self_t *self, const int fd);
 
-/* Note that name and ctx must NOT be freed by user */
-_public_ module_ret_code module_get_name(const self_t *mod_self, const char **name);
-_public_ module_ret_code module_get_context(const self_t *mod_self, const char **ctx);
+/* Note that name and ctx must be freed by user */
+_public_ module_ret_code module_get_name(const self_t *mod_self, char **name);
+_public_ module_ret_code module_get_context(const self_t *mod_self, char **ctx);
 
 _public_ module_ret_code module_ref(const self_t *self, const char *name, const self_t **modref);
 
@@ -49,11 +49,11 @@ _public_ module_ret_code module_deregister_topic(const self_t *self, const char 
 _public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
 _public_ module_ret_code module_unsubscribe(const self_t *self, const char *topic);
 
-_public_ module_ret_code module_tell(const self_t *self, const self_t *recipient, const unsigned char *message,
+_public_ module_ret_code module_tell(const self_t *self, const self_t *recipient, const void *message,
                                      const ssize_t size, const bool autofree);
-_public_ module_ret_code module_publish(const self_t *self, const char *topic, const unsigned char *message,
+_public_ module_ret_code module_publish(const self_t *self, const char *topic, const void *message,
                                         const ssize_t size, const bool autofree);
-_public_ module_ret_code module_broadcast(const self_t *self, const unsigned char *message,
+_public_ module_ret_code module_broadcast(const self_t *self, const void *message,
                                           const ssize_t size, const bool autofree);
 
 #ifdef __cplusplus

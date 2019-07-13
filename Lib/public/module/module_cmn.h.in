@@ -49,7 +49,7 @@ enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGI
 
 typedef struct {
     const char *topic;
-    const unsigned char *message;
+    const void *message;
     ssize_t size;
     const self_t *sender;
     enum msg_type type;

@@ -10,13 +10,15 @@
 static void *loop(void *param);
 
 static void logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
-    const char *mname = NULL, *cname = NULL;
+    char *mname = NULL, *cname = NULL;
     if (module_get_name(self, &mname) == MOD_OK &&
         module_get_context(self, &cname) == MOD_OK) {
        
         printf("%s@%s:\t*", mname, cname);
         vprintf(fmt, args);
     }
+    free(mname);
+    free(cname);
 }
 
 void setup_signals(void) {
