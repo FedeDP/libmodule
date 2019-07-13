@@ -61,5 +61,4 @@
 - [ ] m_forward -> like m_tell but to all children
 
 ## Ideas
-- [ ] Let contexts talk together? Eg: broadcast(msg, bool global) to send a message to all modules in every context; module_publish message in another context? etc etc
 - [ ] Akka-persistence like message store? (ie: store all messages and replay them)
