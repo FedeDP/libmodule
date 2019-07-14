@@ -6,9 +6,9 @@
 static map_ret_code tell_if(void *data, const char *key, void *value);
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
                                enum msg_type type, const size_t size, const bool autofree);
-static void destroy_pubsub_msg(ps_priv_t *pubsub_msg);
-static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c);
 static map_ret_code tell_global(void *data, const char *key, void *value);
+static void destroy_pubsub_msg(ps_priv_t *pubsub_msg);
+static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c, const bool global);
 static module_ret_code publish_msg(const module *mod, const char *topic, const void *message, 
                                    const ssize_t size, const bool autofree, const bool global);
 
@@ -19,11 +19,11 @@ static map_ret_code tell_if(void *data, const char *key, void *value) {
     if (_module_is(mod, RUNNING | PAUSED) &&                         // mod is running or paused
         ((msg->msg.type != USER && msg->msg.sender != &mod->self) || // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == USER &&                                    // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
-        (!msg->msg.topic || map_has_key(mod->subscriptions, msg->msg.topic))))) {          
+        (!msg->msg.topic || map_has_key(mod->subscriptions, msg->msg.topic))))) {     
         
         MODULE_DEBUG("Telling a message to %s.\n", mod->name);
         
-    if (write(mod->pubsub_fd[1], &msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
+        if (write(mod->pubsub_fd[1], &msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
             MODULE_DEBUG("Failed to write message for %s: %s\n", mod->name, strerror(errno));
         } else {
             msg->refs++;
@@ -47,6 +47,14 @@ static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, c
     return m;
 }
 
+static map_ret_code tell_global(void *data, const char *key, void *value) {
+    m_context *c = (m_context *)value;
+    ps_priv_t *msg = (ps_priv_t *)data;
+    
+    map_iterate(c->modules, tell_if, msg);
+    return MAP_OK;
+}
+
 static void destroy_pubsub_msg(ps_priv_t *pubsub_msg) {
     /* Properly free pubsub msg if its ref count reaches 0 and autofree bit is true */
     if (pubsub_msg->refs == 0 || --pubsub_msg->refs == 0) {
@@ -57,11 +65,13 @@ static void destroy_pubsub_msg(ps_priv_t *pubsub_msg) {
     }
 }
 
-static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c) {
+static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c, const bool global) {
     if (mod) {
         tell_if(m, NULL, mod);
-    } else {
+    } else if (!global) {
         map_iterate(c->modules, tell_if, m);
+    } else {
+        map_iterate(ctx, tell_global, m);
     }
     
     /* Nobody received our message; destroy it right away */
@@ -70,14 +80,6 @@ static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c) 
     }
     
     return MOD_OK;
-}
-
-static map_ret_code tell_global(void *data, const char *key, void *value) {
-    m_context *c = (m_context *)value;
-    ps_priv_t *msg = (ps_priv_t *)data;
-    
-    tell_pubsub_msg(msg, NULL, c);
-    return MAP_OK;
 }
 
 
@@ -95,12 +97,7 @@ static module_ret_code publish_msg(const module *mod, const char *topic, const v
      */
     if (!topic || ((tmp = map_get(c->topics, topic)) && tmp == mod)) {
         ps_priv_t *m = create_pubsub_msg(message, &mod->self, topic, USER, size, autofree);
-        if (!global) {
-            return tell_pubsub_msg(m, NULL, c);
-        }
-        if (map_iterate(ctx, tell_global, m) == MAP_OK) {
-            return MOD_OK;
-        }
+        return tell_pubsub_msg(m, NULL, c, global);
     }
     return MOD_ERR;
 }
@@ -109,7 +106,7 @@ static module_ret_code publish_msg(const module *mod, const char *topic, const v
 
 module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const self_t *sender, const char *topic) {
     ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, false);
-    return tell_pubsub_msg(m, NULL, c);
+    return tell_pubsub_msg(m, NULL, c, false);
 }
 
 map_ret_code flush_pubsub_msg(void *data, const char *key, void *value) {
@@ -228,7 +225,7 @@ module_ret_code module_tell(const self_t *self, const self_t *recipient, const v
     MOD_PARAM_ASSERT(self->ctx == recipient->ctx);
 
     ps_priv_t *m = create_pubsub_msg(message, &mod->self, NULL, USER, size, autofree);
-    return tell_pubsub_msg(m, recipient->mod, recipient->ctx);
+    return tell_pubsub_msg(m, recipient->mod, recipient->ctx, false);
 }
 
 module_ret_code module_publish(const self_t *self, const char *topic, const void *message, 
