@@ -150,6 +150,7 @@ int main(void) {
         cmocka_unit_test(test_map_put),
         cmocka_unit_test(test_map_get),
         cmocka_unit_test(test_map_length),
+        cmocka_unit_test(test_map_iterator),
         cmocka_unit_test(test_map_remove),
         cmocka_unit_test(test_map_clear),
         cmocka_unit_test(test_map_free),
@@ -158,6 +159,7 @@ int main(void) {
         cmocka_unit_test(test_stack_push),
         cmocka_unit_test(test_stack_peek),
         cmocka_unit_test(test_stack_length),
+        cmocka_unit_test(test_stack_iterator),
         cmocka_unit_test(test_stack_pop),
         cmocka_unit_test(test_stack_free)
     };

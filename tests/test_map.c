@@ -60,6 +60,26 @@ void test_map_length(void **state) {
     assert_int_equal(len, 2);
 }
 
+void test_map_iterator(void **state) {
+    (void) state; /* unused */
+    
+    /* NULL map */
+    map_itr_t *itr = map_itr_new(NULL);
+    assert_null(itr);
+    
+    itr = map_itr_new(my_map);
+    assert_non_null(itr);
+    
+    int count = map_length(my_map);
+    while (itr) {
+        count--;
+        printf("%s -> %p\n", map_itr_get_key(itr), map_itr_get_data(itr));
+        itr = map_itr_next(itr);
+    }
+    
+    assert_int_equal(count, 0);
+}
+
 void test_map_remove(void **state) {
     (void) state; /* unused */
     

@@ -50,6 +50,26 @@ void test_stack_length(void **state) {
     assert_int_equal(len, 3);
 }
 
+void test_stack_iterator(void **state) {
+    (void) state; /* unused */
+    
+    /* NULL stack */
+    stack_itr_t *itr = stack_itr_new(NULL);
+    assert_null(itr);
+    
+    itr = stack_itr_new(my_st);
+    assert_non_null(itr);
+    
+    int count = stack_length(my_st);
+    while (itr) {
+        count--;
+        printf("%p\n", stack_itr_get_data(itr));
+        itr = stack_itr_next(itr);
+    }
+    
+    assert_int_equal(count, 0);
+}
+
 void test_stack_pop(void **state) {
     (void) state; /* unused */
     

@@ -21,6 +21,17 @@
 - [x] Rename pubsub_msg_t to ps_msg_t
 - [x] Rename pubsub_priv_t to ps_priv_t
 
+### Map
+- [x] FIx: avoid incrementing map size on value update
+- [x] Add map_itr_t interface
+- [x] Add tests for new interface
+- [ ] Add Doc
+
+### Stack
+- [X] Add stack_itr_t interface
+- [x] Add tests for new interface
+- [ ] Add Doc
+
 ### Generic
 - [x] Add some diagnostic API, eg: module_dump() (to dump each module's state)
 - [x] Add a module_load/unload function, to load a module from a compiled object at runtime
