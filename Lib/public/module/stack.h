@@ -13,10 +13,10 @@ typedef enum {
 } stack_ret_code;
 
 /* Callback for stack_iterate */
-typedef stack_ret_code(*stack_cb)(void *, void *);
+typedef stack_ret_code (*stack_cb)(void *, void *);
 
 /* Fn for stack_set_dtor */
-typedef stack_ret_code(*stack_dtor)(void *);
+typedef void (*stack_dtor)(void *);
 
 /* Incomplete struct declaration for stack */
 typedef struct _stack stack_t;

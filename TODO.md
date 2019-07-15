@@ -23,11 +23,13 @@
 
 ### Map
 - [x] FIx: avoid incrementing map size on value update
+- [x] map->dtor should default to memhook._free, and fallback to default if map_set_dtor is called with NULL callback parameter 
 - [x] Add map_itr_t interface
 - [x] Add tests for new interface
 - [ ] Add Doc
 
 ### Stack
+- [x] stack->dtor should default to memhook._free, and fallback to default if stack_set_dtor is called with NULL callback parameter 
 - [X] Add stack_itr_t interface
 - [x] Add tests for new interface
 - [ ] Add Doc

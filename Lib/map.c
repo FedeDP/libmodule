@@ -198,7 +198,7 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bo
     m->data[index].val_needs_free = autofree;
     
     /* In case of value update, avoid incrementing size */
-    if (! m->data[index].in_use) {
+    if (!m->data[index].in_use) {
         m->data[index].in_use = true;
         m->size++;
     }
@@ -217,11 +217,7 @@ static void clear_elem(map_t *m, const int idx) {
     m->data[idx].key_needs_free = false;
     
     if (m->data[idx].val_needs_free) {
-        if (m->dtor) {
-            m->dtor(m->data[idx].data);
-        } else {
-            memhook._free((void *)m->data[idx].data);
-        }
+        m->dtor(m->data[idx].data);
     }
     m->data[idx].data = NULL;
     m->data[idx].val_needs_free = false;
@@ -242,6 +238,7 @@ map_t *map_new(void) {
         if (m->data) {
             m->table_size = INITIAL_SIZE;
             m->size = 0;
+            m->dtor = memhook._free;
         } else {
             map_free(m);
             m = NULL;
@@ -415,6 +412,10 @@ int map_length(const map_t *m) {
 map_ret_code map_set_dtor(map_t *m, map_dtor fn) {
     MAP_PARAM_ASSERT(m);
     
-    m->dtor = fn;
+    if (fn) {
+        m->dtor = fn;
+    } else {
+        m->dtor = memhook._free;
+    }
     return MAP_OK;
 }

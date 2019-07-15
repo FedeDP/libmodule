@@ -21,7 +21,11 @@ struct _stack_itr {
 /** Public API **/
 
 stack_t *stack_new(void) {
-    return memhook._calloc(1, sizeof(stack_t));
+    stack_t *s = memhook._calloc(1, sizeof(stack_t));
+    if (s) {
+        s->dtor = memhook._free;
+    }
+    return s;
 }
 
 stack_itr_t *stack_itr_new(const stack_t *s) {
@@ -112,11 +116,7 @@ stack_ret_code stack_clear(stack_t *s) {
         const bool autofree = elem->autofree;
         void *data = stack_pop(s);
         if (autofree) {
-            if (s->dtor) {
-                s->dtor(data);
-            } else {
-                memhook._free(data);
-            }
+            s->dtor(data);
         }
     }
     return STACK_OK;
@@ -139,6 +139,10 @@ int stack_length(const stack_t *s) {
 stack_ret_code stack_set_dtor(stack_t *s, stack_dtor fn) {
     STACK_PARAM_ASSERT(s);
     
-    s->dtor = fn;
+    if (fn) {
+        s->dtor = fn;
+    } else {
+        s->dtor = memhook._free;
+    }
     return STACK_OK;
 }
