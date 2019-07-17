@@ -123,15 +123,17 @@ struct _context {
 /* Defined in module.c */
 _pure_ bool _module_is(const module *mod, const enum module_states st);
 map_ret_code evaluate_module(void *data, const char *key, void *value);
+module_ret_code start(module *mod, const bool start);
+module_ret_code stop(module *mod, const bool stop);
 
 /* Defined in pubsub.c */
-module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, 
+module_ret_code tell_system_pubsub_msg(module *mod, m_context *c, enum msg_type type, 
                                        const self_t *sender, const char *topic);
-map_ret_code flush_pubsub_msg(void *data, const char *key, void *value);
+map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value);
 void run_pubsub_cb(module *mod, msg_t *msg);
 
 /* Defined in priv.c */
 char *mem_strdup(const char *s);
 
 extern map_t *ctx;
-extern memalloc_hook memhook;
+extern memhook_t memhook;

@@ -151,8 +151,10 @@ int main(void) {
         cmocka_unit_test(test_map_get),
         cmocka_unit_test(test_map_length),
         cmocka_unit_test(test_map_iterator),
+        cmocka_unit_test(test_map_iterate),
         cmocka_unit_test(test_map_remove),
         cmocka_unit_test(test_map_clear),
+        cmocka_unit_test(test_map_stress),
         cmocka_unit_test(test_map_free),
         
         /* Test Stack API */

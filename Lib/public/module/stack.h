@@ -39,7 +39,7 @@ _public_ void *stack_pop(stack_t *s);
 _public_ void *stack_peek(const stack_t *s);
 _public_ stack_ret_code stack_clear(stack_t *s);
 _public_ stack_ret_code stack_free(stack_t *s);
-_public_ int stack_length(const stack_t *s);
+_public_ ssize_t stack_length(const stack_t *s);
 _public_ stack_ret_code stack_set_dtor(stack_t *s, stack_dtor fn);
 
 #ifdef __cplusplus

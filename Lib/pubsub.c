@@ -21,10 +21,10 @@ static map_ret_code tell_if(void *data, const char *key, void *value) {
         (msg->msg.type == USER &&                                    // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || map_has_key(mod->subscriptions, msg->msg.topic))))) {     
         
-        MODULE_DEBUG("Telling a message to %s.\n", mod->name);
+        MODULE_DEBUG("Telling a message to '%s'.\n", mod->name);
         
         if (write(mod->pubsub_fd[1], &msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-            MODULE_DEBUG("Failed to write message for %s: %s\n", mod->name, strerror(errno));
+            MODULE_DEBUG("Failed to write message: %s\n", strerror(errno));
         } else {
             msg->refs++;
         }
@@ -104,28 +104,17 @@ static module_ret_code publish_msg(const module *mod, const char *topic, const v
 
 /** Private API **/
 
-module_ret_code tell_system_pubsub_msg(m_context *c, enum msg_type type, const self_t *sender, const char *topic) {
+module_ret_code tell_system_pubsub_msg(module *mod, m_context *c, enum msg_type type, const self_t *sender, const char *topic) {
     ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, false);
-    return tell_pubsub_msg(m, NULL, c, false);
+    return tell_pubsub_msg(m, mod, c, false);
 }
 
-map_ret_code flush_pubsub_msg(void *data, const char *key, void *value) {
+map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value) {
     module *mod = (module *)value;
     ps_priv_t *mm = NULL;
 
     while (read(mod->pubsub_fd[0], &mm, sizeof(ps_priv_t *)) == sizeof(ps_priv_t *)) {
-        /* 
-         * Actually tell msg ONLY if we are not deregistering module, 
-         * ie: we are stopping looping on the context. 
-         * Else, just free msg.
-         */
-        if (!data) {
-            MODULE_DEBUG("Flushing pubsub message for module '%s'.\n", mod->name);
-            msg_t msg = { .is_pubsub = true, .ps_msg = &mm->msg };
-            run_pubsub_cb(mod, &msg);
-        } else {
-            destroy_pubsub_msg(mm);
-        }
+        destroy_pubsub_msg(mm);
     }
     return 0;
 }
@@ -165,7 +154,7 @@ module_ret_code module_register_topic(const self_t *self, const char *topic) {
     
     if (!map_has_key(c->topics, topic)) {
         if (map_put(c->topics, topic, mod, false, false) == MAP_OK) {
-            tell_system_pubsub_msg(c, TOPIC_REGISTERED, self, topic);
+            tell_system_pubsub_msg(NULL, c, TOPIC_REGISTERED, &mod->self, topic);
             return MOD_OK;
         }
     }
@@ -181,7 +170,7 @@ module_ret_code module_deregister_topic(const self_t *self, const char *topic) {
     /* Only same mod which registered topic can deregister it */
     if (tmp == mod) {
         if (map_remove(c->topics, topic) == MAP_OK) {
-            tell_system_pubsub_msg(c, TOPIC_DEREGISTERED, self, topic);
+            tell_system_pubsub_msg(NULL, c, TOPIC_DEREGISTERED, &mod->self, topic);
             return MOD_OK;
         }
     }
@@ -242,3 +231,11 @@ module_ret_code module_broadcast(const self_t *self, const void *message,
     
     return publish_msg(mod, NULL, message, size, autofree, global);
 }
+
+module_ret_code module_poisonpill(const self_t *self, const self_t *recipient) {
+    GET_MOD(self);
+    GET_CTX(self);
+    MOD_PARAM_ASSERT(recipient);
+    
+    return tell_system_pubsub_msg(recipient->mod, c, POISON_PILL, &mod->self, NULL);
+} 

@@ -9,7 +9,7 @@ typedef struct _elem {
 } stack_elem;
 
 struct _stack {
-    int len;
+    size_t len;
     stack_dtor dtor;
     stack_elem *data;
 };
@@ -57,6 +57,7 @@ void *stack_itr_get_data(const stack_itr_t *itr) {
 
 stack_ret_code stack_itr_set_data(const stack_itr_t *itr, void *value) {
     STACK_PARAM_ASSERT(itr);
+    STACK_PARAM_ASSERT(value);
     
     itr->elem->userptr = value;
     return STACK_OK;
@@ -66,13 +67,20 @@ stack_ret_code stack_iterate(const stack_t *s, const stack_cb fn, void *userptr)
     STACK_PARAM_ASSERT(fn);
     MOD_RET_ASSERT(stack_length(s) > 0, STACK_MISSING);
     
-    stack_ret_code status = STACK_OK;
     stack_elem *elem = s->data;
-    while (elem && status == STACK_OK) {
-        status = fn(userptr, elem->userptr);
+    while (elem) {
+        stack_ret_code rc = fn(userptr, elem->userptr);
+        if (rc < STACK_OK) {
+            /* Stop right now with error */
+            return rc;
+        }
+        if (rc > STACK_OK) {
+            /* Stop right now with MAP_OK */
+            return STACK_OK;
+        }
         elem = elem->prev;
     }
-    return status;
+    return STACK_OK;
 }
 
 stack_ret_code stack_push(stack_t *s, void *data, bool autofree) {
@@ -130,7 +138,7 @@ stack_ret_code stack_free(stack_t *s) {
     return ret;
 }
 
-int stack_length(const stack_t *s) {
+ssize_t stack_length(const stack_t *s) {
     STACK_PARAM_ASSERT(s);
     
     return s->len;

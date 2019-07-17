@@ -13,8 +13,6 @@ static void default_logger(const self_t *self, const char *fmt, va_list args, co
 static module_ret_code _register_fd(module *mod, const int fd, const bool autoclose, const void *userptr);
 static module_ret_code _deregister_fd(module *mod, const int fd);
 static int manage_fds(module *mod, m_context *c, const int flag, const bool stop);
-static module_ret_code start(module *mod, const char *err_str);
-static module_ret_code stop(module *mod, const char *err_str, const bool stop);
 static map_ret_code subscribtions_dump(void *data, const char *key, void *value);
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
@@ -160,70 +158,6 @@ static int manage_fds(module *mod, m_context *c, const int flag, const bool stop
     return ret;
 }
 
-static module_ret_code start(module *mod, const char *err_str) {
-    GET_CTX_PRIV((&mod->self));
-    
-    
-    const bool was_idle = _module_is(mod, IDLE);
-    
-    /* 
-     * Starting module for the first time
-     * or after it was stopped.
-     * Properly add back its pubsub fds.
-     */
-    if (!_module_is(mod, PAUSED)) {
-        /* THIS IS NOT A RESUME */
-        if (init_pubsub_fd(mod) != MOD_OK) {
-            return MOD_ERR;
-        }
-    }
-    
-    int ret = manage_fds(mod, c, ADD, false);
-    MOD_ASSERT(!ret, err_str, MOD_ERR);
-        
-    mod->state = RUNNING;
-    
-    /* If this is first time module is started, call its init() callback */
-    if (was_idle) {
-        mod->hook.init();
-    }
-    
-    tell_system_pubsub_msg(c, MODULE_STARTED, &mod->self, NULL);
-    return MOD_OK;
-}
-
-static module_ret_code stop(module *mod, const char *err_str, const bool stop) {
-    GET_CTX_PRIV((&mod->self));
-    
-    if (stop) {
-        /* 
-         * Free all unread pubsub msg for this module.
-         * We need to do this every time module gets stopped,
-         * as if it is stopped and restarted multiple times,
-         * we will close and reopen its pubsub_fds,
-         * thus we are not able to retrieve its old messages anymore.
-         */
-        flush_pubsub_msg(mod, NULL, mod);        
-    }
-    
-    int ret = manage_fds(mod, c, RM, stop);
-    MOD_ASSERT(!ret, err_str, MOD_ERR);
-    
-    mod->state = stop ? STOPPED : PAUSED;
-    /*
-     * When module gets stopped, its write-end pubsub fd is closed too 
-     * Read-end is already closed by stop().
-     */
-    if (stop && mod->pubsub_fd[1] != -1) {
-        close(mod->pubsub_fd[1]);
-        mod->pubsub_fd[0] = -1;
-        mod->pubsub_fd[1] = -1;
-    }
-    
-    tell_system_pubsub_msg(c, MODULE_STOPPED, &mod->self, NULL);
-    return MOD_OK;
-}
-
 static map_ret_code subscribtions_dump(void *data, const char *key, void *value) {
     const self_t *self = (self_t *) data;
     
@@ -240,9 +174,78 @@ bool _module_is(const module *mod, const enum module_states st) {
 map_ret_code evaluate_module(void *data, const char *key, void *value) {
     module *mod = (module *)value;
     if (_module_is(mod, IDLE) && mod->hook.evaluate()) {
-        start(mod, "Failed to start module.");
+        start(mod, true);
     }
     return MAP_OK;
+}
+
+module_ret_code start(module *mod, const bool start) {
+    static const char *errors[2] = { "Failed to resume module.", "Failed to start module." };
+    
+    GET_CTX_PRIV((&mod->self));
+    
+    const bool was_idle = _module_is(mod, IDLE);
+    
+    /* 
+     * Starting module for the first time
+     * or after it was stopped.
+     * Properly add back its pubsub fds.
+     */
+    if (start) {
+        /* THIS IS NOT A RESUME */
+        if (init_pubsub_fd(mod) != MOD_OK) {
+            return MOD_ERR;
+        }
+    }
+    
+    int ret = manage_fds(mod, c, ADD, false);
+    MOD_ASSERT(!ret, errors[start], MOD_ERR);
+    
+    mod->state = RUNNING;
+    
+    /* If this is first time module is started, call its init() callback */
+    if (was_idle) {
+        mod->hook.init();
+    }
+    
+    MODULE_DEBUG("%s '%s'.\n", start ? "Started" : "Resumed", mod->name);
+    tell_system_pubsub_msg(NULL, c, MODULE_STARTED, &mod->self, NULL);
+    return MOD_OK;
+}
+
+module_ret_code stop(module *mod, const bool stop) {
+    static const char *errors[2] = { "Failed to pause module.", "Failed to stop module." };
+    
+    GET_CTX_PRIV((&mod->self));
+    
+    if (stop) {
+        /* 
+         * Free all unread pubsub msg for this module.
+         * We need to do this every time module gets stopped,
+         * as if it is stopped and restarted multiple times,
+         * we will close and reopen its pubsub_fds,
+         * thus we are not able to retrieve its old messages anymore.
+         */
+        flush_pubsub_msgs(NULL, NULL, mod);        
+    }
+    
+    int ret = manage_fds(mod, c, RM, stop);
+    MOD_ASSERT(!ret, errors[stop], MOD_ERR);
+    
+    mod->state = stop ? STOPPED : PAUSED;
+    /*
+     * When module gets stopped, its write-end pubsub fd is closed too 
+     * Read-end is already closed by stop().
+     */
+    if (stop && mod->pubsub_fd[1] != -1) {
+        close(mod->pubsub_fd[1]);
+        mod->pubsub_fd[0] = -1;
+        mod->pubsub_fd[1] = -1;
+    }
+    
+    MODULE_DEBUG("%s '%s'.\n", stop ? "Stopped" : "Paused", mod->name);
+    tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, &mod->self, NULL);
+    return MOD_OK;
 }
 
 /** Public API **/
@@ -318,7 +321,7 @@ module_ret_code module_deregister(self_t **self) {
     GET_MOD(tmp);
     MODULE_DEBUG("Deregistering module '%s'.\n", mod->name);
     
-    stop(mod, "Failed to stop module.", true);
+    stop(mod, true);
     
     /* Remove the module from the context */
     map_remove(tmp->ctx->modules, mod->name);
@@ -482,23 +485,23 @@ module_ret_code module_dump(const self_t *self) {
 module_ret_code module_start(const self_t *self) {
     GET_MOD_IN_STATE(self, IDLE | STOPPED);
     
-    return start(mod, "Failed to start module.");
+    return start(mod, true);
 }
 
 module_ret_code module_pause(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
-    return stop(mod, "Failed to pause module.", false);
+    return stop(mod, false);
 }
 
 module_ret_code module_resume(const self_t *self) {
     GET_MOD_IN_STATE(self, PAUSED);
     
-    return start(mod, "Failed to resume module.");
+    return start(mod, false);
 }
 
 module_ret_code module_stop(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING | PAUSED);
     
-    return stop(mod, "Failed to stop module.", true);
+    return stop(mod, true);
 }

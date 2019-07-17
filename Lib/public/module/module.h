@@ -55,6 +55,7 @@ _public_ module_ret_code module_publish(const self_t *self, const char *topic, c
                                         const ssize_t size, const bool autofree);
 _public_ module_ret_code module_broadcast(const self_t *self, const void *message,
                                           const ssize_t size, const bool autofree, bool global);
+_public_ module_ret_code module_poisonpill(const self_t *self, const self_t *recipient);
 
 #ifdef __cplusplus
 }

@@ -3,6 +3,7 @@
 
 static map_t *my_map;
 static int val = 5;
+static int count;
 
 void test_map_put(void **state) {
     (void) state; /* unused */
@@ -24,6 +25,12 @@ void test_map_put(void **state) {
     ret = map_put(my_map, "key", &val, false, false);
     assert_true(ret == MAP_OK);
     assert_true(map_has_key(my_map, "key"));
+    assert_int_equal(map_length(my_map), 1);
+    
+    /* Update val; check that map size was not increased */
+    ret = map_put(my_map, "key", &val, false, false);
+    assert_true(ret == MAP_OK);
+    assert_int_equal(map_length(my_map), 1);
     
     ret = map_put(my_map, "key2", &val, false, false);
     assert_true(ret == MAP_OK);
@@ -70,14 +77,34 @@ void test_map_iterator(void **state) {
     itr = map_itr_new(my_map);
     assert_non_null(itr);
     
-    int count = map_length(my_map);
+    count = map_length(my_map);
     while (itr) {
         count--;
         printf("%s -> %p\n", map_itr_get_key(itr), map_itr_get_data(itr));
         itr = map_itr_next(itr);
     }
-    
     assert_int_equal(count, 0);
+}
+
+map_ret_code iterate_cb(void *userptr, const char *key, void *data) {
+    count++;
+    return MAP_OK;
+}
+
+void test_map_iterate(void **state) {
+    (void) state; /* unused */
+    
+    /* NULL map */
+    map_ret_code ret = map_iterate(NULL, iterate_cb, NULL);
+    assert_false(ret == MAP_OK);
+    
+    /* NULL cb */
+    ret = map_iterate(my_map, NULL, NULL);
+    assert_false(ret == MAP_OK);
+    
+    ret = map_iterate(my_map, iterate_cb, NULL);
+    assert_true(ret == MAP_OK);
+    assert_int_equal(count, map_length(my_map));
 }
 
 void test_map_remove(void **state) {
@@ -111,6 +138,20 @@ void test_map_clear(void **state) {
     
     int len = map_length(my_map);
     assert_int_equal(len, 0);
+}
+
+void test_map_stress(void **state) {
+    (void) state; /* unused */
+    
+    const int size = 1000000;
+    for (int i = 0; i < size; i++) {
+        char key[20];
+        snprintf(key, sizeof(key), "key%d", i);
+        map_ret_code ret = map_put(my_map, key, "top", true, false);
+        assert_true(ret == MAP_OK);
+        assert_true(map_has_key(my_map, key));
+    }
+    assert_int_equal(map_length(my_map), size);
 }
 
 void test_map_free(void **state) {

@@ -5,6 +5,8 @@
 
 static void receive_sleeping(const msg_t *msg, const void *userdata);
 
+static const self_t *new_mod;
+
 /* 
  * Declare and automagically initialize 
  * this module as soon as program starts.
@@ -98,15 +100,16 @@ static void receive_sleeping(const msg_t *msg, const void *userdata) {
         if (msg->ps_msg->type == USER) {
             if (!strcmp((char *)msg->ps_msg->message, "WakeUp")) {
                 m_unbecome();
-                m_dump();
                 m_log("Yawn...\n");
+                m_poisonpill(new_mod);
             } else {
                 m_log("ZzzZzz...\n");
             }
         } else if (msg->ps_msg->type == MODULE_STARTED) {
+            new_mod = msg->ps_msg->sender;
             /* A new module has been started */
             char *name = NULL;
-            module_get_name(msg->ps_msg->sender, &name);
+            module_get_name(new_mod, &name);
             m_log("Module '%s' has been started started.\n", name);
             free(name);
         }

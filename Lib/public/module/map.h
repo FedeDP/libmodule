@@ -5,7 +5,8 @@
 /** Hashmap interface **/
 
 typedef enum {
-    MAP_WRONG_PARAM = -5,
+    MAP_EPERM = -6,
+    MAP_WRONG_PARAM,
     MAP_ERR,
     MAP_MISSING,
     MAP_FULL,
@@ -32,7 +33,7 @@ extern "C"{
 _public_ map_t *map_new(void);
 _public_ map_itr_t *map_itr_new(const map_t *m);
 _public_ map_itr_t *map_itr_next(map_itr_t *itr);
-_public_ map_ret_code map_itr_remove(const map_itr_t *itr);
+_public_ map_ret_code map_itr_remove(map_itr_t *itr);
 _public_ const char *map_itr_get_key(const map_itr_t *itr);
 _public_ void *map_itr_get_data(const map_itr_t *itr);
 _public_ map_ret_code map_itr_set_data(const map_itr_t *itr, void *value);
@@ -43,7 +44,7 @@ _public_ bool map_has_key(const map_t *m, const char *key);
 _public_ map_ret_code map_remove(map_t *m, const char *key);
 _public_ map_ret_code map_clear(map_t *m);
 _public_ map_ret_code map_free(map_t *m);
-_public_ int map_length(const map_t *m);
+_public_ ssize_t map_length(const map_t *m);
 _public_ map_ret_code map_set_dtor(map_t *m, map_dtor fn);
 
 #ifdef __cplusplus

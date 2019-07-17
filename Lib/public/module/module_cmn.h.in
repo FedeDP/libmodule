@@ -45,7 +45,7 @@ typedef struct _self self_t;
 enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
 /* PubSub message types */
-enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED, MODULE_STARTED, MODULE_STOPPED };
+enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED, MODULE_STARTED, MODULE_STOPPED, POISON_PILL };
 
 typedef struct {
     const char *topic;
@@ -97,7 +97,7 @@ typedef struct {
     realloc_fn _realloc;
     calloc_fn _calloc;
     free_fn _free;
-} memalloc_hook;
+} memhook_t;
 
 /* Module return codes */
 typedef enum {

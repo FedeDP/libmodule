@@ -13,7 +13,7 @@ static inline int loop_quit(m_context *c, const uint8_t quit_code);
 static int recv_events(m_context *c, int timeout);
 
 map_t *ctx;
-memalloc_hook memhook;
+memhook_t memhook;
 
 void modules_pre_start(void) {
     MODULE_DEBUG("Pre-starting libmodule.");
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     
     /* If there is more than 1 registered ctx, alloc as many pthreads as needed */
     if (map_length(ctx) > 1) {
-        MODULE_DEBUG("Allocating %d pthreads.\n", map_length(ctx));
+        MODULE_DEBUG("Allocating %ld pthreads.\n", map_length(ctx));
         th = memhook._calloc(map_length(ctx), sizeof(pthread_t));
     }
     
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
-    modules_set_memalloc_hook(NULL);
+    modules_set_memhook(NULL);
     ctx = map_new();
 }
 
@@ -107,7 +107,7 @@ static module_ret_code loop_start(m_context *c, const int max_events) {
         evaluate_new_state(c);
 
         /* Tell every RUNNING module that loop is started */
-        tell_system_pubsub_msg(c, LOOP_STARTED, NULL, NULL);
+        tell_system_pubsub_msg(NULL, c, LOOP_STARTED, NULL, NULL);
         return MOD_OK;
     }
     return MOD_ERR;
@@ -115,10 +115,10 @@ static module_ret_code loop_start(m_context *c, const int max_events) {
 
 static int loop_stop(m_context *c) {
     /* Tell every module that loop is stopped */
-    tell_system_pubsub_msg(c, LOOP_STOPPED, NULL, NULL);
+    tell_system_pubsub_msg(NULL, c, LOOP_STOPPED, NULL, NULL);
 
     /* Flush pubsub msg to avoid memleaks */
-    map_iterate(c->modules, flush_pubsub_msg, NULL);
+    map_iterate(c->modules, flush_pubsub_msgs, NULL);
 
     poll_destroy_pevents(&c->pevents, &c->max_events);
     c->looping = false;
@@ -160,8 +160,11 @@ static int recv_events(m_context *c, int timeout) {
                 msg.fd_msg = &fd_msg;
             }
             
-            if (!msg.is_pubsub || msg.ps_msg) {
+            if (!msg.is_pubsub || (msg.ps_msg && msg.ps_msg->type != POISON_PILL)) {
                 run_pubsub_cb(mod, &msg);
+            } else if (msg.ps_msg->type == POISON_PILL) {
+                MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
+                stop(mod, true);
             }
         } else {
             /* Forward error to below handling code */
@@ -185,13 +188,13 @@ static int recv_events(m_context *c, int timeout) {
 
 /** Public API **/
 
-module_ret_code modules_set_memalloc_hook(const memalloc_hook *hook) {
+module_ret_code modules_set_memhook(const memhook_t *hook) {
     if (hook) {
         MOD_ASSERT(hook->_malloc, "NULL malloc fn.", MOD_ERR);
         MOD_ASSERT(hook->_realloc, "NULL realloc fn.", MOD_ERR);
         MOD_ASSERT(hook->_calloc, "NULL calloc fn.", MOD_ERR);
         MOD_ASSERT(hook->_free, "NULL free fn.", MOD_ERR);
-        memcpy(&memhook, hook, sizeof(memalloc_hook));
+        memcpy(&memhook, hook, sizeof(memhook_t));
     } else {
         memhook._malloc = malloc;
         memhook._realloc = realloc;
