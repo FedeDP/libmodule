@@ -162,7 +162,7 @@ static int recv_events(m_context *c, int timeout) {
             
             if (!msg.is_pubsub || (msg.ps_msg && msg.ps_msg->type != POISON_PILL)) {
                 run_pubsub_cb(mod, &msg);
-            } else if (msg.ps_msg->type == POISON_PILL) {
+            } else if (msg.ps_msg) {
                 MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
                 stop(mod, true);
             }

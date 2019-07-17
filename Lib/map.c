@@ -304,13 +304,19 @@ map_ret_code map_itr_remove(map_itr_t *itr) {
 const char *map_itr_get_key(const map_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     
-    return itr->curr->key;
+    if (!itr->removed) {
+        return itr->curr->key;
+    }
+    return NULL;
 }
 
 void *map_itr_get_data(const map_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     
-    return itr->curr->data;
+    if (!itr->removed) {
+        return itr->curr->data;
+    }
+    return NULL;
 }
 
 map_ret_code map_itr_set_data(const map_itr_t *itr, void *value) {
