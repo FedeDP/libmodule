@@ -8,8 +8,8 @@ static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
 static void evaluate_new_state(m_context *c);
 static module_ret_code loop_start(m_context *c, const int max_events);
-static int loop_stop(m_context *c);
-static inline int loop_quit(m_context *c, const uint8_t quit_code);
+static uint8_t loop_stop(m_context *c);
+static inline module_ret_code loop_quit(m_context *c, const uint8_t quit_code);
 static int recv_events(m_context *c, int timeout);
 
 map_t *ctx;
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     modules_set_memhook(NULL);
-    ctx = map_new();
+    ctx = map_new(false, NULL);
 }
 
 static void modules_destroy(void) {
@@ -113,7 +113,7 @@ static module_ret_code loop_start(m_context *c, const int max_events) {
     return MOD_ERR;
 }
 
-static int loop_stop(m_context *c) {
+static uint8_t loop_stop(m_context *c) {
     /* Tell every module that loop is stopped */
     tell_system_pubsub_msg(NULL, c, LOOP_STOPPED, NULL, NULL);
 
@@ -126,7 +126,7 @@ static int loop_stop(m_context *c) {
     return c->quit_code;
 }
 
-static inline int loop_quit(m_context *c, const uint8_t quit_code) {
+static inline module_ret_code loop_quit(m_context *c, const uint8_t quit_code) {
     c->quit = true;
     c->quit_code = quit_code;
     return MOD_OK;
@@ -160,7 +160,7 @@ static int recv_events(m_context *c, int timeout) {
                 msg.fd_msg = &fd_msg;
             }
             
-            if (!msg.is_pubsub || (msg.ps_msg && msg.ps_msg->type != POISON_PILL)) {
+            if (!msg.is_pubsub || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {
                 run_pubsub_cb(mod, &msg);
             } else if (msg.ps_msg) {
                 MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
@@ -175,14 +175,22 @@ static int recv_events(m_context *c, int timeout) {
     
     if (nfds > 0) {
         evaluate_new_state(c);
+        
+        /* Are there any running modules still? */
+        if (!c->running_mods) {
+            MODULE_DEBUG("No running modules in '%s'. Stopping it.\n", c->name);
+            loop_quit(c, 0);
+        }
     } else if (nfds < 0) {
+        /* Quit and return < 0 only for real errors */
         if (errno != EINTR && errno != EAGAIN) {
             fprintf(stderr, "Module loop error: %s.\n", strerror(errno));
             loop_quit(c, errno);
         } else {
-            nfds = 0; // return < 0 only for real errors
+            nfds = 0;
         }
     }
+    
     return nfds;
 }
 

@@ -4,7 +4,6 @@
 
 typedef struct _elem {
     void *userptr;
-    bool autofree;
     struct _elem *prev;
 } stack_elem;
 
@@ -20,10 +19,10 @@ struct _stack_itr {
 
 /** Public API **/
 
-stack_t *stack_new(void) {
+stack_t *stack_new(const stack_dtor fn) {
     stack_t *s = memhook._calloc(1, sizeof(stack_t));
     if (s) {
-        s->dtor = memhook._free;
+        s->dtor = fn;
     }
     return s;
 }
@@ -83,7 +82,7 @@ stack_ret_code stack_iterate(const stack_t *s, const stack_cb fn, void *userptr)
     return STACK_OK;
 }
 
-stack_ret_code stack_push(stack_t *s, void *data, bool autofree) {
+stack_ret_code stack_push(stack_t *s, void *data) {
     STACK_PARAM_ASSERT(s);
     STACK_PARAM_ASSERT(data);
     
@@ -92,7 +91,6 @@ stack_ret_code stack_push(stack_t *s, void *data, bool autofree) {
         s->len++;
         elem->userptr = data;
         elem->prev = s->data;
-        elem->autofree = autofree;
         s->data = elem;
         return STACK_OK;
     }
@@ -121,9 +119,8 @@ stack_ret_code stack_clear(stack_t *s) {
     
     stack_elem *elem = NULL;
     while ((elem = s->data) && s->len > 0) {
-        const bool autofree = elem->autofree;
         void *data = stack_pop(s);
-        if (autofree) {
+        if (s->dtor) {
             s->dtor(data);
         }
     }
@@ -142,15 +139,4 @@ ssize_t stack_length(const stack_t *s) {
     STACK_PARAM_ASSERT(s);
     
     return s->len;
-}
-
-stack_ret_code stack_set_dtor(stack_t *s, stack_dtor fn) {
-    STACK_PARAM_ASSERT(s);
-    
-    if (fn) {
-        s->dtor = fn;
-    } else {
-        s->dtor = memhook._free;
-    }
-    return STACK_OK;
 }

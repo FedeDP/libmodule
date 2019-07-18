@@ -24,8 +24,6 @@
 
 typedef struct {
     const char *key;
-    bool key_needs_free;
-    bool val_needs_free;
     void *data;
 } map_elem;
 
@@ -36,6 +34,7 @@ typedef struct {
 struct _map {
     size_t table_size;
     size_t length;
+    bool dupkeys;
     map_elem *table;
     map_dtor dtor;
 };
@@ -51,7 +50,7 @@ static size_t hashmap_table_min_size_calc(size_t num_entries);
 static size_t hashmap_calc_index(const map_t *m, const char *key);
 static size_t hashmap_hash_string(const char *key);
 static map_ret_code hashmap_rehash(map_t *m);
-static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bool needs_free, const bool autofree);
+static map_ret_code hashmap_put(map_t *m, const char *key, void *value);
 static void clear_elem(map_t *m, map_elem *entry);
 
 /*
@@ -149,7 +148,9 @@ revert:
     return MAP_ERR;
 }
 
-static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bool needs_free, const bool autofree) {
+static map_ret_code hashmap_put(map_t *m, const char *key, void *value) {
+    MOD_RET_ASSERT(key, MAP_OMEM);
+    
     map_ret_code ret;
     
     /* Rehash with 2x capacity if load factor is approaching 0.75 */
@@ -177,18 +178,11 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bo
         }
     }
     if (!entry->key) {
-        if (needs_free) {
-            entry->key = mem_strdup(key);
-            MOD_RET_ASSERT(entry->key, MAP_OMEM);
-        } else {
-            entry->key = key;
-        }
+        entry->key = key;
         m->length++;
     }
     /* Update value in any case */
     entry->data = value;
-    entry->key_needs_free = needs_free;
-    entry->val_needs_free = autofree;
     return MAP_OK;
 }
 
@@ -199,10 +193,10 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value, const bo
  */
 static void clear_elem(map_t *m, map_elem *removed_entry) {
     /* Blank out the fields */
-    if (removed_entry->key_needs_free) {
+    if (m->dupkeys) {
         memhook._free((void *)removed_entry->key);
     }
-    if (removed_entry->val_needs_free) {
+    if (m->dtor) {
         m->dtor(removed_entry->data);
     }
     
@@ -236,13 +230,14 @@ static void clear_elem(map_t *m, map_elem *removed_entry) {
 /*
  * Return an empty hashmap, or NULL on failure.
  */
-map_t *map_new(void) {
+map_t *map_new(const bool keysdup, const map_dtor fn) {
     map_t *m = memhook._calloc(1, sizeof(map_t));
     if (m) {
         m->table = memhook._calloc(MAP_SIZE_DEFAULT, sizeof(map_elem));
         if (m->table) {
             m->table_size = MAP_SIZE_DEFAULT;
-            m->dtor = memhook._free;
+            m->dtor = fn;
+            m->dupkeys = keysdup;
         } else {
             map_free(m);
             m = NULL;
@@ -330,13 +325,13 @@ map_ret_code map_itr_set_data(const map_itr_t *itr, void *value) {
 /*
  * Add a pointer to the hashmap with strdupped key if dupkey is true
  */
-map_ret_code map_put(map_t *m, const char *key, void *value, const bool dupkey, const bool autofree) {
+map_ret_code map_put(map_t *m, const char *key, void *value) {
     MAP_PARAM_ASSERT(m);
     MAP_PARAM_ASSERT(key);
     MAP_PARAM_ASSERT(value);
     
     /* Find a place to put our value */
-    return hashmap_put(m, key, value, dupkey, autofree);
+    return hashmap_put(m, m->dupkeys ? mem_strdup(key) : key, value);
 }
 
 /*
@@ -436,15 +431,4 @@ ssize_t map_length(const map_t *m) {
     MAP_PARAM_ASSERT(m);
     
     return m->length;
-}
-
-map_ret_code map_set_dtor(map_t *m, map_dtor fn) {
-    MAP_PARAM_ASSERT(m);
-    
-    if (fn) {
-        m->dtor = fn;
-    } else {
-        m->dtor = memhook._free;
-    }
-    return MAP_OK;
 }

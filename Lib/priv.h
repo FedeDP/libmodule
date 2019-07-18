@@ -118,6 +118,7 @@ struct _context {
     void *pevents;
     int max_events;
     map_t *topics;
+    size_t running_mods;
 };
 
 /* Defined in module.c */

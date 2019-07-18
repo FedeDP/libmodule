@@ -34,15 +34,16 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Add a stress test for hashmap implementation
 - [x] Fix map_clear implementation
 - [x] Add map_iterate test
-- [ ] Set keydup and autofree in map_new()
-- [ ] Add a hashset implementation (that is the same as hashmap but sets data to NULL and hides it!) (just alias() hashmap functions!)
+- [x] Set keydup and autofree in map_new()
+- [x] Drop map_set_dtor
 
 ### Stack
 - [x] stack->dtor should default to memhook._free, and fallback to default if stack_set_dtor is called with NULL callback parameter 
 - [X] Add stack_itr_t interface
 - [x] Add tests for new interface
 - [x] Stack_iterate to follow same logic as map_iterate
-- [ ] Set autofree in stack_new()
+- [x] Set autofree in stack_new()
+- [x] Drop stack_set_dtor
 
 ### Generic
 - [x] Add some diagnostic API, eg: module_dump() (to dump each module's state)
@@ -57,6 +58,8 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] module_get_name/ctx to return a strdup string
 - [x] Rename modules_set_memalloc_hook to modules_set_memhook() + rename memalloc_hook to memhook_t
 - [x] stop() and start() should avoid err_str parameter.
+- [x] Stop looping on context when there are no RUNNING modules?
+- [ ] Is LOOP_STOPPED sysmessage useful? Right now it is delivered and flushed (freed)...
 
 ### Doc
 - [x] module_dump
@@ -72,6 +75,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [ ] modules_set_memhook/memhook_t
 - [ ] new stop behaviour (stop will always destroy pubsub messages instead of delivering them, except when calling module_poisonpill)
 - [ ] module_poisonpill
+- [ ] New modules_loop behaviour (stop looping when no RUNNING modules)
 - [ ] New Map API
 - [ ] New Stack API
 

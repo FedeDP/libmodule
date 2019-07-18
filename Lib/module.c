@@ -26,12 +26,12 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
      
     (*context)->logger = default_logger;
     
-    (*context)->modules = map_new();
-    (*context)->topics = map_new();
+    (*context)->modules = map_new(false, NULL);
+    (*context)->topics = map_new(false, NULL);
     
     (*context)->name = ctx_name;
     if ((*context)->topics && (*context)->modules &&
-        map_put(ctx, (*context)->name, *context, false, false) == MAP_OK) {
+        map_put(ctx, (*context)->name, *context) == MAP_OK) {
         
         return MOD_OK;
     }
@@ -210,6 +210,8 @@ module_ret_code start(module *mod, const bool start) {
     
     MODULE_DEBUG("%s '%s'.\n", start ? "Started" : "Resumed", mod->name);
     tell_system_pubsub_msg(NULL, c, MODULE_STARTED, &mod->self, NULL);
+    
+    c->running_mods++;
     return MOD_OK;
 }
 
@@ -225,6 +227,9 @@ module_ret_code stop(module *mod, const bool stop) {
          * as if it is stopped and restarted multiple times,
          * we will close and reopen its pubsub_fds,
          * thus we are not able to retrieve its old messages anymore.
+         * 
+         * Pass a !NULL pointer as first parameter,
+         * so flush_pubsub_msgs() will free messages instead of delivering them.
          */
         flush_pubsub_msgs(NULL, NULL, mod);        
     }
@@ -245,6 +250,8 @@ module_ret_code stop(module *mod, const bool stop) {
     
     MODULE_DEBUG("%s '%s'.\n", stop ? "Stopped" : "Paused", mod->name);
     tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, &mod->self, NULL);
+    
+    c->running_mods--;
     return MOD_OK;
 }
 
@@ -277,12 +284,12 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
         mod->state = IDLE;
         mod->fds = NULL;
         
-        mod->subscriptions = map_new();
+        mod->subscriptions = map_new(false, NULL);
         if (!mod->subscriptions) {
             break;
         }
         
-        mod->recvs = stack_new();
+        mod->recvs = stack_new(NULL);
         if (!mod->recvs) {
             break;
         }
@@ -299,7 +306,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
         /* Internal reference used as sender for pubsub messages */
         memcpy(&mod->self, &((self_t){ mod, context, true }), sizeof(self_t));
         
-        if (map_put(context->modules, mod->name, mod, false, false) == MAP_OK) {
+        if (map_put(context->modules, mod->name, mod) == MAP_OK) {
             mod->pubsub_fd[0] = -1;
             mod->pubsub_fd[1] = -1;
             return MOD_OK;
@@ -390,7 +397,7 @@ module_ret_code module_become(const self_t *self, const recv_cb new_recv) {
     MOD_PARAM_ASSERT(new_recv);
     GET_MOD_IN_STATE(self, RUNNING);
     
-    if (stack_push(mod->recvs, new_recv, false) == STACK_OK) {
+    if (stack_push(mod->recvs, new_recv) == STACK_OK) {
         return MOD_OK;
     }
     return MOD_ERR;

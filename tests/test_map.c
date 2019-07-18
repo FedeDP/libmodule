@@ -9,30 +9,30 @@ void test_map_put(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    map_ret_code ret = map_put(my_map, "key", &val, false, false);
+    map_ret_code ret = map_put(my_map, "key", &val);
     assert_false(ret == MAP_OK);
     
-    my_map = map_new();
+    my_map = map_new(false, NULL);
     
     /* NULL value */
-    ret = map_put(my_map, "key", NULL, false, false);
+    ret = map_put(my_map, "key", NULL);
     assert_false(ret == MAP_OK);
     
     /* NULL key */
-    ret = map_put(my_map, NULL, &val, false, false);
+    ret = map_put(my_map, NULL, &val);
     assert_false(ret == MAP_OK);
     
-    ret = map_put(my_map, "key", &val, false, false);
+    ret = map_put(my_map, "key", &val);
     assert_true(ret == MAP_OK);
     assert_true(map_has_key(my_map, "key"));
     assert_int_equal(map_length(my_map), 1);
     
     /* Update val; check that map size was not increased */
-    ret = map_put(my_map, "key", &val, false, false);
+    ret = map_put(my_map, "key", &val);
     assert_true(ret == MAP_OK);
     assert_int_equal(map_length(my_map), 1);
     
-    ret = map_put(my_map, "key2", &val, false, false);
+    ret = map_put(my_map, "key2", &val);
     assert_true(ret == MAP_OK);
     assert_true(map_has_key(my_map, "key2"));
 }
@@ -140,20 +140,6 @@ void test_map_clear(void **state) {
     assert_int_equal(len, 0);
 }
 
-void test_map_stress(void **state) {
-    (void) state; /* unused */
-    
-    const int size = 1000000;
-    for (int i = 0; i < size; i++) {
-        char key[20];
-        snprintf(key, sizeof(key), "key%d", i);
-        map_ret_code ret = map_put(my_map, key, "top", true, false);
-        assert_true(ret == MAP_OK);
-        assert_true(map_has_key(my_map, key));
-    }
-    assert_int_equal(map_length(my_map), size);
-}
-
 void test_map_free(void **state) {
     (void) state; /* unused */
     
@@ -161,6 +147,24 @@ void test_map_free(void **state) {
     map_ret_code ret = map_free(NULL);
     assert_false(ret == MOD_OK);
     
+    ret = map_free(my_map);
+    assert_true(ret == MOD_OK);
+}
+
+void test_map_stress(void **state) {
+    (void) state; /* unused */
+    
+    map_ret_code ret;
+    my_map = map_new(true, NULL);
+    const int size = 1000000;
+    for (int i = 0; i < size; i++) {
+        char key[20];
+        snprintf(key, sizeof(key), "key%d", i);
+        ret = map_put(my_map, key, "top");
+        assert_true(ret == MAP_OK);
+        assert_true(map_has_key(my_map, key));
+    }
+    assert_int_equal(map_length(my_map), size);
     ret = map_free(my_map);
     assert_true(ret == MOD_OK);
 }

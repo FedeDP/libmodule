@@ -10,22 +10,22 @@ void test_stack_push(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    stack_ret_code ret = stack_push(my_st, &val1, false);
+    stack_ret_code ret = stack_push(my_st, &val1);
     assert_false(ret == STACK_OK);
     
-    my_st = stack_new();
+    my_st = stack_new(NULL);
     
     /* NULL value */
-    ret = stack_push(my_st, NULL, false);
+    ret = stack_push(my_st, NULL);
     assert_false(ret == STACK_OK);
     
-    ret = stack_push(my_st, &val1, false);
+    ret = stack_push(my_st, &val1);
     assert_true(ret == STACK_OK);
     
-    ret = stack_push(my_st, &val2, false);
+    ret = stack_push(my_st, &val2);
     assert_true(ret == STACK_OK);
     
-    ret = stack_push(my_st, val3, false);
+    ret = stack_push(my_st, val3);
     assert_true(ret == STACK_OK);
 }
 

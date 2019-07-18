@@ -114,6 +114,7 @@ map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value) {
     ps_priv_t *mm = NULL;
 
     while (read(mod->pubsub_fd[0], &mm, sizeof(ps_priv_t *)) == sizeof(ps_priv_t *)) {
+        MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
         destroy_pubsub_msg(mm);
     }
     return 0;
@@ -153,7 +154,7 @@ module_ret_code module_register_topic(const self_t *self, const char *topic) {
     GET_CTX(self);
     
     if (!map_has_key(c->topics, topic)) {
-        if (map_put(c->topics, topic, mod, false, false) == MAP_OK) {
+        if (map_put(c->topics, topic, mod) == MAP_OK) {
             tell_system_pubsub_msg(NULL, c, TOPIC_REGISTERED, &mod->self, topic);
             return MOD_OK;
         }
@@ -185,7 +186,7 @@ module_ret_code module_subscribe(const self_t *self, const char *topic) {
     if (map_has_key(c->topics, topic) &&
         (map_has_key(mod->subscriptions, topic) ||
         /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
-        map_put(mod->subscriptions, topic, mod, false, false) == MAP_OK)) {
+        map_put(mod->subscriptions, topic, mod) == MAP_OK)) {
         
         return MOD_OK;
     }
@@ -237,5 +238,5 @@ module_ret_code module_poisonpill(const self_t *self, const self_t *recipient) {
     GET_CTX(self);
     MOD_PARAM_ASSERT(recipient);
     
-    return tell_system_pubsub_msg(recipient->mod, c, POISON_PILL, &mod->self, NULL);
+    return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->self, NULL);
 } 
