@@ -59,6 +59,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Rename modules_set_memalloc_hook to modules_set_memhook() + rename memalloc_hook to memhook_t
 - [x] stop() and start() should avoid err_str parameter.
 - [x] Stop looping on context when there are no RUNNING modules?
+- [ ] Stop looping on context when there are no RUNNING modules even right after modules_ctx_loop() has been called?
 - [ ] Is LOOP_STOPPED sysmessage useful? Right now it is delivered and flushed (freed)...
 
 ### Doc
