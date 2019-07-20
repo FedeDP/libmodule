@@ -114,8 +114,19 @@ map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value) {
     ps_priv_t *mm = NULL;
 
     while (read(mod->pubsub_fd[0], &mm, sizeof(ps_priv_t *)) == sizeof(ps_priv_t *)) {
-        MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
-        destroy_pubsub_msg(mm);
+        /*
+         * Actually tell msg ONLY if we are not deregistering module,
+         * ie: we are stopping looping on the context.
+         * Else, just free msg.
+         */
+        if (!data) {
+            MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
+            msg_t msg = { .is_pubsub = true, .ps_msg = &mm->msg };
+            run_pubsub_cb(mod, &msg);
+        } else {
+            MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
+            destroy_pubsub_msg(mm);
+        }
     }
     return 0;
 }

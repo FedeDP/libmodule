@@ -165,6 +165,12 @@ void test_map_stress(void **state) {
         assert_true(map_has_key(my_map, key));
     }
     assert_int_equal(map_length(my_map), size);
+    
+    count = 0;
+    ret = map_iterate(my_map, iterate_cb, NULL);
+    assert_true(ret == MAP_OK);
+    assert_int_equal(count, map_length(my_map));
+    
     ret = map_free(my_map);
     assert_true(ret == MOD_OK);
 }

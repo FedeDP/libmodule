@@ -121,6 +121,7 @@ static map_ret_code hashmap_rehash(map_t *m) {
     /* Backup old elements in case of rehash failure */
     size_t old_size = m->table_size;
     map_elem *old_table = m->table;
+
     m->table_size = m->table_size << 1;
     m->table = new_table;
     
@@ -180,6 +181,9 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value) {
     if (!entry->key) {
         entry->key = key;
         m->length++;
+    } else if (m->dtor) {
+        /* Destroy old value if needed */
+        m->dtor(entry->data);
     }
     /* Update value in any case */
     entry->data = value;

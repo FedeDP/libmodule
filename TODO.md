@@ -36,6 +36,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Add map_iterate test
 - [x] Set keydup and autofree in map_new()
 - [x] Drop map_set_dtor
+- [x] Destroy old value upon val update
 
 ### Stack
 - [x] stack->dtor should default to memhook._free, and fallback to default if stack_set_dtor is called with NULL callback parameter 
@@ -58,9 +59,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] module_get_name/ctx to return a strdup string
 - [x] Rename modules_set_memalloc_hook to modules_set_memhook() + rename memalloc_hook to memhook_t
 - [x] stop() and start() should avoid err_str parameter.
-- [x] Stop looping on context when there are no RUNNING modules?
-- [ ] Stop looping on context when there are no RUNNING modules even right after modules_ctx_loop() has been called?
-- [ ] Is LOOP_STOPPED sysmessage useful? Right now it is delivered and flushed (freed)...
+- [x] Stop looping on context when there are no RUNNING modules
 
 ### Doc
 - [x] module_dump
@@ -74,7 +73,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Document main() weak symbol!
 - [x] Add a new page about trusting pointers
 - [ ] modules_set_memhook/memhook_t
-- [ ] new stop behaviour (stop will always destroy pubsub messages instead of delivering them, except when calling module_poisonpill)
+- [ ] new stop behaviour (stop will always destroy pubsub messages instead of delivering them, except when a module gets stopped through module_poisonpill)
 - [ ] module_poisonpill
 - [ ] New modules_loop behaviour (stop looping when no RUNNING modules)
 - [ ] New Map API

@@ -227,8 +227,11 @@ module_ret_code stop(module *mod, const bool stop) {
          * as if it is stopped and restarted multiple times,
          * we will close and reopen its pubsub_fds,
          * thus we are not able to retrieve its old messages anymore.
+         *
+         * Pass a !NULL pointer as first parameter,
+         * so flush_pubsub_msgs() will free messages instead of delivering them.
          */
-        flush_pubsub_msgs(NULL, NULL, mod);        
+        flush_pubsub_msgs(mod, NULL, mod);
     }
     
     int ret = manage_fds(mod, c, RM, stop);

@@ -100,6 +100,7 @@ static void evaluate_new_state(m_context *c) {
 static module_ret_code loop_start(m_context *c, const int max_events) {
     if (poll_init_pevents(&c->pevents, max_events) == MOD_OK) {
         c->looping = true;
+        c->quit = false;
         c->quit_code = 0;
         c->max_events = max_events;
 
@@ -122,7 +123,6 @@ static uint8_t loop_stop(m_context *c) {
 
     poll_destroy_pevents(&c->pevents, &c->max_events);
     c->looping = false;
-    c->quit = false;
     return c->quit_code;
 }
 
@@ -147,7 +147,7 @@ static int recv_events(m_context *c, int timeout) {
                 /* Received on pubsub interface */
                 msg.is_pubsub = true;
                 if (read(p->fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-                    MODULE_DEBUG("Failed to read message for %s: %s\n", mod->name, strerror(errno));
+                    MODULE_DEBUG("Failed to read message for '%s': %s\n", mod->name, strerror(errno));
                     msg.ps_msg = NULL;
                 } else {
                     msg.ps_msg = &ps_msg->msg;
@@ -175,22 +175,15 @@ static int recv_events(m_context *c, int timeout) {
     
     if (nfds > 0) {
         evaluate_new_state(c);
-        
-        /* Are there any running modules still? */
-        if (!c->running_mods) {
-            MODULE_DEBUG("No running modules in '%s'. Stopping it.\n", c->name);
-            loop_quit(c, 0);
-        }
     } else if (nfds < 0) {
         /* Quit and return < 0 only for real errors */
         if (errno != EINTR && errno != EAGAIN) {
-            fprintf(stderr, "Module loop error: %s.\n", strerror(errno));
+            fprintf(stderr, "Ctx '%s' loop error: %s.\n", c->name, strerror(errno));
             loop_quit(c, errno);
         } else {
             nfds = 0;
         }
     }
-    
     return nfds;
 }
 
@@ -226,7 +219,7 @@ module_ret_code modules_ctx_loop_events(const char *ctx_name, const int max_even
     MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
 
     if (loop_start(c, max_events) == MOD_OK) {
-        while (!c->quit) {
+        while (!c->quit && c->running_mods) {
             recv_events(c, -1);
         }
         return loop_stop(c);
@@ -259,7 +252,7 @@ module_ret_code modules_ctx_dispatch(const char *ctx_name, int *ret) {
         return loop_start(c, MODULES_MAX_EVENTS);
     }
     
-    if (c->quit) {
+    if (c->quit || !c->running_mods) {
         /* We are stopping! */
         *ret = loop_stop(c);
         /* 

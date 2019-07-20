@@ -71,9 +71,9 @@ typedef struct _context m_context;
 
 /* Struct that holds self module informations, static to each module */
 struct _self {
-    module *mod;                        // self's mod
-    m_context *ctx;                     // self's ctx
-    bool is_ref;                        // is this a reference?
+    module *mod;                            // self's mod
+    m_context *ctx;                         // self's ctx
+    bool is_ref;                            // is this a reference?
 };
 
 /* List that matches fds with selfs */
@@ -82,7 +82,7 @@ typedef struct _poll_t {
     bool autoclose;
     void *ev;
     const void *userptr;
-    const struct _self *self;           // ptr needed to map a fd to a self_t in epoll
+    const struct _self *self;               // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
 } module_poll_t;
 
@@ -95,30 +95,30 @@ typedef struct {
 
 /* Struct that holds data for each module */
 struct _module {
-    userhook hook;                        // module's user defined callbacks
-    stack_t *recvs;                       // Stack of recv functions for module_become/unbecome
-    const void *userdata;                 // module's user defined data
-    enum module_states state;             // module's state
-    const char *name;                     // module's name
-    module_poll_t *fds;                   // module's fds to be polled
-    map_t *subscriptions;                 // module's subscriptions
-    int pubsub_fd[2];                     // In and Out pipe for pubsub msg
-    self_t self;                          // pointer to self (and thus context)
+    userhook hook;                          // module's user defined callbacks
+    stack_t *recvs;                         // Stack of recv functions for module_become/unbecome
+    const void *userdata;                   // module's user defined data
+    enum module_states state;               // module's state
+    const char *name;                       // module's name
+    module_poll_t *fds;                     // module's fds to be polled
+    map_t *subscriptions;                   // module's subscriptions
+    int pubsub_fd[2];                       // In and Out pipe for pubsub msg
+    self_t self;                            // pointer to self (and thus context)
 };
 
 /* Struct that holds data for each context */
 struct _context {
-    const char *name;
-    bool quit;
-    uint8_t quit_code;
-    bool looping;
-    int fd;
-    log_cb logger;
-    map_t *modules;
-    void *pevents;
-    int max_events;
-    map_t *topics;
-    size_t running_mods;
+    const char *name;                       // Context's name'
+    bool quit;                              // Context's quit flag
+    uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
+    bool looping;                           // Whether context is looping
+    int fd;                                 // Context's epoll/kqueue fd
+    log_cb logger;                          // Context's log callback
+    map_t *modules;                         // Context's modules
+    void *pevents;                          // Context's polled events structs
+    int max_events;                         // Max number of returned events for epoll/kqueue
+    map_t *topics;                          // Context's registered topics
+    size_t running_mods;                    // Number of RUNNING modules in context
 };
 
 /* Defined in module.c */
