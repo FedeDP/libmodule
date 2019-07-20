@@ -13,7 +13,6 @@ static void default_logger(const self_t *self, const char *fmt, va_list args, co
 static module_ret_code _register_fd(module *mod, const int fd, const bool autoclose, const void *userptr);
 static module_ret_code _deregister_fd(module *mod, const int fd);
 static int manage_fds(module *mod, m_context *c, const int flag, const bool stop);
-static map_ret_code subscribtions_dump(void *data, const char *key, void *value);
 
 static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
@@ -156,13 +155,6 @@ static int manage_fds(module *mod, m_context *c, const int flag, const bool stop
         }
     }
     return ret;
-}
-
-static map_ret_code subscribtions_dump(void *data, const char *key, void *value) {
-    const self_t *self = (self_t *) data;
-    
-    module_log(self, "-> %s: %p\n", key, value);
-    return MAP_OK;
 }
 
 /** Private API **/
@@ -314,7 +306,8 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
         ret = MOD_ERR;
         break;
     }
-    memhook._free((self_t *)*self);
+    memhook._free(*self);
+    *self = NULL;
     map_free(mod->subscriptions);
     stack_free(mod->recvs);
     memhook._free(mod);
@@ -324,24 +317,23 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
 module_ret_code module_deregister(self_t **self) {
     MOD_PARAM_ASSERT(self);
     
-    self_t *tmp = (self_t *) *self;
-    GET_MOD(tmp);
+    GET_MOD(*self);
     MODULE_DEBUG("Deregistering module '%s'.\n", mod->name);
     
     stop(mod, true);
     
     /* Remove the module from the context */
-    map_remove(tmp->ctx->modules, mod->name);
+    map_remove((*self)->ctx->modules, mod->name);
             
     /* Remove context without modules */
-    if (map_length(tmp->ctx->modules) == 0) {
-        destroy_ctx(tmp->ctx);
+    if (map_length((*self)->ctx->modules) == 0) {
+        destroy_ctx((*self)->ctx);
     }
     map_free(mod->subscriptions);
     stack_free(mod->recvs);
     
     /* Destroy external handler */
-    memhook._free(tmp);
+    memhook._free(*self);
     *self = NULL;
 
     /*
@@ -475,7 +467,9 @@ module_ret_code module_dump(const self_t *self) {
     module_log(self, "* State: %u\n", mod->state);
     module_log(self, "* Userdata: %p\n", mod->userdata);
     module_log(self, "* Subscriptions:\n");
-    map_iterate(mod->subscriptions, subscribtions_dump, (void *)self);
+    for (map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr)) {
+        module_log(self, "-> %s: %p\n", map_itr_get_key(itr), map_itr_get_data(itr));
+    }
     module_log(self, "* Fds:\n");
     module_poll_t *tmp = mod->fds;
     while (tmp) {

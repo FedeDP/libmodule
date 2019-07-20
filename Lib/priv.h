@@ -29,9 +29,9 @@
  * Skip reference check for pure functions.
  */
 #define _GET_CTX(self, pure) \
-    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
-    MOD_ASSERT(!self->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
-    GET_CTX_PRIV(self); \
+    MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF); \
+    MOD_ASSERT(!(self)->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
+    GET_CTX_PRIV((self)); \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
 
 /* Convenience macros for exposed API */
@@ -49,9 +49,9 @@
  * Skip reference check for pure functions.
  */
 #define _GET_MOD(self, pure) \
-    MOD_ASSERT(self, "NULL self handler.", MOD_NO_SELF); \
-    MOD_ASSERT(!self->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
-    GET_MOD_PRIV(self); \
+    MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF); \
+    MOD_ASSERT(!(self)->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
+    GET_MOD_PRIV((self)); \
     MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
 /* Convenience macros for exposed API */
