@@ -53,6 +53,7 @@ When module is started, thus reaching RUNNING state, all its registered fds will
 If a module is PAUSED, it will stop polling on its fds and PubSub messages, but PubSub messages will still be queued on its write end of pipe. Thus, as soon as module is resumed, all PubSub messages received during PAUSED state will trigger receive() callback. |br|
 If a module gets STOPPED, it will stop polling on its fds and PubSub messages, and every autoclose fd will be closed. Moreover, all its registered fds are freed and its enqueued pubsub messages are destroyed. |br|
 STOPPED state is the same as IDLE state, but it means that module was started at least once and module's init() callback has already been called. |br|
+If you instead wish to stop a module letting it receive any enqueued pubsub message, you need to send a POISONPILL message to it, through module_poisonpill() function. |br|
 
 module_start() needs to be called on a IDLE or STOPPED module. |br|
 module_pause() needs to be called on a RUNNING module. |br|

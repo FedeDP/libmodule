@@ -23,24 +23,64 @@ Structures
 
     /* Callback for stack_iterate */
     typedef stack_ret_code (*stack_cb)(void *, void *);
-    
+
     /* Fn for stack_set_dtor */
-    typedef stack_ret_code(*stack_dtor)(void *);
+    typedef void (*stack_dtor)(void *);
 
     /* Incomplete struct declaration for stack */
     typedef struct _stack stack_t;
+
+    /* Incomplete struct declaration for stack iterator */
+    typedef struct _stack_itr stack_itr_t;
 
 API
 ---
 
 Where not specified, these functions return a stack_ret_code.
 
-.. c:function:: stack_new()
+.. c:function:: stack_new(fn)
 
-  Create a new stack_t object.
+  Create a new stack_t object. If dtor is not NULL, objects lifetime will be managed by stack.
+  
+  :param fn: callback to be called
+  :type fn: :c:type:`const stack_dtor`
     
   :returns: pointer to newly allocated stack_t.
   
+.. c:function:: stack_itr_new(s)
+
+  Create a new stack_itr_t object.
+  
+  :param s: pointer to stack_t
+  :type s: :c:type:`const stack_t *`
+    
+  :returns: pointer to newly allocated stack_itr_t.
+  
+.. c:function:: stack_itr_next(itr)
+
+  Get next iterator.
+  
+  :param itr: pointer to stack_itr_t
+  :type itr: :c:type:`stack_itr_t *`
+    
+  :returns: pointer to next iterator.
+  
+.. c:function:: stack_itr_get_data(itr)
+
+  Get iterator's data.
+  
+  :param itr: pointer to stack_itr_t
+  :type itr: :c:type:`const stack_itr_t *`
+    
+  :returns: pointer to current iterator's data.
+  
+.. c:function:: stack_itr_set_data(itr)
+
+  Set iterator's data.
+  
+  :param itr: pointer to stack_itr_t
+  :type itr: :c:type:`const stack_itr_t *`
+
 .. c:function:: stack_iterate(s, fn, userptr)
 
   Iterate a stack calling cb on each element until STACK_OK is returned (or end of stack is reached). Returns STACK_MISSING if stack is NULL.
@@ -52,16 +92,14 @@ Where not specified, these functions return a stack_ret_code.
   :type fn: :c:type:`const stack_cb`
   :type userptr: :c:type:`void *`
   
-.. c:function:: stack_push(s, val, autofree)
+.. c:function:: stack_push(s, val)
 
-  Push a value on top of stack. Note that if autofree is true, data willbe automatically freed when calling stack_free() on the stack.
+  Push a value on top of stack.
 
   :param s: pointer to stack_t
   :param val: value to be put inside stack
-  :param autofree: whether to autofree val upon stack_pop/stack_clear/stack_free
   :type s: :c:type:`stack_t *`
   :type val: :c:type:`void *`
-  :type autofree: :c:type:`const bool`
 
 .. c:function:: stack_pop(s)
 
@@ -81,7 +119,7 @@ Where not specified, these functions return a stack_ret_code.
 
 .. c:function:: stack_clear(s)
 
-  Clears a stack object by deleting any object inside stack, and eventually freeing it too if marked with autofree.
+  Clears a stack object by deleting any object inside stack.
 
   :param s: pointer to stack_t
   :type s: :c:type:`stack_t *`
@@ -100,12 +138,3 @@ Where not specified, these functions return a stack_ret_code.
   :param s: pointer to stack_t
   :type s: :c:type:`stack_t *`
   :returns: stack length or a stack_ret_code if any error happens (stack_t is null).
-
-.. c:function:: stack_set_dtor(s, fn)
-
-  Set a function to be called upon data deletion for autofree elements.
-
-  :param s: pointer to stack_t
-  :param fn: pointer dtor callback
-  :type s: :c:type:`stack_t *`
-  :type fn: :c:type:`stack_dtor`

@@ -14,7 +14,8 @@ Structures
 .. code::
 
     typedef enum {
-        MAP_WRONG_PARAM = -5,
+        MAP_EPERM = -6,
+        MAP_WRONG_PARAM,
         MAP_ERR,
         MAP_MISSING,
         MAP_FULL,
@@ -23,25 +24,83 @@ Structures
     } map_ret_code;
 
     /* Callback for map_iterate */
-    typedef map_ret_code (*map_cb)(void *, void *);
-    
+    typedef map_ret_code (*map_cb)(void *, const char *, void *);
+
     /* Fn for map_set_dtor */
-    typedef map_ret_code (*map_dtor)(void *);
+    typedef void (*map_dtor)(void *);
 
     /* Incomplete struct declaration for hashmap */
     typedef struct _map map_t;
+
+    /* Incomplete struct declaration for hashmap iterator */
+    typedef struct _map_itr map_itr_t;
 
 API
 ---
 
 Where not specified, these functions return a map_ret_code.
 
-.. c:function:: map_new()
+.. c:function:: map_new(const bool autofree, const map_dtor fn)
 
   Create a new map_t object.
+  
+  :param autofree: whether keys lifetime should be managed by map
+  :param fn: callback called on value destroy. If NULL, values won't be automatically destroyed.
+  :type autofree: :c:type:`const bool`
+  :type fn: :c:type:`const map_dtor`
     
   :returns: pointer to newly allocated map_t.
   
+.. c:function:: map_itr_new(m)
+
+  Create a new map iterator object.
+  
+  :param m: pointer to map_t
+  :type m: :c:type:`const map_t *`
+  
+  :returns: pointer to newly allocated map_itr_t.
+  
+.. c:function:: map_itr_next(itr)
+
+  Get next iterator.
+  
+  :param itr: pointer to map_itr_t
+  :type itr: :c:type:`map_itr_t *`
+  
+  :returns: pointer to next iterator.
+  
+.. c:function:: map_itr_remove(itr)
+
+  Remove current iterator {key, value} from map.
+  
+  :param itr: pointer to map_itr_t
+  :type itr: :c:type:`map_itr_t *`
+  
+.. c:function:: map_itr_get_key(itr)
+
+  Get current iterator's key.
+  
+  :param itr: pointer to map_itr_t
+  :type itr: :c:type:`const map_itr_t *`
+    
+  :returns: current iterator's key
+  
+.. c:function:: map_itr_get_data(itr)
+
+  Get current iterator's data.
+  
+  :param itr: pointer to map_itr_t
+  :type itr: :c:type:`const map_itr_t *`
+    
+  :returns: current iterator's data
+  
+.. c:function:: map_itr_set_data(itr)
+
+  Set current iterator's data.
+  
+  :param itr: pointer to map_itr_t
+  :type itr: :c:type:`const map_itr_t *`
+
 .. c:function:: map_iterate(m, fn, userptr)
 
   Iterate an hashmap calling cb on each element until MAP_OK is returned (or end of hashmap is reached). Returns MAP_MISSING if map is NULL.
@@ -53,20 +112,16 @@ Where not specified, these functions return a map_ret_code.
   :type fn: :c:type:`const map_cb`
   :type userptr: :c:type:`void *`
   
-.. c:function:: map_put(m, key, val, dupkey, autofree)
+.. c:function:: map_put(m, key, val)
 
-  Put a value inside hashmap. Note that if dupkey is true, key will be strdupped and its lifetime will be managed by libmodule.
+  Put a value inside hashmap.
 
   :param m: pointer to map_t
   :param key: key for this value
   :param val: value to be put inside map
-  :param dupkey: whether to strdup key
-  :param autofree: whether to automatically free val upon map_remove/map_clear/map_free
   :type m: :c:type:`map_t *`
   :type key: :c:type:`const char *`
   :type val: :c:type:`void *`
-  :type dupkey: :c:type:`const bool`
-  :type autofree: :c:type:`const bool`
 
 .. c:function:: map_get(m, key)
 
@@ -99,7 +154,7 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_clear(m)
 
-  Clears a map object by deleting any object inside map, and eventually freeing it too if marked with autofree.
+  Clears a map object by deleting any object inside map.
 
   :param s: pointer to map_t
   :type s: :c:type:`map_t *`
@@ -118,12 +173,3 @@ Where not specified, these functions return a map_ret_code.
   :param m: pointer to map_t
   :type m: :c:type:`map_t *`
   :returns: map length or a map_ret_code if any error happens (map_t is null).
-  
-.. c:function:: map_set_dtor(m, fn)
-
-  Set a function to be called upon data deletion for autofree elements.
-
-  :param m: pointer to map_t
-  :param fn: pointer dtor callback
-  :type m: :c:type:`map_t *`
-  :type fn: :c:type:`map_dtor`

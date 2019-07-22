@@ -25,7 +25,7 @@ Types
     enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
 
     /* PubSub message types */
-    enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED, MODULE_STARTED, MODULE_STOPPED };
+    enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL };
 
     typedef struct {
         const char *topic;
@@ -36,7 +36,7 @@ Types
     } ps_msg_t;
 
     typedef struct {
-        const int fd;
+        int fd;
         const void *userptr;
     } fd_msg_t;
 
@@ -49,14 +49,14 @@ Types
     } msg_t;
 
     /* Callbacks typedefs */
-    typedef void(*init_cb)(void);
-    typedef bool(*evaluate_cb)(void);
-    typedef void(*recv_cb)(const msg_t *const msg, const void *userdata);
-    typedef void(*destroy_cb)(void);
+    typedef void (*init_cb)(void);
+    typedef bool (*evaluate_cb)(void);
+    typedef void (*recv_cb)(const msg_t *const msg, const void *userdata);
+    typedef void (*destroy_cb)(void);
 
     /* Logger callback */
     typedef void (*log_cb)(const self_t *self, const char *fmt, va_list args, const void *userdata);
-    
+
     /* Memory management user-passed functions */
     typedef void *(*malloc_fn)(size_t size);
     typedef void *(*realloc_fn)(void *ptr, size_t size);
@@ -70,14 +70,14 @@ Types
         recv_cb recv;                           // module's recv function
         destroy_cb destroy;                     // module's destroy function
     } userhook;
-    
+
     /* Struct that holds user defined memory functions */
     typedef struct {
         malloc_fn _malloc;
         realloc_fn _realloc;
         calloc_fn _calloc;
         free_fn _free;
-    } memalloc_hook;
+    } memhook_t;
 
 .. _module_ret_code:  
 

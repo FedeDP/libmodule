@@ -30,12 +30,12 @@ Moreover, there are a bunch of functions that are common to every context (thus 
   :type argc: :c:type:`int`
   :type argv: :c:type:`char *[]`
 
-.. c:function:: modules_set_memalloc_hook(hook)
+.. c:function:: modules_set_memhook(hook)
 
   Set memory management functions. By default: malloc, realloc, calloc and free are used.
   
   :param hook: new memory management hook.
-  :type hook: :c:type:`const memalloc_hook *`
+  :type hook: :c:type:`const memhook_t *`
 
 Easy API
 --------
@@ -53,6 +53,7 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
 .. c:macro:: modules_loop(void)
 
   Start looping on events from modules. Note that as soon as modules_loop is called, a message with type == LOOP_STARTED will be broadcasted to all context's modules.
+  Moreover, loop is automatically stopped (with return code 0) if there are no more RUNNING modules in its context.
   
 .. c:macro:: modules_quit(quit_code)
 
@@ -93,6 +94,7 @@ It exposes very similar functions to single-context API (again, single-context i
 .. c:macro:: modules_ctx_loop(ctx_name)
 
   Start looping on events from modules. Note that this is just a macro that calls modules_ctx_loop_events with MODULE_MAX_EVENTS (64) events.
+  Moreover, loop is automatically stopped (with return code 0) if there are no more RUNNING modules in its context.
   
   :param ctx_name: context name.
   :type ctx_name: :c:type:`const char *`
@@ -100,6 +102,7 @@ It exposes very similar functions to single-context API (again, single-context i
 .. c:function:: modules_ctx_loop_events(ctx_name, maxevents)
 
   Start looping on events from modules, on at most maxevents events at the same time. Note that as soon as modules_loop is called, a message with type == LOOP_STARTED will be broadcasted to all context's modules.
+  Moreover, loop is automatically stopped (with return code 0) if there are no more RUNNING modules in its context.
   
   :param ctx_name: context name.
   :param maxevents: max number of fds wakeup that will be managed at the same time.

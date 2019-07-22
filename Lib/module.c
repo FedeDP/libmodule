@@ -116,7 +116,7 @@ static module_ret_code _register_fd(module *mod, const int fd, const bool autocl
     return MOD_ERR;
 }
 
-/* Linear search for fd */
+/* Linearly search for fd */
 static module_ret_code _deregister_fd(module *mod, const int fd) {
     module_poll_t **tmp = &mod->fds;
     
@@ -149,6 +149,15 @@ static int manage_fds(module *mod, m_context *c, const int flag, const bool stop
         module_poll_t *t = tmp;
         tmp = tmp->prev;
         if (flag == RM && stop) {
+            if (t->fd == mod->pubsub_fd[0]) {
+                /*
+                 * Free all unread pubsub msg for this module.
+                 *
+                 * Pass a !NULL pointer as first parameter,
+                 * so that flush_pubsub_msgs() will free messages instead of delivering them.
+                 */
+                flush_pubsub_msgs(mod, NULL, mod);
+            }
             ret = _deregister_fd(mod, t->fd);
         } else {
             ret = poll_set_new_evt(t, c, flag);
@@ -212,27 +221,13 @@ module_ret_code stop(module *mod, const bool stop) {
     
     GET_CTX_PRIV((&mod->self));
     
-    if (stop) {
-        /* 
-         * Free all unread pubsub msg for this module.
-         * We need to do this every time module gets stopped,
-         * as if it is stopped and restarted multiple times,
-         * we will close and reopen its pubsub_fds,
-         * thus we are not able to retrieve its old messages anymore.
-         *
-         * Pass a !NULL pointer as first parameter,
-         * so flush_pubsub_msgs() will free messages instead of delivering them.
-         */
-        flush_pubsub_msgs(mod, NULL, mod);
-    }
-    
     int ret = manage_fds(mod, c, RM, stop);
     MOD_ASSERT(!ret, errors[stop], MOD_ERR);
     
     mod->state = stop ? STOPPED : PAUSED;
     /*
      * When module gets stopped, its write-end pubsub fd is closed too 
-     * Read-end is already closed by stop().
+     * Read-end is already closed by manage_fds().
      */
     if (stop && mod->pubsub_fd[1] != -1) {
         close(mod->pubsub_fd[1]);

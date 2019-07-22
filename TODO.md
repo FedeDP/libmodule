@@ -23,6 +23,8 @@
 - [x] Add a module_poisonpill() function, to send a system message to a module to stop it -> this will be enqueued in module's message queue, 
 conversely to module_stop that should stop module right away freeing all its enqueued messages.
 - [x] Always destroy messages in flush_pubsub_msg()? RIght now it delivers all of them if we're stopping looping on ctx
+- [x] module_poisonpill should only be sent to RUNNING modules
+- [x] when stop looping on a context, flush all pubsub messages to RUNNING modules only. Destroy messages for non-running modules.
 
 ### Map
 - [x] FIx: avoid incrementing map size on value update
@@ -72,12 +74,12 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves
 - [x] Document main() weak symbol!
 - [x] Add a new page about trusting pointers
-- [ ] modules_set_memhook/memhook_t
-- [ ] new stop behaviour (stop will always destroy pubsub messages instead of delivering them, except when a module gets stopped through module_poisonpill)
-- [ ] module_poisonpill
-- [ ] New modules_loop behaviour (stop looping when no RUNNING modules)
-- [ ] New Map API
-- [ ] New Stack API
+- [x] modules_set_memhook/memhook_t
+- [x] new stop behaviour (stop will always destroy pubsub messages instead of delivering them, except when a module gets stopped through module_poisonpill)
+- [x] module_poisonpill
+- [x] New modules_loop behaviour (stop looping when no RUNNING modules)
+- [x] New Map API
+- [x] New Stack API
 
 ### Samples
 - [x] Fix samples

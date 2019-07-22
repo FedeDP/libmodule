@@ -118,8 +118,11 @@ map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value) {
          * Actually tell msg ONLY if we are not deregistering module,
          * ie: we are stopping looping on the context.
          * Else, just free msg.
+         *
+         * While stopping module, manage_fds() will call this with data != NULL
+         * to let us know we should destroy all enqueued messages.
          */
-        if (!data) {
+        if (!data && _module_is(mod, RUNNING)) {
             MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             msg_t msg = { .is_pubsub = true, .ps_msg = &mm->msg };
             run_pubsub_cb(mod, &msg);
@@ -247,7 +250,7 @@ module_ret_code module_broadcast(const self_t *self, const void *message,
 module_ret_code module_poisonpill(const self_t *self, const self_t *recipient) {
     GET_MOD(self);
     GET_CTX(self);
-    MOD_PARAM_ASSERT(recipient);
+    MOD_PARAM_ASSERT(module_is(recipient, RUNNING));
     
     return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->self, NULL);
 } 

@@ -83,6 +83,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 .. c:macro:: m_stop(void)
 
   Stop module's polling by closing its fds. Note that module is not destroyed: you can add new fds and call m_start on it.
+  Moreover, its enqueued pubsub messages are destroyed.
   
 .. c:macro:: m_become(new_recv)
 
@@ -235,6 +236,13 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :param global: whether to broadcast to every context.
   :type msg: :c:type:`const char *`
   :type global: :c:type:`const bool`
+  
+.. c:macro:: m_poisonpill(recipient)
+
+  Enqueue a POISONPILL message to recipient. This allows to stop another module after it flushes its pubsub messages.
+  
+  :param recipient: RUNNING module to be stopped.
+  :type recipient: :c:type:`const self_t *`
 
 .. _module_complex:    
   
@@ -315,6 +323,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
 .. c:function:: module_stop(self)
 
   Stop module's polling by closing its fds. Note that module is not destroyed: you can add new fds and call module_start on it.
+  Moreover, its enqueued pubsub messages are destroyed.
     
   :param self: pointer to module's handler
   :type self: :c:type:`const self_t *`
@@ -486,3 +495,12 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type size: :c:type:`const ssize_t`
   :type autofree: :c:type:`const bool`
   :type global: :c:type:`const bool`
+  
+.. c:macro:: module_poisonpill(self, recipient)
+
+  Enqueue a POISONPILL message to recipient. This allows to stop another module after it flushes its pubsub messages.
+  
+  :param self: pointer to module's handler
+  :param recipient: RUNNING module to be stopped.
+  :type self: :c:type:`const self_t *`
+  :type recipient: :c:type:`const self_t *`
