@@ -62,6 +62,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Rename modules_set_memalloc_hook to modules_set_memhook() + rename memalloc_hook to memhook_t
 - [x] stop() and start() should avoid err_str parameter.
 - [x] Stop looping on context when there are no RUNNING modules
+- [x] Cleanup some out of date comments in examples
 
 ### Doc
 - [x] module_dump

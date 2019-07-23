@@ -10,26 +10,14 @@
 
 static const self_t *doggo;
 
-/* 
- * Declare and automagically initialize 
- * this module as soon as program starts.
- */
 MODULE("Pippo");
 
 static void receive_ready(const msg_t *msg, const void *userdata);
 
-/*
- * This function is automatically called before registering the module. 
- * Use this to set some global state needed eg: in check() function 
- */
 static void module_pre_start(void) {
     
 }
 
-/*
- * Initializes this module's state;
- * returns a valid fd to be polled.
- */
 static void init(void) {
 #ifdef __linux__
     /* Add signal fd */
@@ -44,45 +32,24 @@ static void init(void) {
     m_register_fd(fd, 1, NULL);
 #endif
     
-    /* Add stdin fd */
+    /* Register stdin fd */
     m_register_fd(STDIN_FILENO, 0, NULL);
     
     m_ref("Doggo", &doggo);
 }
 
-/* 
- * Whether this module should be actually created:
- * true if module must be created, !true otherwise.
- * 
- * Use this function as a starting filter: 
- * you may desire that a module is not started in certain conditions.
- */
 static bool check(void) {
     return true;
 }
 
-/* 
- * Should return not-0 value when module can be actually started (and thus polled).
- * Use this to check intra-modules dependencies or any other env variable.
- * 
- * Eg: you can evaluate your global state to make this module start right after
- * certain conditions are met.
- */
 static bool evaluate(void) {
     return true;
 }
 
-/*
- * Destroyer function, called at module unload (at end of program).
- * Note that module's FD is automatically closed for you.
- */
 static void destroy(void) {
     
 }
 
-/*
- * Default poll callback
- */
 static void receive(const msg_t *msg, const void *userdata) {
     if (!msg->is_pubsub) {
         char c;

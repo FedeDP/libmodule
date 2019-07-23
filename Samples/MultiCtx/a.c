@@ -8,26 +8,15 @@
 #include <string.h>
 
 static const char *myCtx = "FirstCtx";
-/* 
- * Declare and automagically initialize 
- * this module and its context as soon as program starts.
- */
+
 MODULE_CTX("A", myCtx);
 
-/*
- * This function is automatically called before registering the module. 
- * Use this to set some  global state needed eg: in check() function 
- */
 static void module_pre_start(void) {
     
 }
 
 static void receive_ready(const msg_t *msg, const void *userdata);
 
-/*
- * Initializes this module's state;
- * returns a valid fd to be polled.
- */
 static void init(void) {
 #ifdef __linux__
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
@@ -41,39 +30,18 @@ static void init(void) {
 #endif
 }
 
-/* 
- * Whether this module should be actually created:
- * true if module must be created, !true otherwise.
- * 
- * Use this function as a starting filter: 
- * you may desire that a module is not started in certain conditions.
- */
 static bool check(void) {
     return true;
 }
 
-/* 
- * Should return not-0 value when module can be actually started (and thus polled).
- * Use this to check intra-modules dependencies or any other env variable.
- * 
- * Eg: you can evaluate your global state to make this module start right after
- * certain conditions are met.
- */
 static bool evaluate(void) {
     return true;
 }
 
-/*
- * Destroyer function, called at module unload (at end of program).
- * Note that module's FD is automatically closed for you.
- */
 static void destroy(void) {
     
 }
 
-/*
- * Default poll callback
- */
 static void receive(const msg_t *msg, const void *userdata) {
     if (!msg->is_pubsub) {
         uint64_t t;
@@ -93,10 +61,6 @@ static void receive(const msg_t *msg, const void *userdata) {
     }
 }
 
-/*
- * Secondary poll callback.
- * Use m_become(ready) to start using this second poll callback.
- */
 static void receive_ready(const msg_t *msg, const void *userdata) {
     if (!msg->is_pubsub) {
         uint64_t t;

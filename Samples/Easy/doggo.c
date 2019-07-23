@@ -7,54 +7,24 @@ static void receive_sleeping(const msg_t *msg, const void *userdata);
 
 static const self_t *new_mod;
 
-/* 
- * Declare and automagically initialize 
- * this module as soon as program starts.
- */
 MODULE("Doggo");
 
-/*
- * This function is automatically called before registering the module. 
- * Use this to set some  global state needed eg: in check() function 
- */
 static void module_pre_start(void) {
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 
-/*
- * Initializes this module's state;
- * returns a valid fd to be polled.
- */
 static void init(void) {
    
 }
 
-/* 
- * Whether this module should be actually created:
- * true if module must be created, !true otherwise.
- * 
- * Use this function as a starting filter: 
- * you may desire that a module is not started in certain conditions.
- */
 static bool check(void) {
     return true;
 }
 
-/* 
- * Should return not-0 value when module can be actually started (and thus polled).
- * Use this to check intra-modules dependencies or any other env variable.
- * 
- * Eg: you can evaluate your global state to make this module start right after
- * certain conditions are met.
- */
 static bool evaluate(void) {
     return true;
 }
 
-/*
- * Destroyer function, called at module unload (at end of program).
- * Note that any module's fds are automatically closed for you.
- */
 static void destroy(void) {
     
 }

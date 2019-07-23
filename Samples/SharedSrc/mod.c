@@ -42,37 +42,18 @@ void destroy_modules(void) {
     module_deregister(&selfB);
 }
 
-/*
- * Initializes A module's state;
- * returns a valid fd to be polled.
- */
 static void A_init(void) {
     module_register_fd(selfA, STDIN_FILENO, 0, NULL);
 }
 
-/*
- * Initializes B module's state;
- * returns a valid fd to be polled.
- */
 static void B_init(void) {
    
 }
 
-/* 
- * Should return not-0 value when module can be actually started (and thus polled).
- * Use this to check intra-modules dependencies or any other env variable.
- * 
- * Eg: you can evaluate your global state to make this module start right after
- * certain conditions are met.
- */
 static bool evaluate(void) {
     return true;
 }
 
-/*
- * Destroyer function, called by module_deregister for each module.
- * Note that each module's FD is automatically closed for you.
- */
 static void destroy(void) {
     
 }

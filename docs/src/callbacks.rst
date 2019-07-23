@@ -25,19 +25,20 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 
 .. c:function:: init(void)
 
-  Initializes module state; useful to call module_register_fd() for each fd this module should listen to or to register any topic. |br|
+  Initializes module state; useful to register any fd to be polled or to register any topic. |br|
   Note that init() is only called first time module is started.
 
 .. c:function:: check(void)
 
-  Startup filter to check whether this module should be registered and managed by libmodule. |br|
+  Startup filter to check whether this module should be actually created and managed by libmodule. |br|
   
   :returns: true if the module should be registered, false otherwise.
 
 .. c:function:: evaluate(void)
 
   Similar to check() function but at runtime: this function is called for each IDLE module after evey state machine update
-  and it should check whether a module is now ready to be start (ie: init should be called on this module).
+  and it should check whether a module is now ready to be start (ie: init should be called on this module and its state should be set to RUNNING).
+  Use this to check intra-modules dependencies or any other env variable.
   
   :returns: true if module is now ready to be started, else false.
   
