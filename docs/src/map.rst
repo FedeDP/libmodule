@@ -103,7 +103,8 @@ Where not specified, these functions return a map_ret_code.
 
 .. c:function:: map_iterate(m, fn, userptr)
 
-  Iterate an hashmap calling cb on each element until MAP_OK is returned (or end of hashmap is reached). Returns MAP_MISSING if map is NULL.
+  Iterate an hashmap calling cb on each element until MAP_OK is returned (or end of hashmap is reached). Returns MAP_MISSING if map is NULL or empty.
+  If fn() returns a value != MAP_OK, iteration will stop and: if value < MAP_OK, value will be returned, else MAP_OK will be returned.
 
   :param m: pointer to map_t
   :param fn: callback to be called

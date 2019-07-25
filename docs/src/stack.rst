@@ -40,9 +40,9 @@ Where not specified, these functions return a stack_ret_code.
 
 .. c:function:: stack_new(fn)
 
-  Create a new stack_t object. If dtor is not NULL, objects lifetime will be managed by stack.
+  Create a new stack_t object.
   
-  :param fn: callback to be called
+  :param fn: callback called on value destroy. If NULL, values won't be automatically destroyed.
   :type fn: :c:type:`const stack_dtor`
     
   :returns: pointer to newly allocated stack_t.
@@ -83,7 +83,8 @@ Where not specified, these functions return a stack_ret_code.
 
 .. c:function:: stack_iterate(s, fn, userptr)
 
-  Iterate a stack calling cb on each element until STACK_OK is returned (or end of stack is reached). Returns STACK_MISSING if stack is NULL.
+  Iterate a stack calling cb on each element until STACK_OK is returned (or end of stack is reached). Returns STACK_MISSING if stack is NULL or empty.
+  If fn() returns a value != STACK_OK, iteration will stop and: if value < STACK_OK, value will be returned, else STACK_OK will be returned.
 
   :param s: pointer to stack_t
   :param fn: callback to be called
