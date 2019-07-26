@@ -63,6 +63,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] stop() and start() should avoid err_str parameter.
 - [x] Stop looping on context when there are no RUNNING modules
 - [x] Cleanup some out of date comments in examples
+- [x] Avoid exposing in modules.h main() and modules_pre_start() functions: they're not part of libmodule's API and cannot be called as functions.
 
 ### Doc
 - [x] module_dump

@@ -59,6 +59,13 @@ static void receive(const msg_t *msg, const void *userdata) {
             /* Doggo should subscribe to "leaving" topic */
             m_subscribe(msg->ps_msg->topic);
             break;
+        case MODULE_STOPPED: {
+                char *name = NULL;
+                module_get_name(msg->ps_msg->sender, &name);
+                m_log("Module '%s' has been stopped.\n", name);
+                free(name);
+            }
+            break;
         default:
             break;
         }
@@ -80,7 +87,7 @@ static void receive_sleeping(const msg_t *msg, const void *userdata) {
             /* A new module has been started */
             char *name = NULL;
             module_get_name(new_mod, &name);
-            m_log("Module '%s' has been started started.\n", name);
+            m_log("Module '%s' has been started.\n", name);
             free(name);
         }
     }

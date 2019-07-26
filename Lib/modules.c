@@ -15,7 +15,7 @@ static int recv_events(m_context *c, int timeout);
 map_t *ctx;
 memhook_t memhook;
 
-void modules_pre_start(void) {
+_public_ void _ctor0_ _weak_ modules_pre_start(void) {
     MODULE_DEBUG("Pre-starting libmodule.");
 }
 
@@ -46,7 +46,7 @@ static map_ret_code main_loop(void *data, const char *key, void *value) {
  * if ctx_num > 1 -> allocating ctx_num pthreads and each of them will loop on its context
  * else           -> just loops on only ctx on main thread 
  */
-int main(int argc, char *argv[]) {
+_public_ int _weak_ main(int argc, char *argv[]) {
     void *th = NULL;
     
     /* If there is more than 1 registered ctx, alloc as many pthreads as needed */
