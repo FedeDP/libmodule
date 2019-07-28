@@ -8,7 +8,7 @@
 - [x] Avoid strdupping module's name and ctx's name
 - [x] Avoid any allocation inside library and ALWAYS TRUST USER POINTER as core rule
 - [x] Add a self() alias to _self
-- [x] module_subscribe/unsubscribe should return OK if already subscribed/not subscribed
+- [x] module_subscribe/unsubscribe should avoid checking if topic is registered in context
 - [x] Add new System messages: MODULE_STARTED/STOPPED
 - [x] Avoid telling system messages like MODULE_STARTED/TOPIC_REGISTERED to ourselves
 - [x] Test pubsub messagging for paused modules

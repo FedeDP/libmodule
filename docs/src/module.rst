@@ -159,16 +159,16 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_subscribe(topic)
 
-  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_OK will be returned.
+  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_ERR will be returned
     
-  :param topic: topic to which subscribe. Note that topic must be registered before.
+  :param topic: topic to which subscribe. It is not mandatory for topic to be already registered in context, ie: it may be registered later.
   :type topic: :c:type:`const char *`
   
 .. c:macro:: m_unsubscribe(topic)
 
-  Unsubscribes the module from a topic. If module is not subscribed to topic, MODULE_OK will be returned.
+  Unsubscribes the module from a topic. If module is not subscribed to topic, MODULE_ERR will be returned.
     
-  :param topic: topic to which unsubscribe. Note that topic must be registered before.
+  :param topic: topic to which unsubscribe. It is not mandatory for topic to be already registered in context, ie: it may be registered later.
   :type topic: :c:type:`const char *`
   
 .. c:macro:: m_tell(recipient, msg, size, autofree)
@@ -435,19 +435,19 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_subscribe(self, topic)
 
-  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_OK will be returned.
+  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_ERR will be returned.
     
   :param self: pointer to module's handler
-  :param topic: topic to which subscribe. Note that topic must be registered before.
+  :param topic: topic to which subscribe. It is not mandatory for topic to be already registered in context, ie: it may be registered later.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
   
 .. c:function:: module_unsubscribe(self, topic)
 
-  Unsubscribes the module from a topic. If module is not subscribed to topic, MODULE_OK will be returned.
+  Unsubscribes the module from a topic. If module is not subscribed to topic, MODULE_ERR will be returned.
     
   :param self: pointer to module's handler
-  :param topic: topic to which unsubscribe. Note that topic must be registered before.
+  :param topic: topic to which unsubscribe. It is not mandatory for topic to be already registered in context, ie: it may be registered later.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
   

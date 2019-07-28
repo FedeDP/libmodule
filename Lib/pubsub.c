@@ -197,10 +197,9 @@ module_ret_code module_subscribe(const self_t *self, const char *topic) {
     GET_MOD(self);
     GET_CTX(self);
     
-    if (map_has_key(c->topics, topic) &&
-        (map_has_key(mod->subscriptions, topic) ||
+    if (!map_has_key(mod->subscriptions, topic) &&
         /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
-        map_put(mod->subscriptions, topic, mod) == MAP_OK)) {
+        map_put(mod->subscriptions, topic, mod) == MAP_OK) {
         
         return MOD_OK;
     }
@@ -211,7 +210,7 @@ module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     
-    if (!map_has_key(mod->subscriptions, topic) ||
+    if (map_has_key(mod->subscriptions, topic) &&
         map_remove(mod->subscriptions, topic) == MAP_OK) {
         
         return MOD_OK;
