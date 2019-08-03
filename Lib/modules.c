@@ -6,11 +6,11 @@ static void *thread_loop(void *param);
 static map_ret_code main_loop(void *data, const char *key, void *value);
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
-static void evaluate_new_state(m_context *c);
-static module_ret_code loop_start(m_context *c, const int max_events);
-static uint8_t loop_stop(m_context *c);
-static inline module_ret_code loop_quit(m_context *c, const uint8_t quit_code);
-static int recv_events(m_context *c, int timeout);
+static void evaluate_new_state(ctx_t *c);
+static module_ret_code loop_start(ctx_t *c, const int max_events);
+static uint8_t loop_stop(ctx_t *c);
+static inline module_ret_code loop_quit(ctx_t *c, const uint8_t quit_code);
+static int recv_events(ctx_t *c, int timeout);
 
 map_t *ctx;
 memhook_t memhook;
@@ -93,11 +93,11 @@ static void modules_destroy(void) {
     ctx = NULL; 
 }
 
-static void evaluate_new_state(m_context *c) {
+static void evaluate_new_state(ctx_t *c) {
     map_iterate(c->modules, evaluate_module, NULL);
 }
 
-static module_ret_code loop_start(m_context *c, const int max_events) {
+static module_ret_code loop_start(ctx_t *c, const int max_events) {
     if (poll_init_pevents(&c->pevents, max_events) == MOD_OK) {
         c->looping = true;
         c->quit = false;
@@ -114,7 +114,7 @@ static module_ret_code loop_start(m_context *c, const int max_events) {
     return MOD_ERR;
 }
 
-static uint8_t loop_stop(m_context *c) {
+static uint8_t loop_stop(ctx_t *c) {
     /* Tell every module that loop is stopped */
     tell_system_pubsub_msg(NULL, c, LOOP_STOPPED, NULL, NULL);
 
@@ -126,18 +126,18 @@ static uint8_t loop_stop(m_context *c) {
     return c->quit_code;
 }
 
-static inline module_ret_code loop_quit(m_context *c, const uint8_t quit_code) {
+static inline module_ret_code loop_quit(ctx_t *c, const uint8_t quit_code) {
     c->quit = true;
     c->quit_code = quit_code;
     return MOD_OK;
 }
 
-static int recv_events(m_context *c, int timeout) {
+static int recv_events(ctx_t *c, int timeout) {
     int nfds = poll_wait(c->fd, c->max_events, c->pevents, timeout);
     for (int i = 0; i < nfds; i++) {
-        module_poll_t *p = poll_recv(i, c->pevents);
+        fd_priv_t *p = poll_recv(i, c->pevents);
         if (p && p->self && p->self->mod) {
-            module *mod = p->self->mod;
+            mod_t *mod = p->self->mod;
             
             msg_t msg;
             fd_msg_t fd_msg;

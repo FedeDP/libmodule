@@ -11,7 +11,7 @@ int poll_set_data(void **_ev) {
     return MOD_OK;
 }
 
-int poll_set_new_evt(module_poll_t *tmp, m_context *c, const enum op_type flag) {
+int poll_set_new_evt(fd_priv_t *tmp, ctx_t *c, const enum op_type flag) {
     int f = flag == ADD ? EPOLL_CTL_ADD : EPOLL_CTL_DEL;
     struct epoll_event *ev = (struct epoll_event *)tmp->ev;
     ev->data.ptr = tmp;
@@ -34,9 +34,9 @@ int poll_wait(const int fd, const int max_events, void *pevents, const int timeo
     return epoll_wait(fd, (struct epoll_event *) pevents, max_events, timeout);
 }
 
-module_poll_t *poll_recv(const int idx, void *pevents) {
+fd_priv_t *poll_recv(const int idx, void *pevents) {
     struct epoll_event *pev = (struct epoll_event *) pevents;
-    return (module_poll_t *)pev[idx].data.ptr;
+    return (fd_priv_t *)pev[idx].data.ptr;
 }
 
 int poll_destroy_pevents(void **pevents, int *max_events) {

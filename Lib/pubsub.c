@@ -8,13 +8,13 @@ static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, c
                                enum msg_type type, const size_t size, const bool autofree);
 static map_ret_code tell_global(void *data, const char *key, void *value);
 static void destroy_pubsub_msg(ps_priv_t *pubsub_msg);
-static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c, const bool global);
-static module_ret_code send_msg(const module *mod, module *recipient, 
+static module_ret_code tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c, const bool global);
+static module_ret_code send_msg(const mod_t *mod, mod_t *recipient, 
                                    const char *topic, const void *message, 
                                    const ssize_t size, const bool autofree, const bool global);
 
 static map_ret_code tell_if(void *data, const char *key, void *value) {
-    module *mod = (module *)value;
+    mod_t *mod = (mod_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
 
     if (_module_is(mod, RUNNING | PAUSED) &&                         // mod is running or paused
@@ -49,7 +49,7 @@ static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, c
 }
 
 static map_ret_code tell_global(void *data, const char *key, void *value) {
-    m_context *c = (m_context *)value;
+    ctx_t *c = (ctx_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
     
     map_iterate(c->modules, tell_if, msg);
@@ -66,7 +66,7 @@ static void destroy_pubsub_msg(ps_priv_t *pubsub_msg) {
     }
 }
 
-static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c, const bool global) {
+static module_ret_code tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c, const bool global) {
     if (mod) {
         tell_if(m, NULL, mod);
     } else if (!global) {
@@ -83,7 +83,7 @@ static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c, 
     return MOD_OK;
 }
 
-static module_ret_code send_msg(const module *mod, module *recipient, 
+static module_ret_code send_msg(const mod_t *mod, mod_t *recipient, 
                                    const char *topic, const void *message, 
                                    const ssize_t size, const bool autofree, const bool global) {
     MOD_PARAM_ASSERT(message);
@@ -97,13 +97,13 @@ static module_ret_code send_msg(const module *mod, module *recipient,
 
 /** Private API **/
 
-module_ret_code tell_system_pubsub_msg(module *mod, m_context *c, enum msg_type type, const self_t *sender, const char *topic) {
+module_ret_code tell_system_pubsub_msg(mod_t *mod, ctx_t *c, enum msg_type type, const self_t *sender, const char *topic) {
     ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, false);
     return tell_pubsub_msg(m, mod, c, false);
 }
 
 map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value) {
-    module *mod = (module *)value;
+    mod_t *mod = (mod_t *)value;
     ps_priv_t *mm = NULL;
 
     while (read(mod->pubsub_fd[0], &mm, sizeof(ps_priv_t *)) == sizeof(ps_priv_t *)) {
@@ -127,7 +127,7 @@ map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value) {
     return 0;
 }
 
-void run_pubsub_cb(module *mod, msg_t *msg) {
+void run_pubsub_cb(mod_t *mod, msg_t *msg) {
     /* If module is using some different receive function, honor it. */
     recv_cb cb = stack_peek(mod->recvs);
     if (!cb) {

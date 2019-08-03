@@ -20,10 +20,10 @@
 /* Finds a ctx inside our global map, given its name */
 #define FIND_CTX(name) \
     MOD_ASSERT(name, "NULL ctx.", MOD_ERR); \
-    m_context *c = map_get(ctx, (char *)name); \
+    ctx_t *c = map_get(ctx, (char *)name); \
     MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
 
-#define GET_CTX_PRIV(self)  m_context *c = self->ctx
+#define GET_CTX_PRIV(self)  ctx_t *c = self->ctx
 /* 
  * Convenience macro to retrieve self->ctx + doing some checks.
  * Skip reference check for pure functions.
@@ -40,10 +40,11 @@
 
 /* Convenience macro to retrieve a module from a context, given its name */
 #define CTX_GET_MOD(name, ctx) \
-    module *mod = map_get(ctx->modules, (char *)name); \
+    mod_t *mod = map_get(ctx->modules, (char *)name); \
     MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
 
-#define GET_MOD_PRIV(self) module *mod = self->mod
+#define GET_MOD_PRIV(self) mod_t *mod = self->mod
+
 /* 
  * Convenience macro to retrieve self->mod + doing some checks.
  * Skip reference check for pure functions.
@@ -66,13 +67,13 @@
     GET_MOD(self); \
     MOD_ASSERT(_module_is(mod, state), "Wrong module state.", MOD_WRONG_STATE);
 
-typedef struct _module module;
-typedef struct _context m_context;
+typedef struct _module mod_t;
+typedef struct _context ctx_t;
 
 /* Struct that holds self module informations, static to each module */
 struct _self {
-    module *mod;                            // self's mod
-    m_context *ctx;                         // self's ctx
+    mod_t *mod;                            // self's mod
+    ctx_t *ctx;                         // self's ctx
     bool is_ref;                            // is this a reference?
 };
 
@@ -84,7 +85,7 @@ typedef struct _poll_t {
     const void *userptr;
     const struct _self *self;               // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
-} module_poll_t;
+} fd_priv_t;
 
 /* Struct that holds pubsub messaging, private. It keeps reference count. */
 typedef struct {
@@ -100,7 +101,7 @@ struct _module {
     const void *userdata;                   // module's user defined data
     enum module_states state;               // module's state
     const char *name;                       // module's name
-    module_poll_t *fds;                     // module's fds to be polled
+    fd_priv_t *fds;                     // module's fds to be polled
     map_t *subscriptions;                   // module's subscriptions
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     self_t self;                            // pointer to self (and thus context)
@@ -121,16 +122,16 @@ struct _context {
 };
 
 /* Defined in module.c */
-_pure_ bool _module_is(const module *mod, const enum module_states st);
+_pure_ bool _module_is(const mod_t *mod, const enum module_states st);
 map_ret_code evaluate_module(void *data, const char *key, void *value);
-module_ret_code start(module *mod, const bool start);
-module_ret_code stop(module *mod, const bool stop);
+module_ret_code start(mod_t *mod, const bool start);
+module_ret_code stop(mod_t *mod, const bool stop);
 
 /* Defined in pubsub.c */
-module_ret_code tell_system_pubsub_msg(module *mod, m_context *c, enum msg_type type, 
+module_ret_code tell_system_pubsub_msg(mod_t *mod, ctx_t *c, enum msg_type type, 
                                        const self_t *sender, const char *topic);
 map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value);
-void run_pubsub_cb(module *mod, msg_t *msg);
+void run_pubsub_cb(mod_t *mod, msg_t *msg);
 
 /* Defined in priv.c */
 char *mem_strdup(const char *s);

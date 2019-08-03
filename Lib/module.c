@@ -4,20 +4,20 @@
 
 /** Generic module interface **/
 
-static module_ret_code init_ctx(const char *ctx_name, m_context **context);
-static void destroy_ctx(m_context *context);
-static m_context *check_ctx(const char *ctx_name);
-static int _pipe(module *mod);
-static module_ret_code init_pubsub_fd(module *mod);
+static module_ret_code init_ctx(const char *ctx_name, ctx_t **context);
+static void destroy_ctx(ctx_t *context);
+static ctx_t *check_ctx(const char *ctx_name);
+static int _pipe(mod_t *mod);
+static module_ret_code init_pubsub_fd(mod_t *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata);
-static module_ret_code _register_fd(module *mod, const int fd, const bool autoclose, const void *userptr);
-static module_ret_code _deregister_fd(module *mod, const int fd);
-static int manage_fds(module *mod, m_context *c, const int flag, const bool stop);
+static module_ret_code _register_fd(mod_t *mod, const int fd, const bool autoclose, const void *userptr);
+static module_ret_code _deregister_fd(mod_t *mod, const int fd);
+static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
 
-static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
+static module_ret_code init_ctx(const char *ctx_name, ctx_t **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
-    *context = memhook._calloc(1, sizeof(m_context));
+    *context = memhook._calloc(1, sizeof(ctx_t));
     MOD_ALLOC_ASSERT(*context);
         
     (*context)->fd = poll_create();
@@ -39,7 +39,7 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     return MOD_ERR;
 }
 
-static void destroy_ctx(m_context *context) {
+static void destroy_ctx(ctx_t *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", context->name);
     map_free(context->modules);
     poll_close(context->fd, &context->pevents, &context->max_events);
@@ -47,15 +47,15 @@ static void destroy_ctx(m_context *context) {
     memhook._free(context);
 }
 
-static m_context *check_ctx(const char *ctx_name) {
-    m_context *context = map_get(ctx, ctx_name);
+static ctx_t *check_ctx(const char *ctx_name) {
+    ctx_t *context = map_get(ctx, ctx_name);
     if (!context) {
         init_ctx(ctx_name, &context);
     }
     return context;
 }
 
-static int _pipe(module *mod) {
+static int _pipe(mod_t *mod) {
     int ret = pipe(mod->pubsub_fd);
     if (ret == 0) {
         for (int i = 0; i < 2; i++) {
@@ -70,7 +70,7 @@ static int _pipe(module *mod) {
     return ret;
 }
 
-static module_ret_code init_pubsub_fd(module *mod) {
+static module_ret_code init_pubsub_fd(mod_t *mod) {
     if (_pipe(mod) == 0) {
         if (_register_fd(mod, mod->pubsub_fd[0], true, NULL) == MOD_OK) {
             return MOD_OK;
@@ -92,8 +92,8 @@ static void default_logger(const self_t *self, const char *fmt, va_list args, co
  * Append this fd to our list of fds and 
  * if module is in RUNNING state, start listening on its events 
  */
-static module_ret_code _register_fd(module *mod, const int fd, const bool autoclose, const void *userptr) {
-    module_poll_t *tmp = memhook._malloc(sizeof(module_poll_t));
+static module_ret_code _register_fd(mod_t *mod, const int fd, const bool autoclose, const void *userptr) {
+    fd_priv_t *tmp = memhook._malloc(sizeof(fd_priv_t));
     MOD_ALLOC_ASSERT(tmp);
     
     if (poll_set_data(&tmp->ev) == MOD_OK) {
@@ -115,13 +115,13 @@ static module_ret_code _register_fd(module *mod, const int fd, const bool autocl
 }
 
 /* Linearly search for fd */
-static module_ret_code _deregister_fd(module *mod, const int fd) {
-    module_poll_t **tmp = &mod->fds;
+static module_ret_code _deregister_fd(mod_t *mod, const int fd) {
+    fd_priv_t **tmp = &mod->fds;
     
     int ret = 0;
     while (*tmp) {
         if ((*tmp)->fd == fd) {
-            module_poll_t *t = *tmp;
+            fd_priv_t *t = *tmp;
             *tmp = (*tmp)->prev;
             /* If a fd is deregistered for a RUNNING module, stop polling on it */
             if (_module_is(mod, RUNNING)) {
@@ -139,12 +139,12 @@ static module_ret_code _deregister_fd(module *mod, const int fd) {
     return MOD_ERR;
 }
 
-static int manage_fds(module *mod, m_context *c, const int flag, const bool stop) {    
-    module_poll_t *tmp = mod->fds;
+static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {    
+    fd_priv_t *tmp = mod->fds;
     int ret = 0;
     
     while (tmp && !ret) {
-        module_poll_t *t = tmp;
+        fd_priv_t *t = tmp;
         tmp = tmp->prev;
         if (flag == RM && stop) {
             if (t->fd == mod->pubsub_fd[0]) {
@@ -166,19 +166,19 @@ static int manage_fds(module *mod, m_context *c, const int flag, const bool stop
 
 /** Private API **/
 
-bool _module_is(const module *mod, const enum module_states st) {
+bool _module_is(const mod_t *mod, const enum module_states st) {
     return mod->state & st;
 }
 
 map_ret_code evaluate_module(void *data, const char *key, void *value) {
-    module *mod = (module *)value;
+    mod_t *mod = (mod_t *)value;
     if (_module_is(mod, IDLE) && mod->hook.evaluate()) {
         start(mod, true);
     }
     return MAP_OK;
 }
 
-module_ret_code start(module *mod, const bool start) {
+module_ret_code start(mod_t *mod, const bool start) {
     static const char *errors[2] = { "Failed to resume module.", "Failed to start module." };
     
     GET_CTX_PRIV((&mod->self));
@@ -214,7 +214,7 @@ module_ret_code start(module *mod, const bool start) {
     return MOD_OK;
 }
 
-module_ret_code stop(module *mod, const bool stop) {
+module_ret_code stop(mod_t *mod, const bool stop) {
     static const char *errors[2] = { "Failed to pause module.", "Failed to stop module." };
     
     GET_CTX_PRIV((&mod->self));
@@ -249,7 +249,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
     MOD_PARAM_ASSERT(!*self);
     MOD_PARAM_ASSERT(hook);
     
-    m_context *context = check_ctx(ctx_name);
+    ctx_t *context = check_ctx(ctx_name);
     MOD_ASSERT(context, "Failed to create context.", MOD_ERR);
     
     const bool present = map_has_key(context->modules, name);
@@ -257,7 +257,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
     
-    module *mod = memhook._calloc(1, sizeof(module));
+    mod_t *mod = memhook._calloc(1, sizeof(mod_t));
     MOD_ALLOC_ASSERT(mod);
     
     module_ret_code ret = MOD_NO_MEM;
@@ -458,7 +458,7 @@ module_ret_code module_dump(const self_t *self) {
         module_log(self, "-> %s: %p\n", map_itr_get_key(itr), map_itr_get_data(itr));
     }
     module_log(self, "* Fds:\n");
-    module_poll_t *tmp = mod->fds;
+    fd_priv_t *tmp = mod->fds;
     while (tmp) {
         if (tmp->fd != mod->pubsub_fd[0]) {
             module_log(self, "-> Fd: %d Ac: %d Up: %p\n", tmp->fd, tmp->autoclose, tmp->userptr);

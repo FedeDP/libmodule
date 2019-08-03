@@ -66,6 +66,9 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Stop looping on context when there are no RUNNING modules
 - [x] Cleanup some out of date comments in examples
 - [x] Avoid exposing in modules.h main() and modules_pre_start() functions: they're not part of libmodule's API and cannot be called as functions.
+- [x] Rename module to mod_t and m_context to ctx_t
+- [x] Rename module_poll_t to fd_priv_t
+- [ ] Automatically poisonpill a module if init()/receive() return false?
 
 ### Doc
 - [x] module_dump
