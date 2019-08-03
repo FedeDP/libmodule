@@ -26,10 +26,9 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
     (*context)->logger = default_logger;
     
     (*context)->modules = map_new(false, NULL);
-    (*context)->topics = map_new(false, NULL);
     
     (*context)->name = ctx_name;
-    if ((*context)->topics && (*context)->modules &&
+    if ((*context)->modules &&
         map_put(ctx, (*context)->name, *context) == MAP_OK) {
         
         return MOD_OK;
@@ -43,7 +42,6 @@ static module_ret_code init_ctx(const char *ctx_name, m_context **context) {
 static void destroy_ctx(m_context *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", context->name);
     map_free(context->modules);
-    map_free(context->topics);
     poll_close(context->fd, &context->pevents, &context->max_events);
     map_remove(ctx, context->name);
     memhook._free(context);
@@ -271,11 +269,6 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
         mod->state = IDLE;
         mod->fds = NULL;
         
-        mod->subscriptions = map_new(false, NULL);
-        if (!mod->subscriptions) {
-            break;
-        }
-        
         mod->recvs = stack_new(NULL);
         if (!mod->recvs) {
             break;
@@ -303,7 +296,6 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
     }
     memhook._free(*self);
     *self = NULL;
-    map_free(mod->subscriptions);
     stack_free(mod->recvs);
     memhook._free(mod);
     return ret;

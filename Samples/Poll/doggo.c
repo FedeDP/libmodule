@@ -10,7 +10,8 @@ static void module_pre_start(void) {
 }
 
 static void init(void) {
-   
+    /* Doggo should subscribe to "leaving" topic */
+    m_subscribe("leaving");
 }
 
 static bool check(void) {
@@ -44,10 +45,6 @@ static void receive(const msg_t *msg, const void *userdata) {
             } else if (!strcmp((char *)msg->ps_msg->message, "WakeUp")) {
                 m_log("???\n");
             }
-            break;
-        case TOPIC_REGISTERED:
-            /* Doggo should subscribe to "leaving" topic */
-            m_subscribe(msg->ps_msg->topic);
             break;
         default:
             break;

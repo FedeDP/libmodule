@@ -44,8 +44,6 @@ _public_ module_ret_code module_ref(const self_t *self, const char *name, const 
 _public_ module_ret_code module_become(const self_t *self, const recv_cb new_recv);
 _public_ module_ret_code module_unbecome(const self_t *self);
 
-_public_ module_ret_code module_register_topic(const self_t *self, const char *topic);
-_public_ module_ret_code module_deregister_topic(const self_t *self, const char *topic);
 _public_ module_ret_code module_subscribe(const self_t *self, const char *topic);
 _public_ module_ret_code module_unsubscribe(const self_t *self, const char *topic);
 

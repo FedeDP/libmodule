@@ -117,7 +117,6 @@ struct _context {
     map_t *modules;                         // Context's modules
     void *pevents;                          // Context's polled events structs
     int max_events;                         // Max number of returned events for epoll/kqueue
-    map_t *topics;                          // Context's registered topics
     size_t running_mods;                    // Number of RUNNING modules in context
 };
 

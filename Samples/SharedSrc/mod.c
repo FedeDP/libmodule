@@ -47,7 +47,8 @@ static void A_init(void) {
 }
 
 static void B_init(void) {
-   
+    /* Doggo should subscribe to "leaving" topic */
+    module_subscribe(selfB, "leaving");
 }
 
 static bool evaluate(void) {
@@ -150,10 +151,6 @@ static void B_recv(const msg_t *msg, const void *userdata) {
                 } else if (!strcmp((char *)msg->ps_msg->message, "WakeUp")) {
                     module_log(selfB, "???\n");
                 }
-                break;
-            case TOPIC_REGISTERED:
-                /* Doggo should subscribe to "leaving" topic */
-                module_subscribe(selfB, msg->ps_msg->topic);
                 break;
             default:
                 break;

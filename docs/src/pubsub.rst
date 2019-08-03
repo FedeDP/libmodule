@@ -9,8 +9,8 @@ Concepts
 --------
 
 Those unfamiliar with actor like messaging, may wonder what a pubsub messaging is. |br|
-PubSub (Publisher-Subscriber) messaging is much like a producer/consumer architecture: an entity registers a "topic" on which it will send messages. |br|
-Other entities can then subscribe to the topic to receive those messages. |br|
+PubSub (Publisher-Subscriber) messaging is much like a producer/consumer architecture: some entities publish messages on a topic; |br|
+other entities can subscribe to the topic to receive those messages. |br|
 
 Implementation
 --------------
@@ -26,11 +26,9 @@ Only module_is(), module_get_name/context() and module_poisonpill() functions ca
 System messages
 ---------------
 
-Beside USER messages (ps_msg_t.type), there are 6 system messages, respectively: LOOP_STARTED, LOOP_STOPPED, TOPIC_REGISTERED, TOPIC_DEREGISTERED, MODULE_STARTED, MODULE_STOPPED. |br|
+Beside USER messages (ps_msg_t.type), there are some system messages, respectively: LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED. |br|
 These pubsub messages are automatically sent by libmodule when matching functions are called, eg: |br|
 * LOOP_STARTED(STOPPED) is sent whenever a loop starts(stops) looping. It is useful to actually start(stop) your pubsub messagging (eg: one module waits on LOOP_STARTED to send a pubsub message to another module, and so on...). It won't have any valued fields, except for type. |br|
-* TOPIC_(DE)REGISTERED message is sent when any module registers a topic; it is useful for other modules to (un)subscribe to it. |br|
-It will have valued type and topic fields; moreover, sender field will be set to module that (de)registered the topic. |br|
 * MODULE_STARTED(STOPPED) is sent whenever a module starts/resumes(stops/pauses). Again this is useful to inform other modules that a new module is available. |br|
 It will have valued type and sender fields; sender will be set to started(stopped) module.
 

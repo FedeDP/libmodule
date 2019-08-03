@@ -46,8 +46,7 @@ static void _ctor2_ module_pre_start(void)
 
 #define m_become(x)                             module_become(self(), receive_##x)
 #define m_unbecome()                            module_unbecome(self())
-#define m_register_topic(topic)                 module_register_topic(self(), topic)
-#define m_deregister_topic(topic)               module_deregister_topic(self(), topic)
+
 #define m_subscribe(topic)                      module_subscribe(self(), topic)
 #define m_unsubscribe(topic)                    module_unsubscribe(self(), topic)
 #define m_tell(recipient, msg, size, free)      module_tell(self(), recipient, msg, size, free)

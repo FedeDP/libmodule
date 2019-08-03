@@ -9,7 +9,8 @@ static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, c
 static map_ret_code tell_global(void *data, const char *key, void *value);
 static void destroy_pubsub_msg(ps_priv_t *pubsub_msg);
 static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c, const bool global);
-static module_ret_code publish_msg(const module *mod, const char *topic, const void *message, 
+static module_ret_code send_msg(const module *mod, module *recipient, 
+                                   const char *topic, const void *message, 
                                    const ssize_t size, const bool autofree, const bool global);
 
 static map_ret_code tell_if(void *data, const char *key, void *value) {
@@ -82,24 +83,16 @@ static module_ret_code tell_pubsub_msg(ps_priv_t *m, module *mod, m_context *c, 
     return MOD_OK;
 }
 
-
-static module_ret_code publish_msg(const module *mod, const char *topic, const void *message, 
+static module_ret_code send_msg(const module *mod, module *recipient, 
+                                   const char *topic, const void *message, 
                                    const ssize_t size, const bool autofree, const bool global) {
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
     
     GET_CTX_PRIV((&mod->self));
     
-    void *tmp = NULL;
-    /* 
-     * Only module that registered a topic can publish on the topic.
-     * Moreover, a publish can only be made on existent topic.
-     */
-    if (!topic || ((tmp = map_get(c->topics, topic)) && tmp == mod)) {
-        ps_priv_t *m = create_pubsub_msg(message, &mod->self, topic, USER, size, autofree);
-        return tell_pubsub_msg(m, NULL, c, global);
-    }
-    return MOD_ERR;
+    ps_priv_t *m = create_pubsub_msg(message, &mod->self, topic, USER, size, autofree);
+    return tell_pubsub_msg(m, recipient, c, global);
 }
 
 /** Private API **/
@@ -162,40 +155,16 @@ module_ret_code module_ref(const self_t *self, const char *name, const self_t **
     return MOD_OK;
 }
 
-module_ret_code module_register_topic(const self_t *self, const char *topic) {
-    MOD_PARAM_ASSERT(topic);
-    GET_MOD(self);
-    GET_CTX(self);
-    
-    if (!map_has_key(c->topics, topic)) {
-        if (map_put(c->topics, topic, mod) == MAP_OK) {
-            tell_system_pubsub_msg(NULL, c, TOPIC_REGISTERED, &mod->self, topic);
-            return MOD_OK;
-        }
-    }
-    return MOD_ERR;
-}
-
-module_ret_code module_deregister_topic(const self_t *self, const char *topic) {
-    MOD_PARAM_ASSERT(topic);
-    GET_MOD(self);
-    GET_CTX(self);
-    
-    void *tmp = map_get(c->topics, topic); // NULL if key is not present
-    /* Only same mod which registered topic can deregister it */
-    if (tmp == mod) {
-        if (map_remove(c->topics, topic) == MAP_OK) {
-            tell_system_pubsub_msg(NULL, c, TOPIC_DEREGISTERED, &mod->self, topic);
-            return MOD_OK;
-        }
-    }
-    return MOD_ERR;
-}
-
 module_ret_code module_subscribe(const self_t *self, const char *topic) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     GET_CTX(self);
+    
+    /* Lazy subscriptions map init */
+    if (!mod->subscriptions)  {
+        mod->subscriptions = map_new(false, NULL);
+        MOD_ALLOC_ASSERT(mod->subscriptions);
+    }
     
     if (!map_has_key(mod->subscriptions, topic) &&
         /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
@@ -221,14 +190,11 @@ module_ret_code module_unsubscribe(const self_t *self, const char *topic) {
 module_ret_code module_tell(const self_t *self, const self_t *recipient, const void *message, 
                             const ssize_t size, const bool autofree) {
     GET_MOD(self);
-    MOD_PARAM_ASSERT(message);
-    MOD_PARAM_ASSERT(size > 0);
     MOD_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
     MOD_PARAM_ASSERT(self->ctx == recipient->ctx);
 
-    ps_priv_t *m = create_pubsub_msg(message, &mod->self, NULL, USER, size, autofree);
-    return tell_pubsub_msg(m, recipient->mod, recipient->ctx, false);
+    return send_msg(mod, recipient->mod, NULL, message, size, autofree, false);
 }
 
 module_ret_code module_publish(const self_t *self, const char *topic, const void *message, 
@@ -236,14 +202,14 @@ module_ret_code module_publish(const self_t *self, const char *topic, const void
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     
-    return publish_msg(mod, topic, message, size, autofree, false);
+    return send_msg(mod, NULL, topic, message, size, autofree, false);
 }
 
 module_ret_code module_broadcast(const self_t *self, const void *message, 
                                  const ssize_t size, const bool autofree, bool global) {
     GET_MOD(self);
     
-    return publish_msg(mod, NULL, message, size, autofree, global);
+    return send_msg(mod, NULL, NULL, message, size, autofree, global);
 }
 
 module_ret_code module_poisonpill(const self_t *self, const self_t *recipient) {

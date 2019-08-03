@@ -88,8 +88,6 @@ static void receive(const msg_t *msg, const void *userdata) {
     } else {
         if (msg->ps_msg->type == USER && !strcmp((char *)msg->ps_msg->message, "BauBau")) {
             m_become(ready);
-            /* Finally register Leaving topic */
-            m_register_topic("leaving");
             m_log("Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
     }

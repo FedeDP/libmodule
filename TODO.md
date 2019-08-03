@@ -25,6 +25,8 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Always destroy messages in flush_pubsub_msg()? RIght now it delivers all of them if we're stopping looping on ctx
 - [x] module_poisonpill should only be sent to RUNNING modules
 - [x] when stop looping on a context, flush all pubsub messages to RUNNING modules only. Destroy messages for non-running modules.
+- [x] Drop (de)register_topic?
+- [x] mod->subscriptions map lazy creation
 
 ### Map
 - [x] FIx: avoid incrementing map size on value update
@@ -82,7 +84,8 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] New modules_loop behaviour (stop looping when no RUNNING modules)
 - [x] New Map API
 - [x] New Stack API
-
+- [x] Dropped (de)register_topic!
+ 
 ### Samples
 - [x] Fix samples
 

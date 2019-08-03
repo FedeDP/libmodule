@@ -143,32 +143,18 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   :type name: :c:type:`const char *` 
   :type modref: :c:type:`const self_t **`
   
-.. c:macro:: m_register_topic(topic)
-
-  Registers a new topic in module's context.
-    
-  :param topic: topic to be registered. Only a not-existent topic can be registered. Note that as soon as a topic is registered, a message with type == SYSTEM will be broadcasted to all modules.
-  :type topic: :c:type:`const char *`
-  
-.. c:macro:: m_deregister_topic(topic)
-
-  Deregisters topic in module's context.
-    
-  :param topic: topic to be deregistered. Only topic creator can deregister a topic.
-  :type topic: :c:type:`const char *`
-  
 .. c:macro:: m_subscribe(topic)
 
   Subscribes the module to a topic. If module is already subscribed to topic, MODULE_ERR will be returned
     
-  :param topic: topic to which subscribe. It is not mandatory for topic to be already registered in context, ie: it may be registered later.
+  :param topic: topic to which subscribe.
   :type topic: :c:type:`const char *`
   
 .. c:macro:: m_unsubscribe(topic)
 
   Unsubscribes the module from a topic. If module is not subscribed to topic, MODULE_ERR will be returned.
     
-  :param topic: topic to which unsubscribe. It is not mandatory for topic to be already registered in context, ie: it may be registered later.
+  :param topic: topic to which unsubscribe.
   :type topic: :c:type:`const char *`
   
 .. c:macro:: m_tell(recipient, msg, size, autofree)
@@ -415,30 +401,12 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type name: :c:type:`const char *` 
   :type modref: :c:type:`const self_t **`
   
-.. c:function:: module_register_topic(self, topic)
-
-  Registers a new topic in module's context.
-  
-  :param self: pointer to module's handler
-  :param topic: topic to be registered. Only a not-existent topic can be registered. Note that as soon as a topic is registered, a message with type == SYSTEM will be broadcasted to all modules.
-  :type self: :c:type:`const self_t *`
-  :type topic: :c:type:`const char *`
-  
-.. c:function:: module_deregister_topic(self, topic)
-
-  Deregisters topic in module's context. Note that deregistering a topic will not unsubscribe any module. Thus, if topic gets registered again, subscribed modules will start receiveing new publishes.
-    
-  :param self: pointer to module's handler
-  :param topic: topic to be deregistered. Only topic creator can deregister a topic.
-  :type self: :c:type:`const self_t *`
-  :type topic: :c:type:`const char *`
-  
 .. c:function:: module_subscribe(self, topic)
 
   Subscribes the module to a topic. If module is already subscribed to topic, MODULE_ERR will be returned.
     
   :param self: pointer to module's handler
-  :param topic: topic to which subscribe. It is not mandatory for topic to be already registered in context, ie: it may be registered later.
+  :param topic: topic to which subscribe.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
   
@@ -447,7 +415,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   Unsubscribes the module from a topic. If module is not subscribed to topic, MODULE_ERR will be returned.
     
   :param self: pointer to module's handler
-  :param topic: topic to which unsubscribe. It is not mandatory for topic to be already registered in context, ie: it may be registered later.
+  :param topic: topic to which unsubscribe.
   :type self: :c:type:`const self_t *`
   :type topic: :c:type:`const char *`
   
