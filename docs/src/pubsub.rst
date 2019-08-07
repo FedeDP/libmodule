@@ -30,7 +30,7 @@ Beside USER messages (ps_msg_t.type), there are some system messages, respective
 These pubsub messages are automatically sent by libmodule when matching functions are called, eg: |br|
 * LOOP_STARTED(STOPPED) is sent whenever a loop starts(stops) looping. It is useful to actually start(stop) your pubsub messagging (eg: one module waits on LOOP_STARTED to send a pubsub message to another module, and so on...). It won't have any valued fields, except for type. |br|
 * MODULE_STARTED(STOPPED) is sent whenever a module starts/resumes(stops/pauses). Again this is useful to inform other modules that a new module is available. |br|
-It will have valued type and sender fields; sender will be set to started(stopped) module.
+It will have valued type and sender fields; sender will be set to started(stopped) module; it will be NULL though when a module is stopped by deregistering it.
 
 Finally, note that system messages with valued sender won't be sent to modules that actually generated the message.
 

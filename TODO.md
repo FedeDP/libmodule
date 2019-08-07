@@ -68,7 +68,8 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Avoid exposing in modules.h main() and modules_pre_start() functions: they're not part of libmodule's API and cannot be called as functions.
 - [x] Rename module to mod_t and m_context to ctx_t
 - [x] Rename module_poll_t to fd_priv_t
-- [ ] Automatically poisonpill a module if init()/receive() return false?
+- [x] FIX: avoid sending with MODULE_STOPPED pubsub message a not-exishtent reference to mod->self when deregistering, as module gets freed right after. Send NULL.
+- [x] FIX: when deregistering, remove module from context before stopping it
 
 ### Doc
 - [x] module_dump

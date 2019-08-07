@@ -219,6 +219,8 @@ module_ret_code stop(mod_t *mod, const bool stop) {
     
     GET_CTX_PRIV((&mod->self));
     
+    const bool was_running = _module_is(mod, RUNNING);
+    
     int ret = manage_fds(mod, c, RM, stop);
     MOD_ASSERT(!ret, errors[stop], MOD_ERR);
     
@@ -234,9 +236,23 @@ module_ret_code stop(mod_t *mod, const bool stop) {
     }
     
     MODULE_DEBUG("%s '%s'.\n", stop ? "Stopped" : "Paused", mod->name);
-    tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, &mod->self, NULL);
     
-    c->running_mods--;
+    /*
+     * Check that we are not deregistering; this is needed to
+     * avoid sending a &mod->self that will be freed right after 
+     * (thus pointing to freed data).
+     * When deregistering, module has already been removed from c->modules map.
+     */
+    self_t *self = NULL;
+    if (map_has_key(c->modules, mod->name)) {
+        self = &mod->self;
+    }
+    tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, self, NULL);
+    
+    /* Increment only if we were previously RUNNING */
+    if (was_running) {
+        c->running_mods--;
+    }
     return MOD_OK;
 }
 
@@ -307,10 +323,10 @@ module_ret_code module_deregister(self_t **self) {
     GET_MOD(*self);
     MODULE_DEBUG("Deregistering module '%s'.\n", mod->name);
     
-    stop(mod, true);
-    
     /* Remove the module from the context */
     map_remove((*self)->ctx->modules, mod->name);
+    
+    stop(mod, true);
             
     /* Remove context without modules */
     if (map_length((*self)->ctx->modules) == 0) {
