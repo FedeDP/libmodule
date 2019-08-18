@@ -1,8 +1,11 @@
 #include "module.h"
 #include "poll_priv.h"
+#include <regex.h>        
 
 /** Actor-like PubSub interface **/
 
+static void regex_dtor(void *data);
+static bool is_subscribed(mod_t *mod, const char *topic);
 static map_ret_code tell_if(void *data, const char *key, void *value);
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
                                enum msg_type type, const size_t size, const bool autofree);
@@ -13,6 +16,31 @@ static module_ret_code send_msg(const mod_t *mod, mod_t *recipient,
                                    const char *topic, const void *message, 
                                    const ssize_t size, const bool autofree, const bool global);
 
+static void regex_dtor(void *data) {
+    regfree(data);
+    memhook._free(data);
+}
+
+static bool is_subscribed(mod_t *mod, const char *topic) {
+    /* Check if module is directly subscribed to topic */
+    if (map_has_key(mod->subscriptions, topic)) {
+       return true;
+    }
+    
+    /* Check if any stored subscriptions is a regex that matches topic */
+    map_itr_t *itr = map_itr_new(mod->subscriptions);
+    for (; itr; itr = map_itr_next(itr)) {
+        const regex_t *reg = map_itr_get_data(itr);
+
+        /* Execute regular expression */
+        int ret = regexec(reg, topic, 0, NULL, 0);
+        if (!ret) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static map_ret_code tell_if(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
@@ -20,7 +48,7 @@ static map_ret_code tell_if(void *data, const char *key, void *value) {
     if (_module_is(mod, RUNNING | PAUSED) &&                         // mod is running or paused
         ((msg->msg.type != USER && msg->msg.sender != &mod->self) || // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == USER &&                                    // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
-        (!msg->msg.topic || map_has_key(mod->subscriptions, msg->msg.topic))))) {     
+        (!msg->msg.topic || is_subscribed(mod, msg->msg.topic))))) {     
         
         MODULE_DEBUG("Telling a message to '%s'.\n", mod->name);
         
@@ -160,17 +188,26 @@ module_ret_code module_subscribe(const self_t *self, const char *topic) {
     GET_MOD(self);
     GET_CTX(self);
     
-    /* Lazy subscriptions map init */
-    if (!mod->subscriptions)  {
-        mod->subscriptions = map_new(false, NULL);
-        MOD_ALLOC_ASSERT(mod->subscriptions);
-    }
-    
-    if (!map_has_key(mod->subscriptions, topic) &&
-        /* Store pointer to mod as value, even if it will be unused; this should be a hashset */
-        map_put(mod->subscriptions, topic, mod) == MAP_OK) {
+    /* Check if it is a valid regex: compile it */
+    regex_t regex;
+    int ret = regcomp(&regex, topic, REG_NOSUB);
+    if (!ret) {
+        MODULE_DEBUG("'%s' is a valid regex.\n", topic);
         
-        return MOD_OK;
+        /* Lazy subscriptions map init */
+        if (!mod->subscriptions)  {
+            mod->subscriptions = map_new(false, regex_dtor);
+            MOD_ALLOC_ASSERT(mod->subscriptions);
+        }
+
+        if (!map_has_key(mod->subscriptions, topic)) {
+            /* Store regex on heap */
+            regex_t *reg = memhook._malloc(sizeof(regex_t));
+            memcpy(reg, &regex, sizeof(regex_t));
+            if (map_put(mod->subscriptions, topic, reg) == MAP_OK) {
+                return MOD_OK;
+            }
+        }
     }
     return MOD_ERR;
 }

@@ -123,7 +123,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
 
 .. c:macro:: m_log(fmt, args)
 
-  Logger function for this module. Call it the same way you'd call printf
+  Logger function for this module. Call it the same way you'd call printf.
     
   :param fmt: log's format.
   :param args: variadic argument.
@@ -145,7 +145,7 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_subscribe(topic)
 
-  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_ERR will be returned
+  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_ERR will be returned. Note that a regex is a valid topic too.
     
   :param topic: topic to which subscribe.
   :type topic: :c:type:`const char *`
@@ -403,7 +403,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_subscribe(self, topic)
 
-  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_ERR will be returned.
+  Subscribes the module to a topic. If module is already subscribed to topic, MODULE_ERR will be returned. Note that a regex is a valid topic too.
     
   :param self: pointer to module's handler
   :param topic: topic to which subscribe.

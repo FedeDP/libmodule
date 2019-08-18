@@ -30,7 +30,7 @@ typedef struct _map_itr map_itr_t;
 extern "C"{
 #endif
 
-_public_ map_t *map_new(const bool autofree, const map_dtor fn);
+_public_ map_t *map_new(const bool keysdup, const map_dtor fn);
 _public_ map_itr_t *map_itr_new(const map_t *m);
 _public_ map_itr_t *map_itr_next(map_itr_t *itr);
 _public_ map_ret_code map_itr_remove(map_itr_t *itr);

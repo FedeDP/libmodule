@@ -27,6 +27,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] when stop looping on a context, flush all pubsub messages to RUNNING modules only. Destroy messages for non-running modules.
 - [x] Drop (de)register_topic?
 - [x] mod->subscriptions map lazy creation
+- [x] Support regex topic subscriptions
 
 ### Map
 - [x] FIx: avoid incrementing map size on value update

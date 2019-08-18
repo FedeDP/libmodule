@@ -14,8 +14,8 @@ static void module_pre_start(void) {
 }
 
 static void init(void) {
-    /* Doggo should subscribe to "leaving" topic */
-    m_subscribe("leaving");
+    /* Doggo should subscribe to "leaving" topic, as regex */
+    m_subscribe("leav[i+]ng");
 }
 
 static bool check(void) {

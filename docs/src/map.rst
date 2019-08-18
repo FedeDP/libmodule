@@ -40,13 +40,13 @@ API
 
 Where not specified, these functions return a map_ret_code.
 
-.. c:function:: map_new(const bool autofree, const map_dtor fn)
+.. c:function:: map_new(const bool keysdup, const map_dtor fn)
 
   Create a new map_t object.
   
-  :param autofree: whether keys lifetime should be managed by map
+  :param keysdup: whether keys lifetime should be managed by map
   :param fn: callback called on value destroy. If NULL, values won't be automatically destroyed.
-  :type autofree: :c:type:`const bool`
+  :type keysdup: :c:type:`const bool`
   :type fn: :c:type:`const map_dtor`
     
   :returns: pointer to newly allocated map_t.

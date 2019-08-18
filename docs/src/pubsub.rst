@@ -34,6 +34,13 @@ It will have valued type and sender fields; sender will be set to started(stoppe
 
 Finally, note that system messages with valued sender won't be sent to modules that actually generated the message.
 
+Topics
+------
+
+Topics are just strings. Thus, if subscribing to "foo" topic, a module will receive: broadcasted messages, messages told directly to it and messages published on "foo" topic. |br|
+Note that you can subscribe to regex patterns too, eg: "f[o+]" would receive messages published on "fo", "foo", "fooo" etc etc. |br|
+When you unsubscribe from a regex topic, you should pass same regex to which you subscribed.
+
 Notes
 -----
 

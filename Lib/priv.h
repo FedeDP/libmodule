@@ -101,7 +101,7 @@ struct _module {
     const void *userdata;                   // module's user defined data
     enum module_states state;               // module's state
     const char *name;                       // module's name
-    fd_priv_t *fds;                     // module's fds to be polled
+    fd_priv_t *fds;                         // module's fds to be polled
     map_t *subscriptions;                   // module's subscriptions
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     self_t self;                            // pointer to self (and thus context)
