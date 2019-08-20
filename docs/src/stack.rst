@@ -49,7 +49,7 @@ Where not specified, these functions return a stack_ret_code.
   
 .. c:function:: stack_itr_new(s)
 
-  Create a new stack_itr_t object.
+  Create a new stack_itr_t object. Note that it can be freed with free().
   
   :param s: pointer to stack_t
   :type s: :c:type:`const stack_t *`
@@ -58,7 +58,7 @@ Where not specified, these functions return a stack_ret_code.
   
 .. c:function:: stack_itr_next(itr)
 
-  Get next iterator.
+  Get next iterator. If next iterator is past last element, iterator will be automatically freed for you.
   
   :param itr: pointer to stack_itr_t
   :type itr: :c:type:`stack_itr_t *`

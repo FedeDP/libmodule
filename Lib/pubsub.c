@@ -35,6 +35,7 @@ static bool is_subscribed(mod_t *mod, const char *topic) {
         /* Execute regular expression */
         int ret = regexec(reg, topic, 0, NULL, 0);
         if (!ret) {
+            memhook._free(itr);
             return true;
         }
     }

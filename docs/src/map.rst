@@ -53,7 +53,7 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_itr_new(m)
 
-  Create a new map iterator object.
+  Create a new map iterator object. Note that it can be freed with free().
   
   :param m: pointer to map_t
   :type m: :c:type:`const map_t *`
@@ -62,7 +62,7 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_itr_next(itr)
 
-  Get next iterator.
+  Get next iterator. If next iterator is past last element, iterator will be automatically freed for you.
   
   :param itr: pointer to map_itr_t
   :type itr: :c:type:`map_itr_t *`
