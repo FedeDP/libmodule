@@ -115,7 +115,8 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_put(m, key, val)
 
-  Put a value inside hashmap.
+  Put a value inside hashmap. |br|
+  If key is already present, old value will be updated (and, if dtor is set, destroyed). Note that if new value and old value are the same pointer, nothing will be done.
 
   :param m: pointer to map_t
   :param key: key for this value
