@@ -42,6 +42,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Set keydup and autofree in map_new()
 - [x] Drop map_set_dtor
 - [x] Destroy old value upon val update
+- [x] Avoid destroying map value on update with same pointer; just return MAP_OK
 
 ### Stack
 - [x] stack->dtor should default to memhook._free, and fallback to default if stack_set_dtor is called with NULL callback parameter 

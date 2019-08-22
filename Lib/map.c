@@ -181,7 +181,7 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value) {
     if (!entry->key) {
         entry->key = key;
         m->length++;
-    } else if (m->dtor) {
+    } else if (m->dtor && entry->data != value) {
         /* Destroy old value if needed */
         m->dtor(entry->data);
     }
