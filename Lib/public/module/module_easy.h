@@ -14,7 +14,7 @@ static void destroy(void); \
 static const self_t *_self = NULL; \
 static void _ctor3_ constructor(void) { \
     if (check()) { \
-        userhook hook = { init, evaluate, receive, destroy }; \
+        userhook_t hook = { init, evaluate, receive, destroy }; \
         module_register(name, ctx, (self_t **)&self(), &hook); \
     } \
 } \

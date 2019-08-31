@@ -69,7 +69,7 @@ Types
         evaluate_cb evaluate;                   // module's state changed function
         recv_cb recv;                           // module's recv function
         destroy_cb destroy;                     // module's destroy function
-    } userhook;
+    } userhook_t;
 
     /* Struct that holds user defined memory functions */
     typedef struct {

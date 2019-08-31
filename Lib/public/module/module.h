@@ -9,7 +9,7 @@ extern "C"{
 #endif
 
 /* Module registration */
-_public_ module_ret_code module_register(const char *name, const char *ctx_name, self_t **self, const userhook *hook);
+_public_ module_ret_code module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook);
 _public_ module_ret_code module_deregister(self_t **self);
 
 /* External shared object module runtime loading */

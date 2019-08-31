@@ -96,7 +96,7 @@ typedef struct {
 
 /* Struct that holds data for each module */
 struct _module {
-    userhook hook;                          // module's user defined callbacks
+    userhook_t hook;                        // module's user defined callbacks
     stack_t *recvs;                         // Stack of recv functions for module_become/unbecome
     const void *userdata;                   // module's user defined data
     enum module_states state;               // module's state

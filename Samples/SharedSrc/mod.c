@@ -24,8 +24,8 @@ static self_t *selfA, *selfB;
  * These modules can share some callbacks.
  */
 void create_modules(const char *ctx_name) {
-    userhook hookA = (userhook) { A_init, evaluate, A_recv, destroy };
-    userhook hookB = (userhook) { B_init, evaluate, B_recv, destroy };
+    userhook_t hookA = (userhook_t) { A_init, evaluate, A_recv, destroy };
+    userhook_t hookB = (userhook_t) { B_init, evaluate, B_recv, destroy };
     
     module_register("Pippo", ctx_name, &selfA, &hookA);
     module_register("Doggo", ctx_name, &selfB, &hookB);

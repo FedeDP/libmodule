@@ -72,6 +72,7 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Rename module_poll_t to fd_priv_t
 - [x] FIX: avoid sending with MODULE_STOPPED pubsub message a not-exishtent reference to mod->self when deregistering, as module gets freed right after. Send NULL.
 - [x] FIX: when deregistering, remove module from context before stopping it
+- [x] Rename userhook to userhook_t, following other types
 
 ### Doc
 - [x] module_dump

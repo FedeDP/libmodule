@@ -258,7 +258,7 @@ module_ret_code stop(mod_t *mod, const bool stop) {
 
 /** Public API **/
 
-module_ret_code module_register(const char *name, const char *ctx_name, self_t **self, const userhook *hook) {
+module_ret_code module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook) {
     MOD_PARAM_ASSERT(name);
     MOD_PARAM_ASSERT(ctx_name);
     MOD_PARAM_ASSERT(self);
@@ -281,7 +281,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
     while (true) {
         mod->name = name;
         
-        memcpy(&mod->hook, hook, sizeof(userhook));
+        memcpy(&mod->hook, hook, sizeof(userhook_t));
         mod->state = IDLE;
         mod->fds = NULL;
         

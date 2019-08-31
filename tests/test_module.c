@@ -18,7 +18,7 @@ const self_t *testSelf = NULL;
 void test_module_register_NULL_name(void **state) {
     (void) state; /* unused */
 
-    userhook hook = (userhook) { init, evaluate, recv, destroy };
+    userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
     module_ret_code ret = module_register(NULL, CTX, &self, &hook);
     assert_false(ret == MOD_OK);
     assert_null(self);
@@ -27,7 +27,7 @@ void test_module_register_NULL_name(void **state) {
 void test_module_register_NULL_ctx(void **state) {
     (void) state; /* unused */
     
-    userhook hook = (userhook) { init, evaluate, recv, destroy };
+    userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
     module_ret_code ret = module_register("testName", NULL, &self, &hook);
     assert_false(ret == MOD_OK);
     assert_null(self);
@@ -36,7 +36,7 @@ void test_module_register_NULL_ctx(void **state) {
 void test_module_register_NULL_self(void **state) {
     (void) state; /* unused */
     
-    userhook hook = (userhook) { init, evaluate, recv, destroy };
+    userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
     module_ret_code ret = module_register("testName", CTX, NULL, &hook);
     assert_false(ret == MOD_OK);
     assert_null(self);
@@ -53,7 +53,7 @@ void test_module_register_NULL_hook(void **state) {
 void test_module_register(void **state) {
     (void) state; /* unused */
     
-    userhook hook = (userhook) { init, evaluate, recv, destroy };
+    userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
     module_ret_code ret = module_register("testName", CTX, &self, &hook);
     assert_true(ret == MOD_OK);
     assert_non_null(self);
@@ -63,7 +63,7 @@ void test_module_register(void **state) {
 void test_module_register_already_registered(void **state) {
     (void) state; /* unused */
     
-    userhook hook = (userhook) { init, evaluate, recv, destroy };
+    userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
     module_ret_code ret = module_register("testName", CTX, &self, &hook);
     assert_false(ret == MOD_OK);
     assert_non_null(self);
@@ -75,7 +75,7 @@ void test_module_register_same_name(void **state) {
     
     self_t *self2 = NULL;
     
-    userhook hook = (userhook) { init, evaluate, recv, destroy };
+    userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
     module_ret_code ret = module_register("testName", CTX, &self2, &hook);
     assert_false(ret == MOD_OK);
     assert_null(self2);
