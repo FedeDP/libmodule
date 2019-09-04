@@ -74,7 +74,7 @@ stack_ret_code stack_iterate(const stack_t *s, const stack_cb fn, void *userptr)
             return rc;
         }
         if (rc > STACK_OK) {
-            /* Stop right now with MAP_OK */
+            /* Stop right now with STACK_OK */
             return STACK_OK;
         }
         elem = elem->prev;

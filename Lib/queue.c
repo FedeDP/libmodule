@@ -76,7 +76,7 @@ queue_ret_code queue_iterate(const queue_t *q, const queue_cb fn, void *userptr)
             return rc;
         }
         if (rc > QUEUE_OK) {
-            /* Stop right now with MAP_OK */
+            /* Stop right now with QUEUE_OK */
             return QUEUE_OK;
         }
         elem = elem->prev;
