@@ -26,7 +26,7 @@ typedef struct _queue_itr queue_itr_t;
 
 #ifdef __cplusplus
 extern "C"{
-    #endif
+#endif
     
     _public_ queue_t *queue_new(const queue_dtor fn);
     _public_ queue_itr_t *queue_itr_new(const queue_t *q);
@@ -41,6 +41,6 @@ extern "C"{
     _public_ queue_ret_code queue_free(queue_t *q);
     _public_ ssize_t queue_length(const queue_t *q);
     
-    #ifdef __cplusplus
+#ifdef __cplusplus
 }
 #endif
