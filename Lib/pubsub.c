@@ -256,4 +256,4 @@ module_ret_code module_poisonpill(const self_t *self, const self_t *recipient) {
     MOD_PARAM_ASSERT(module_is(recipient, RUNNING));
     
     return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->self, NULL);
-} 
+}

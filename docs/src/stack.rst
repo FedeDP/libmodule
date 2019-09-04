@@ -58,7 +58,7 @@ Where not specified, these functions return a stack_ret_code.
   
 .. c:function:: stack_itr_next(itr)
 
-  Get next iterator. If next iterator is past last element, iterator will be automatically freed for you.
+  Get next iterator. If next iterator is past last element, iterator will be automatically freed.
   
   :param itr: pointer to stack_itr_t
   :type itr: :c:type:`stack_itr_t *`

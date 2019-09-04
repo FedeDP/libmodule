@@ -464,7 +464,7 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   :type autofree: :c:type:`const bool`
   :type global: :c:type:`const bool`
   
-.. c:macro:: module_poisonpill(self, recipient)
+.. c:function:: module_poisonpill(self, recipient)
 
   Enqueue a POISONPILL message to recipient. This allows to stop another module after it flushes its pubsub messages.
   

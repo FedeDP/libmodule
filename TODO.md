@@ -52,6 +52,10 @@ conversely to module_stop that should stop module right away freeing all its enq
 - [x] Set autofree in stack_new()
 - [x] Drop stack_set_dtor
 
+### Queue
+- [x] Add queue API
+- [x] Add doc
+
 ### Generic
 - [x] Add some diagnostic API, eg: module_dump() (to dump each module's state)
 - [x] Add a module_load/unload function, to load a module from a compiled object at runtime
@@ -111,3 +115,4 @@ conversely to module_stop that should stop module right away freeing all its enq
 
 ## Ideas
 - [ ] Akka-persistence like message store? (ie: store all messages and replay them)
+- [ ] module_msg_ref/unref to forcefully keep an autofree message alive?

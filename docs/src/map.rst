@@ -62,7 +62,7 @@ Where not specified, these functions return a map_ret_code.
   
 .. c:function:: map_itr_next(itr)
 
-  Get next iterator. If next iterator is past last element, iterator will be automatically freed for you.
+  Get next iterator. If next iterator is past last element, iterator will be automatically freed.
   
   :param itr: pointer to map_itr_t
   :type itr: :c:type:`map_itr_t *`

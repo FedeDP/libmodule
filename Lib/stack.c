@@ -130,7 +130,7 @@ stack_ret_code stack_clear(stack_t *s) {
 stack_ret_code stack_free(stack_t *s) {
     stack_ret_code ret = stack_clear(s);
     if (ret == STACK_OK) {
-        free(s);
+        memhook._free(s);
     }
     return ret;
 }

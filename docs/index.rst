@@ -20,6 +20,7 @@ Welcome to libmodule's documentation!
    src/modules
    src/map
    src/stack
+   src/queue
 
 Indices and tables
 ==================
