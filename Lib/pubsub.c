@@ -10,7 +10,7 @@ static map_ret_code tell_if(void *data, const char *key, void *value);
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
                                enum msg_type type, const size_t size, const bool autofree);
 static map_ret_code tell_global(void *data, const char *key, void *value);
-static void destroy_pubsub_msg(ps_priv_t *pubsub_msg);
+static void pubsub_msg_unref(ps_priv_t *pubsub_msg);
 static module_ret_code tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c, const bool global);
 static module_ret_code send_msg(const mod_t *mod, mod_t *recipient, 
                                    const char *topic, const void *message, 
@@ -85,7 +85,7 @@ static map_ret_code tell_global(void *data, const char *key, void *value) {
     return MAP_OK;
 }
 
-static void destroy_pubsub_msg(ps_priv_t *pubsub_msg) {
+static void pubsub_msg_unref(ps_priv_t *pubsub_msg) {
     /* Properly free pubsub msg if its ref count reaches 0 and autofree bit is true */
     if (pubsub_msg->refs == 0 || --pubsub_msg->refs == 0) {
         if (pubsub_msg->autofree) {
@@ -106,7 +106,7 @@ static module_ret_code tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c, const
     
     /* Nobody received our message; destroy it right away */
     if (m->refs == 0) {
-        destroy_pubsub_msg(m);
+        pubsub_msg_unref(m);
     }
     
     return MOD_OK;
@@ -150,7 +150,7 @@ map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value) {
             run_pubsub_cb(mod, &msg);
         } else {
             MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
-            destroy_pubsub_msg(mm);
+            pubsub_msg_unref(mm);
         }
     }
     return 0;
@@ -166,7 +166,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg) {
     cb(msg, mod->userdata);
 
     if (msg->is_pubsub) {
-        destroy_pubsub_msg((ps_priv_t *)msg->ps_msg);
+        pubsub_msg_unref((ps_priv_t *)msg->ps_msg);
     }
 }
 
