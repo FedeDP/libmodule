@@ -31,11 +31,11 @@ static void init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    m_register_fd(fd, 1, &myData);
+    m_register_source(fd, FD_AUTOCLOSE, &myData);
 #endif
     
     /* Register stdin fd */
-    m_register_fd(STDIN_FILENO, 0, NULL);
+    m_register_source(STDIN_FILENO, 0, NULL);
     
     /* Get Doggo module reference */
     m_ref("Doggo", &doggo);
@@ -60,7 +60,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         /* Forcefully quit if we received a signal */
         if (msg->fd_msg->fd != STDIN_FILENO) {
             c = 'q';
-            int *data = (int *)msg->fd_msg->userptr;
+            int *data = (int *)userdata;
             if (data) {
                 m_log("Data is %d\n", *data);
             }

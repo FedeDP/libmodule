@@ -43,12 +43,12 @@ void destroy_modules(void) {
 }
 
 static void A_init(void) {
-    module_register_fd(selfA, STDIN_FILENO, 0, NULL);
+    module_register_source(selfA, STDIN_FILENO, 0, NULL);
 }
 
 static void B_init(void) {
     /* Doggo should subscribe to "leaving" topic */
-    module_subscribe(selfB, "leaving");
+    module_register_source(selfB, "leaving", 0, NULL);
 }
 
 static bool evaluate(void) {

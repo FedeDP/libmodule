@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.3.2)
 
-project(libmodule VERSION 5.0.0 LANGUAGES C CXX)
+project(libmodule VERSION 6.0.0 LANGUAGES C CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE Release)
@@ -116,7 +116,7 @@ install(FILES LICENSE
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/licenses/${PROJECT_NAME})
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -fvisibility=hidden")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -fvisibility=hidden")
 
 #
 # Packaging support

@@ -17,7 +17,7 @@ static void module_pre_start(void) {
  * returns a valid fd to be polled.
  */
 static void init(void) {
-    m_subscribe("leaving");
+    m_register_source("leaving", 0, NULL);
     m_log("Linked.\n");
 }
 

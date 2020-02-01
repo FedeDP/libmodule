@@ -20,7 +20,7 @@ static void init(void) {
     sigaddset(&mask, SIGTERM);
     
     int fd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
-    m_register_fd(fd, true, NULL);
+    m_register_source(fd, FD_AUTOCLOSE, NULL);
 #endif
 }
 

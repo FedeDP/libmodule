@@ -9,8 +9,8 @@ static void destroy_ctx(ctx_t *context);
 static ctx_t *check_ctx(const char *ctx_name);
 static int _pipe(mod_t *mod);
 static module_ret_code init_pubsub_fd(mod_t *mod);
-static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata);
-static module_ret_code _register_fd(mod_t *mod, const int fd, const bool autoclose, const void *userptr);
+static void default_logger(const self_t *self, const char *fmt, va_list args);
+static module_ret_code _register_fd(mod_t *mod, const int fd, const module_source_flags flags, const void *userptr);
 static module_ret_code _deregister_fd(mod_t *mod, const int fd);
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
 
@@ -72,7 +72,7 @@ static int _pipe(mod_t *mod) {
 
 static module_ret_code init_pubsub_fd(mod_t *mod) {
     if (_pipe(mod) == 0) {
-        if (_register_fd(mod, mod->pubsub_fd[0], true, NULL) == MOD_OK) {
+        if (_register_fd(mod, mod->pubsub_fd[0], FD_AUTOCLOSE, NULL) == MOD_OK) {
             return MOD_OK;
         }
         close(mod->pubsub_fd[0]);
@@ -83,7 +83,7 @@ static module_ret_code init_pubsub_fd(mod_t *mod) {
     return MOD_ERR;
 }
 
-static void default_logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
+static void default_logger(const self_t *self, const char *fmt, va_list args) {
     printf("[%s]|%s|: ", self->ctx->name, self->mod->name);
     vprintf(fmt, args);
 }
@@ -92,13 +92,13 @@ static void default_logger(const self_t *self, const char *fmt, va_list args, co
  * Append this fd to our list of fds and 
  * if module is in RUNNING state, start listening on its events 
  */
-static module_ret_code _register_fd(mod_t *mod, const int fd, const bool autoclose, const void *userptr) {
+static module_ret_code _register_fd(mod_t *mod, const int fd, const module_source_flags flags, const void *userptr) {
     fd_priv_t *tmp = memhook._malloc(sizeof(fd_priv_t));
     MOD_ALLOC_ASSERT(tmp);
     
     if (poll_set_data(&tmp->ev) == MOD_OK) {
         tmp->fd = fd;
-        tmp->autoclose = autoclose;
+        tmp->flags = flags ;
         tmp->userptr = userptr;
         tmp->prev = mod->fds;
         tmp->self = &mod->self;
@@ -127,7 +127,7 @@ static module_ret_code _deregister_fd(mod_t *mod, const int fd) {
             if (_module_is(mod, RUNNING)) {
                 ret = poll_set_new_evt(t, mod->self.ctx, RM);
             }
-            if (t->autoclose) {
+            if (t->flags & FD_AUTOCLOSE) {
                 close(t->fd);
             }
             memhook._free(t->ev);
@@ -166,19 +166,21 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
 
 /** Private API **/
 
-bool _module_is(const mod_t *mod, const enum module_states st) {
+bool _module_is(const mod_t *mod, const module_states st) {
     return mod->state & st;
 }
 
 map_ret_code evaluate_module(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
-    if (_module_is(mod, IDLE) && mod->hook.evaluate()) {
+    if (_module_is(mod, IDLE) && 
+        (!mod->hook.evaluate || mod->hook.evaluate())) {
+        
         start(mod, true);
     }
     return MAP_OK;
 }
 
-module_ret_code start(mod_t *mod, const bool start) {
+module_ret_code start(mod_t *mod, const bool starting) {
     static const char *errors[2] = { "Failed to resume module.", "Failed to start module." };
     
     GET_CTX_PRIV((&mod->self));
@@ -190,7 +192,7 @@ module_ret_code start(mod_t *mod, const bool start) {
      * or after it was stopped.
      * Properly add back its pubsub fds.
      */
-    if (start) {
+    if (starting) {
         /* THIS IS NOT A RESUME */
         if (init_pubsub_fd(mod) != MOD_OK) {
             return MOD_ERR;
@@ -198,7 +200,7 @@ module_ret_code start(mod_t *mod, const bool start) {
     }
     
     int ret = manage_fds(mod, c, ADD, false);
-    MOD_ASSERT(!ret, errors[start], MOD_ERR);
+    MOD_ASSERT(!ret, errors[starting], MOD_ERR);
     
     mod->state = RUNNING;
     
@@ -207,35 +209,35 @@ module_ret_code start(mod_t *mod, const bool start) {
         mod->hook.init();
     }
     
-    MODULE_DEBUG("%s '%s'.\n", start ? "Started" : "Resumed", mod->name);
+    MODULE_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
     tell_system_pubsub_msg(NULL, c, MODULE_STARTED, &mod->self, NULL);
     
     c->running_mods++;
     return MOD_OK;
 }
 
-module_ret_code stop(mod_t *mod, const bool stop) {
+module_ret_code stop(mod_t *mod, const bool stopping) {
     static const char *errors[2] = { "Failed to pause module.", "Failed to stop module." };
     
     GET_CTX_PRIV((&mod->self));
     
     const bool was_running = _module_is(mod, RUNNING);
     
-    int ret = manage_fds(mod, c, RM, stop);
-    MOD_ASSERT(!ret, errors[stop], MOD_ERR);
+    int ret = manage_fds(mod, c, RM, stopping);
+    MOD_ASSERT(!ret, errors[stopping], MOD_ERR);
     
-    mod->state = stop ? STOPPED : PAUSED;
+    mod->state = stopping ? STOPPED : PAUSED;
     /*
      * When module gets stopped, its write-end pubsub fd is closed too 
      * Read-end is already closed by manage_fds().
      */
-    if (stop && mod->pubsub_fd[1] != -1) {
+    if (stopping && mod->pubsub_fd[1] != -1) {
         close(mod->pubsub_fd[1]);
         mod->pubsub_fd[0] = -1;
         mod->pubsub_fd[1] = -1;
     }
     
-    MODULE_DEBUG("%s '%s'.\n", stop ? "Stopped" : "Paused", mod->name);
+    MODULE_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
     
     /*
      * Check that we are not deregistering; this is needed to
@@ -264,6 +266,9 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
     MOD_PARAM_ASSERT(self);
     MOD_PARAM_ASSERT(!*self);
     MOD_PARAM_ASSERT(hook);
+    /* Mandatory callbacks */
+    MOD_PARAM_ASSERT(hook->init);
+    MOD_PARAM_ASSERT(hook->recv);
     
     ctx_t *context = check_ctx(ctx_name);
     MOD_ASSERT(context, "Failed to create context.", MOD_ERR);
@@ -343,7 +348,10 @@ module_ret_code module_deregister(self_t **self) {
      * Call destroy once self is NULL 
      * (ie: no more libmodule operations can be called on this handler) 
      */
-    mod->hook.destroy();
+    if (mod->hook.destroy) {
+        mod->hook.destroy();
+    }
+
 
     /* Finally free module */
     memhook._free(mod);
@@ -413,7 +421,7 @@ module_ret_code module_log(const self_t *self, const char *fmt, ...) {
     
     va_list args;
     va_start(args, fmt);
-    c->logger(self, fmt, args, mod->userdata);
+    c->logger(self, fmt, args);
     va_end(args);
     return MOD_OK;
 }
@@ -425,11 +433,20 @@ module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
     return MOD_OK;
 }
 
-module_ret_code module_register_fd(const self_t *self, const int fd, const bool autoclose, const void *userptr) {
+const void *module_get_userdata(const self_t *self) {
+    MOD_ASSERT(self, "NULL self handler.", NULL);
+    MOD_ASSERT(!self->is_ref, "Self is a reference object. It does not own module.", NULL);
+    GET_MOD_PRIV(self);
+    MOD_ASSERT(mod, "Module not found.", NULL);
+    
+    return mod->userdata;
+}
+
+module_ret_code module_register_fd(const self_t *self, const int fd, const module_source_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(fd >= 0);
     GET_MOD(self);
 
-    return _register_fd(mod, fd, autoclose, userptr);
+    return _register_fd(mod, fd, flags, userptr);
 }
 
 module_ret_code module_deregister_fd(const self_t *self, const int fd) {
@@ -440,26 +457,26 @@ module_ret_code module_deregister_fd(const self_t *self, const int fd) {
     return _deregister_fd(mod, fd);
 }
 
-module_ret_code module_get_name(const self_t *self, char **name) {
-    GET_MOD_PURE(self);
+const char *module_get_name(const self_t *mod_self) {
+    MOD_ASSERT(mod_self, "NULL mod_self handler.", NULL);
+    GET_MOD_PRIV(mod_self);
+    MOD_ASSERT(mod, "Module not found.", NULL);
     
-    *name = mem_strdup(mod->name);
-    MOD_ALLOC_ASSERT(*name);
-    return MOD_OK;
+    return mod->name;
 }
 
-module_ret_code module_get_context(const self_t *self, char **ctx) {
-    GET_CTX_PURE(self);
+const char *module_get_ctx(const self_t *mod_self) {
+    MOD_ASSERT(mod_self, "NULL mod_self handler.", NULL);
+    GET_CTX_PRIV(mod_self);
+    MOD_ASSERT(c, "Context not found.", NULL);
     
-    *ctx = mem_strdup(c->name);
-    MOD_ALLOC_ASSERT(*ctx);
-    return MOD_OK;
+    return c->name;
 }
 
 /** Module state getters **/
 
-bool module_is(const self_t *self, const enum module_states st) {
-    GET_MOD_PURE(self);
+bool module_is(const self_t *mod_self, const module_states st) {
+    GET_MOD_PURE(mod_self);
 
     return _module_is(mod, st);
 }
@@ -471,13 +488,14 @@ module_ret_code module_dump(const self_t *self) {
     module_log(self, "* Userdata: %p\n", mod->userdata);
     module_log(self, "* Subscriptions:\n");
     for (map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr)) {
-        module_log(self, "-> %s: %p\n", map_itr_get_key(itr), map_itr_get_data(itr));
+        ps_sub_t *sub = map_itr_get_data(itr);
+        module_log(self, "-> T: %s: Fl: %d UP: %p\n", sub->topic, sub->flags, sub->userptr);
     }
     module_log(self, "* Fds:\n");
     fd_priv_t *tmp = mod->fds;
     while (tmp) {
         if (tmp->fd != mod->pubsub_fd[0]) {
-            module_log(self, "-> Fd: %d Ac: %d Up: %p\n", tmp->fd, tmp->autoclose, tmp->userptr);
+            module_log(self, "-> FD: %d Fl: %d UP: %p\n", tmp->fd, tmp->flags, tmp->userptr);
         }
         tmp = tmp->prev;
     }

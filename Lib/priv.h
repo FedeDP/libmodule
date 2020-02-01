@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <regex.h>
 #include "map.h"
 #include "stack.h"
 
@@ -80,26 +81,35 @@ struct _self {
 /* List that matches fds with selfs */
 typedef struct _poll_t {
     int fd;
-    bool autoclose;
+    module_source_flags flags;
     void *ev;
     const void *userptr;
     const struct _self *self;               // ptr needed to map a fd to a self_t in epoll
     struct _poll_t *prev;
 } fd_priv_t;
 
-/* Struct that holds pubsub messaging, private. It keeps reference count. */
+/* Struct that holds pubsub messaging, private. It keeps reference count */
 typedef struct {
     ps_msg_t msg;
     uint64_t refs;
     bool autofree;
+    const void *userptr;
 } ps_priv_t;
+
+/* Struct that holds pubsub subscriptions */
+typedef struct {
+    regex_t reg;
+    const char *topic;
+    module_source_flags flags;
+    const void *userptr;
+} ps_sub_t;
 
 /* Struct that holds data for each module */
 struct _module {
     userhook_t hook;                        // module's user defined callbacks
     stack_t *recvs;                         // Stack of recv functions for module_become/unbecome
     const void *userdata;                   // module's user defined data
-    enum module_states state;               // module's state
+    module_states state;                    // module's state
     const char *name;                       // module's name
     fd_priv_t *fds;                         // module's fds to be polled
     map_t *subscriptions;                   // module's subscriptions
@@ -122,16 +132,16 @@ struct _context {
 };
 
 /* Defined in module.c */
-_pure_ bool _module_is(const mod_t *mod, const enum module_states st);
+_pure_ bool _module_is(const mod_t *mod, const module_states st);
 map_ret_code evaluate_module(void *data, const char *key, void *value);
-module_ret_code start(mod_t *mod, const bool start);
-module_ret_code stop(mod_t *mod, const bool stop);
+module_ret_code start(mod_t *mod, const bool starting);
+module_ret_code stop(mod_t *mod, const bool stopping);
 
 /* Defined in pubsub.c */
-module_ret_code tell_system_pubsub_msg(mod_t *mod, ctx_t *c, enum msg_type type, 
+module_ret_code tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, 
                                        const self_t *sender, const char *topic);
 map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value);
-void run_pubsub_cb(mod_t *mod, msg_t *msg);
+void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr);
 
 /* Defined in priv.c */
 char *mem_strdup(const char *s);

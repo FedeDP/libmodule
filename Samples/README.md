@@ -27,7 +27,3 @@ There can be some cases, though, were 2 modules share a huge callback that you m
 
 [MultiCtx](https://github.com/FedeDP/libmodule/tree/master/Samples/MultiCtx) example shows how to use "most complicated" libmodule API.  
 This example fully introduces context's concept, already seen in previous example.  
-
-## Cpp example
-
-[Cpp](https://github.com/FedeDP/libmodule/tree/master/Samples/Cpp) example is same example as Easy, but built for c++.  

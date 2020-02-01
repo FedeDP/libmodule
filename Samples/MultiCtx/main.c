@@ -9,16 +9,13 @@
 
 static void *loop(void *param);
 
-static void logger(const self_t *self, const char *fmt, va_list args, const void *userdata) {
-    char *mname = NULL, *cname = NULL;
-    if (module_get_name(self, &mname) == MOD_OK &&
-        module_get_context(self, &cname) == MOD_OK) {
-       
+static void logger(const self_t *self, const char *fmt, va_list args) {
+    const char *mname = module_get_name(self);
+    const char *cname = module_get_ctx(self);
+    if (mname && cname) {
         printf("%s@%s:\t*", mname, cname);
         vprintf(fmt, args);
     }
-    free(mname);
-    free(cname);
 }
 
 void setup_signals(void) {

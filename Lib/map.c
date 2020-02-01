@@ -200,9 +200,12 @@ static void clear_elem(map_t *m, map_elem *removed_entry) {
     if (m->dupkeys) {
         memhook._free((void *)removed_entry->key);
     }
+    removed_entry->key = NULL;
+    
     if (m->dtor) {
         m->dtor(removed_entry->data);
     }
+    removed_entry->data = NULL;
     
     /* Reduce the size */
     m->length--;

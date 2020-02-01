@@ -1,45 +1,57 @@
 #include "module.h"
-#include "poll_priv.h"
-#include <regex.h>        
+#include "poll_priv.h"     
 
 /** Actor-like PubSub interface **/
 
-static void regex_dtor(void *data);
-static bool is_subscribed(mod_t *mod, const char *topic);
+static void subscribtions_dtor(void *data);
+static bool is_subscribed(mod_t *mod, ps_priv_t *msg);
 static map_ret_code tell_if(void *data, const char *key, void *value);
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
-                               enum msg_type type, const size_t size, const bool autofree);
+                               ps_msg_type type, const size_t size, const bool autofree);
 static map_ret_code tell_global(void *data, const char *key, void *value);
+static void pubsub_msg_ref(ps_priv_t *pubsub_msg);
 static void pubsub_msg_unref(ps_priv_t *pubsub_msg);
 static module_ret_code tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c, const bool global);
 static module_ret_code send_msg(const mod_t *mod, mod_t *recipient, 
                                    const char *topic, const void *message, 
                                    const ssize_t size, const bool autofree, const bool global);
 
-static void regex_dtor(void *data) {
-    regfree(data);
-    memhook._free(data);
+static void subscribtions_dtor(void *data) {
+    ps_sub_t *sub = (ps_sub_t *)data;
+    regfree(&sub->reg);
+    if (sub->flags & PS_DUPTOPIC) {
+        memhook._free((void *)sub->topic);
+    }
+    if (sub->flags & PS_AUTOFREE) {
+        memhook._free((void *)sub->userptr);
+    }
+    memhook._free(sub);
 }
 
-static bool is_subscribed(mod_t *mod, const char *topic) {
+static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
     /* Check if module is directly subscribed to topic */
-    if (map_has_key(mod->subscriptions, topic)) {
-       return true;
+    const ps_sub_t *sub = map_get(mod->subscriptions, msg->msg.topic);
+    if (sub) {
+        goto found;
     }
     
     /* Check if any stored subscriptions is a regex that matches topic */
     map_itr_t *itr = map_itr_new(mod->subscriptions);
     for (; itr; itr = map_itr_next(itr)) {
-        const regex_t *reg = map_itr_get_data(itr);
+        sub = map_itr_get_data(itr);
 
         /* Execute regular expression */
-        int ret = regexec(reg, topic, 0, NULL, 0);
+        int ret = regexec(&sub->reg, msg->msg.topic, 0, NULL, 0);
         if (!ret) {
             memhook._free(itr);
-            return true;
+            goto found;
         }
     }
     return false;
+    
+found:
+    msg->userptr = sub->userptr;
+    return true;
 }
 
 static map_ret_code tell_if(void *data, const char *key, void *value) {
@@ -49,21 +61,21 @@ static map_ret_code tell_if(void *data, const char *key, void *value) {
     if (_module_is(mod, RUNNING | PAUSED) &&                         // mod is running or paused
         ((msg->msg.type != USER && msg->msg.sender != &mod->self) || // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == USER &&                                    // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
-        (!msg->msg.topic || is_subscribed(mod, msg->msg.topic))))) {     
+        (!msg->msg.topic || is_subscribed(mod, msg))))) {     
         
         MODULE_DEBUG("Telling a message to '%s'.\n", mod->name);
         
         if (write(mod->pubsub_fd[1], &msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
             MODULE_DEBUG("Failed to write message: %s\n", strerror(errno));
         } else {
-            msg->refs++;
+            pubsub_msg_ref(msg);
         }
     }
     return MAP_OK;
 }
 
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
-                               enum msg_type type, const size_t size, const bool autofree) {
+                               ps_msg_type type, const size_t size, const bool autofree) {
     ps_priv_t *m = memhook._malloc(sizeof(ps_priv_t));
     if (m) {
         m->msg.message = message;
@@ -84,6 +96,11 @@ static map_ret_code tell_global(void *data, const char *key, void *value) {
     map_iterate(c->modules, tell_if, msg);
     return MAP_OK;
 }
+
+static void pubsub_msg_ref(ps_priv_t *pubsub_msg) {
+    pubsub_msg->refs++;
+}
+    
 
 static void pubsub_msg_unref(ps_priv_t *pubsub_msg) {
     /* Properly free pubsub msg if its ref count reaches 0 and autofree bit is true */
@@ -126,7 +143,7 @@ static module_ret_code send_msg(const mod_t *mod, mod_t *recipient,
 
 /** Private API **/
 
-module_ret_code tell_system_pubsub_msg(mod_t *mod, ctx_t *c, enum msg_type type, const self_t *sender, const char *topic) {
+module_ret_code tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, const self_t *sender, const char *topic) {
     ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, false);
     return tell_pubsub_msg(m, mod, c, false);
 }
@@ -147,7 +164,7 @@ map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value) {
         if (!data && _module_is(mod, RUNNING)) {
             MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             msg_t msg = { .is_pubsub = true, .ps_msg = &mm->msg };
-            run_pubsub_cb(mod, &msg);
+            run_pubsub_cb(mod, &msg, mm->userptr);
         } else {
             MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
             pubsub_msg_unref(mm);
@@ -156,14 +173,14 @@ map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value) {
     return 0;
 }
 
-void run_pubsub_cb(mod_t *mod, msg_t *msg) {
+void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr) {
     /* If module is using some different receive function, honor it. */
     recv_cb cb = stack_peek(mod->recvs);
     if (!cb) {
         /* Fallback to module default receive */
         cb = mod->hook.recv;
     }
-    cb(msg, mod->userdata);
+    cb(msg, userptr);
 
     if (msg->is_pubsub) {
         pubsub_msg_unref((ps_priv_t *)msg->ps_msg);
@@ -184,7 +201,7 @@ module_ret_code module_ref(const self_t *self, const char *name, const self_t **
     return MOD_OK;
 }
 
-module_ret_code module_subscribe(const self_t *self, const char *topic) {
+module_ret_code module_subscribe(const self_t *self, const char *topic, module_source_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     GET_CTX(self);
@@ -197,17 +214,31 @@ module_ret_code module_subscribe(const self_t *self, const char *topic) {
         
         /* Lazy subscriptions map init */
         if (!mod->subscriptions)  {
-            mod->subscriptions = map_new(false, regex_dtor);
+            mod->subscriptions = map_new(false, subscribtions_dtor);
             MOD_ALLOC_ASSERT(mod->subscriptions);
-        }
-
-        if (!map_has_key(mod->subscriptions, topic)) {
-            /* Store regex on heap */
-            regex_t *reg = memhook._malloc(sizeof(regex_t));
-            memcpy(reg, &regex, sizeof(regex_t));
-            if (map_put(mod->subscriptions, topic, reg) == MAP_OK) {
-                return MOD_OK;
+        } else {
+            ps_sub_t *old_sub = map_get(mod->subscriptions, topic);
+            if (old_sub) {
+                if (old_sub->flags == flags) {
+                    /* Update just userptr. */
+                    old_sub->userptr = userptr;
+                    return MOD_OK;
+                }
+                /* Remove old subscription object; requested flags are different! */
+                map_remove(mod->subscriptions, topic);
             }
+        }
+        
+        /* Store regex on heap */
+        ps_sub_t *sub = memhook._calloc(1, sizeof(ps_sub_t));
+        MOD_ALLOC_ASSERT(sub);
+        
+        memcpy(&sub->reg, &regex, sizeof(regex_t));
+        sub->flags = flags;
+        sub->userptr = userptr;
+        sub->topic = sub->flags & PS_DUPTOPIC ? mem_strdup(topic) : topic;
+        if (map_put(mod->subscriptions, sub->topic, sub) == MAP_OK) {
+            return MOD_OK;
         }
     }
     return MOD_ERR;
@@ -257,3 +288,24 @@ module_ret_code module_poisonpill(const self_t *self, const self_t *recipient) {
     
     return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->self, NULL);
 }
+
+module_ret_code module_msg_ref(const self_t *self, const ps_msg_t *msg) {
+    /* You can only ref a msg from within a module context */
+    MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF);
+    MOD_PARAM_ASSERT(msg);
+       
+    ps_priv_t *priv_msg = (ps_priv_t *)msg;
+    pubsub_msg_ref(priv_msg);
+    return MOD_OK;
+}
+    
+module_ret_code module_msg_unref(const self_t *self, const ps_msg_t *msg) {
+    /* You can only unref a msg from within a module context */
+    MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF);
+    MOD_PARAM_ASSERT(msg);
+            
+    ps_priv_t *priv_msg = (ps_priv_t *)msg;
+    pubsub_msg_unref(priv_msg);
+    return MOD_OK;
+}
+        

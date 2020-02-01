@@ -29,7 +29,6 @@
 #define _dtor1_     __attribute__((destructor (111)))
 
 #define _pure_      __attribute__((pure))
-
 #define _weak_      __attribute__((weak))
 #define _public_    __attribute__ ((visibility("default")))
 
@@ -42,22 +41,24 @@
 typedef struct _self self_t;
 
 /* Modules states */
-enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
+typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 } module_states;
 
 /* PubSub message types */
-enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL };
+typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
+
+/* Module event sources' flags */
+typedef enum { FD_AUTOCLOSE = 0x1, PS_DUPTOPIC = 0x2, PS_AUTOFREE = 0x04 } module_source_flags;
 
 typedef struct {
     const char *topic;
     const void *message;
     ssize_t size;
     const self_t *sender;
-    enum msg_type type;
+    ps_msg_type type;
 } ps_msg_t;
 
 typedef struct {
     int fd;
-    const void *userptr;
 } fd_msg_t;
 
 typedef struct {
@@ -75,7 +76,7 @@ typedef void (*recv_cb)(const msg_t *const msg, const void *userdata);
 typedef void (*destroy_cb)(void);
 
 /* Logger callback */
-typedef void (*log_cb)(const self_t *self, const char *fmt, va_list args, const void *userdata);
+typedef void (*log_cb)(const self_t *self, const char *fmt, va_list args);
 
 /* Memory management user-passed functions */
 typedef void *(*malloc_fn)(size_t size);

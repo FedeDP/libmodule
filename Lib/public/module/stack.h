@@ -24,10 +24,6 @@ typedef struct _stack stack_t;
 /* Incomplete struct declaration for stack iterator */
 typedef struct _stack_itr stack_itr_t;
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-
 _public_ stack_t *stack_new(const stack_dtor fn);
 _public_ stack_itr_t *stack_itr_new(const stack_t *s);
 _public_ stack_itr_t *stack_itr_next(stack_itr_t *itr);
@@ -40,7 +36,3 @@ _public_ void *stack_peek(const stack_t *s);
 _public_ stack_ret_code stack_clear(stack_t *s);
 _public_ stack_ret_code stack_free(stack_t *s);
 _public_ ssize_t stack_length(const stack_t *s);
-
-#ifdef __cplusplus
-}
-#endif

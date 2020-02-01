@@ -305,21 +305,22 @@ void test_module_rm_fd(void **state) {
 void test_module_subscribe_NULL_topic(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_subscribe(self, NULL);
+    // module_register_source won't even let you use NULL as topic as it only expects "int" or "(const) char *"
+    module_ret_code ret = module_subscribe(self, NULL, 0, NULL);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_subscribe_NULL_self(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_subscribe(NULL, "topic");
+    module_ret_code ret = module_register_source(NULL, "topic", 0, NULL);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_subscribe(void **state) {
     (void) state; /* unused */
     
-    module_ret_code ret = module_subscribe(self, "topic");
+    module_ret_code ret = module_register_source(self, "topic", 0, NULL);
     assert_true(ret == MOD_OK);
 }
 

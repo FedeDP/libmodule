@@ -142,6 +142,7 @@ static int recv_events(ctx_t *c, int timeout) {
             msg_t msg;
             fd_msg_t fd_msg;
             ps_priv_t *ps_msg;
+            const void *userptr = NULL;
             
             if (p->fd == mod->pubsub_fd[0]) {
                 /* Received on pubsub interface */
@@ -151,17 +152,18 @@ static int recv_events(ctx_t *c, int timeout) {
                     msg.ps_msg = NULL;
                 } else {
                     msg.ps_msg = &ps_msg->msg;
+                    userptr = ps_msg->userptr;
                 }
             } else {
                 /* Received from FD */
                 msg.is_pubsub = false;
                 fd_msg.fd = p->fd;
-                fd_msg.userptr = p->userptr;
                 msg.fd_msg = &fd_msg;
+                userptr = p->userptr;
             }
             
             if (!msg.is_pubsub || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {
-                run_pubsub_cb(mod, &msg);
+                run_pubsub_cb(mod, &msg, userptr);
             } else if (msg.ps_msg) {
                 MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
                 stop(mod, true);
