@@ -2,8 +2,8 @@
 
    <br />
 
-Stack API
-=========
+List API
+========
 
 Libmodule offers an easy to use linked list implementation, provided by <module/list.h> header. |br|
 It is used internally to store module's list of pollable fds. |br|

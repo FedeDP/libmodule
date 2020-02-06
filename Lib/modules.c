@@ -287,7 +287,7 @@ module_ret_code modules_ctx_dump(const char *ctx_name) {
     for (map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
         const char *mod_name = map_itr_get_key(itr);
         const char *mod = map_itr_get_data(itr);
-        ctx_logger(c, "-> '%s':%p\n", mod_name, mod);
+        ctx_logger(c, "-> '%s': %p\n", mod_name, mod);
     }
     return MOD_OK;
 }
