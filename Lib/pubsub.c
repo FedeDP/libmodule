@@ -17,10 +17,10 @@ static module_ret_code send_msg(const mod_t *mod, mod_t *recipient,
                                    const ssize_t size, const bool autofree, const bool global);
 
 static void subscribtions_dtor(void *data) {
-    ps_sub_t *sub = (ps_sub_t *)data;
-    regfree(&sub->reg);
+    ev_src_t *sub = (ev_src_t *)data;
+    regfree(&sub->ps_src.reg);
     if (sub->flags & PS_DUPTOPIC) {
-        memhook._free((void *)sub->topic);
+        memhook._free((void *)sub->ps_src.topic);
     }
     if (sub->flags & PS_AUTOFREE) {
         memhook._free((void *)sub->userptr);
@@ -30,7 +30,7 @@ static void subscribtions_dtor(void *data) {
 
 static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
     /* Check if module is directly subscribed to topic */
-    const ps_sub_t *sub = map_get(mod->subscriptions, msg->msg.topic);
+    const ev_src_t *sub = map_get(mod->subscriptions, msg->msg.topic);
     if (sub) {
         goto found;
     }
@@ -41,7 +41,7 @@ static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
         sub = map_itr_get_data(itr);
 
         /* Execute regular expression */
-        int ret = regexec(&sub->reg, msg->msg.topic, 0, NULL, 0);
+        int ret = regexec(&sub->ps_src.reg, msg->msg.topic, 0, NULL, 0);
         if (!ret) {
             memhook._free(itr);
             goto found;
@@ -217,7 +217,7 @@ module_ret_code module_subscribe(const self_t *self, const char *topic, module_s
             mod->subscriptions = map_new(false, subscribtions_dtor);
             MOD_ALLOC_ASSERT(mod->subscriptions);
         } else {
-            ps_sub_t *old_sub = map_get(mod->subscriptions, topic);
+            ev_src_t *old_sub = map_get(mod->subscriptions, topic);
             if (old_sub) {
                 if (old_sub->flags == flags) {
                     /* Update just userptr. */
@@ -230,14 +230,15 @@ module_ret_code module_subscribe(const self_t *self, const char *topic, module_s
         }
         
         /* Store regex on heap */
-        ps_sub_t *sub = memhook._calloc(1, sizeof(ps_sub_t));
+        ev_src_t *sub = memhook._calloc(1, sizeof(ev_src_t));
         MOD_ALLOC_ASSERT(sub);
         
-        memcpy(&sub->reg, &regex, sizeof(regex_t));
+        ps_src_t *ps_src = &sub->ps_src;
         sub->flags = flags;
         sub->userptr = userptr;
-        sub->topic = sub->flags & PS_DUPTOPIC ? mem_strdup(topic) : topic;
-        if (map_put(mod->subscriptions, sub->topic, sub) == MAP_OK) {
+        memcpy(&ps_src->reg, &regex, sizeof(regex_t));
+        ps_src->topic = sub->flags & PS_DUPTOPIC ? mem_strdup(topic) : topic;
+        if (map_put(mod->subscriptions, ps_src->topic, sub) == MAP_OK) {
             return MOD_OK;
         }
     }
@@ -308,4 +309,3 @@ module_ret_code module_msg_unref(const self_t *self, const ps_msg_t *msg) {
     pubsub_msg_unref(priv_msg);
     return MOD_OK;
 }
-        

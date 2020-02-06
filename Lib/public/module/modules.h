@@ -10,3 +10,5 @@ _public_ module_ret_code modules_ctx_quit(const char *ctx_name, const uint8_t qu
 
 _public_ module_ret_code modules_ctx_get_fd(const char *ctx_name, int *fd);
 _public_ module_ret_code modules_ctx_dispatch(const char *ctx_name, int *ret);
+
+_public_ module_ret_code modules_ctx_dump(const char *ctx_name);

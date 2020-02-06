@@ -4,6 +4,8 @@ void test_modules_ctx_set_logger_NULL_ctx(void **state);
 void test_modules_ctx_set_logger_NULL_logger(void **state);
 void test_modules_ctx_set_logger(void **state);
 void test_modules_ctx_set_logger_no_ctx(void **state);
+void test_modules_ctx_dump_no_ctx(void **state);
+void test_modules_ctx_dump(void **state);
 void test_modules_ctx_quit_NULL_ctx(void **state);
 void test_modules_ctx_quit_no_loop(void **state);
 void test_modules_ctx_loop_NULL_ctx(void **state);

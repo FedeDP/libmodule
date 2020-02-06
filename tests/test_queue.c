@@ -1,4 +1,4 @@
-#include "test_map.h"
+#include "test_queue.h"
 #include <module/queue.h>
 
 static queue_t *my_q;
@@ -68,6 +68,7 @@ void test_queue_iterator(void **state) {
     }
     
     assert_int_equal(count, 0);
+    assert_null(itr);
 }
 
 void test_queue_dequeue(void **state) {

@@ -1,4 +1,4 @@
-#include "test_map.h"
+#include "test_stack.h"
 #include <module/stack.h>
 
 static stack_t *my_st;
@@ -68,6 +68,7 @@ void test_stack_iterator(void **state) {
     }
     
     assert_int_equal(count, 0);
+    assert_null(itr);
 }
 
 void test_stack_pop(void **state) {

@@ -11,6 +11,7 @@ static int _pipe(mod_t *mod);
 static module_ret_code init_pubsub_fd(mod_t *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args);
 static module_ret_code _register_fd(mod_t *mod, const int fd, const module_source_flags flags, const void *userptr);
+static int is_fd_same(void *my_data, void *list_data);
 static module_ret_code _deregister_fd(mod_t *mod, const int fd);
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
 
@@ -88,66 +89,69 @@ static void default_logger(const self_t *self, const char *fmt, va_list args) {
     vprintf(fmt, args);
 }
 
+static void fd_priv_dtor(void *data) {
+    ev_src_t *t = (ev_src_t *)data;
+    
+    /* If a fd is deregistered for a RUNNING module, stop polling on it */
+    if (_module_is(t->fd_src.self->mod, RUNNING)) {
+        poll_set_new_evt(t, t->fd_src.self->ctx, RM);
+    }
+    
+    if (t->flags & FD_AUTOCLOSE) {
+        close(t->fd_src.fd);
+    }
+    memhook._free(t->fd_src.ev);
+    memhook._free(t);
+}
+
 /* 
  * Append this fd to our list of fds and 
  * if module is in RUNNING state, start listening on its events 
  */
 static module_ret_code _register_fd(mod_t *mod, const int fd, const module_source_flags flags, const void *userptr) {
-    fd_priv_t *tmp = memhook._malloc(sizeof(fd_priv_t));
-    MOD_ALLOC_ASSERT(tmp);
+    ev_src_t *src = memhook._malloc(sizeof(ev_src_t));
+    MOD_ALLOC_ASSERT(src);
     
-    if (poll_set_data(&tmp->ev) == MOD_OK) {
-        tmp->fd = fd;
-        tmp->flags = flags ;
-        tmp->userptr = userptr;
-        tmp->prev = mod->fds;
-        tmp->self = &mod->self;
-        mod->fds = tmp;
+    fd_src_t *fd_src = &src->fd_src;
+    if (poll_set_data(&fd_src->ev) == MOD_OK) {
+        fd_src->fd = fd;
+        fd_src->self = &mod->self;
+        src->flags = flags;
+        src->userptr = userptr;
+        list_insert(mod->fds, src, NULL);
         /* If a fd is registered at runtime, start polling on it */
         int ret = 0;
         if (_module_is(mod, RUNNING)) {
-            ret = poll_set_new_evt(tmp, mod->self.ctx, ADD);
+            ret = poll_set_new_evt(src, mod->self.ctx, ADD);
         }
         return !ret ? MOD_OK : MOD_ERR;
     }
-    memhook._free(tmp);
+    memhook._free(src);
     return MOD_ERR;
 }
 
-/* Linearly search for fd */
-static module_ret_code _deregister_fd(mod_t *mod, const int fd) {
-    fd_priv_t **tmp = &mod->fds;
+static int is_fd_same(void *my_data, void *list_data) {
+    ev_src_t *fdin = (ev_src_t *)list_data;
+    int fd = *((int *)my_data);
     
-    int ret = 0;
-    while (*tmp) {
-        if ((*tmp)->fd == fd) {
-            fd_priv_t *t = *tmp;
-            *tmp = (*tmp)->prev;
-            /* If a fd is deregistered for a RUNNING module, stop polling on it */
-            if (_module_is(mod, RUNNING)) {
-                ret = poll_set_new_evt(t, mod->self.ctx, RM);
-            }
-            if (t->flags & FD_AUTOCLOSE) {
-                close(t->fd);
-            }
-            memhook._free(t->ev);
-            memhook._free(t);
-            return !ret ? MOD_OK : MOD_ERR;
-        }
-        tmp = &(*tmp)->prev;
+    return !(fdin->fd_src.fd == fd);
+}
+
+/* Linearly search for fd */
+static module_ret_code _deregister_fd(mod_t *mod, const int fd) {    
+    if (list_remove(mod->fds, (void *)&fd, is_fd_same) == LIST_OK) {
+        return MOD_OK;
     }
     return MOD_ERR;
 }
 
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {    
-    fd_priv_t *tmp = mod->fds;
     int ret = 0;
     
-    while (tmp && !ret) {
-        fd_priv_t *t = tmp;
-        tmp = tmp->prev;
+    for (list_itr_t *itr = list_itr_new(mod->fds); itr && !ret; itr = list_itr_next(itr)) {
+        ev_src_t *t = list_itr_get_data(itr);
         if (flag == RM && stop) {
-            if (t->fd == mod->pubsub_fd[0]) {
+            if (t->fd_src.fd == mod->pubsub_fd[0]) {
                 /*
                  * Free all unread pubsub msg for this module.
                  *
@@ -156,7 +160,7 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
                  */
                 flush_pubsub_msgs(mod, NULL, mod);
             }
-            ret = _deregister_fd(mod, t->fd);
+            ret = _deregister_fd(mod, t->fd_src.fd);
         } else {
             ret = poll_set_new_evt(t, c, flag);
         }
@@ -288,7 +292,11 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
         
         memcpy(&mod->hook, hook, sizeof(userhook_t));
         mod->state = IDLE;
-        mod->fds = NULL;
+        
+        mod->fds = list_new(fd_priv_dtor);
+        if (!mod->fds) {
+            break;
+        }
         
         mod->recvs = stack_new(NULL);
         if (!mod->recvs) {
@@ -318,6 +326,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
     memhook._free(*self);
     *self = NULL;
     stack_free(mod->recvs);
+    list_free(mod->fds);
     memhook._free(mod);
     return ret;
 }
@@ -339,6 +348,7 @@ module_ret_code module_deregister(self_t **self) {
     }
     map_free(mod->subscriptions);
     stack_free(mod->recvs);
+    list_free(mod->fds);
     
     /* Destroy external handler */
     memhook._free(*self);
@@ -416,7 +426,6 @@ module_ret_code module_unbecome(const self_t *self) {
 }
 
 module_ret_code module_log(const self_t *self, const char *fmt, ...) {
-    GET_MOD(self);
     GET_CTX(self);
     
     va_list args;
@@ -484,20 +493,20 @@ bool module_is(const self_t *mod_self, const module_states st) {
 module_ret_code module_dump(const self_t *self) {
     GET_MOD(self);
 
+    module_log(self, "Mod '%s'\n", self->mod->name);
     module_log(self, "* State: %u\n", mod->state);
     module_log(self, "* Userdata: %p\n", mod->userdata);
     module_log(self, "* Subscriptions:\n");
     for (map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr)) {
-        ps_sub_t *sub = map_itr_get_data(itr);
-        module_log(self, "-> T: %s: Fl: %d UP: %p\n", sub->topic, sub->flags, sub->userptr);
+        ev_src_t *sub = map_itr_get_data(itr);
+        module_log(self, "-> T: %s: Fl: %d UP: %p\n", sub->ps_src.topic, sub->flags, sub->userptr);
     }
     module_log(self, "* Fds:\n");
-    fd_priv_t *tmp = mod->fds;
-    while (tmp) {
-        if (tmp->fd != mod->pubsub_fd[0]) {
-            module_log(self, "-> FD: %d Fl: %d UP: %p\n", tmp->fd, tmp->flags, tmp->userptr);
+    for (list_itr_t *itr = list_itr_new(mod->fds); itr; itr = list_itr_next(itr)) {
+        ev_src_t *t = list_itr_get_data(itr);
+        if (t->fd_src.fd != mod->pubsub_fd[0]) {
+            module_log(self, "-> FD: %d Fl: %d UP: %p\n", t->fd_src.fd, t->flags, t->userptr);
         }
-        tmp = tmp->prev;
     }
     return MOD_OK;
 }

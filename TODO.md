@@ -14,7 +14,6 @@
 - [x] Rename Module_subscribe and module_register_fd to module_register_source(type), _Generic.
 Ie: if first parameter is an int then call module_register_fd, else if const char*, module register subscribe.
 Signature: Module_register_source(int/char*, uint flags, void userptr) -> Flags: FD_AUTOCLOSE and others?
-- [ ] Use 2 different types for FD_ flags and PS_ flags?
 
 - [x] Drop C++ support (useless...)
 
@@ -30,15 +29,21 @@ Signature: Module_register_source(int/char*, uint flags, void userptr) -> Flags:
 
 - [x] enum module_states and enum msg_type to full types!
 
-- [ ] Add linked list implementation and use it for fds
+- [x] Add linked list implementation
+- [x] Use it for fds
+- [x] Add linked list tests
+- [x] Add linked list doc
 
-- [ ] modules_dump() (same as module_dump but for modules context!)
+- [x] modules_dump() (same as module_dump but for modules context!)
+- [ ] DOCument module_dump and modules_dump odd letters!!
+
+- [x] In epoll interface, check that events & EPOLLERR is false
 
 - [ ] Fix module_load/unload() ... -> Rename to modules_load/unload()?
 
-- [ ] Each module has a selt_t *owner. Drop self->is_ref and use "self == mod->owner as check!
+- [x] Rename fd_priv_t/ps_priv_t/ps_sub_t? More meaningful names!!
 
-- [ ] Update example
+- [ ] Update examples
 - [ ] Update tests
 - [ ] Update DOC!
 

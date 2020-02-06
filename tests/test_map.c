@@ -84,6 +84,7 @@ void test_map_iterator(void **state) {
         itr = map_itr_next(itr);
     }
     assert_int_equal(count, 0);
+    assert_null(itr);
 }
 
 map_ret_code iterate_cb(void *userptr, const char *key, void *data) {

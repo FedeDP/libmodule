@@ -3,6 +3,7 @@
 #include "test_map.h"
 #include "test_stack.h"
 #include "test_queue.h"
+#include "test_list.h"
 
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -35,6 +36,7 @@ int main(void) {
         cmocka_unit_test(test_modules_ctx_loop_NULL_ctx),
         cmocka_unit_test(test_modules_ctx_quit_NULL_ctx),
         cmocka_unit_test(test_modules_ctx_quit_no_loop),
+        cmocka_unit_test(test_modules_ctx_dump),
         
         /* Test module state setters */
         cmocka_unit_test(test_module_start_NULL_self),
@@ -131,6 +133,7 @@ int main(void) {
         /* Test modules_ API: it should fail now */
         cmocka_unit_test(test_modules_ctx_set_logger_no_ctx), // here context is already destroyed
         cmocka_unit_test(test_modules_ctx_quit_no_loop), // here context is already destroyed
+        cmocka_unit_test(test_modules_ctx_dump_no_ctx), // here context is already destroyed
 
         /* Test Map API */
         cmocka_unit_test(test_map_put),
@@ -157,7 +160,15 @@ int main(void) {
         cmocka_unit_test(test_queue_length),
         cmocka_unit_test(test_queue_iterator),
         cmocka_unit_test(test_queue_dequeue),
-        cmocka_unit_test(test_queue_free)
+        cmocka_unit_test(test_queue_free),
+        
+        /* Test List API */
+        cmocka_unit_test(test_list_insert),
+        cmocka_unit_test(test_list_length),
+        cmocka_unit_test(test_list_iterator),
+        cmocka_unit_test(test_list_remove),
+        cmocka_unit_test(test_list_clear),
+        cmocka_unit_test(test_list_free)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

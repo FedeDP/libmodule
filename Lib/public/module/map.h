@@ -14,7 +14,7 @@ typedef enum {
     MAP_OK
 } map_ret_code;
 
-/* Callback for map_iterate */
+/* Callback for map_iterate; first parameter is userdata, second and third are {key,value} tuple */
 typedef map_ret_code (*map_cb)(void *, const char *, void *);
 
 /* Fn for map_set_dtor */

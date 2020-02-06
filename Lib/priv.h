@@ -4,6 +4,7 @@
 #include <regex.h>
 #include "map.h"
 #include "stack.h"
+#include "list.h"
 
 #ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
@@ -73,20 +74,33 @@ typedef struct _context ctx_t;
 
 /* Struct that holds self module informations, static to each module */
 struct _self {
-    mod_t *mod;                            // self's mod
-    ctx_t *ctx;                         // self's ctx
+    mod_t *mod;                             // self's mod
+    ctx_t *ctx;                             // self's ctx
     bool is_ref;                            // is this a reference?
 };
 
-/* List that matches fds with selfs */
-typedef struct _poll_t {
-    int fd;
+/* List that holds fds to self_t mapping for epoll/kqueue, ie: socket source data */
+typedef struct {
+    int fd;                                 // file descriptor polled by main loop
+    void *ev;                               // poll plugin defined data structure (used by kqueue and epoll)
+    const self_t *self;                     // ptr needed to map a fd to a self_t in epoll
+} fd_src_t;
+
+/* Struct that holds pubsub subscriptions source data */
+typedef struct {
+    regex_t reg;
+    const char *topic;
+} ps_src_t;
+
+/* Struct that holds generic "event source" data */
+typedef struct {
+    union {
+        ps_src_t ps_src;
+        fd_src_t fd_src;
+    };
     module_source_flags flags;
-    void *ev;
     const void *userptr;
-    const struct _self *self;               // ptr needed to map a fd to a self_t in epoll
-    struct _poll_t *prev;
-} fd_priv_t;
+} ev_src_t;
 
 /* Struct that holds pubsub messaging, private. It keeps reference count */
 typedef struct {
@@ -96,23 +110,15 @@ typedef struct {
     const void *userptr;
 } ps_priv_t;
 
-/* Struct that holds pubsub subscriptions */
-typedef struct {
-    regex_t reg;
-    const char *topic;
-    module_source_flags flags;
-    const void *userptr;
-} ps_sub_t;
-
 /* Struct that holds data for each module */
 struct _module {
     userhook_t hook;                        // module's user defined callbacks
-    stack_t *recvs;                         // Stack of recv functions for module_become/unbecome
+    stack_t *recvs;                         // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
     module_states state;                    // module's state
     const char *name;                       // module's name
-    fd_priv_t *fds;                         // module's fds to be polled
-    map_t *subscriptions;                   // module's subscriptions
+    list_t *fds;                            // module's fds to be polled (list of ev_src_t)
+    map_t *subscriptions;                   // module's subscriptions (map of ev_src_t)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     self_t self;                            // pointer to self (and thus context)
 };

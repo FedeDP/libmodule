@@ -11,6 +11,7 @@ static module_ret_code loop_start(ctx_t *c, const int max_events);
 static uint8_t loop_stop(ctx_t *c);
 static inline module_ret_code loop_quit(ctx_t *c, const uint8_t quit_code);
 static int recv_events(ctx_t *c, int timeout);
+static void ctx_logger(ctx_t *c, const char *fmt, ...);
 
 map_t *ctx;
 memhook_t memhook;
@@ -135,19 +136,19 @@ static inline module_ret_code loop_quit(ctx_t *c, const uint8_t quit_code) {
 static int recv_events(ctx_t *c, int timeout) {
     int nfds = poll_wait(c->fd, c->max_events, c->pevents, timeout);
     for (int i = 0; i < nfds; i++) {
-        fd_priv_t *p = poll_recv(i, c->pevents);
-        if (p && p->self && p->self->mod) {
-            mod_t *mod = p->self->mod;
+        ev_src_t *p = poll_recv(i, c->pevents);
+        if (p && p->fd_src.self && p->fd_src.self->mod) {
+            mod_t *mod = p->fd_src.self->mod;
             
             msg_t msg;
             fd_msg_t fd_msg;
             ps_priv_t *ps_msg;
             const void *userptr = NULL;
             
-            if (p->fd == mod->pubsub_fd[0]) {
+            if (p->fd_src.fd == mod->pubsub_fd[0]) {
                 /* Received on pubsub interface */
                 msg.is_pubsub = true;
-                if (read(p->fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
+                if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
                     MODULE_DEBUG("Failed to read message for '%s': %s\n", mod->name, strerror(errno));
                     msg.ps_msg = NULL;
                 } else {
@@ -157,7 +158,7 @@ static int recv_events(ctx_t *c, int timeout) {
             } else {
                 /* Received from FD */
                 msg.is_pubsub = false;
-                fd_msg.fd = p->fd;
+                fd_msg.fd = p->fd_src.fd;
                 msg.fd_msg = &fd_msg;
                 userptr = p->userptr;
             }
@@ -187,6 +188,13 @@ static int recv_events(ctx_t *c, int timeout) {
         }
     }
     return nfds;
+}
+
+static void ctx_logger(ctx_t *c, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    c->logger(NULL, fmt, args);
+    va_end(args);
 }
 
 /** Public API **/
@@ -267,4 +275,19 @@ module_ret_code modules_ctx_dispatch(const char *ctx_name, int *ret) {
     /* Recv new events, no timeout */
     *ret = recv_events(c, 0);
     return *ret >= 0 ? MOD_OK : MOD_ERR;
+}
+
+module_ret_code modules_ctx_dump(const char *ctx_name) {
+    FIND_CTX(ctx_name);
+    
+    ctx_logger(c, "Ctx: '%s'\n", ctx_name);
+    ctx_logger(c, "* State:\n");
+    ctx_logger(c, "-> Q: %d L: %d M: %d\n", c->quit, c->looping, c->max_events);
+    ctx_logger(c, "* Modules (Running %d/%zd):\n", c->running_mods, map_length(c->modules));
+    for (map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
+        const char *mod_name = map_itr_get_key(itr);
+        const char *mod = map_itr_get_data(itr);
+        ctx_logger(c, "-> '%s':%p\n", mod_name, mod);
+    }
+    return MOD_OK;
 }

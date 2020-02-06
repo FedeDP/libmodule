@@ -4,12 +4,14 @@
 #include <stdlib.h>
 
 static void logger(const self_t *self, const char *fmt, va_list args) {
-    const char *name = module_get_name(self);
-    const char *context = module_get_ctx(self);
-    if (name && context) {
-        printf("%s@%s:\t*", name, context);
-        vprintf(fmt, args);
+    const char *name = NULL;
+    const char *context = NULL;
+    if (self) {
+        name = module_get_name(self);
+        context = module_get_ctx(self);
     }
+    printf("%s@%s:\t* ", name ? name : "null", context ? context : "null");
+    vprintf(fmt, args);
 }
 
 void test_modules_ctx_set_logger_NULL_ctx(void **state) {
@@ -38,6 +40,20 @@ void test_modules_ctx_set_logger_no_ctx(void **state) {
     
     module_ret_code ret = modules_ctx_set_logger(CTX, logger);
     assert_false(ret == MOD_OK);
+}
+
+void test_modules_ctx_dump_no_ctx(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = modules_ctx_dump(CTX);
+    assert_false(ret == MOD_OK);
+}
+
+void test_modules_ctx_dump(void **state) {
+    (void) state; /* unused */
+    
+    module_ret_code ret = modules_ctx_dump(CTX);
+    assert_true(ret == MOD_OK);
 }
 
 void test_modules_ctx_quit_NULL_ctx(void **state) {

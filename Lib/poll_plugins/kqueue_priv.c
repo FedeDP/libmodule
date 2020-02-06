@@ -15,13 +15,13 @@ int poll_set_data(void **_ev) {
     return MOD_OK;
 }
 
-int poll_set_new_evt(fd_priv_t *tmp, ctx_t *c, const enum op_type flag) {
+int poll_set_new_evt(ev_src_t *tmp, ctx_t *c, const enum op_type flag) {
     int f = flag == ADD ? EV_ADD : EV_DELETE;
-    struct kevent *_ev = (struct kevent *)tmp->ev;
-    EV_SET(_ev, tmp->fd, EVFILT_READ, f, 0, 0, (void *)tmp);
+    struct kevent *_ev = (struct kevent *)tmp->fd_src.ev;
+    EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, (void *)tmp);
     int ret = kevent(c->fd, _ev, 1, NULL, 0, NULL);
     /* Workaround for STDIN_FILENO: it is actually pollable */
-    if (tmp->fd == STDIN_FILENO) {
+    if (tmp->fd_src.fd == STDIN_FILENO) {
         ret = 0;
     }
     return ret;
@@ -39,12 +39,12 @@ int poll_wait(const int fd, const int max_events, void *pevents, const int timeo
     return kevent(fd, NULL, 0, (struct kevent *)pevents, max_events, timeout >= 0 ? &t : NULL);
 }
 
-fd_priv_t *poll_recv(const int idx, void *pevents) {
+ev_src_t *poll_recv(const int idx, void *pevents) {
     struct kevent *pev = (struct kevent *)pevents;
     if (pev[idx].flags & EV_ERROR) {
         return NULL;
     }
-    return (fd_priv_t *)pev[idx].udata;
+    return (ev_src_t *)pev[idx].udata;
 }
 
 int poll_destroy_pevents(void **pevents, int *max_events) {

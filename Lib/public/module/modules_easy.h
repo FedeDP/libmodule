@@ -12,3 +12,5 @@
 
 #define modules_get_fd(fd)              modules_ctx_get_fd(MODULES_DEFAULT_CTX, fd)
 #define modules_dispatch(ret)           modules_ctx_dispatch(MODULES_DEFAULT_CTX, ret)
+
+#define modules_dump()                  modules_ctx_dump(MODULES_DEFAULT_CTX)
