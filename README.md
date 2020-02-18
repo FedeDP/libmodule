@@ -25,7 +25,7 @@ MODULE("Pippo");
 
 static void init(void) {
     /* Register STDIN fd, without autoclosing it at the end */
-    m_register_fd(STDIN_FILENO, false, NULL);
+    m_register_source(STDIN_FILENO, 0, NULL);
 }
 
 static bool check(void) {
@@ -79,8 +79,8 @@ Finally, it heavily relies upon gcc attributes that may or may not be available 
 ## Is there any documentation?
 
 Yes, it is availabe at [readthedocs](http://libmodule.readthedocs.io/en/latest/).  
-You have some simple examples too, check [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.  
-To see a real project using libmodule, check [Clightd](https://github.com/FedeDP/Clightd).
+There are some simple examples too, see [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.  
+To see a real project using libmodule, see [Clight](https://github.com/FedeDP/Clight) and [Clightd](https://github.com/FedeDP/Clightd).
 
 ## CI
 
