@@ -10,7 +10,7 @@ typedef struct _elem {
 
 struct _queue {
     size_t len;
-    queue_dtor dtor;
+    mod_queue_dtor dtor;
     queue_elem *head;
     queue_elem *tail;
 };
@@ -21,25 +21,25 @@ struct _queue_itr {
 
 /** Public API **/
 
-queue_t *queue_new(const queue_dtor fn) {
-    queue_t *q = memhook._calloc(1, sizeof(queue_t));
+mod_queue_t *queue_new(const mod_queue_dtor fn) {
+    mod_queue_t *q = memhook._calloc(1, sizeof(mod_queue_t));
     if (q) {
         q->dtor = fn;
     }
     return q;
 }
 
-queue_itr_t *queue_itr_new(const queue_t *q) {
+mod_queue_itr_t *queue_itr_new(const mod_queue_t *q) {
     MOD_RET_ASSERT(queue_length(q) > 0, NULL);
     
-    queue_itr_t *itr = memhook._malloc(sizeof(queue_itr_t));
+    mod_queue_itr_t *itr = memhook._malloc(sizeof(mod_queue_itr_t));
     if (itr) {
         itr->elem = q->head;
     }
     return itr;
 }
 
-queue_itr_t *queue_itr_next(queue_itr_t *itr) {
+mod_queue_itr_t *queue_itr_next(mod_queue_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     
     itr->elem = itr->elem->prev;
@@ -50,13 +50,13 @@ queue_itr_t *queue_itr_next(queue_itr_t *itr) {
     return itr;
 }
 
-void *queue_itr_get_data(const queue_itr_t *itr) {
+void *queue_itr_get_data(const mod_queue_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     
     return itr->elem->userptr;
 }
 
-queue_ret_code queue_itr_set_data(const queue_itr_t *itr, void *value) {
+mod_queue_ret queue_itr_set_data(const mod_queue_itr_t *itr, void *value) {
     QUEUE_PARAM_ASSERT(itr);
     QUEUE_PARAM_ASSERT(value);
     
@@ -64,13 +64,13 @@ queue_ret_code queue_itr_set_data(const queue_itr_t *itr, void *value) {
     return QUEUE_OK;
 }
 
-queue_ret_code queue_iterate(const queue_t *q, const queue_cb fn, void *userptr) {
+mod_queue_ret queue_iterate(const mod_queue_t *q, const mod_queue_cb fn, void *userptr) {
     QUEUE_PARAM_ASSERT(fn);
     MOD_RET_ASSERT(queue_length(q) > 0, QUEUE_MISSING);
     
     queue_elem *elem = q->head;
     while (elem) {
-        queue_ret_code rc = fn(userptr, elem->userptr);
+        mod_queue_ret rc = fn(userptr, elem->userptr);
         if (rc < QUEUE_OK) {
             /* Stop right now with error */
             return rc;
@@ -84,7 +84,7 @@ queue_ret_code queue_iterate(const queue_t *q, const queue_cb fn, void *userptr)
     return QUEUE_OK;
 }
 
-queue_ret_code queue_enqueue(queue_t *q, void *data) {
+mod_queue_ret queue_enqueue(mod_queue_t *q, void *data) {
     QUEUE_PARAM_ASSERT(q);
     QUEUE_PARAM_ASSERT(data);
     
@@ -104,7 +104,7 @@ queue_ret_code queue_enqueue(queue_t *q, void *data) {
     return QUEUE_OMEM;
 }
 
-void *queue_dequeue(queue_t *q) {
+void *queue_dequeue(mod_queue_t *q) {
     MOD_RET_ASSERT(queue_length(q) > 0, NULL);
     
     queue_elem *elem = q->head;
@@ -119,13 +119,13 @@ void *queue_dequeue(queue_t *q) {
     return data;
 }
 
-void *queue_peek(const queue_t *q) {
+void *queue_peek(const mod_queue_t *q) {
     MOD_RET_ASSERT(queue_length(q) > 0, NULL);
     
     return q->head->userptr;
 }
 
-queue_ret_code queue_clear(queue_t *q) {
+mod_queue_ret queue_clear(mod_queue_t *q) {
     QUEUE_PARAM_ASSERT(q);
     
     queue_elem *elem = NULL;
@@ -138,15 +138,15 @@ queue_ret_code queue_clear(queue_t *q) {
     return QUEUE_OK;
 }
 
-queue_ret_code queue_free(queue_t *q) {
-    queue_ret_code ret = queue_clear(q);
+mod_queue_ret queue_free(mod_queue_t *q) {
+    mod_queue_ret ret = queue_clear(q);
     if (ret == QUEUE_OK) {
         memhook._free(q);
     }
     return ret;
 }
 
-ssize_t queue_length(const queue_t *q) {
+ssize_t queue_length(const mod_queue_t *q) {
     QUEUE_PARAM_ASSERT(q);
     
     return q->len;

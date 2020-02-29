@@ -15,7 +15,7 @@ static void module_pre_start(void) {
 
 static void init(void) {
     /* Doggo should subscribe to "leaving" topic, as regex */
-    m_register_source("leav[i+]ng", 0, NULL);
+    m_register_src("leav[i+]ng", 0, NULL);
 }
 
 static bool check(void) {

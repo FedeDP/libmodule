@@ -1,7 +1,7 @@
 #include "test_queue.h"
 #include <module/queue.h>
 
-static queue_t *my_q;
+static mod_queue_t *my_q;
 static int val1 = 1;
 static int val2 = 2;
 static char val3[] = "Hello World";
@@ -10,7 +10,7 @@ void test_queue_enqueue(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    queue_ret_code ret = queue_enqueue(my_q, &val1);
+    mod_queue_ret ret = queue_enqueue(my_q, &val1);
     assert_false(ret == QUEUE_OK);
     
     my_q = queue_new(NULL);
@@ -54,7 +54,7 @@ void test_queue_iterator(void **state) {
     (void) state; /* unused */
     
     /* NULL queue */
-    queue_itr_t *itr = queue_itr_new(NULL);
+    mod_queue_itr_t *itr = queue_itr_new(NULL);
     assert_null(itr);
     
     itr = queue_itr_new(my_q);
@@ -92,7 +92,7 @@ void test_queue_dequeue(void **state) {
 void test_queue_clear(void **state) {
     (void) state; /* unused */
     
-    queue_ret_code ret = queue_clear(NULL);
+    mod_queue_ret ret = queue_clear(NULL);
     assert_false(ret == QUEUE_OK);
     
     ret = queue_clear(my_q);
@@ -105,7 +105,7 @@ void test_queue_clear(void **state) {
 void test_queue_free(void **state) {
     (void) state; /* unused */
     
-    queue_ret_code ret = queue_free(NULL);
+    mod_queue_ret ret = queue_free(NULL);
     assert_false(ret == QUEUE_OK);
     
     ret = queue_free(my_q);

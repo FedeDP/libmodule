@@ -4,6 +4,7 @@
 #include "test_stack.h"
 #include "test_queue.h"
 #include "test_list.h"
+#include "test_perf.h"
 
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -168,7 +169,10 @@ int main(void) {
         cmocka_unit_test(test_list_iterator),
         cmocka_unit_test(test_list_remove),
         cmocka_unit_test(test_list_clear),
-        cmocka_unit_test(test_list_free)
+        cmocka_unit_test(test_list_free),
+        
+        /* Test poll plugin performance */
+        cmocka_unit_test(test_poll_perf)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

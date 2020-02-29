@@ -4,26 +4,23 @@
 
 /** Generic module interface **/
 
-static module_ret_code init_ctx(const char *ctx_name, ctx_t **context);
+static mod_ret init_ctx(const char *ctx_name, ctx_t **context);
 static void destroy_ctx(ctx_t *context);
 static ctx_t *check_ctx(const char *ctx_name);
 static int _pipe(mod_t *mod);
-static module_ret_code init_pubsub_fd(mod_t *mod);
+static mod_ret init_pubsub_fd(mod_t *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args);
-static module_ret_code _register_fd(mod_t *mod, const int fd, const module_source_flags flags, const void *userptr);
+static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr);
 static int is_fd_same(void *my_data, void *list_data);
-static module_ret_code _deregister_fd(mod_t *mod, const int fd);
+static mod_ret _deregister_fd(mod_t *mod, const int fd);
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
 
-static module_ret_code init_ctx(const char *ctx_name, ctx_t **context) {
+static mod_ret init_ctx(const char *ctx_name, ctx_t **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
     *context = memhook._calloc(1, sizeof(ctx_t));
     MOD_ALLOC_ASSERT(*context);
-        
-    (*context)->fd = poll_create();
-    MOD_ASSERT((*context)->fd >= 0, "Failed to create context fd.", MOD_ERR);
-     
+
     (*context)->logger = default_logger;
     
     (*context)->modules = map_new(false, NULL);
@@ -32,7 +29,9 @@ static module_ret_code init_ctx(const char *ctx_name, ctx_t **context) {
     if ((*context)->modules &&
         map_put(ctx, (*context)->name, *context) == MAP_OK) {
         
-        return MOD_OK;
+        if (poll_create(&(*context)->ppriv) == MOD_OK) {
+            return MOD_OK;
+        }
     }
     
     destroy_ctx(*context);
@@ -43,7 +42,7 @@ static module_ret_code init_ctx(const char *ctx_name, ctx_t **context) {
 static void destroy_ctx(ctx_t *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", context->name);
     map_free(context->modules);
-    poll_close(context->fd, &context->pevents, &context->max_events);
+    poll_destroy(&context->ppriv);
     map_remove(ctx, context->name);
     memhook._free(context);
 }
@@ -71,7 +70,7 @@ static int _pipe(mod_t *mod) {
     return ret;
 }
 
-static module_ret_code init_pubsub_fd(mod_t *mod) {
+static mod_ret init_pubsub_fd(mod_t *mod) {
     if (_pipe(mod) == 0) {
         if (_register_fd(mod, mod->pubsub_fd[0], FD_AUTOCLOSE, NULL) == MOD_OK) {
             return MOD_OK;
@@ -92,15 +91,16 @@ static void default_logger(const self_t *self, const char *fmt, va_list args) {
 static void fd_priv_dtor(void *data) {
     ev_src_t *t = (ev_src_t *)data;
     
+    ctx_t *c = t->fd_src.self->ctx;
     /* If a fd is deregistered for a RUNNING module, stop polling on it */
     if (_module_is(t->fd_src.self->mod, RUNNING)) {
-        poll_set_new_evt(t, t->fd_src.self->ctx, RM);
+        poll_set_new_evt(&c->ppriv, t, RM);
     }
     
     if (t->flags & FD_AUTOCLOSE) {
         close(t->fd_src.fd);
     }
-    memhook._free(t->fd_src.ev);
+    poll_free_data(&c->ppriv, &t->fd_src.ev);
     memhook._free(t);
 }
 
@@ -108,12 +108,13 @@ static void fd_priv_dtor(void *data) {
  * Append this fd to our list of fds and 
  * if module is in RUNNING state, start listening on its events 
  */
-static module_ret_code _register_fd(mod_t *mod, const int fd, const module_source_flags flags, const void *userptr) {
+static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr) {
     ev_src_t *src = memhook._malloc(sizeof(ev_src_t));
     MOD_ALLOC_ASSERT(src);
     
     fd_src_t *fd_src = &src->fd_src;
-    if (poll_set_data(&fd_src->ev) == MOD_OK) {
+    ctx_t *c = mod->self.ctx;
+    if (poll_new_data(&c->ppriv, &fd_src->ev) == MOD_OK) {
         fd_src->fd = fd;
         fd_src->self = &mod->self;
         src->flags = flags;
@@ -122,7 +123,7 @@ static module_ret_code _register_fd(mod_t *mod, const int fd, const module_sourc
         /* If a fd is registered at runtime, start polling on it */
         int ret = 0;
         if (_module_is(mod, RUNNING)) {
-            ret = poll_set_new_evt(src, mod->self.ctx, ADD);
+            ret = poll_set_new_evt(&c->ppriv, src, ADD);
         }
         return !ret ? MOD_OK : MOD_ERR;
     }
@@ -138,7 +139,7 @@ static int is_fd_same(void *my_data, void *list_data) {
 }
 
 /* Linearly search for fd */
-static module_ret_code _deregister_fd(mod_t *mod, const int fd) {    
+static mod_ret _deregister_fd(mod_t *mod, const int fd) {    
     if (list_remove(mod->fds, (void *)&fd, is_fd_same) == LIST_OK) {
         return MOD_OK;
     }
@@ -148,7 +149,7 @@ static module_ret_code _deregister_fd(mod_t *mod, const int fd) {
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {    
     int ret = 0;
     
-    for (list_itr_t *itr = list_itr_new(mod->fds); itr && !ret; itr = list_itr_next(itr)) {
+    for (mod_list_itr_t *itr = list_itr_new(mod->fds); itr && !ret; itr = list_itr_next(itr)) {
         ev_src_t *t = list_itr_get_data(itr);
         if (flag == RM && stop) {
             if (t->fd_src.fd == mod->pubsub_fd[0]) {
@@ -162,7 +163,7 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
             }
             ret = _deregister_fd(mod, t->fd_src.fd);
         } else {
-            ret = poll_set_new_evt(t, c, flag);
+            ret = poll_set_new_evt(&c->ppriv, t, flag);
         }
     }
     return ret;
@@ -170,11 +171,11 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
 
 /** Private API **/
 
-bool _module_is(const mod_t *mod, const module_states st) {
+bool _module_is(const mod_t *mod, const mod_states st) {
     return mod->state & st;
 }
 
-map_ret_code evaluate_module(void *data, const char *key, void *value) {
+mod_map_ret evaluate_module(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
     if (_module_is(mod, IDLE) && 
         (!mod->hook.evaluate || mod->hook.evaluate())) {
@@ -184,8 +185,8 @@ map_ret_code evaluate_module(void *data, const char *key, void *value) {
     return MAP_OK;
 }
 
-module_ret_code start(mod_t *mod, const bool starting) {
-    static const char *errors[2] = { "Failed to resume module.", "Failed to start module." };
+mod_ret start(mod_t *mod, const bool starting) {
+    static const char *errors[] = { "Failed to resume module.", "Failed to start module." };
     
     GET_CTX_PRIV((&mod->self));
     
@@ -220,8 +221,8 @@ module_ret_code start(mod_t *mod, const bool starting) {
     return MOD_OK;
 }
 
-module_ret_code stop(mod_t *mod, const bool stopping) {
-    static const char *errors[2] = { "Failed to pause module.", "Failed to stop module." };
+mod_ret stop(mod_t *mod, const bool stopping) {
+    static const char *errors[] = { "Failed to pause module.", "Failed to stop module." };
     
     GET_CTX_PRIV((&mod->self));
     
@@ -264,7 +265,7 @@ module_ret_code stop(mod_t *mod, const bool stopping) {
 
 /** Public API **/
 
-module_ret_code module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook) {
+mod_ret module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook) {
     MOD_PARAM_ASSERT(name);
     MOD_PARAM_ASSERT(ctx_name);
     MOD_PARAM_ASSERT(self);
@@ -285,7 +286,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
     mod_t *mod = memhook._calloc(1, sizeof(mod_t));
     MOD_ALLOC_ASSERT(mod);
     
-    module_ret_code ret = MOD_NO_MEM;
+    mod_ret ret = MOD_NO_MEM;
     /* Let us gladly jump out with break on error */
     while (true) {
         mod->name = name;
@@ -331,7 +332,7 @@ module_ret_code module_register(const char *name, const char *ctx_name, self_t *
     return ret;
 }
 
-module_ret_code module_deregister(self_t **self) {
+mod_ret module_deregister(self_t **self) {
     MOD_PARAM_ASSERT(self);
     
     GET_MOD(*self);
@@ -369,7 +370,7 @@ module_ret_code module_deregister(self_t **self) {
     return MOD_OK;
 }
 
-module_ret_code module_load(const char *module_path, const char *ctx_name) {
+mod_ret module_load(const char *module_path, const char *ctx_name) {
     MOD_PARAM_ASSERT(module_path);
     FIND_CTX(ctx_name);
     
@@ -392,7 +393,7 @@ module_ret_code module_load(const char *module_path, const char *ctx_name) {
     return MOD_OK;
 }
 
-module_ret_code module_unload(const char *module_path) {
+mod_ret module_unload(const char *module_path) {
     MOD_PARAM_ASSERT(module_path);    
     
     void *handle = dlopen(module_path, RTLD_NOW | RTLD_NOLOAD);
@@ -406,7 +407,7 @@ module_ret_code module_unload(const char *module_path) {
     return MOD_ERR;
 }
 
-module_ret_code module_become(const self_t *self, const recv_cb new_recv) {
+mod_ret module_become(const self_t *self, const recv_cb new_recv) {
     MOD_PARAM_ASSERT(new_recv);
     GET_MOD_IN_STATE(self, RUNNING);
     
@@ -416,7 +417,7 @@ module_ret_code module_become(const self_t *self, const recv_cb new_recv) {
     return MOD_ERR;
 }
 
-module_ret_code module_unbecome(const self_t *self) {
+mod_ret module_unbecome(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
     if (stack_pop(mod->recvs) != NULL) {
@@ -425,7 +426,7 @@ module_ret_code module_unbecome(const self_t *self) {
     return MOD_ERR;
 }
 
-module_ret_code module_log(const self_t *self, const char *fmt, ...) {
+mod_ret module_log(const self_t *self, const char *fmt, ...) {
     GET_CTX(self);
     
     va_list args;
@@ -435,7 +436,7 @@ module_ret_code module_log(const self_t *self, const char *fmt, ...) {
     return MOD_OK;
 }
 
-module_ret_code module_set_userdata(const self_t *self, const void *userdata) {
+mod_ret module_set_userdata(const self_t *self, const void *userdata) {
     GET_MOD(self);
     
     mod->userdata = userdata;
@@ -451,14 +452,14 @@ const void *module_get_userdata(const self_t *self) {
     return mod->userdata;
 }
 
-module_ret_code module_register_fd(const self_t *self, const int fd, const module_source_flags flags, const void *userptr) {
+mod_ret module_register_fd(const self_t *self, const int fd, const mod_src_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(fd >= 0);
     GET_MOD(self);
 
     return _register_fd(mod, fd, flags, userptr);
 }
 
-module_ret_code module_deregister_fd(const self_t *self, const int fd) {
+mod_ret module_deregister_fd(const self_t *self, const int fd) {
     MOD_PARAM_ASSERT(fd >= 0);
     GET_MOD(self);
     MOD_ASSERT(mod->fds, "No fd registered in this module.", MOD_ERR);
@@ -484,25 +485,25 @@ const char *module_get_ctx(const self_t *mod_self) {
 
 /** Module state getters **/
 
-bool module_is(const self_t *mod_self, const module_states st) {
-    GET_MOD_PURE(mod_self);
+bool module_is(const self_t *mod_self, const mod_states st) {
+    MOD_ASSERT((mod_self), "NULL self handler.", false);
 
-    return _module_is(mod, st);
+    return _module_is(mod_self->mod, st);
 }
 
-module_ret_code module_dump(const self_t *self) {
+mod_ret module_dump(const self_t *self) {
     GET_MOD(self);
 
     module_log(self, "Mod '%s'\n", self->mod->name);
     module_log(self, "* State: %u\n", mod->state);
     module_log(self, "* Userdata: %p\n", mod->userdata);
     module_log(self, "* Subscriptions:\n");
-    for (map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr)) {
+    for (mod_map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr)) {
         ev_src_t *sub = map_itr_get_data(itr);
         module_log(self, "-> T: %s: Fl: %d UP: %p\n", sub->ps_src.topic, sub->flags, sub->userptr);
     }
     module_log(self, "* Fds:\n");
-    for (list_itr_t *itr = list_itr_new(mod->fds); itr; itr = list_itr_next(itr)) {
+    for (mod_list_itr_t *itr = list_itr_new(mod->fds); itr; itr = list_itr_next(itr)) {
         ev_src_t *t = list_itr_get_data(itr);
         if (t->fd_src.fd != mod->pubsub_fd[0]) {
             module_log(self, "-> FD: %d Fl: %d UP: %p\n", t->fd_src.fd, t->flags, t->userptr);
@@ -513,25 +514,25 @@ module_ret_code module_dump(const self_t *self) {
 
 /** Module state setters **/
 
-module_ret_code module_start(const self_t *self) {
+mod_ret module_start(const self_t *self) {
     GET_MOD_IN_STATE(self, IDLE | STOPPED);
     
     return start(mod, true);
 }
 
-module_ret_code module_pause(const self_t *self) {
+mod_ret module_pause(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
     return stop(mod, false);
 }
 
-module_ret_code module_resume(const self_t *self) {
+mod_ret module_resume(const self_t *self) {
     GET_MOD_IN_STATE(self, PAUSED);
     
     return start(mod, false);
 }
 
-module_ret_code module_stop(const self_t *self) {
+mod_ret module_stop(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING | PAUSED);
     
     return stop(mod, true);

@@ -41,13 +41,13 @@
 typedef struct _self self_t;
 
 /* Modules states */
-typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 } module_states;
+typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 } mod_states;
 
 /* PubSub message types */
 typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
 
 /* Module event sources' flags */
-typedef enum { FD_AUTOCLOSE = 0x1, PS_DUPTOPIC = 0x2, PS_AUTOFREE = 0x04 } module_source_flags;
+typedef enum { FD_AUTOCLOSE = 0x1, PS_DUPTOPIC = 0x2, PS_AUTOFREE = 0x04 } mod_src_flags;
 
 typedef struct {
     const char *topic;
@@ -112,4 +112,4 @@ typedef enum {
     MOD_NO_SELF,
     MOD_ERR,
     MOD_OK
-} module_ret_code;
+} mod_ret;

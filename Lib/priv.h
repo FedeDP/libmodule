@@ -98,7 +98,7 @@ typedef struct {
         ps_src_t ps_src;
         fd_src_t fd_src;
     };
-    module_source_flags flags;
+    mod_src_flags flags;
     const void *userptr;
 } ev_src_t;
 
@@ -110,15 +110,20 @@ typedef struct {
     const void *userptr;
 } ps_priv_t;
 
+typedef struct {
+    void *data;                             // Context's poll priv data (depends upon poll_plugin)
+    int max_events;                         // Max number of returned events for poll_plugin
+} poll_priv_t;
+
 /* Struct that holds data for each module */
 struct _module {
     userhook_t hook;                        // module's user defined callbacks
-    stack_t *recvs;                         // Stack of recv functions for module_become/unbecome (stack of funpointers)
+    mod_stack_t *recvs;                     // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
-    module_states state;                    // module's state
+    mod_states state;                       // module's state
     const char *name;                       // module's name
-    list_t *fds;                            // module's fds to be polled (list of ev_src_t)
-    map_t *subscriptions;                   // module's subscriptions (map of ev_src_t)
+    mod_list_t *fds;                        // module's fds to be polled (list of ev_src_t)
+    mod_map_t *subscriptions;               // module's subscriptions (map of ev_src_t)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     self_t self;                            // pointer to self (and thus context)
 };
@@ -129,28 +134,26 @@ struct _context {
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
     bool looping;                           // Whether context is looping
-    int fd;                                 // Context's epoll/kqueue fd
     log_cb logger;                          // Context's log callback
-    map_t *modules;                         // Context's modules
-    void *pevents;                          // Context's polled events structs
-    int max_events;                         // Max number of returned events for epoll/kqueue
+    mod_map_t *modules;                     // Context's modules
+    poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     size_t running_mods;                    // Number of RUNNING modules in context
 };
 
 /* Defined in module.c */
-_pure_ bool _module_is(const mod_t *mod, const module_states st);
-map_ret_code evaluate_module(void *data, const char *key, void *value);
-module_ret_code start(mod_t *mod, const bool starting);
-module_ret_code stop(mod_t *mod, const bool stopping);
+_pure_ bool _module_is(const mod_t *mod, const mod_states st);
+mod_map_ret evaluate_module(void *data, const char *key, void *value);
+mod_ret start(mod_t *mod, const bool starting);
+mod_ret stop(mod_t *mod, const bool stopping);
 
 /* Defined in pubsub.c */
-module_ret_code tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, 
+mod_ret tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, 
                                        const self_t *sender, const char *topic);
-map_ret_code flush_pubsub_msgs(void *data, const char *key, void *value);
+mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value);
 void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr);
 
 /* Defined in priv.c */
 char *mem_strdup(const char *s);
 
-extern map_t *ctx;
+extern mod_map_t *ctx;
 extern memhook_t memhook;

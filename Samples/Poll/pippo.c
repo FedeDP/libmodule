@@ -31,11 +31,11 @@ static void init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    m_register_source(fd, FD_AUTOCLOSE, &myData);
+    m_register_src(fd, FD_AUTOCLOSE, &myData);
 #endif
     
     /* Add stdin fd */
-    m_register_source(STDIN_FILENO, 0, NULL);
+    m_register_src(STDIN_FILENO, 0, NULL);
     
     /* Get Doggo module reference */
     m_ref("Doggo", &doggo);

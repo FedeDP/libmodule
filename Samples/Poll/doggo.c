@@ -11,7 +11,7 @@ static void module_pre_start(void) {
 
 static void init(void) {
     /* Doggo should subscribe to "leaving" topic */
-    m_register_source("leaving", 0, NULL);
+    m_register_src("leaving", 0, NULL);
 }
 
 static bool check(void) {

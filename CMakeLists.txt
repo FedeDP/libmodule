@@ -62,16 +62,36 @@ configure_file(Lib/public/module/module_cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/publi
 #
 file(GLOB SOURCES Lib/*.c)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    set(SOURCES ${SOURCES} Lib/poll_plugins/epoll_priv.c)
+    option(WITH_LIBURING "build ${PROJECT_NAME} with liburing support" OFF)
+    option(WITH_LIBKQUEUE "build ${PROJECT_NAME} with libkqueue support" OFF)
 else()
     include(CheckFunctionExists)
     check_function_exists(kqueue KQUEUE_IN_LIBC)
     if(NOT KQUEUE_IN_LIBC)
         find_package(Kqueue REQUIRED)
+        set(WITH_LIBKQUEUE true)
     else()
-        set(KQUEUE_LIBRARIES "")
+        set(WITH_KQUEUE true)
     endif()
+endif()
+
+if(WITH_LIBURING)
+    find_package(PkgConfig)
+    pkg_check_modules(URING REQUIRED liburing)
+    set(SOURCES ${SOURCES} Lib/poll_plugins/uring_priv.c)
+    add_compile_definitions(_GNU_SOURCE)
+    set(POLL_PLUGIN "liburing")
+elseif(WITH_LIBKQUEUE)
+    find_package(Kqueue REQUIRED)
     set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
+    add_compile_definitions(_GNU_SOURCE)
+    set(POLL_PLUGIN "libkqueue")
+elseif(WITH_KQUEUE)
+    set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
+    set(POLL_PLUGIN "kqueue")
+else()
+    set(SOURCES ${SOURCES} Lib/poll_plugins/epoll_priv.c)
+    set(POLL_PLUGIN "epoll")
 endif()
 
 #
@@ -80,11 +100,10 @@ endif()
 message(STATUS "Building ${PROJECT_NAME}-${PROJECT_VERSION}")
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Library Type: ${LIBRARY_TYPE}")
+MESSAGE(STATUS "Poll plugin: ${POLL_PLUGIN}")
 MESSAGE(STATUS "Target OS: ${CMAKE_SYSTEM_NAME}")
 
 file(GLOB PUBLIC_H Lib/public/module/*.h)
-
-include_directories(Lib Lib/public/module)
 
 add_library(${PROJECT_NAME} ${LIBRARY_TYPE} ${SOURCES})
 
@@ -96,18 +115,15 @@ set_target_properties(
     PUBLIC_HEADER "${PUBLIC_H}"
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE Lib/ Lib/public/module/)
+target_include_directories(${PROJECT_NAME} PRIVATE ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} Lib/ Lib/public/module/)
 
-#
-# KQUEUE_LIBRARIES will be empty where native epoll/kqueue are supported
-#
-target_link_libraries(${PROJECT_NAME} ${KQUEUE_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} dl)
+target_link_libraries(${PROJECT_NAME} ${URING_LIBRARIES} ${KQUEUE_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} dl)
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/module
-    )
+)
 
 install(FILES ${CMAKE_BINARY_DIR}/libmodule.pc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
@@ -143,6 +159,11 @@ set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_URL "https://github.com/FedeDP/libmodule")
 set(CPACK_RPM_PACKAGE_GROUP "System Environment/Libraries")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "${CMAKE_INSTALL_DATAROOTDIR}/licenses ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig")
+if(WITH_LIBURING)
+    set(CPACK_RPM_PACKAGE_REQUIRES "liburing")
+elseif(WITH_LIBKQUEUE)
+    set(CPACK_RPM_PACKAGE_REQUIRES "libkqueue")
+endif()
 set(CPACK_RPM_PACKAGE_DESCRIPTION ${CPACK_PACKAGE_DESCRIPTION})
 set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
 
@@ -151,6 +172,11 @@ set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
 #
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/FedeDP/libmodule")
 set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+if(WITH_LIBURING)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "liburing")
+elseif(WITH_LIBKQUEUE)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libkqueue0")
+endif()
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 
 include(CPack)

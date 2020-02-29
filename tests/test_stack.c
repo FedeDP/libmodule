@@ -1,7 +1,7 @@
 #include "test_stack.h"
 #include <module/stack.h>
 
-static stack_t *my_st;
+static mod_stack_t *my_st;
 static int val1 = 1;
 static int val2 = 2;
 static char val3[] = "Hello World";
@@ -10,7 +10,7 @@ void test_stack_push(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    stack_ret_code ret = stack_push(my_st, &val1);
+    mod_stack_ret ret = stack_push(my_st, &val1);
     assert_false(ret == STACK_OK);
     
     my_st = stack_new(NULL);
@@ -54,7 +54,7 @@ void test_stack_iterator(void **state) {
     (void) state; /* unused */
     
     /* NULL stack */
-    stack_itr_t *itr = stack_itr_new(NULL);
+    mod_stack_itr_t *itr = stack_itr_new(NULL);
     assert_null(itr);
     
     itr = stack_itr_new(my_st);
@@ -92,7 +92,7 @@ void test_stack_pop(void **state) {
 void test_stack_clear(void **state) {
     (void) state; /* unused */
     
-    stack_ret_code ret = stack_clear(NULL);
+    mod_stack_ret ret = stack_clear(NULL);
     assert_false(ret == STACK_OK);
     
     ret = stack_clear(my_st);
@@ -105,7 +105,7 @@ void test_stack_clear(void **state) {
 void test_stack_free(void **state) {
     (void) state; /* unused */
     
-    stack_ret_code ret = stack_free(NULL);
+    mod_stack_ret ret = stack_free(NULL);
     assert_false(ret == STACK_OK);
     
     ret = stack_free(my_st);

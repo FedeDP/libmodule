@@ -48,8 +48,8 @@ static void _ctor2_ module_pre_start(void)
 #define m_unbecome()                            module_unbecome(self())
 
 /* Generic event source registering functions */
-#define m_register_source(X, flags, userptr)    module_register_source(self(), X, flags, userptr)
-#define m_deregister_source(X)                  module_deregister_source(self(), X)
+#define m_register_src(X, flags, userptr)       module_register_src(self(), X, flags, userptr)
+#define m_deregister_src(X)                     module_deregister_src(self(), X)
 
 #define m_tell(recipient, msg, size, free)      module_tell(self(), recipient, msg, size, free)
 #define m_publish(topic, msg, size, free)       module_publish(self(), topic, msg, size, free)

@@ -1,5 +1,17 @@
 ## 6.0.0
 
+### liburing
+
+- [x] Introduce an uring poll plugin
+- [x] Fix tests with uring
+- [x] Add a poll plugin perf test: eg: for (int i = 0; i < 1000; i++) { m_tell(self(), &x); } -> check recv_callback() time!
+- [x] Let user build kqueue userspace support on linux too
+- [ ] linux CI build with uring/kqueue too!
+- [x] Add deb/rpm packages deps (liburing/libkqueue)
+- [ ] Drop poll_new_data/poll_free_data and just alloc/free in ADD/RM poll_set_new_evt() ?
+- [ ] Avoid initing uring during poll_create() -> what if module is manually started? ring won't yet be created but we would try to register new fds causing a crash...
+- [ ] Fix failing tests!
+
 ### Generic
 
 - [x] Finally avoid injecting _self into file-global variables
@@ -11,9 +23,11 @@
 - [x] Add new userptr parameter to module_subscribe (just like module_register_fd())
 - [x] Use this new parameter -> pass both fd_msg_t and ps_msg_t "userptr" as receive() userdata parameter (and drop it from ps_msg_t and fd_msg_t)
 
-- [x] Rename Module_subscribe and module_register_fd to module_register_source(type), _Generic.
+- [x] Rename Module_subscribe and module_register_fd to module_register_src(type), _Generic.
 Ie: if first parameter is an int then call module_register_fd, else if const char*, module register subscribe.
-Signature: Module_register_source(int/char*, uint flags, void userptr) -> Flags: FD_AUTOCLOSE and others?
+Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD_AUTOCLOSE and others?
+- [ ] Add module_register_timer()? module_register_signal()? (and add them to m_register_src(struct itimerspec *it/sigset_t *mask))
+
 
 - [x] Drop C++ support (useless...)
 
@@ -24,6 +38,7 @@ Signature: Module_register_source(int/char*, uint flags, void userptr) -> Flags:
 
 - [x] Actually check userhook: at least init() and receive() must be defined
 - [x] Let users avoid passing other callbacks
+- [ ] init() to return a bool -> if false -> init failed; automatically stop module
 
 - [x] module_get_name/ctx to return const char *
 
@@ -42,6 +57,18 @@ Signature: Module_register_source(int/char*, uint flags, void userptr) -> Flags:
 - [ ] Fix module_load/unload() ... -> Rename to modules_load/unload()?
 
 - [x] Rename fd_priv_t/ps_priv_t/ps_sub_t? More meaningful names!!
+
+- [x] Fix: avoid name clash between stack_t and /usr/include/bits/types/stack_t.h when __GNU_SOURCE is defined
+- [x] Similarly, fix list_t, map_t and queue_t... Something like mod_map_t, mod_list_t, mod_queue_t and mod_stack_t
+
+- [x] Rename module_states to mod_states
+- [x] Rename module_source_flags to mod_src_flags
+- [x] Rename module_ret_code to mod_ret
+- [x] Rename stack_ret_code, map_ret_code, etc etc to mod_x_ret
+
+- [x] module_is should return false if mod is NULL
+
+- [ ] Add a FD_AUTOFREE flag to mimic PS_AUTOFREE flag?
 
 - [ ] Update examples
 - [ ] Update tests

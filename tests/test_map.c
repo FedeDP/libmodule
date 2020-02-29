@@ -1,7 +1,7 @@
 #include "test_map.h"
 #include <module/map.h>
 
-static map_t *my_map;
+static mod_map_t *my_map;
 static int val = 5;
 static int count;
 
@@ -9,7 +9,7 @@ void test_map_put(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    map_ret_code ret = map_put(my_map, "key", &val);
+    mod_map_ret ret = map_put(my_map, "key", &val);
     assert_false(ret == MAP_OK);
     
     my_map = map_new(false, NULL);
@@ -71,7 +71,7 @@ void test_map_iterator(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    map_itr_t *itr = map_itr_new(NULL);
+    mod_map_itr_t *itr = map_itr_new(NULL);
     assert_null(itr);
     
     itr = map_itr_new(my_map);
@@ -87,7 +87,7 @@ void test_map_iterator(void **state) {
     assert_null(itr);
 }
 
-map_ret_code iterate_cb(void *userptr, const char *key, void *data) {
+mod_map_ret iterate_cb(void *userptr, const char *key, void *data) {
     count++;
     return MAP_OK;
 }
@@ -96,7 +96,7 @@ void test_map_iterate(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    map_ret_code ret = map_iterate(NULL, iterate_cb, NULL);
+    mod_map_ret ret = map_iterate(NULL, iterate_cb, NULL);
     assert_false(ret == MAP_OK);
     
     /* NULL cb */
@@ -112,7 +112,7 @@ void test_map_remove(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    map_ret_code ret = map_remove(NULL, "key");
+    mod_map_ret ret = map_remove(NULL, "key");
     assert_false(ret == MOD_OK);
     
     /* NULL key */
@@ -131,7 +131,7 @@ void test_map_clear(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    map_ret_code ret = map_clear(NULL);
+    mod_map_ret ret = map_clear(NULL);
     assert_false(ret == MOD_OK);
     
     ret = map_clear(my_map);
@@ -145,7 +145,7 @@ void test_map_free(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    map_ret_code ret = map_free(NULL);
+    mod_map_ret ret = map_free(NULL);
     assert_false(ret == MOD_OK);
     
     ret = map_free(my_map);
@@ -155,7 +155,7 @@ void test_map_free(void **state) {
 void test_map_stress(void **state) {
     (void) state; /* unused */
     
-    map_ret_code ret;
+    mod_map_ret ret;
     my_map = map_new(true, NULL);
     const int size = 1000000;
     for (int i = 0; i < size; i++) {

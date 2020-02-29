@@ -36,28 +36,28 @@ struct _map {
     size_t length;
     bool dupkeys;
     map_elem *table;
-    map_dtor dtor;
+    mod_map_dtor dtor;
 };
 
 struct _map_itr {
-    map_t *m;
+    mod_map_t *m;
     map_elem *curr;
     bool removed;
 };
 
-static map_elem *hashmap_entry_find(const map_t *m, const char *key, bool find_empty);
+static map_elem *hashmap_entry_find(const mod_map_t *m, const char *key, bool find_empty);
 static size_t hashmap_table_min_size_calc(size_t num_entries);
-static size_t hashmap_calc_index(const map_t *m, const char *key);
+static size_t hashmap_calc_index(const mod_map_t *m, const char *key);
 static size_t hashmap_hash_string(const char *key);
-static map_ret_code hashmap_rehash(map_t *m);
-static map_ret_code hashmap_put(map_t *m, const char *key, void *value);
-static void clear_elem(map_t *m, map_elem *entry);
+static mod_map_ret hashmap_rehash(mod_map_t *m);
+static mod_map_ret hashmap_put(mod_map_t *m, const char *key, void *value);
+static void clear_elem(mod_map_t *m, map_elem *entry);
 
 /*
  * Find the hashmap entry with the specified key, or an empty slot.
  * Returns NULL if the entire table has been searched without finding a match.
  */
-static map_elem *hashmap_entry_find(const map_t *m, const char *key, bool find_empty) {
+static map_elem *hashmap_entry_find(const mod_map_t *m, const char *key, bool find_empty) {
     const size_t probe_len = MAP_PROBE_LEN(m);    
     size_t index = hashmap_calc_index(m, key);
     
@@ -88,7 +88,7 @@ static inline size_t hashmap_table_min_size_calc(size_t num_entries) {
 /*
  * Get a valid hash table index from a key.
  */
-static inline size_t hashmap_calc_index(const map_t *m, const char *key) {
+static inline size_t hashmap_calc_index(const mod_map_t *m, const char *key) {
     return MAP_SIZE_MOD(m, hashmap_hash_string(key));
 }
 
@@ -114,7 +114,7 @@ static size_t hashmap_hash_string(const char *key) {
 /*
  * Doubles the size of the hashmap, and rehashes all the elements
  */
-static map_ret_code hashmap_rehash(map_t *m) {
+static mod_map_ret hashmap_rehash(mod_map_t *m) {
     map_elem *new_table = memhook._calloc(m->table_size << 1, sizeof(map_elem));
     MOD_RET_ASSERT(new_table, MAP_OMEM);
     
@@ -149,10 +149,10 @@ revert:
     return MAP_ERR;
 }
 
-static map_ret_code hashmap_put(map_t *m, const char *key, void *value) {
+static mod_map_ret hashmap_put(mod_map_t *m, const char *key, void *value) {
     MOD_RET_ASSERT(key, MAP_OMEM);
     
-    map_ret_code ret;
+    mod_map_ret ret;
     
     /* Rehash with 2x capacity if load factor is approaching 0.75 */
     if (m->table_size <= hashmap_table_min_size_calc(m->length)) {
@@ -195,7 +195,7 @@ static map_ret_code hashmap_put(map_t *m, const char *key, void *value) {
  * the load factor and keep the chain continuous. 
  * This is a required step for hashmaps using linear probing.
  */
-static void clear_elem(map_t *m, map_elem *removed_entry) {
+static void clear_elem(mod_map_t *m, map_elem *removed_entry) {
     /* Blank out the fields */
     if (m->dupkeys) {
         memhook._free((void *)removed_entry->key);
@@ -237,8 +237,8 @@ static void clear_elem(map_t *m, map_elem *removed_entry) {
 /*
  * Return an empty hashmap, or NULL on failure.
  */
-map_t *map_new(const bool keysdup, const map_dtor fn) {
-    map_t *m = memhook._calloc(1, sizeof(map_t));
+mod_map_t *map_new(const bool keysdup, const mod_map_dtor fn) {
+    mod_map_t *m = memhook._calloc(1, sizeof(mod_map_t));
     if (m) {
         m->table = memhook._calloc(MAP_SIZE_DEFAULT, sizeof(map_elem));
         if (m->table) {
@@ -253,18 +253,18 @@ map_t *map_new(const bool keysdup, const map_dtor fn) {
     return m;
 }
 
-map_itr_t *map_itr_new(const map_t *m) {
+mod_map_itr_t *map_itr_new(const mod_map_t *m) {
     MOD_RET_ASSERT(map_length(m) > 0, NULL);
     
-    map_itr_t *itr = memhook._calloc(1, sizeof(map_itr_t));
+    mod_map_itr_t *itr = memhook._calloc(1, sizeof(mod_map_itr_t));
     if (itr) {
-        itr->m = (map_t *)m;
+        itr->m = (mod_map_t *)m;
         itr = map_itr_next(itr);
     }
     return itr;
 }
 
-map_itr_t *map_itr_next(map_itr_t *itr) {
+mod_map_itr_t *map_itr_next(mod_map_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     
     if (!itr->curr) {
@@ -292,7 +292,7 @@ map_itr_t *map_itr_next(map_itr_t *itr) {
     return itr;
 }
 
-map_ret_code map_itr_remove(map_itr_t *itr) {
+mod_map_ret map_itr_remove(mod_map_itr_t *itr) {
     MAP_PARAM_ASSERT(itr);
     
     if (!itr->removed) {
@@ -303,7 +303,7 @@ map_ret_code map_itr_remove(map_itr_t *itr) {
     return MAP_EPERM;
 }
 
-const char *map_itr_get_key(const map_itr_t *itr) {
+const char *map_itr_get_key(const mod_map_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     
     if (!itr->removed) {
@@ -312,7 +312,7 @@ const char *map_itr_get_key(const map_itr_t *itr) {
     return NULL;
 }
 
-void *map_itr_get_data(const map_itr_t *itr) {
+void *map_itr_get_data(const mod_map_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     
     if (!itr->removed) {
@@ -321,7 +321,7 @@ void *map_itr_get_data(const map_itr_t *itr) {
     return NULL;
 }
 
-map_ret_code map_itr_set_data(const map_itr_t *itr, void *value) {
+mod_map_ret map_itr_set_data(const mod_map_itr_t *itr, void *value) {
     MAP_PARAM_ASSERT(itr);
     MAP_PARAM_ASSERT(value);
     
@@ -332,7 +332,7 @@ map_ret_code map_itr_set_data(const map_itr_t *itr, void *value) {
 /*
  * Add a pointer to the hashmap with strdupped key if dupkey is true
  */
-map_ret_code map_put(map_t *m, const char *key, void *value) {
+mod_map_ret map_put(mod_map_t *m, const char *key, void *value) {
     MAP_PARAM_ASSERT(m);
     MAP_PARAM_ASSERT(key);
     MAP_PARAM_ASSERT(value);
@@ -344,7 +344,7 @@ map_ret_code map_put(map_t *m, const char *key, void *value) {
 /*
  * Get your pointer out of the hashmap with a key
  */
-void *map_get(const map_t *m, const char *key) {
+void *map_get(const mod_map_t *m, const char *key) {
     MOD_RET_ASSERT(key, NULL);
     MOD_RET_ASSERT(map_length(m) > 0, NULL);
     
@@ -356,7 +356,7 @@ void *map_get(const map_t *m, const char *key) {
     return entry->data;
 }
 
-bool map_has_key(const map_t *m, const char *key) {
+bool map_has_key(const mod_map_t *m, const char *key) {
     return map_get(m, key) != NULL;
 }
 
@@ -368,7 +368,7 @@ bool map_has_key(const map_t *m, const char *key) {
  * Iteration is stopped if func returns non-zero.  
  * Returns func's return value if it is < 0, otherwise, 0.
  */
-map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
+mod_map_ret map_iterate(mod_map_t *m, const mod_map_cb fn, void *userptr) {
     MAP_PARAM_ASSERT(fn);
     MOD_RET_ASSERT(map_length(m) > 0, MAP_MISSING);
     
@@ -378,7 +378,7 @@ map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
         }
         const size_t num_entries = m->length;
         const char *key = entry->key;
-        map_ret_code rc = fn(userptr, entry->key, entry->data);
+        mod_map_ret rc = fn(userptr, entry->key, entry->data);
         if (rc < MAP_OK) {
             /* Stop right now with error */
             return rc;
@@ -401,7 +401,7 @@ map_ret_code map_iterate(map_t *m, const map_cb fn, void *userptr) {
 /*
  * Remove an element with that key from the map
  */
-map_ret_code map_remove(map_t *m, const char *key) {
+mod_map_ret map_remove(mod_map_t *m, const char *key) {
     MAP_PARAM_ASSERT(key);
     MOD_RET_ASSERT(map_length(m) > 0, MAP_MISSING);
     
@@ -414,18 +414,18 @@ map_ret_code map_remove(map_t *m, const char *key) {
 }
 
 /* Remove all elements from map */
-map_ret_code map_clear(map_t *m) {
+mod_map_ret map_clear(mod_map_t *m) {
     MAP_PARAM_ASSERT(m);
     
-    for (map_itr_t *itr = map_itr_new(m); itr; itr = map_itr_next(itr)) {
+    for (mod_map_itr_t *itr = map_itr_new(m); itr; itr = map_itr_next(itr)) {
         map_itr_remove(itr);
     }
     return MAP_OK;
 }
 
 /* Deallocate the hashmap (it clears it too) */
-map_ret_code map_free(map_t *m) {
-    map_ret_code ret = map_clear(m);
+mod_map_ret map_free(mod_map_t *m) {
+    mod_map_ret ret = map_clear(m);
     if (ret == MAP_OK) {
         memhook._free(m->table);
         memhook._free(m);
@@ -434,7 +434,7 @@ map_ret_code map_free(map_t *m) {
 }
 
 /* Return the length of the hashmap */
-ssize_t map_length(const map_t *m) {
+ssize_t map_length(const mod_map_t *m) {
     MAP_PARAM_ASSERT(m);
     
     return m->length;

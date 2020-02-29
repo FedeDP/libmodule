@@ -8,11 +8,13 @@
 /* Useful macros to smooth away differences between supported OS */
 enum op_type { ADD, RM };
 
-int poll_create(void);
-int poll_set_data(void **_ev);
-int poll_set_new_evt(ev_src_t *tmp, ctx_t *c, const enum op_type flag);
-int poll_init_pevents(void **pevents, const int max_events);
-int poll_wait(const int fd, const int max_events, void *pevents, const int timeout);
-ev_src_t *poll_recv(const int idx, void *pevents);
-int poll_destroy_pevents(void **pevents, int *max_events);
-int poll_close(const int fd, void **pevents, int *max_events);
+mod_ret poll_create(poll_priv_t *priv);
+mod_ret poll_new_data(poll_priv_t *priv, void **_ev);
+mod_ret poll_free_data(poll_priv_t *priv, void **_ev);
+int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag);
+mod_ret poll_init(poll_priv_t *priv);
+int poll_wait(poll_priv_t *priv, const int timeout);
+ev_src_t *poll_recv(poll_priv_t *priv, const int idx);
+int poll_get_fd(poll_priv_t *priv);
+mod_ret poll_clear(poll_priv_t *priv);
+mod_ret poll_destroy(poll_priv_t *priv);

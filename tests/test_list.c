@@ -1,7 +1,7 @@
 #include "test_list.h"
 #include <module/list.h>
 
-static list_t *my_l;
+static mod_list_t *my_l;
 static int val1 = 1;
 static int val2 = 2;
 static int val3 = 3;
@@ -10,7 +10,7 @@ void test_list_insert(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    list_ret_code ret = list_insert(my_l, &val1, NULL);
+    mod_list_ret ret = list_insert(my_l, &val1, NULL);
     assert_false(ret == LIST_OK);
     
     my_l = list_new(NULL);
@@ -43,7 +43,7 @@ void test_list_iterator(void **state) {
     (void) state; /* unused */
     
     /* NULL list */
-    list_itr_t *itr = list_itr_new(NULL);
+    mod_list_itr_t *itr = list_itr_new(NULL);
     assert_null(itr);
     
     itr = list_itr_new(my_l);
@@ -53,7 +53,7 @@ void test_list_iterator(void **state) {
     while (itr) {
         count--;
         printf("%p\n", list_itr_get_data(itr));
-        list_ret_code ret = list_itr_insert(itr, &val1);
+        mod_list_ret ret = list_itr_insert(itr, &val1);
         assert_true(ret == LIST_OK);
         ret = list_itr_remove(itr);
         assert_true(ret == LIST_OK);
@@ -73,7 +73,7 @@ static int int_match(void *my_data, void *list_data) {
 void test_list_remove(void **state) {
     (void) state; /* unused */
     
-    list_ret_code ret = list_remove(NULL, NULL, NULL);
+    mod_list_ret ret = list_remove(NULL, NULL, NULL);
     assert_false(ret == LIST_OK);
     
     ret = list_remove(my_l, NULL, NULL);
@@ -95,7 +95,7 @@ void test_list_remove(void **state) {
 void test_list_clear(void **state) {
     (void) state; /* unused */
     
-    list_ret_code ret = list_clear(NULL);
+    mod_list_ret ret = list_clear(NULL);
     assert_false(ret == LIST_OK);
     
     ret = list_clear(my_l);
@@ -108,7 +108,7 @@ void test_list_clear(void **state) {
 void test_list_free(void **state) {
     (void) state; /* unused */
     
-    list_ret_code ret = list_free(NULL);
+    mod_list_ret ret = list_free(NULL);
     assert_false(ret == LIST_OK);
     
     ret = list_free(my_l);
