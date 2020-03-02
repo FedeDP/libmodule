@@ -9,9 +9,10 @@ MODULE("Doggo");
 static void module_pre_start(void) {
 }
 
-static void init(void) {
+static bool init(void) {
     /* Doggo should subscribe to "leaving" topic */
     m_register_src("leaving", 0, NULL);
+    return true;
 }
 
 static bool check(void) {

@@ -20,7 +20,7 @@ static void module_pre_start(void) {
 
 }
 
-static void init(void) {
+static bool init(void) {
 #ifdef __linux__
     /* Add signal fd */
     sigset_t mask;
@@ -39,6 +39,7 @@ static void init(void) {
     
     /* Get Doggo module reference */
     m_ref("Doggo", &doggo);
+    return true;
 }
 
 static bool check(void) {

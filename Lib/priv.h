@@ -122,6 +122,7 @@ struct _module {
     const void *userdata;                   // module's user defined data
     mod_states state;                       // module's state
     const char *name;                       // module's name
+    const char *local_path;                 // For runtime loaded modules: path of module
     mod_list_t *fds;                        // module's fds to be polled (list of ev_src_t)
     mod_map_t *subscriptions;               // module's subscriptions (map of ev_src_t)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
@@ -154,6 +155,9 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr);
 
 /* Defined in priv.c */
 char *mem_strdup(const char *s);
+
+/* Defined in map.c */
+void *map_get_last(const mod_map_t *m);
 
 extern mod_map_t *ctx;
 extern memhook_t memhook;

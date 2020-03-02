@@ -16,7 +16,7 @@ Easy API
 Module easy API consists of a single-context-multi-modules set of macros. It can be found in <module/module_easy.h>. |br|
 These macros make it easy and transparent to developer all of the module's internal mechanisms, providing a very simple way to use libmodule. |br|
 It enforces correct modularity too: each module must have its own source file. |br|
-Where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.
+Where not specified, these functions return a :ref:`mod_ret <mod_ret>`.
 
 .. c:macro:: MODULE(name)
 
@@ -45,20 +45,6 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   Returns _self handler for the module.
   
   :returns: :c:type:`const self_t *`
-  
-.. c:macro:: m_load(path)
-  
-  Attaches a new module from a .so file to "default" context. If module.so has a different context, this will be an error.
-  
-  :param path: shared object path.
-  :type path: :c:type:`const char *`
-  
-.. c:macro:: m_unload(path)
-  
-  Detaches a module loaded from a .so file.
-  
-  :param path: shared object path.
-  :type path: :c:type:`const char *`
 
 .. c:macro:: m_is(state)
 
@@ -132,7 +118,9 @@ Where not specified, these functions return a :ref:`module_ret_code <module_ret_
   
 .. c:macro:: m_dump()
 
-  Dump current module's state. Diagnostic API.
+  Dump current module's state. Diagnostic API. Output explanation:  
+  * Subscribtions: T -> "Topic", Fl -> "Flags", UP -> "UserPointer"
+  * Fds: FD -> fd, Fl -> "Flags", UP -> "UserPointer"
   
 .. c:macro:: m_ref(name, modref)
 
@@ -237,7 +225,7 @@ Complex API
 
 Complex (probably better to say less-easy) API consists of `Module easy API`_ internally used functions. It can be found in <module/module.h> header. |br|
 Sometime you may avoid using easy API; eg: if you wish to use same source file for different modules, or if you wish to manually register a module. |br|
-Again, where not specified, these functions return a :ref:`module_ret_code <module_ret_code>`.
+Again, where not specified, these functions return a :ref:`mod_ret <mod_ret>`.
 
 .. c:function:: module_register(name, ctx_name, self, hook)
 
@@ -258,22 +246,6 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
     
   :param self: pointer to module's handler. It is set to NULL after this call.
   :type self: :c:type:`self_t **`
-  
-.. c:function:: module_load(path, ctx_name)
-  
-  Attaches a new module from a .so file to ctx_name context. If module.so has a different context, this will be an error.
-  
-  :param path: shared object path.
-  :param ctx_name: module's context name.
-  :type path: :c:type:`const char *`
-  :type ctx_name: :c:type:`const char *`
-  
-.. c:function:: module_unload(path)
-  
-  Detaches a module loaded from a .so file.
-  
-  :param path: shared object path.
-  :type path: :c:type:`const char *`
   
 .. c:function:: module_is(self, state)
 
@@ -385,7 +357,9 @@ Again, where not specified, these functions return a :ref:`module_ret_code <modu
   
 .. c:function:: module_dump(self)
 
-  Dump current module's state. Diagnostic API.
+  Dump current module's state. Diagnostic API. Output explanation:  
+  * Subscribtions: T -> "Topic", Fl -> "Flags", UP -> "UserPointer"
+  * Fds: FD -> fd, Fl -> "Flags", UP -> "UserPointer"
   
   :param self: pointer to module's handler
   :type self: :c:type:`const self_t *`

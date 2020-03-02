@@ -3,20 +3,25 @@ packages:
   - cmocka
   - valgrind
   - cmake
+  - liburing
+  - libkqueue
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:
   - prepare: |
       cd libmodule
-      mkdir build
-      cd build
-      cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true ../
+      mkdir build_kqueue build_uring build_epoll
+      (cd build_kqueue && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_LIBKQUEUE=true ..)
+      (cd build_uring && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_LIBURING=true ..)
+      (cd build_epoll && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true ..)
   - build: |
-      cd libmodule/build
-      make
+      cd libmodule
+      (cd build_kqueue && make)
+      (cd build_uring && make)
+      (cd build_epoll && make)
   - test: |
-      cd libmodule/build
-      ctest -V
+      cd libmodule
+      (cd build_epoll && ctest -V)
 triggers:
   - action: email
     condition: failure

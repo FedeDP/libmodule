@@ -16,9 +16,10 @@ static void module_pre_start(void) {
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static void init(void) {
+static bool init(void) {
     m_register_src("leaving", 0, NULL);
     m_log("Linked.\n");
+    return true;
 }
 
 /* 

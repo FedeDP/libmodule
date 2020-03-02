@@ -6,7 +6,7 @@
 #define self() *(get_self())
 
 #define MODULE_CTX(name, ctx) \
-static void init(void); \
+static bool init(void); \
 static bool check(void); \
 static bool evaluate(void); \
 static void receive(const msg_t *const msg, const void *userdata); \
@@ -24,9 +24,6 @@ static void _ctor2_ module_pre_start(void)
 #define MODULE(name) MODULE_CTX(name, MODULES_DEFAULT_CTX)
 
 /* Defines for easy API (with no need bothering with both _self and ctx) */
-#define m_load(path)                            module_load(path, MODULES_DEFAULT_CTX)
-#define m_unload(path)                          module_unload(path) // just an alias
-
 #define m_is(state)                             module_is(self(), state)
 #define m_dump()                                module_dump(self())
 

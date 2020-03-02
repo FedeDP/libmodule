@@ -7,12 +7,13 @@ Callbacks
 
 Every module needs 5 functions that must be defined by developer. |br|
 If using :ref:`module_easy`, they are automatically declared by MODULE macro. |br|
-Moreover, a module_pre_start function is declared too, but it is not needed by libmodule interface, ie: it can be left undefined. Your compiler may warn you about that though.
+Moreover, a module_pre_start function is declared too, but it is not needed by libmodule interface, ie: it can be left undefined. Your compiler may warn you about that though. |br|
+When using :ref:`module_complex` API, libmodule only mandates init() and receive() callbacks. A NULL check() and evaluate() functions mean to avoid checking and evaluating and thus starting module right away.
 
 .. code::
 
     static void module_pre_start(void);
-    static void init(void);
+    static bool init(void);
     static bool check(void);
     static bool evaluate(void);
     static void receive(const msg_t *const msg, const void *userdata);
@@ -26,7 +27,8 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 .. c:function:: init(void)
 
   Initializes module state; useful to register any fd to be polled or to register any topic. |br|
-  Note that init() is only called first time module is started.
+  Note that init() is called each time module is started. |br|
+  If init callback returns false, module is automatically stopped as its initialization failed.
 
 .. c:function:: check(void)
 
@@ -37,7 +39,7 @@ Moreover, a module_pre_start function is declared too, but it is not needed by l
 .. c:function:: evaluate(void)
 
   Similar to check() function but at runtime: this function is called for each IDLE module after evey state machine update
-  and it should check whether a module is now ready to be start (ie: init should be called on this module and its state should be set to RUNNING).
+  and it should check whether a module is now ready to be start (ie: init should be called on this module and its state should be set to RUNNING). |br|
   Use this to check intra-modules dependencies or any other env variable.
   
   :returns: true if module is now ready to be started, else false.

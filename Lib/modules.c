@@ -1,6 +1,7 @@
 #include "modules.h"
 #include "poll_priv.h"
 #include <pthread.h>
+#include <dlfcn.h> // dlopen
 
 static void *thread_loop(void *param);
 static mod_map_ret main_loop(void *data, const char *key, void *value);
@@ -291,4 +292,58 @@ mod_ret modules_ctx_dump(const char *ctx_name) {
         ctx_logger(c, "-> '%s': %p\n", mod_name, mod);
     }
     return MOD_OK;
+}
+
+
+mod_ret modules_load(const char *ctx_name, const char *module_path) {
+    MOD_PARAM_ASSERT(module_path);
+    FIND_CTX(ctx_name);
+    
+    const int module_size = map_length(c->modules);
+    
+    void *handle = dlopen(module_path, RTLD_NOW);
+    if (!handle) {
+        MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
+        return MOD_ERR;
+    }
+    
+    /* 
+     * Check that requested module has been created in requested ctx, 
+     * by looking at requested ctx number of modules
+     */
+    if (module_size == map_length(c->modules)) { 
+        dlclose(handle);
+        return MOD_ERR;
+    }
+    
+    mod_t *mod = map_get_last(c->modules);
+    mod->local_path = mem_strdup(module_path);
+    return MOD_OK;
+}
+
+mod_ret modules_unload(const char *ctx_name, const char *module_path) {
+    MOD_PARAM_ASSERT(module_path);    
+    FIND_CTX(ctx_name);
+    
+    /* Check if desired module is actually loaded in context */
+    bool found = false;
+    for (mod_map_itr_t *itr = map_itr_new(c->modules); !found && itr; itr = map_itr_next(itr)) {
+        mod_t *mod = map_itr_get_data(itr);
+        if (mod->local_path && !strcmp(mod->local_path, module_path)) {
+            found = true;
+            memhook._free(itr);
+        }
+    }
+    
+    if (found) {
+        void *handle = dlopen(module_path, RTLD_NOLOAD);
+        if (handle) {
+            dlclose(handle);
+            return MOD_OK;
+        }
+        MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
+        return MOD_ERR;
+    }
+    MODULE_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, ctx_name);
+    return MOD_NO_MOD;
 }

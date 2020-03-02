@@ -17,7 +17,7 @@ static void module_pre_start(void) {
 
 static void receive_ready(const msg_t *msg, const void *userdata);
 
-static void init(void) {
+static bool init(void) {
 #ifdef __linux__
     int fd = timerfd_create(CLOCK_BOOTTIME, TFD_NONBLOCK);
     
@@ -28,6 +28,7 @@ static void init(void) {
     timerfd_settime(fd, 0, &timerValue, NULL);
     m_register_src(fd, FD_AUTOCLOSE, NULL);
 #endif
+    return true;
 }
 
 static bool check(void) {

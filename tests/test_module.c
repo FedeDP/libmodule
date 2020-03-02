@@ -7,7 +7,8 @@
 #include <errno.h>
 #include <string.h>
 
-static void init(void);
+static bool init(void);
+static bool init_false(void);
 static bool evaluate(void);
 static void recv(const msg_t *msg, const void *userdata);
 static void destroy(void);
@@ -97,6 +98,24 @@ void test_module_deregister(void **state) {
     assert_null(self);
 }
 
+void test_module_false_init(void **state) {
+    (void) state; /* unused */
+    
+    userhook_t hook = (userhook_t) { init_false, evaluate, recv, destroy };
+    mod_ret ret = module_register("testName", CTX, &self, &hook);
+    assert_true(ret == MOD_OK);
+    assert_non_null(self);
+    assert_true(module_is(self, IDLE));
+    
+    ret = module_start(self);
+    assert_false(ret == MOD_OK);
+    assert_true(module_is(self, IDLE));
+    
+    ret = module_deregister(&self);
+    assert_true(ret == MOD_OK);
+    assert_null(self);
+}
+
 void test_module_pause_NULL_self(void **state) {
     (void) state; /* unused */
     
@@ -138,7 +157,7 @@ void test_module_stop_NULL_self(void **state) {
     
     mod_ret ret = module_stop(NULL);
     assert_false(ret == MOD_OK);
-    assert_false(module_is(self, STOPPED));
+    assert_false(module_is(self, IDLE));
 }
 
 void test_module_stop(void **state) {
@@ -146,7 +165,7 @@ void test_module_stop(void **state) {
     
     mod_ret ret = module_stop(self);
     assert_true(ret == MOD_OK);
-    assert_true(module_is(self, STOPPED));
+    assert_true(module_is(self, IDLE));
 }
 
 void test_module_start_NULL_self(void **state) {
@@ -451,8 +470,12 @@ void test_module_broadcast(void **state) {
     assert_true(ret == MOD_OK);
 }
 
-static void init(void) {
-    
+static bool init(void) {
+    return true;
+}
+
+static bool init_false(void) {
+    return false;
 }
 
 static bool evaluate(void) {

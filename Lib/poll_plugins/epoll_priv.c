@@ -16,32 +16,36 @@ mod_ret poll_create(poll_priv_t *priv) {
     return ep->fd != -1 ? MOD_OK : MOD_ERR;
 }
 
-mod_ret poll_new_data(poll_priv_t *priv, void **_ev) {
-    *_ev = memhook._calloc(1, sizeof(struct epoll_event));
-    MOD_ALLOC_ASSERT(*_ev);
-    return MOD_OK;
-}
-
-mod_ret poll_free_data(poll_priv_t *priv, void **_ev) {
-    memhook._free(*_ev);
-    *_ev = NULL;
-    return MOD_OK;
-}
-
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
     GET_PRIV_DATA();
     
-    int f = flag == ADD ? EPOLL_CTL_ADD : EPOLL_CTL_DEL;
+    /* Eventually alloc epoll data if needed */
+    if (!tmp->fd_src.ev) {
+        if (flag == ADD) {
+            tmp->fd_src.ev = memhook._calloc(1, sizeof(struct epoll_event));
+            MOD_ALLOC_ASSERT(tmp->fd_src.ev);
+        } else {
+            /* We need to RM an unregistered ev. Fine. */
+            return MOD_OK;
+        }
+    }
     
+    int f = flag == ADD ? EPOLL_CTL_ADD : EPOLL_CTL_DEL;
     struct epoll_event *ev = (struct epoll_event *)tmp->fd_src.ev;
     ev->data.ptr = tmp;
     ev->events = EPOLLIN;
-    
     int ret = epoll_ctl(ep->fd, f, tmp->fd_src.fd, ev);
     /* Workaround for STDIN_FILENO: it returns EPERM but it is actually pollable */
     if (ret == -1 && tmp->fd_src.fd == STDIN_FILENO && errno == EPERM) {
         ret = 0;
     }
+    
+    /* Eventually free epoll data if needed */
+    if (flag == RM) {
+        memhook._free(tmp->fd_src.ev);
+        tmp->fd_src.ev = NULL;
+    }
+    
     return ret;
 }
 

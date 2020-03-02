@@ -8,10 +8,6 @@
 _public_ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook);
 _public_ mod_ret module_deregister(self_t **self);
 
-/* External shared object module runtime loading */
-_public_ mod_ret module_load(const char *module_path, const char *ctx_name);
-_public_ mod_ret module_unload(const char *module_path);
-
 /* Module state getters */
 _public_ _pure_ bool module_is(const self_t *mod_self, const mod_states st);
 

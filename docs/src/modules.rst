@@ -7,7 +7,7 @@ Modules API
 
 Modules API denotes libmodule interface functions to manage context loop. |br|
 Like Module API, it has an easy, single-context API. Moreover, it has an equivalent multi-context API. |br|
-All these functions but modules_pre_start() return a :ref:`module_ret_code <module_ret_code>`. |br|
+All these functions but modules_pre_start() return a :ref:`mod_ret <mod_ret>`. |br|
 
 Moreover, there are a bunch of functions that are common to every context (thus not needing ctx_name param). |br|
 
@@ -76,6 +76,28 @@ It abstracts all of libmodule internals mechanisms to provide an easy-to-use and
   :param ret: ret >= 0 and MOD_OK returned -> number of dispatched messages. ret >= 0 and MOD_ERR returned -> loop has been quitted by a modules_quit() code, thus it returns quit_code. Ret < 0 and MOD_ERR returned: an error happened.
   :type ret: :c:type:`int *`
   
+.. c:macro:: modules_dump()
+
+  Dump default context info. Diagnostic API. Output explanation:  
+  * Q -> "Quit", L -> "Looping", M -> "Max Events"
+  
+  :param ret: ret >= 0 and MOD_OK returned -> number of dispatched messages. ret >= 0 and MOD_ERR returned -> loop has been quitted by a modules_quit() code, thus it returns quit_code. Ret < 0 and MOD_ERR returned: an error happened.
+  :type ret: :c:type:`int *`
+
+.. c:macro:: m_load(path)
+  
+  Attaches a new module from a .so file to "default" context. If module has a different context, this will be an error.
+  
+  :param path: shared object path.
+  :type path: :c:type:`const char *`
+  
+.. c:macro:: m_unload(path)
+  
+  Detaches a module loaded from a .so file from "default" context. If module was loaded in a different context, MOD_NO_MOD will be returned.
+  
+  :param path: shared object path.
+  :type path: :c:type:`const char *`
+  
 Multi-context API
 -----------------
 
@@ -135,3 +157,25 @@ It exposes very similar functions to single-context API (again, single-context i
   :param ret: ret >= 0 and MOD_OK returned -> number of dispatched messages. ret >= 0 and MOD_ERR returned -> loop has been quitted by a modules_quit() code, thus it returns quit_code. Ret < 0 and MOD_ERR returned: an error happened.
   :type ctx_name: :c:type:`const char *`
   :type ret: :c:type:`int *`
+
+.. c:function:: modules_ctx_dump()
+
+  Dump context info. Diagnostic API. Output explanation:  
+  * Q -> "Quit", L -> "Looping", M -> "Max Events"
+
+  
+.. c:function:: module_load(ctx_name, path)
+  
+  Attaches a new module from a .so file to ctx_name context. If module has a different context, this will be an error.
+  
+  :param path: shared object path.
+  :param ctx_name: module's context name.
+  :type path: :c:type:`const char *`
+  :type ctx_name: :c:type:`const char *`
+  
+.. c:function:: module_unload(ctx_name, path)
+  
+  Detaches a module loaded from a .so file. If module was loaded in a different context, MOD_NO_MOD will be returned.
+  
+  :param path: shared object path.
+  :type path: :c:type:`const char *`

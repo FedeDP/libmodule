@@ -9,6 +9,7 @@ void test_module_register_already_registered(void **state);
 void test_module_register_same_name(void **state);
 void test_module_deregister_NULL_self(void **state);
 void test_module_deregister(void **state);
+void test_module_false_init(void **state);
 void test_module_pause_NULL_self(void **state);
 void test_module_pause(void **state);
 void test_module_resume_NULL_self(void **state);

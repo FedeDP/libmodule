@@ -8,8 +8,8 @@
  * Note how check() function is not required now 
  * as we're explicitly calling module_register 
  */
-static void A_init(void);
-static void B_init(void);
+static bool A_init(void);
+static bool B_init(void);
 static bool evaluate(void);
 static void destroy(void);
 static void A_recv(const msg_t *msg, const void *userdata);
@@ -42,13 +42,15 @@ void destroy_modules(void) {
     module_deregister(&selfB);
 }
 
-static void A_init(void) {
+static bool A_init(void) {
     module_register_src(selfA, STDIN_FILENO, 0, NULL);
+    return true;
 }
 
-static void B_init(void) {
+static bool B_init(void) {
     /* Doggo should subscribe to "leaving" topic */
     module_register_src(selfB, "leaving", 0, NULL);
+    return true;
 }
 
 static bool evaluate(void) {

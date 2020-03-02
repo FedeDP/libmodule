@@ -1,6 +1,5 @@
 #include "module.h"
 #include "poll_priv.h"
-#include <dlfcn.h> // dlopen
 
 /** Generic module interface **/
 
@@ -14,6 +13,7 @@ static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags,
 static int is_fd_same(void *my_data, void *list_data);
 static mod_ret _deregister_fd(mod_t *mod, const int fd);
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
+static void reset_module(mod_t *mod);
 
 static mod_ret init_ctx(const char *ctx_name, ctx_t **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
@@ -100,7 +100,6 @@ static void fd_priv_dtor(void *data) {
     if (t->flags & FD_AUTOCLOSE) {
         close(t->fd_src.fd);
     }
-    poll_free_data(&c->ppriv, &t->fd_src.ev);
     memhook._free(t);
 }
 
@@ -114,21 +113,18 @@ static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags,
     
     fd_src_t *fd_src = &src->fd_src;
     ctx_t *c = mod->self.ctx;
-    if (poll_new_data(&c->ppriv, &fd_src->ev) == MOD_OK) {
-        fd_src->fd = fd;
-        fd_src->self = &mod->self;
-        src->flags = flags;
-        src->userptr = userptr;
-        list_insert(mod->fds, src, NULL);
-        /* If a fd is registered at runtime, start polling on it */
-        int ret = 0;
-        if (_module_is(mod, RUNNING)) {
-            ret = poll_set_new_evt(&c->ppriv, src, ADD);
-        }
-        return !ret ? MOD_OK : MOD_ERR;
+    fd_src->fd = fd;
+    fd_src->self = &mod->self;
+    fd_src->ev = NULL;
+    src->flags = flags;
+    src->userptr = userptr;
+    list_insert(mod->fds, src, NULL);
+    /* If a fd is registered at runtime, start polling on it */
+    int ret = 0;
+    if (_module_is(mod, RUNNING)) {
+        ret = poll_set_new_evt(&c->ppriv, src, ADD);
     }
-    memhook._free(src);
-    return MOD_ERR;
+    return !ret ? MOD_OK : MOD_ERR;
 }
 
 static int is_fd_same(void *my_data, void *list_data) {
@@ -169,6 +165,16 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
     return ret;
 }
 
+static void reset_module(mod_t *mod) {
+    if (mod->pubsub_fd[1] != -1) {
+        close(mod->pubsub_fd[1]);
+        mod->pubsub_fd[0] = -1;
+        mod->pubsub_fd[1] = -1;
+    }
+    map_clear(mod->subscriptions);
+    stack_clear(mod->recvs);
+}
+
 /** Private API **/
 
 bool _module_is(const mod_t *mod, const mod_states st) {
@@ -189,9 +195,7 @@ mod_ret start(mod_t *mod, const bool starting) {
     static const char *errors[] = { "Failed to resume module.", "Failed to start module." };
     
     GET_CTX_PRIV((&mod->self));
-    
-    const bool was_idle = _module_is(mod, IDLE);
-    
+
     /* 
      * Starting module for the first time
      * or after it was stopped.
@@ -208,17 +212,19 @@ mod_ret start(mod_t *mod, const bool starting) {
     MOD_ASSERT(!ret, errors[starting], MOD_ERR);
     
     mod->state = RUNNING;
+    c->running_mods++;
     
-    /* If this is first time module is started, call its init() callback */
-    if (was_idle) {
-        mod->hook.init();
+    /* Call module init() callback only if module is being (re)started */
+    if (!starting || mod->hook.init()) {
+        MODULE_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
+        tell_system_pubsub_msg(NULL, c, MODULE_STARTED, &mod->self, NULL);
+        
+        return MOD_OK;
     }
     
-    MODULE_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
-    tell_system_pubsub_msg(NULL, c, MODULE_STARTED, &mod->self, NULL);
-    
-    c->running_mods++;
-    return MOD_OK;
+    /* If init() returns false, we need to stop this module right away */
+    stop(mod, true);
+    return MOD_ERR;
 }
 
 mod_ret stop(mod_t *mod, const bool stopping) {
@@ -231,15 +237,15 @@ mod_ret stop(mod_t *mod, const bool stopping) {
     int ret = manage_fds(mod, c, RM, stopping);
     MOD_ASSERT(!ret, errors[stopping], MOD_ERR);
     
-    mod->state = stopping ? STOPPED : PAUSED;
+    mod->state = stopping ? IDLE : PAUSED;
+    
     /*
      * When module gets stopped, its write-end pubsub fd is closed too 
      * Read-end is already closed by manage_fds().
+     * Moreover, its subscriptions are cleared.
      */
-    if (stopping && mod->pubsub_fd[1] != -1) {
-        close(mod->pubsub_fd[1]);
-        mod->pubsub_fd[0] = -1;
-        mod->pubsub_fd[1] = -1;
+    if (stopping) {
+        reset_module(mod);
     }
     
     MODULE_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
@@ -256,7 +262,7 @@ mod_ret stop(mod_t *mod, const bool stopping) {
     }
     tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, self, NULL);
     
-    /* Increment only if we were previously RUNNING */
+    /* Decrement only if we were previously RUNNING */
     if (was_running) {
         c->running_mods--;
     }
@@ -351,6 +357,8 @@ mod_ret module_deregister(self_t **self) {
     stack_free(mod->recvs);
     list_free(mod->fds);
     
+    memhook._free((void *)mod->local_path);
+    
     /* Destroy external handler */
     memhook._free(*self);
     *self = NULL;
@@ -363,48 +371,10 @@ mod_ret module_deregister(self_t **self) {
         mod->hook.destroy();
     }
 
-
     /* Finally free module */
     memhook._free(mod);
             
     return MOD_OK;
-}
-
-mod_ret module_load(const char *module_path, const char *ctx_name) {
-    MOD_PARAM_ASSERT(module_path);
-    FIND_CTX(ctx_name);
-    
-    const int module_size = map_length(c->modules);
-
-    void *handle = dlopen(module_path, RTLD_NOW);
-    if (!handle) {
-        MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
-        return MOD_ERR;
-    }
-    
-    /* 
-     * Check that requested module has been created in requested ctx, 
-     * by looking at requested ctx number of modules
-     */
-    if (module_size == map_length(c->modules)) { 
-        dlclose(handle);
-        return MOD_ERR;
-    }
-    return MOD_OK;
-}
-
-mod_ret module_unload(const char *module_path) {
-    MOD_PARAM_ASSERT(module_path);    
-    
-    void *handle = dlopen(module_path, RTLD_NOW | RTLD_NOLOAD);
-    if (handle) {
-        /* RTLD_NOLOAD does still increment refcounter... */
-        dlclose(handle);
-        dlclose(handle);
-        return MOD_OK;
-    }
-    MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
-    return MOD_ERR;
 }
 
 mod_ret module_become(const self_t *self, const recv_cb new_recv) {
@@ -515,7 +485,7 @@ mod_ret module_dump(const self_t *self) {
 /** Module state setters **/
 
 mod_ret module_start(const self_t *self) {
-    GET_MOD_IN_STATE(self, IDLE | STOPPED);
+    GET_MOD_IN_STATE(self, IDLE);
     
     return start(mod, true);
 }

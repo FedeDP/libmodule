@@ -1,4 +1,5 @@
 #include <module/module_easy.h> 
+#include <module/modules_easy.h> 
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -13,9 +14,10 @@ static void module_pre_start(void) {
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 
-static void init(void) {
+static bool init(void) {
     /* Doggo should subscribe to "leaving" topic, as regex */
     m_register_src("leav[i+]ng", 0, NULL);
+    return true;
 }
 
 static bool check(void) {

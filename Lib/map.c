@@ -37,6 +37,7 @@ struct _map {
     bool dupkeys;
     map_elem *table;
     mod_map_dtor dtor;
+    map_elem *last_insert; // used internally by libmodule. Not available in external API
 };
 
 struct _map_itr {
@@ -187,6 +188,7 @@ static mod_map_ret hashmap_put(mod_map_t *m, const char *key, void *value) {
     }
     /* Update value in any case */
     entry->data = value;
+    m->last_insert = entry;
     return MAP_OK;
 }
 
@@ -230,6 +232,13 @@ static void clear_elem(mod_map_t *m, map_elem *removed_entry) {
     }
     /* Clear the last removed entry */
     memset(removed_entry, 0, sizeof(map_elem));
+}
+
+/** Private API **/
+
+void *map_get_last(const mod_map_t *m) {
+    MOD_RET_ASSERT(map_length(m) > 0, NULL);
+    return m->last_insert->data;
 }
 
 /** Public API **/

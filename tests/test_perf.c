@@ -8,7 +8,7 @@
 
 #define MAX_LEN 5000
 
-static void init(void);
+static bool init(void);
 static void my_recv(const msg_t *msg, const void *userdata);
 
 static self_t *self = NULL;
@@ -42,8 +42,8 @@ void test_poll_perf(void **state) {
     module_deregister(&self);
 }
 
-static void init(void) {
-    
+static bool init(void) {
+    return true;
 }
 
 static void my_recv(const msg_t *msg, const void *userdata) {    

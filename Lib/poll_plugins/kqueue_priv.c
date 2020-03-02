@@ -19,20 +19,20 @@ mod_ret poll_create(poll_priv_t *priv) {
     return MOD_OK;
 }
 
-mod_ret poll_new_data(poll_priv_t *priv, void **_ev) {
-    *_ev = memhook._calloc(1, sizeof(struct kevent));
-    MOD_ALLOC_ASSERT(*_ev);
-    return MOD_OK;
-}
-
-mod_ret poll_free_data(poll_priv_t *priv, void **_ev) {
-    memhook._free(*_ev);
-    *_ev = NULL;
-    return MOD_OK;
-}
-
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
     GET_PRIV_DATA();
+    
+    /* Eventually alloc kqueue data if needed */
+    if (!tmp->fd_src.ev) {
+        if (flag == ADD) {
+            tmp->fd_src.ev = memhook._calloc(1, sizeof(struct kevent));
+            MOD_ALLOC_ASSERT(tmp->fd_src.ev);
+        } else {
+            /* We need to RM an unregistered ev. Fine. */
+            return MOD_OK;
+        }
+    }
+    
     int f = flag == ADD ? EV_ADD : EV_DELETE;
     struct kevent *_ev = (struct kevent *)tmp->fd_src.ev;
     EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, (void *)tmp);
@@ -41,6 +41,13 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     if (tmp->fd_src.fd == STDIN_FILENO) {
         ret = 0;
     }
+    
+    /* Eventually free kqueue data if needed */
+    if (flag == RM) {
+        memhook._free(tmp->fd_src.ev);
+        tmp->fd_src.ev = NULL;
+    }
+    
     return ret;
 }
 
@@ -75,7 +82,6 @@ mod_ret poll_clear(poll_priv_t *priv) {
     GET_PRIV_DATA();
     memhook._free(kp->pevents);
     kp->pevents = NULL;
-    priv->max_events = 0;
     return MOD_OK;
 }
 

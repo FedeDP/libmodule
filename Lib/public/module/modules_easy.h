@@ -14,3 +14,6 @@
 #define modules_dispatch(ret)           modules_ctx_dispatch(MODULES_DEFAULT_CTX, ret)
 
 #define modules_dump()                  modules_ctx_dump(MODULES_DEFAULT_CTX)
+
+#define m_load(path)                    modules_load(MODULES_DEFAULT_CTX, path)
+#define m_unload(path)                  modules_unload(MODULES_DEFAULT_CTX, path)

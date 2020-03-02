@@ -70,7 +70,7 @@ typedef struct {
 } msg_t;
 
 /* Callbacks typedefs */
-typedef void (*init_cb)(void);
+typedef bool (*init_cb)(void);
 typedef bool (*evaluate_cb)(void);
 typedef void (*recv_cb)(const msg_t *const msg, const void *userdata);
 typedef void (*destroy_cb)(void);

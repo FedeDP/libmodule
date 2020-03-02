@@ -18,7 +18,7 @@ typedef mod_list_ret (*mod_list_cb)(void *, void *);
 /* Fn for list_set_dtor */
 typedef void (*mod_list_dtor)(void *);
 
-/* Callback for list comapre; first parameter is userdata, second is list data */
+/* Callback for list compare; first parameter is userdata, second is list data */
 typedef int (*mod_list_comp)(void *, void *);
 
 /* Incomplete struct declaration for list */

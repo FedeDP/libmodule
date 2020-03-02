@@ -22,22 +22,24 @@ Types
     typedef struct _self self_t;
 
     /* Modules states */
-    enum module_states { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 };
+    typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4 } mod_states;
 
     /* PubSub message types */
-    enum msg_type { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL };
+    typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
+
+    /* Module event sources' flags */
+    typedef enum { FD_AUTOCLOSE = 0x1, PS_DUPTOPIC = 0x2, PS_AUTOFREE = 0x04 } mod_src_flags;
 
     typedef struct {
         const char *topic;
         const void *message;
         ssize_t size;
         const self_t *sender;
-        enum msg_type type;
+        ps_msg_type type;
     } ps_msg_t;
 
     typedef struct {
         int fd;
-        const void *userptr;
     } fd_msg_t;
 
     typedef struct {
@@ -49,13 +51,13 @@ Types
     } msg_t;
 
     /* Callbacks typedefs */
-    typedef void (*init_cb)(void);
+    typedef bool (*init_cb)(void);
     typedef bool (*evaluate_cb)(void);
     typedef void (*recv_cb)(const msg_t *const msg, const void *userdata);
     typedef void (*destroy_cb)(void);
 
     /* Logger callback */
-    typedef void (*log_cb)(const self_t *self, const char *fmt, va_list args, const void *userdata);
+    typedef void (*log_cb)(const self_t *self, const char *fmt, va_list args);
 
     /* Memory management user-passed functions */
     typedef void *(*malloc_fn)(size_t size);
@@ -79,15 +81,17 @@ Types
         free_fn _free;
     } memhook_t;
 
-.. _module_ret_code:  
+.. _mod_ret:  
 
 Return Codes
 ------------
 
 .. code::
 
+    /* Module return codes */
     typedef enum {
-        MOD_WRONG_PARAM = -8,
+        MOD_REF_ERR = -9,
+        MOD_WRONG_PARAM,
         MOD_NO_MEM,
         MOD_WRONG_STATE,
         MOD_NO_PARENT,
@@ -96,4 +100,4 @@ Return Codes
         MOD_NO_SELF,
         MOD_ERR,
         MOD_OK
-    } module_ret_code;
+    } mod_ret;

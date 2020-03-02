@@ -8,24 +8,22 @@
  * Naming: 
  * SQE -> Submission Queue Event
  * CQE -> Completion Queue Event
- * 
- * Note that we need to pre-allocate MODULES_MAX_EVENTS in poll_create() (calling poll_init())
- * else any fd registered before poll_init() (and thus before ring is actually created)
- * would failt to be registered.
  */
 
 /**
  * TODO:
- * 
  * * Avoid re-arming each time fd in poll_recv()
- * * Avoid pre-allocating MODULES_MAX_EVENTS uring in poll_create()
  * * Avoid io_uring_submit() in poll_wait() ?
  */
 
+static int is_src_same(void *userdata, void *data);
+static void flush_reqs(poll_priv_t *priv);
+
 typedef struct {
     struct io_uring ring;
-    struct io_uring_cqe *cqe;
+    struct io_uring_cqe **cqe;
     bool inited;
+    mod_list_t *req_list;           // keep a list of all requests while ring is not yet inited
 } uring_priv_t;
 
 #define GET_PRIV_DATA()     uring_priv_t *up = (uring_priv_t *)priv->data
@@ -33,42 +31,72 @@ typedef struct {
 mod_ret poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(uring_priv_t));
     MOD_ALLOC_ASSERT(priv->data);
-    priv->max_events = MODULES_MAX_EVENTS;
-    return poll_init(priv);
-}
-
-int poll_new_data(poll_priv_t *priv, void **_ev) {
     GET_PRIV_DATA();
-    *_ev = io_uring_get_sqe(&up->ring);
-    MOD_ALLOC_ASSERT(*_ev);
+    up->req_list = list_new(NULL);
     return MOD_OK;
 }
 
-mod_ret poll_free_data(poll_priv_t *priv, void **_ev) {
-    *_ev = NULL;
-    return MOD_OK;
+static int is_src_same(void *userdata, void *data) {
+    return !(userdata == data);
 }
 
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
-    int ret = 0;
     GET_PRIV_DATA();
-    struct io_uring_sqe *sqe = (struct io_uring_sqe *)tmp->fd_src.ev;
-    if (flag == ADD) {
-        io_uring_prep_poll_add(sqe, tmp->fd_src.fd, POLLIN);
-        io_uring_sqe_set_data(sqe, tmp);
-    } else if (up->cqe) {
-        io_uring_prep_poll_remove(sqe, tmp);
-        ret = -(up->cqe->res != 0); // -1 on error
+    
+    if (up->inited) {
+        /* Eventually request uring sqe if needed */
+        if (!tmp->fd_src.ev) {
+            if (flag == ADD) {
+                tmp->fd_src.ev = io_uring_get_sqe(&up->ring);
+                MOD_ALLOC_ASSERT(tmp->fd_src.ev);
+            } else {
+                /* We need to RM an unregistered ev. Fine. */
+                return MOD_OK;
+            }
+        }
+        
+        struct io_uring_sqe *sqe = (struct io_uring_sqe *)tmp->fd_src.ev;
+        if (flag == ADD) {
+            io_uring_prep_poll_add(sqe, tmp->fd_src.fd, POLLIN);
+            io_uring_sqe_set_data(sqe, tmp);
+        } else {
+            io_uring_prep_poll_remove(sqe, tmp);
+        }
+        
+        /* Eventually release uring sqe if needed */
+        if (flag == RM) {
+            tmp->fd_src.ev = NULL;
+        }
+    } else {
+        /* 
+         * Keep a list of all requests while ring is not inited; 
+         * we will register any request as soon as ring gets inited.
+         */
+        if (flag == ADD) {
+            list_insert(up->req_list, tmp, NULL);
+        } else {
+            list_remove(up->req_list, tmp, is_src_same);
+        }
     }
-    return ret;
+    return 0;
+}
+
+static void flush_reqs(poll_priv_t *priv) {
+    GET_PRIV_DATA();
+    for (mod_list_itr_t *itr = list_itr_new(up->req_list); itr; itr = list_itr_next(itr)) {
+        ev_src_t *tmp = list_itr_get_data(itr);
+        poll_set_new_evt(priv, tmp, ADD);
+    }
+    list_clear(up->req_list);
 }
 
 mod_ret poll_init(poll_priv_t *priv) {
     GET_PRIV_DATA();
-    if (up->inited || 
-        io_uring_queue_init(priv->max_events, &up->ring, IORING_SETUP_IOPOLL) == 0) {
-        
+    if (io_uring_queue_init(priv->max_events, &up->ring, IORING_SETUP_IOPOLL) == 0) {
+        up->cqe = memhook._calloc(priv->max_events, sizeof(struct io_uring_cqe *));
+        MOD_ALLOC_ASSERT(up->cqe);
         up->inited = true;
+        flush_reqs(priv);
         return MOD_OK;
     }
     return MOD_ERR;
@@ -87,22 +115,23 @@ int poll_wait(poll_priv_t *priv, const int timeout) {
     io_uring_submit(&up->ring);
     struct __kernel_timespec t = {0};
     t.tv_sec = timeout;
-    int ret = io_uring_wait_cqe_timeout(&up->ring, &up->cqe, timeout >= 0 ? &t : NULL);
+    int ret = io_uring_wait_cqe_timeout(&up->ring, up->cqe, timeout >= 0 ? &t : NULL);
     if (ret == 0) {
-        return 1; // single event is returned
+        int cqe_count = io_uring_peek_batch_cqe(&up->ring, up->cqe, priv->max_events);
+        return cqe_count;
     }
     return ret; // errno error code
 }
 
 ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     GET_PRIV_DATA();
-    ev_src_t *udata = (ev_src_t *)io_uring_cqe_get_data(up->cqe);
-    io_uring_cqe_seen(&up->ring, up->cqe);
+    ev_src_t *udata = (ev_src_t *)io_uring_cqe_get_data(up->cqe[idx]);
+    io_uring_cqe_seen(&up->ring, up->cqe[idx]);
     
     /* udata != NULL only if fd is still registered */
     if (udata) {
         /* We need to re-arm it: IORING_OP_POLL_ADD interface works in oneshot mode */
-        poll_new_data(priv, &udata->fd_src.ev);
+        udata->fd_src.ev = NULL;
         poll_set_new_evt(priv, udata, ADD);
     }
     return udata;
@@ -116,6 +145,7 @@ int poll_get_fd(poll_priv_t *priv) {
 mod_ret poll_clear(poll_priv_t *priv) {
     GET_PRIV_DATA();
     io_uring_queue_exit(&up->ring);
+    memhook._free(up->cqe);
     up->cqe = NULL;
     up->inited = false;
     return MOD_OK;
@@ -126,6 +156,7 @@ mod_ret poll_destroy(poll_priv_t *priv) {
     if (up->inited) { 
         poll_clear(priv);
     }
+    list_free(up->req_list);
     memhook._free(up);
     return MOD_OK;
 }

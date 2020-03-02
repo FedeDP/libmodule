@@ -128,6 +128,9 @@ int main(void) {
         /* Actually deregister our module */
         cmocka_unit_test(test_module_deregister),
         
+        /* Test that if init returns false, module is stopped */
+        cmocka_unit_test(test_module_false_init),
+        
         /* We have no more our module and its ctx */
         cmocka_unit_test(test_modules_ctx_loop_no_maxevents),
         

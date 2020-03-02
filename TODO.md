@@ -6,11 +6,13 @@
 - [x] Fix tests with uring
 - [x] Add a poll plugin perf test: eg: for (int i = 0; i < 1000; i++) { m_tell(self(), &x); } -> check recv_callback() time!
 - [x] Let user build kqueue userspace support on linux too
-- [ ] linux CI build with uring/kqueue too!
+- [x] linux CI build with uring/kqueue too!
 - [x] Add deb/rpm packages deps (liburing/libkqueue)
-- [ ] Drop poll_new_data/poll_free_data and just alloc/free in ADD/RM poll_set_new_evt() ?
-- [ ] Avoid initing uring during poll_create() -> what if module is manually started? ring won't yet be created but we would try to register new fds causing a crash...
-- [ ] Fix failing tests!
+- [x] Drop poll_new_data/poll_free_data and just alloc/free in ADD/RM poll_set_new_evt() ?
+- [x] Avoid initing uring during poll_create() -> what if module is manually started? ring won't yet be created but we would try to register new fds causing a crash...
+- [x] Fix failing tests
+- [x] Fix valgrind-check tests? "WARNING: unhandled amd64-linux syscall: 425" not much we can do...
+- [x] Batch-recv cqes from io_uring_wait_cqe_timeout
 
 ### Generic
 
@@ -28,17 +30,20 @@ Ie: if first parameter is an int then call module_register_fd, else if const cha
 Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD_AUTOCLOSE and others?
 - [ ] Add module_register_timer()? module_register_signal()? (and add them to m_register_src(struct itimerspec *it/sigset_t *mask))
 
-
 - [x] Drop C++ support (useless...)
 
 - [x] module_message_ref()/ module_message_unref() 
 - [ ] remove autofree parameter to publish/broadcast and do not unref anything unless module_message_unref is called! (then, if message reaches 0 ref count, free it) (?)
 -> what happens if nobody receives a message? Should it be destroyed?
--> what happends when flushing messages upon module destroy?
+-> what happens when flushing messages upon module destroy?
 
 - [x] Actually check userhook: at least init() and receive() must be defined
 - [x] Let users avoid passing other callbacks
-- [ ] init() to return a bool -> if false -> init failed; automatically stop module
+- [x] init() to return a bool -> if false -> init failed; automatically stop module
+- [x] Test new init() behaviour
+- [x] Call init() callback every time module is restarted (both from idle and stopped states)
+- [x] Destroy any module subscriptions too while stopping a module
+- [x] Destroy any stacked recv callback while stopping a module
 
 - [x] module_get_name/ctx to return const char *
 
@@ -50,11 +55,13 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Add linked list doc
 
 - [x] modules_dump() (same as module_dump but for modules context!)
-- [ ] DOCument module_dump and modules_dump odd letters!!
+- [x] DOCument module_dump and modules_dump odd letters!!
 
 - [x] In epoll interface, check that events & EPOLLERR is false
 
-- [ ] Fix module_load/unload() ... -> Rename to modules_load/unload()?
+- [x] Fix module_load/unload() ... -> Rename to modules_load/unload()?
+- [x] modules_unload() should avoid unloading modules in other context
+- [x] Fix doc
 
 - [x] Rename fd_priv_t/ps_priv_t/ps_sub_t? More meaningful names!!
 
@@ -69,6 +76,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] module_is should return false if mod is NULL
 
 - [ ] Add a FD_AUTOFREE flag to mimic PS_AUTOFREE flag?
+
+- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are ref'd and pushed on queue
 
 - [ ] Update examples
 - [ ] Update tests

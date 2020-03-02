@@ -12,7 +12,7 @@ static const char *myCtx = "SecondCtx";
 
 MODULE_CTX("B", myCtx);
 
-static void init(void) {
+static bool init(void) {
 #ifdef __linux__
     sigset_t mask;
     sigemptyset(&mask);
@@ -22,6 +22,7 @@ static void init(void) {
     int fd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
     m_register_src(fd, FD_AUTOCLOSE, NULL);
 #endif
+    return true;
 }
 
 static bool check(void) {

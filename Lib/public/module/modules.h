@@ -12,3 +12,7 @@ _public_ mod_ret modules_ctx_get_fd(const char *ctx_name, int *fd);
 _public_ mod_ret modules_ctx_dispatch(const char *ctx_name, int *ret);
 
 _public_ mod_ret modules_ctx_dump(const char *ctx_name);
+
+/* External shared object module runtime loading */
+_public_ mod_ret modules_load(const char *ctx_name, const char *module_path);
+_public_ mod_ret modules_unload(const char *ctx_name, const char *module_path);
