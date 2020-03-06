@@ -149,16 +149,30 @@ mod_list_ret list_insert(mod_list_t *l, void *data, const mod_list_comp comp) {
 mod_list_ret list_remove(mod_list_t *l, void *data, const mod_list_comp comp) {
     LIST_PARAM_ASSERT(l);
     LIST_PARAM_ASSERT(data);
-    LIST_PARAM_ASSERT(comp);
     
     list_node **tmp = &l->data;
     for (int i = 0; i < l->len; i++) {
-        if (comp(data, (*tmp)->userptr) == 0) {
+        if ((comp && comp(data, (*tmp)->userptr) == 0) || (*tmp)->userptr == data) {
+            
             break;
         }
         tmp = &(*tmp)->next;
     }
     return remove_node(l, tmp);
+}
+
+void *list_find(mod_list_t *l, void *data, const mod_list_comp comp) {
+    MOD_RET_ASSERT(l, NULL);
+    MOD_RET_ASSERT(data, NULL);
+    
+    list_node **tmp = &l->data;
+    for (int i = 0; i < l->len; i++) {
+        if ((comp && comp(data, (*tmp)->userptr) == 0) || (*tmp)->userptr == data) {
+            return (*tmp)->userptr;
+        }
+        tmp = &(*tmp)->next;
+    }
+    return NULL;
 }
 
 mod_list_ret list_clear(mod_list_t *l) {

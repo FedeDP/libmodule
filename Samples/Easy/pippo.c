@@ -21,18 +21,8 @@ static void module_pre_start(void) {
 }
 
 static bool init(void) {
-#ifdef __linux__
-    /* Add signal fd */
-    sigset_t mask;
-    
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGINT);
-    sigaddset(&mask, SIGTERM);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
-    
-    int fd = signalfd(-1, &mask, 0);
-    //m_register_src(fd, FD_AUTOCLOSE, &myData);
-#endif
+    mod_sgn_t sig = { SIGINT | SIGTERM };
+    m_register_src(&sig, SRC_AUTOCLOSE, &myData);
     
     /* Register stdin fd */
     m_register_src(STDIN_FILENO, 0, NULL);
@@ -55,7 +45,7 @@ static void destroy(void) {
 }
 
 static void receive(const msg_t *msg, const void *userdata) {
-    if (!msg->is_pubsub) {
+    if (msg->type != TYPE_PS) {
         char c;
         
         /* Forcefully quit if we received a signal */
@@ -99,12 +89,13 @@ static void receive(const msg_t *msg, const void *userdata) {
  * Use m_become(ready) to start using this second poll callback.
  */
 static void receive_ready(const msg_t *msg, const void *userdata) {
-    if (!msg->is_pubsub) {
+    if (msg->type != TYPE_PS) {
         char c;
         
         /* Forcefully quit if we received a signal */
-        if (msg->fd_msg->fd != STDIN_FILENO) {
+        if (msg->type == TYPE_SGN) {
             c = 'q';
+            m_log("Received %d. Quit.\n", msg->sgn_msg->signo);
         } else {
             read(msg->fd_msg->fd, &c, sizeof(char));
         }

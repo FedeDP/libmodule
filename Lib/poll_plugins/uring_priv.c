@@ -1,6 +1,8 @@
 #include "poll_priv.h"
 #include <liburing.h>
 #include <sys/poll.h>
+#include <sys/signalfd.h>
+#include <sys/timerfd.h>
 
 /*
  * Doc: https://kernel.dk/io_uring.pdf
@@ -17,6 +19,7 @@
  */
 
 static int is_src_same(void *userdata, void *data);
+static void convert_sgn_to_fd(ev_src_t *tmp);
 static void flush_reqs(poll_priv_t *priv);
 
 typedef struct {
@@ -33,6 +36,7 @@ mod_ret poll_create(poll_priv_t *priv) {
     MOD_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
     up->req_list = list_new(NULL);
+    MOD_ALLOC_ASSERT(up->req_list);
     return MOD_OK;
 }
 
@@ -43,29 +47,70 @@ static int is_src_same(void *userdata, void *data) {
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
     GET_PRIV_DATA();
     
+    int ret = 0;
     if (up->inited) {
         /* Eventually request uring sqe if needed */
-        if (!tmp->fd_src.ev) {
+        if (!tmp->ev) { // we can safely use fd_src.ev here as "ev" is first struct field.
             if (flag == ADD) {
-                tmp->fd_src.ev = io_uring_get_sqe(&up->ring);
-                MOD_ALLOC_ASSERT(tmp->fd_src.ev);
+                tmp->ev = io_uring_get_sqe(&up->ring);
+                MOD_ALLOC_ASSERT(tmp->ev);
             } else {
                 /* We need to RM an unregistered ev. Fine. */
                 return MOD_OK;
             }
         }
-        
-        struct io_uring_sqe *sqe = (struct io_uring_sqe *)tmp->fd_src.ev;
-        if (flag == ADD) {
-            io_uring_prep_poll_add(sqe, tmp->fd_src.fd, POLLIN);
-            io_uring_sqe_set_data(sqe, tmp);
-        } else {
-            io_uring_prep_poll_remove(sqe, tmp);
+                
+        struct io_uring_sqe *sqe = (struct io_uring_sqe *)tmp->ev;
+        int fd = -1;
+        switch (tmp->type) {
+        case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
+        case TYPE_FD:
+            fd = tmp->fd_src.fd;
+            break;
+        case TYPE_TIMER: {
+            if (flag == ADD) {
+                tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK);
+                struct itimerspec timerValue = {{0}};
+                timerValue.it_value.tv_sec = tmp->tm_src.its.ms / 1000;
+                timerValue.it_value.tv_nsec = (tmp->tm_src.its.ms % 1000) * 1000 * 1000;
+
+                if (!(tmp->flags & SRC_RUNONCE)) {
+                    /* Set interval */
+                    timerValue.it_interval.tv_sec = tmp->tm_src.its.ms / 1000;
+                    timerValue.it_interval.tv_nsec = (tmp->tm_src.its.ms % 1000) * 1000 * 1000;
+                }
+                timerfd_settime(fd, 0, &timerValue, NULL);
+            } 
+            fd = tmp->tm_src.f.fd;
+            break;
         }
-        
-        /* Eventually release uring sqe if needed */
-        if (flag == RM) {
-            tmp->fd_src.ev = NULL;
+        case TYPE_SGN: {
+            if (flag == ADD) {
+                tmp->sgn_src.f.fd = signalfd(-1, (sigset_t *) &tmp->sgn_src.sgs.signo, 0);
+            }
+            fd = tmp->sgn_src.f.fd;
+            break; 
+        }
+        default:
+            break;
+        }
+
+        if (fd != -1) {
+            if (flag == ADD) {
+                io_uring_prep_poll_add(sqe, fd, POLLIN);
+                /* properly set userdata */
+                io_uring_sqe_set_data(sqe, tmp);
+            } else {
+                io_uring_prep_poll_remove(sqe, tmp);
+                /* Eventually release uring sqe if needed */
+                tmp->ev = NULL;
+                
+                if (tmp->type == TYPE_SGN || tmp->type == TYPE_TIMER) {
+                    close(fd);
+                }
+            }
+        } else {
+            ret = -1;
         }
     } else {
         /* 
@@ -78,7 +123,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             list_remove(up->req_list, tmp, is_src_same);
         }
     }
-    return 0;
+    return ret;
 }
 
 static void flush_reqs(poll_priv_t *priv) {
@@ -129,12 +174,29 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     io_uring_cqe_seen(&up->ring, up->cqe[idx]);
     
     /* udata != NULL only if fd is still registered */
-    if (udata) {
+    if (udata) {        
         /* We need to re-arm it: IORING_OP_POLL_ADD interface works in oneshot mode */
-        udata->fd_src.ev = NULL;
+        udata->ev = NULL;
         poll_set_new_evt(priv, udata, ADD);
     }
     return udata;
+}
+
+mod_ret poll_consume_sgn(poll_priv_t *priv, ev_src_t *src, sgn_msg_t *sgn_msg) {
+    struct signalfd_siginfo fdsi;
+    ssize_t s = read(src->sgn_src.f.fd, &fdsi, sizeof(struct signalfd_siginfo));
+    if (s == sizeof(struct signalfd_siginfo)) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+mod_ret poll_consume_timer(poll_priv_t *priv, ev_src_t *src, tm_msg_t *tm_msg) {
+    uint64_t t;
+    if (read(src->tm_src.f.fd, &t, sizeof(uint64_t)) == sizeof(uint64_t)) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
 }
 
 int poll_get_fd(poll_priv_t *priv) {

@@ -14,6 +14,41 @@
 - [x] Fix valgrind-check tests? "WARNING: unhandled amd64-linux syscall: 425" not much we can do...
 - [x] Batch-recv cqes from io_uring_wait_cqe_timeout
 
+### New Sources support
+
+- [x] Rename Module_subscribe and module_register_fd to module_register_src(type), _Generic.
+Ie: if first parameter is an int then call module_register_fd, else if const char*, module register subscribe.
+Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD_AUTOCLOSE and others?
+
+- [x] Add module_register_timer()? module_register_signal()? (and add them to m_register_src(struct itimerspec *it/sigset_t *mask))
+- [x] Implement register_timer/signal for epoll
+- [x] Implement register_timer/signal for uring
+- [x] Implement register_timer/signal for kqueue
+- [x] Design a correct internal API to provide these functions
+- [x] Fix build without __GNU_SOURCE
+- [x] module_register_timer should get timerid as input (ie: CLOCK_MONOTONIC etc etc)
+- [x] Fix fd_priv_dtor() function
+- [x] Fix manage_fds deregister_fd
+- [x] Fix fire_once timers in kqueue
+- [x] Fix fire_once timers in epoll
+- [x] Fix fire_once timers in uring
+- [x] Set TYPE_PS on pubsub fd! And avoid all checks (if fd == pubsub_fd[0])
+- [x] Fix module_dump
+- [x] Check TYPE_PS ...only pubsub_fd[0] should use it
+- [x] Drop is_pubsub field
+- [x] Fix tests
+- [x] Fix fd closing: timerfd/signalfd should be always closed on RM. In fd_priv_dtor we should only close FD_AUTOCLOSE fds
+- [ ] Port examples
+- [x] Add a FD_AUTOFREE flag to mimic PS_AUTOFREE flag?
+- [ ] Fix!!
+
+### New Linked list api
+
+- [x] Add linked list implementation
+- [x] Use it for fds
+- [x] Add linked list tests
+- [x] Add linked list doc
+
 ### Generic
 
 - [x] Finally avoid injecting _self into file-global variables
@@ -24,11 +59,6 @@
 
 - [x] Add new userptr parameter to module_subscribe (just like module_register_fd())
 - [x] Use this new parameter -> pass both fd_msg_t and ps_msg_t "userptr" as receive() userdata parameter (and drop it from ps_msg_t and fd_msg_t)
-
-- [x] Rename Module_subscribe and module_register_fd to module_register_src(type), _Generic.
-Ie: if first parameter is an int then call module_register_fd, else if const char*, module register subscribe.
-Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD_AUTOCLOSE and others?
-- [ ] Add module_register_timer()? module_register_signal()? (and add them to m_register_src(struct itimerspec *it/sigset_t *mask))
 
 - [x] Drop C++ support (useless...)
 
@@ -48,11 +78,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] module_get_name/ctx to return const char *
 
 - [x] enum module_states and enum msg_type to full types!
-
-- [x] Add linked list implementation
-- [x] Use it for fds
-- [x] Add linked list tests
-- [x] Add linked list doc
 
 - [x] modules_dump() (same as module_dump but for modules context!)
 - [x] DOCument module_dump and modules_dump odd letters!!
@@ -74,8 +99,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename stack_ret_code, map_ret_code, etc etc to mod_x_ret
 
 - [x] module_is should return false if mod is NULL
-
-- [ ] Add a FD_AUTOFREE flag to mimic PS_AUTOFREE flag?
 
 - [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are ref'd and pushed on queue
 

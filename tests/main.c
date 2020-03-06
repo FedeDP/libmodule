@@ -170,6 +170,7 @@ int main(void) {
         cmocka_unit_test(test_list_insert),
         cmocka_unit_test(test_list_length),
         cmocka_unit_test(test_list_iterator),
+        cmocka_unit_test(test_list_find),
         cmocka_unit_test(test_list_remove),
         cmocka_unit_test(test_list_clear),
         cmocka_unit_test(test_list_free),

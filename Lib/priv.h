@@ -68,7 +68,7 @@
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
     MOD_ASSERT(_module_is(mod, state), "Wrong module state.", MOD_WRONG_STATE);
-
+    
 typedef struct _module mod_t;
 typedef struct _context ctx_t;
 
@@ -82,9 +82,19 @@ struct _self {
 /* List that holds fds to self_t mapping for epoll/kqueue, ie: socket source data */
 typedef struct {
     int fd;                                 // file descriptor polled by main loop
-    void *ev;                               // poll plugin defined data structure (used by kqueue and epoll)
-    const self_t *self;                     // ptr needed to map a fd to a self_t in epoll
 } fd_src_t;
+
+/* List that holds fds to self_t mapping for epoll/kqueue, ie: socket source data */
+typedef struct {
+    mod_timer_t its;                    
+    fd_src_t f;
+} timer_src_t;
+
+/* List that holds fds to self_t mapping for epoll/kqueue, ie: socket source data */
+typedef struct {
+    mod_sgn_t sgs;                         
+    fd_src_t f;                                 
+} sgn_src_t;
 
 /* Struct that holds pubsub subscriptions source data */
 typedef struct {
@@ -97,7 +107,12 @@ typedef struct {
     union {
         ps_src_t ps_src;
         fd_src_t fd_src;
+        timer_src_t tm_src;
+        sgn_src_t sgn_src;
     };
+    mod_src_type type;
+    void *ev;                               // poll plugin defined data structure (used by kqueue and epoll)
+    const self_t *self;                     // ptr needed to map a fd to a self_t in epoll
     mod_src_flags flags;
     const void *userptr;
 } ev_src_t;
@@ -123,7 +138,7 @@ struct _module {
     mod_states state;                       // module's state
     const char *name;                       // module's name
     const char *local_path;                 // For runtime loaded modules: path of module
-    mod_list_t *fds;                        // module's fds to be polled (list of ev_src_t)
+    mod_list_t *srcs;                        // module's fds to be polled (list of ev_src_t)
     mod_map_t *subscriptions;               // module's subscriptions (map of ev_src_t)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     self_t self;                            // pointer to self (and thus context)
@@ -157,7 +172,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr);
 char *mem_strdup(const char *s);
 
 /* Defined in map.c */
-void *map_get_last(const mod_map_t *m);
+void *map_peek(const mod_map_t *m);
 
 extern mod_map_t *ctx;
 extern memhook_t memhook;

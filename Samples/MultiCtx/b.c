@@ -20,7 +20,7 @@ static bool init(void) {
     sigaddset(&mask, SIGTERM);
     
     int fd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
-    m_register_src(fd, FD_AUTOCLOSE, NULL);
+    m_register_src(fd, SRC_AUTOCLOSE, NULL);
 #endif
     return true;
 }
@@ -39,7 +39,7 @@ static void destroy(void) {
 
 static void receive(const msg_t *msg, const void *userdata) {
 #ifdef __linux__
-    if (!msg->is_pubsub) {
+    if (msg->type != TYPE_PS) {
         struct signalfd_siginfo fdsi;
         ssize_t s = read(msg->fd_msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
         if (s != sizeof(struct signalfd_siginfo)) {

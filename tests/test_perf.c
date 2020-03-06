@@ -47,7 +47,7 @@ static bool init(void) {
 }
 
 static void my_recv(const msg_t *msg, const void *userdata) {    
-    if (msg->is_pubsub && 
+    if (msg->type == TYPE_PS && 
         msg->ps_msg->type == USER && 
         ++ctr == MAX_LEN) {
            

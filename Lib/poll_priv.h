@@ -16,3 +16,6 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx);
 int poll_get_fd(poll_priv_t *priv);
 mod_ret poll_clear(poll_priv_t *priv);
 mod_ret poll_destroy(poll_priv_t *priv);
+
+mod_ret poll_consume_sgn(poll_priv_t *priv, ev_src_t *src, sgn_msg_t *msg);
+mod_ret poll_consume_timer(poll_priv_t *priv, ev_src_t *src, tm_msg_t *msg);

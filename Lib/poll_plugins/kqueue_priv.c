@@ -23,10 +23,10 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     GET_PRIV_DATA();
     
     /* Eventually alloc kqueue data if needed */
-    if (!tmp->fd_src.ev) {
+    if (!tmp->ev) {
         if (flag == ADD) {
-            tmp->fd_src.ev = memhook._calloc(1, sizeof(struct kevent));
-            MOD_ALLOC_ASSERT(tmp->fd_src.ev);
+            tmp->ev = memhook._calloc(1, sizeof(struct kevent));
+            MOD_ALLOC_ASSERT(tmp->ev);
         } else {
             /* We need to RM an unregistered ev. Fine. */
             return MOD_OK;
@@ -34,8 +34,28 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     }
     
     int f = flag == ADD ? EV_ADD : EV_DELETE;
-    struct kevent *_ev = (struct kevent *)tmp->fd_src.ev;
-    EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, (void *)tmp);
+    if (tmp->flags & SRC_RUNONCE) {
+        f |= EV_ONESHOT;
+    }
+    struct kevent *_ev = (struct kevent *)tmp->ev;
+    switch (tmp->type) {
+    case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
+    case TYPE_FD:
+        EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, tmp);
+        if (flag == RM) {
+            close(tmp->fd_src.fd);
+        }
+        break;
+    case TYPE_TIMER:
+        EV_SET(_ev, tmp->tm_src.its.id, EVFILT_TIMER, f, 0, tmp->tm_src.its.ms, tmp);
+        break;
+    case TYPE_SGN:
+        EV_SET(_ev, tmp->sgn_src.sgs.signo, EVFILT_SIGNAL, f, 0, 0, tmp);
+        break;
+    default: 
+        break;
+    }
+
     int ret = kevent(kp->fd, _ev, 1, NULL, 0, NULL);
     /* Workaround for STDIN_FILENO: it is actually pollable */
     if (tmp->fd_src.fd == STDIN_FILENO) {
@@ -44,8 +64,8 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     
     /* Eventually free kqueue data if needed */
     if (flag == RM) {
-        memhook._free(tmp->fd_src.ev);
-        tmp->fd_src.ev = NULL;
+        memhook._free(tmp->ev);
+        tmp->ev = NULL;
     }
     
     return ret;
@@ -71,6 +91,14 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
         return NULL;
     }
     return (ev_src_t *)kp->pevents[idx].udata;
+}
+
+mod_ret poll_consume_sgn(poll_priv_t *priv, ev_src_t *src, sgn_msg_t *sgn_msg) {
+    return MOD_OK;
+}
+
+mod_ret poll_consume_timer(poll_priv_t *priv, ev_src_t *src, tm_msg_t *tm_msg) {
+    return MOD_OK;
 }
 
 int poll_get_fd(poll_priv_t *priv) {

@@ -26,7 +26,7 @@ static bool init(void) {
     timerValue.it_value.tv_sec = 1;
     timerValue.it_interval.tv_sec = 1;
     timerfd_settime(fd, 0, &timerValue, NULL);
-    m_register_src(fd, FD_AUTOCLOSE, NULL);
+    m_register_src(fd, SRC_AUTOCLOSE, NULL);
 #endif
     return true;
 }
@@ -44,7 +44,7 @@ static void destroy(void) {
 }
 
 static void receive(const msg_t *msg, const void *userdata) {
-    if (!msg->is_pubsub) {
+    if (msg->type != TYPE_PS) {
         uint64_t t;
         read(msg->fd_msg->fd, &t, sizeof(uint64_t));
     
@@ -63,7 +63,7 @@ static void receive(const msg_t *msg, const void *userdata) {
 }
 
 static void receive_ready(const msg_t *msg, const void *userdata) {
-    if (!msg->is_pubsub) {
+    if (msg->type != TYPE_PS) {
         uint64_t t;
         read(msg->fd_msg->fd, &t, sizeof(uint64_t));
     

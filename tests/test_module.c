@@ -268,21 +268,21 @@ void test_module_unbecome(void **state) {
 void test_module_add_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_register_fd(self, -1, FD_AUTOCLOSE, NULL);
+    mod_ret ret = module_register_fd(self, -1, SRC_AUTOCLOSE, NULL);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_add_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_register_fd(NULL, STDIN_FILENO, FD_AUTOCLOSE, NULL);
+    mod_ret ret = module_register_fd(NULL, STDIN_FILENO, SRC_AUTOCLOSE, NULL);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_add_fd(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_register_fd(self, STDIN_FILENO, FD_AUTOCLOSE, NULL);
+    mod_ret ret = module_register_fd(self, STDIN_FILENO, SRC_AUTOCLOSE, NULL);
     assert_true(ret == MOD_OK);
 }
 
@@ -484,7 +484,7 @@ static bool evaluate(void) {
 
 static void recv(const msg_t *msg, const void *userdata) {
     static int ctr = 0;
-    if (msg->is_pubsub && msg->ps_msg->type == USER) {
+    if (msg->type == TYPE_PS && msg->ps_msg->type == USER) {
         ctr++;
         if (!strcmp((char *)msg->ps_msg->message, "hi3!")) {
             modules_ctx_quit(CTX, ctr);

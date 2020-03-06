@@ -56,7 +56,7 @@ static void destroy(void) {
  * Default poll callback
  */
 static void receive(const msg_t *msg, const void *userdata) {
-    if (msg->is_pubsub && msg->ps_msg->type == USER) {
+    if (msg->type == TYPE_PS && msg->ps_msg->type == USER) {
         if (!strcmp((char *)msg->ps_msg->message, "ByeBye")) {
             m_log("Received quit.\n");
         }

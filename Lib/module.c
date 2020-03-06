@@ -9,9 +9,26 @@ static ctx_t *check_ctx(const char *ctx_name);
 static int _pipe(mod_t *mod);
 static mod_ret init_pubsub_fd(mod_t *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args);
+static void src_priv_dtor(void *data);
+
+static mod_ret _deregister_src(mod_t *mod, ev_src_t *src);
+static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *src_data, 
+                             const mod_src_flags flags, const void *userptr);
+
 static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr);
 static int is_fd_same(void *my_data, void *list_data);
 static mod_ret _deregister_fd(mod_t *mod, const int fd);
+
+static mod_ret _register_timer(mod_t *mod, const mod_timer_t *its, 
+                               const mod_src_flags flags, const void *userptr);
+static int is_its_same(void *my_data, void *list_data);
+static mod_ret _deregister_timer(mod_t *mod, const mod_timer_t *its);
+
+static mod_ret _register_sgn(mod_t *mod, const mod_sgn_t *sgs, 
+                             const mod_src_flags flags, const void *userptr);
+static int is_sgs_same(void *my_data, void *list_data);
+static mod_ret _deregister_sgn(mod_t *mod, const mod_sgn_t *sgs);
+
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
 static void reset_module(mod_t *mod);
 
@@ -72,7 +89,9 @@ static int _pipe(mod_t *mod) {
 
 static mod_ret init_pubsub_fd(mod_t *mod) {
     if (_pipe(mod) == 0) {
-        if (_register_fd(mod, mod->pubsub_fd[0], FD_AUTOCLOSE, NULL) == MOD_OK) {
+        fd_src_t fd_src = {0};
+        fd_src.fd = mod->pubsub_fd[0];
+        if (_register_src(mod, TYPE_PS, &fd_src, SRC_AUTOCLOSE, NULL) == MOD_OK) {
             return MOD_OK;
         }
         close(mod->pubsub_fd[0]);
@@ -88,37 +107,88 @@ static void default_logger(const self_t *self, const char *fmt, va_list args) {
     vprintf(fmt, args);
 }
 
-static void fd_priv_dtor(void *data) {
+static void src_priv_dtor(void *data) {
     ev_src_t *t = (ev_src_t *)data;
     
-    ctx_t *c = t->fd_src.self->ctx;
+    ctx_t *c = t->self->ctx;
     /* If a fd is deregistered for a RUNNING module, stop polling on it */
-    if (_module_is(t->fd_src.self->mod, RUNNING)) {
+    if (_module_is(t->self->mod, RUNNING)) {
         poll_set_new_evt(&c->ppriv, t, RM);
     }
     
-    if (t->flags & FD_AUTOCLOSE) {
-        close(t->fd_src.fd);
+    /* Properly manage autoclose flag */
+    if (t->flags & SRC_AUTOCLOSE) {
+        int fd = -1;
+        switch (t->type) {
+        case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
+        case TYPE_FD:
+            fd = t->fd_src.fd;
+            break;
+        default: 
+            break;
+        }
+        if (fd != -1) {
+            close(fd);
+        }
     }
+    
+    if (t->flags & SRC_AUTOFREE) {
+        memhook._free((void *)t->userptr);
+    }
+    
     memhook._free(t);
 }
 
-/* 
- * Append this fd to our list of fds and 
- * if module is in RUNNING state, start listening on its events 
- */
-static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr) {
-    ev_src_t *src = memhook._malloc(sizeof(ev_src_t));
+static mod_ret _deregister_src(mod_t *mod, ev_src_t *src) {
+    if (list_remove(mod->srcs, src, NULL) == LIST_OK) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *src_data, 
+                             const mod_src_flags flags, const void *userptr) {
+    
+    ev_src_t *src = memhook._calloc(1, sizeof(ev_src_t));
     MOD_ALLOC_ASSERT(src);
     
-    fd_src_t *fd_src = &src->fd_src;
-    ctx_t *c = mod->self.ctx;
-    fd_src->fd = fd;
-    fd_src->self = &mod->self;
-    fd_src->ev = NULL;
     src->flags = flags;
     src->userptr = userptr;
-    list_insert(mod->fds, src, NULL);
+    src->type = type;
+    src->self = &mod->self;
+    
+    switch (type) {
+    case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
+    case TYPE_FD: {
+        fd_src_t *fd_src = &src->fd_src;
+        int fd = *((int *)src_data);
+        if (flags & SRC_DUP) {
+            fd_src->fd = dup(fd);
+        } else {
+            fd_src->fd = fd;
+        }
+        break;
+    }
+    case TYPE_TIMER: {
+        timer_src_t *tm_src = &src->tm_src;
+        memcpy(&tm_src->its, src_data, sizeof(mod_timer_t));
+        tm_src->f.fd = -1;
+        break;
+    }
+    case TYPE_SGN: {
+        sgn_src_t *sgn_src = &src->sgn_src;
+        memcpy(&sgn_src->sgs, src_data, sizeof(mod_sgn_t));
+        sgn_src->f.fd = -1;
+        break;
+    }
+    default:
+        MODULE_DEBUG("Wrong src type: %d\n", type);
+        memhook._free(src);
+        return MOD_ERR;
+    }
+    
+    list_insert(mod->srcs, src, NULL);
+    ctx_t *c = mod->self.ctx;
     /* If a fd is registered at runtime, start polling on it */
     int ret = 0;
     if (_module_is(mod, RUNNING)) {
@@ -127,16 +197,71 @@ static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags,
     return !ret ? MOD_OK : MOD_ERR;
 }
 
+/* 
+ * Append this fd to our list of fds and 
+ * if module is in RUNNING state, start listening on its events 
+ */
+static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr) {
+    return _register_src(mod, TYPE_FD, &fd, flags, userptr);
+}
+
 static int is_fd_same(void *my_data, void *list_data) {
-    ev_src_t *fdin = (ev_src_t *)list_data;
+    ev_src_t *src = (ev_src_t *)list_data;
     int fd = *((int *)my_data);
     
-    return !(fdin->fd_src.fd == fd);
+    if (src->type == TYPE_FD) {
+        return !(src->fd_src.fd == fd);
+    }
+    return 1;
 }
 
 /* Linearly search for fd */
-static mod_ret _deregister_fd(mod_t *mod, const int fd) {    
-    if (list_remove(mod->fds, (void *)&fd, is_fd_same) == LIST_OK) {
+static mod_ret _deregister_fd(mod_t *mod, const int fd) {
+    if (list_remove(mod->srcs, (void *)&fd, is_fd_same) == LIST_OK) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+static mod_ret _register_timer(mod_t *mod, const mod_timer_t *its, const mod_src_flags flags, const void *userptr) {
+    return _register_src(mod, TYPE_TIMER, its, flags, userptr);
+}
+
+static int is_its_same(void *my_data, void *list_data) {
+    ev_src_t *src = (ev_src_t *)list_data;
+    const mod_timer_t *its = (const mod_timer_t *)my_data;
+    
+    if (src->type == TYPE_TIMER) {
+        return !(src->tm_src.its.id == its->id);
+    }
+    return 1;
+}
+
+/* Linearly search for its */
+static mod_ret _deregister_timer(mod_t *mod, const mod_timer_t *its) {    
+    if (list_remove(mod->srcs, (void *)its, is_its_same) == LIST_OK) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+static mod_ret _register_sgn(mod_t *mod, const mod_sgn_t *sgs, const mod_src_flags flags, const void *userptr) {
+    return _register_src(mod, TYPE_SGN, sgs, flags, userptr);
+}
+
+static int is_sgs_same(void *my_data, void *list_data) {
+    ev_src_t *src = (ev_src_t *)list_data;
+    const mod_sgn_t *sgs = (const mod_sgn_t *)my_data;
+    
+    if (src->type == TYPE_SGN) {
+        return !(src->sgn_src.sgs.signo == sgs->signo);
+    }
+    return 1;
+}
+
+/* Linearly search for sgs */
+static mod_ret _deregister_sgn(mod_t *mod, const mod_sgn_t *sgs) {    
+    if (list_remove(mod->srcs, (void *)sgs, is_sgs_same) == LIST_OK) {
         return MOD_OK;
     }
     return MOD_ERR;
@@ -145,10 +270,10 @@ static mod_ret _deregister_fd(mod_t *mod, const int fd) {
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {    
     int ret = 0;
     
-    for (mod_list_itr_t *itr = list_itr_new(mod->fds); itr && !ret; itr = list_itr_next(itr)) {
+    for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr && !ret; itr = list_itr_next(itr)) {
         ev_src_t *t = list_itr_get_data(itr);
         if (flag == RM && stop) {
-            if (t->fd_src.fd == mod->pubsub_fd[0]) {
+            if (t->type == TYPE_PS) {
                 /*
                  * Free all unread pubsub msg for this module.
                  *
@@ -157,7 +282,7 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
                  */
                 flush_pubsub_msgs(mod, NULL, mod);
             }
-            ret = _deregister_fd(mod, t->fd_src.fd);
+            ret = _deregister_src(mod, t);
         } else {
             ret = poll_set_new_evt(&c->ppriv, t, flag);
         }
@@ -300,8 +425,8 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
         memcpy(&mod->hook, hook, sizeof(userhook_t));
         mod->state = IDLE;
         
-        mod->fds = list_new(fd_priv_dtor);
-        if (!mod->fds) {
+        mod->srcs = list_new(src_priv_dtor);
+        if (!mod->srcs) {
             break;
         }
         
@@ -333,7 +458,7 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
     memhook._free(*self);
     *self = NULL;
     stack_free(mod->recvs);
-    list_free(mod->fds);
+    list_free(mod->srcs);
     memhook._free(mod);
     return ret;
 }
@@ -355,7 +480,7 @@ mod_ret module_deregister(self_t **self) {
     }
     map_free(mod->subscriptions);
     stack_free(mod->recvs);
-    list_free(mod->fds);
+    list_free(mod->srcs);
     
     memhook._free((void *)mod->local_path);
     
@@ -432,9 +557,39 @@ mod_ret module_register_fd(const self_t *self, const int fd, const mod_src_flags
 mod_ret module_deregister_fd(const self_t *self, const int fd) {
     MOD_PARAM_ASSERT(fd >= 0);
     GET_MOD(self);
-    MOD_ASSERT(mod->fds, "No fd registered in this module.", MOD_ERR);
+    MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
     
     return _deregister_fd(mod, fd);
+}
+
+mod_ret module_register_timer(const self_t *self, const mod_timer_t *its, const mod_src_flags flags, const void *userptr) {
+    MOD_PARAM_ASSERT(its);
+    GET_MOD(self);
+    
+    return _register_timer(mod, its, flags, userptr);
+}
+
+mod_ret module_deregister_timer(const self_t *self, const mod_timer_t *its) {
+    MOD_PARAM_ASSERT(its);
+    GET_MOD(self);
+    MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
+    
+    return _deregister_timer(mod, its);
+}
+
+mod_ret module_register_sgn(const self_t *self, const mod_sgn_t *sgs, const mod_src_flags flags, const void *userptr) {
+    MOD_PARAM_ASSERT(sgs);
+    GET_MOD(self);
+    
+    return _register_sgn(mod, sgs, flags, userptr);
+}
+
+mod_ret module_deregister_sgn(const self_t *self, const mod_sgn_t *sgs) {
+    MOD_PARAM_ASSERT(sgs);
+    GET_MOD(self);
+    MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
+    
+    return _deregister_sgn(mod, sgs);
 }
 
 const char *module_get_name(const self_t *mod_self) {
@@ -473,8 +628,22 @@ mod_ret module_dump(const self_t *self) {
         module_log(self, "-> T: %s: Fl: %d UP: %p\n", sub->ps_src.topic, sub->flags, sub->userptr);
     }
     module_log(self, "* Fds:\n");
-    for (mod_list_itr_t *itr = list_itr_new(mod->fds); itr; itr = list_itr_next(itr)) {
+    for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr; itr = list_itr_next(itr)) {
         ev_src_t *t = list_itr_get_data(itr);
+        switch (t->type) {
+        case TYPE_FD:
+            module_log(self, "-> FD: %d Fl: %d UP: %p\n", t->fd_src.fd, t->flags, t->userptr);
+            break;
+        case TYPE_SGN:
+            module_log(self, "-> SGN: %d Fl: %d UP: %p\n", t->sgn_src.sgs.signo, t->flags, t->userptr);
+            break;
+        case TYPE_TIMER:
+            module_log(self, "-> TMR_ID: %d TMR_MS: %lu TMR_CID: %d Fl: %d UP: %p\n", 
+                       t->tm_src.its.id, t->tm_src.its.ms, t->tm_src.its.clock_id, t->flags, t->userptr);
+            break;
+        default:
+            break;
+        }
         if (t->fd_src.fd != mod->pubsub_fd[0]) {
             module_log(self, "-> FD: %d Fl: %d UP: %p\n", t->fd_src.fd, t->flags, t->userptr);
         }

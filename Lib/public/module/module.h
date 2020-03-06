@@ -33,6 +33,12 @@ _public_ mod_ret module_ref(const self_t *self, const char *name, const self_t *
 _public_ mod_ret module_register_fd(const self_t *self, const int fd, const mod_src_flags flags, const void *userptr);
 _public_ mod_ret module_deregister_fd(const self_t *self, const int fd);
 
+_public_ mod_ret module_register_timer(const self_t *self, const mod_timer_t *its, const mod_src_flags flags, const void *userptr);
+_public_ mod_ret module_deregister_timer(const self_t *self, const mod_timer_t *its);
+
+_public_ mod_ret module_register_sgn(const self_t *self, const mod_sgn_t *its, const mod_src_flags flags, const void *userptr);
+_public_ mod_ret module_deregister_sgn(const self_t *self, const mod_sgn_t *its);
+
 /* Module PubSub interface */
 _public_ mod_ret module_become(const self_t *self, const recv_cb new_recv);
 _public_ mod_ret module_unbecome(const self_t *self);
@@ -54,10 +60,14 @@ _public_ mod_ret module_msg_unref(const self_t *self, const ps_msg_t *msg);
 /* Generic event source registering functions */
 #define module_register_src(self, X, flags, userptr) _Generic((X) + 0, \
     int: module_register_fd, \
-    char *: module_subscribe \
+    char *: module_subscribe, \
+    mod_timer_t *: module_register_timer, \
+    mod_sgn_t *: module_register_sgn \
     )(self, X, flags, userptr);
 
 #define module_deregister_src(self, X) _Generic((X) + 0, \
     int: module_deregister_fd, \
-    char *: module_unsubscribe \
+    char *: module_unsubscribe, \
+    mod_timer_t *: module_deregister_timer, \
+    mod_sgn_t *: module_deregister_sgn \
     )(self, X);

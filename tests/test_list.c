@@ -70,6 +70,27 @@ static int int_match(void *my_data, void *list_data) {
     return !(a == b);
 }
 
+void test_list_find(void **state) {
+    void *data = list_find(NULL, NULL, NULL);
+    assert_null(data);
+    
+    data = list_find(my_l, NULL, NULL);
+    assert_null(data);
+    
+    int c = 0;
+    data = list_find(my_l, &c, NULL);
+    assert_null(data);
+    
+    data = list_find(my_l, &val2, NULL);
+    assert_non_null(data);
+    assert_ptr_equal(data, &val2);
+    
+    c = val1;
+    data = list_find(my_l, &c, int_match);
+    assert_non_null(data);
+    assert_ptr_equal(data, &val1);
+}
+
 void test_list_remove(void **state) {
     (void) state; /* unused */
     
@@ -80,9 +101,6 @@ void test_list_remove(void **state) {
     assert_false(ret == LIST_OK);
     
     ret = list_remove(my_l, &val1, NULL);
-    assert_false(ret == LIST_OK);
-    
-    ret = list_remove(my_l, &val1, int_match);
     assert_true(ret == LIST_OK);
     
     ret = list_remove(my_l, &val2, int_match);

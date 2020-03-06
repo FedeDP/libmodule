@@ -31,7 +31,7 @@ static bool init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    m_register_src(fd, FD_AUTOCLOSE, &myData);
+    m_register_src(fd, SRC_AUTOCLOSE, &myData);
 #endif
     
     /* Add stdin fd */
@@ -55,7 +55,7 @@ static void destroy(void) {
 }
 
 static void receive(const msg_t *msg, const void *userdata) {
-    if (!msg->is_pubsub) {
+    if (msg->type != TYPE_PS) {
         char c;
         
         /* Forcefully quit if we received a signal */
@@ -99,7 +99,7 @@ static void receive(const msg_t *msg, const void *userdata) {
  * Use m_become(ready) to start using this second poll callback.
  */
 static void receive_ready(const msg_t *msg, const void *userdata) {
-    if (!msg->is_pubsub) {
+    if (msg->type != TYPE_PS) {
         char c;
         
         /* Forcefully quit if we received a signal */

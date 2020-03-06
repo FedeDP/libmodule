@@ -139,38 +139,58 @@ static int recv_events(ctx_t *c, int timeout) {
     int nfds = poll_wait(&c->ppriv, timeout);
     for (int i = 0; i < nfds; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
-        if (p && p->fd_src.self && p->fd_src.self->mod) {
-            mod_t *mod = p->fd_src.self->mod;
+        if (p && p->self && p->self->mod) {
+            mod_t *mod = p->self->mod;
             
-            msg_t msg;
+            msg_t msg = {0};
             fd_msg_t fd_msg;
+            tm_msg_t tm_msg;
+            sgn_msg_t sgn_msg;
             ps_priv_t *ps_msg;
-            const void *userptr = NULL;
-                        
-            if (p->fd_src.fd == mod->pubsub_fd[0]) {
-                /* Received on pubsub interface */
-                msg.is_pubsub = true;
-                if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-                    MODULE_DEBUG("Failed to read message for '%s': %s\n", mod->name, strerror(errno));
-                    msg.ps_msg = NULL;
-                } else {
-                    msg.ps_msg = &ps_msg->msg;
-                    userptr = ps_msg->userptr;
-                }
-            } else {
+            
+            msg.type = p->type;
+            switch (msg.type) {
+            case TYPE_FD:
                 /* Received from FD */
-                msg.is_pubsub = false;
                 fd_msg.fd = p->fd_src.fd;
                 msg.fd_msg = &fd_msg;
-                userptr = p->userptr;
+                break;
+            case TYPE_PS:
+                /* Received on pubsub interface */
+                if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
+                    MODULE_DEBUG("Failed to read message for '%s': %s\n", mod->name, strerror(errno));
+                } else {
+                    msg.ps_msg = &ps_msg->msg;
+                }
+                break;
+            case TYPE_SGN:
+                if (poll_consume_sgn(&c->ppriv, p, &sgn_msg) == MOD_OK) {
+                    sgn_msg.signo = p->sgn_src.sgs.signo;
+                    msg.sgn_msg = &sgn_msg;
+                }
+                break;
+            case TYPE_TIMER:
+                if (poll_consume_timer(&c->ppriv, p, &tm_msg) == MOD_OK) {
+                    tm_msg.id = p->tm_src.its.id;
+                    msg.tm_msg = &tm_msg;
+                }
+                break;
+            default:
+                break;
             }
-            
-            if (!msg.is_pubsub || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {
-                run_pubsub_cb(mod, &msg, userptr);
+
+            if (msg.type != TYPE_PS || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {
+                run_pubsub_cb(mod, &msg, p->userptr);
             } else if (msg.ps_msg) {
                 MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
                 stop(mod, true);
             }
+            
+            /* Remove it if it was a fireonce event */
+            if (p->flags & SRC_RUNONCE) {
+                list_remove(mod->srcs, p, NULL);
+            }
+            
         } else {
             /* Forward error to below handling code */
             errno = EAGAIN;
@@ -316,7 +336,7 @@ mod_ret modules_load(const char *ctx_name, const char *module_path) {
         return MOD_ERR;
     }
     
-    mod_t *mod = map_get_last(c->modules);
+    mod_t *mod = map_peek(c->modules);
     mod->local_path = mem_strdup(module_path);
     return MOD_OK;
 }

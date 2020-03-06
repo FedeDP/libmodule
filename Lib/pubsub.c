@@ -19,10 +19,10 @@ static mod_ret send_msg(const mod_t *mod, mod_t *recipient,
 static void subscribtions_dtor(void *data) {
     ev_src_t *sub = (ev_src_t *)data;
     regfree(&sub->ps_src.reg);
-    if (sub->flags & PS_DUPTOPIC) {
+    if (sub->flags & SRC_DUP) {
         memhook._free((void *)sub->ps_src.topic);
     }
-    if (sub->flags & PS_AUTOFREE) {
+    if (sub->flags & SRC_AUTOFREE) {
         memhook._free((void *)sub->userptr);
     }
     memhook._free(sub);
@@ -63,7 +63,7 @@ static mod_map_ret tell_if(void *data, const char *key, void *value) {
         (msg->msg.type == USER &&                                    // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || is_subscribed(mod, msg))))) {     
         
-        MODULE_DEBUG("Telling a message to '%s'.\n", mod->name);
+        MODULE_DEBUG("Telling a message to '%s'\n", mod->name);
         
         if (write(mod->pubsub_fd[1], &msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
             MODULE_DEBUG("Failed to write message: %s\n", strerror(errno));
@@ -163,7 +163,7 @@ mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value) {
          */
         if (!data && _module_is(mod, RUNNING)) {
             MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
-            msg_t msg = { .is_pubsub = true, .ps_msg = &mm->msg };
+            msg_t msg = { .type = TYPE_PS, .ps_msg = &mm->msg };
             run_pubsub_cb(mod, &msg, mm->userptr);
         } else {
             MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
@@ -182,7 +182,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr) {
     }
     cb(msg, userptr);
 
-    if (msg->is_pubsub) {
+    if (msg->type == TYPE_PS) {
         pubsub_msg_unref((ps_priv_t *)msg->ps_msg);
     }
 }
@@ -234,10 +234,11 @@ mod_ret module_subscribe(const self_t *self, const char *topic, mod_src_flags fl
         MOD_ALLOC_ASSERT(sub);
         
         ps_src_t *ps_src = &sub->ps_src;
+        sub->type = TYPE_PS;
         sub->flags = flags;
         sub->userptr = userptr;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
-        ps_src->topic = sub->flags & PS_DUPTOPIC ? mem_strdup(topic) : topic;
+        ps_src->topic = sub->flags & SRC_DUP ? mem_strdup(topic) : topic;
         if (map_put(mod->subscriptions, ps_src->topic, sub) == MAP_OK) {
             return MOD_OK;
         }

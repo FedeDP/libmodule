@@ -28,7 +28,7 @@ static void destroy(void) {
 }
 
 static void receive(const msg_t *msg, const void *userdata) {
-    if (msg->is_pubsub) {
+    if (msg->type == TYPE_PS) {
         switch (msg->ps_msg->type) {
         case USER:
             if (!strcmp((char *)msg->ps_msg->message, "ComeHere")) {
@@ -54,7 +54,7 @@ static void receive(const msg_t *msg, const void *userdata) {
 }
 
 static void receive_sleeping(const msg_t *msg, const void *userdata) {
-    if (msg->is_pubsub && msg->ps_msg->type == USER) {
+    if (msg->type == TYPE_PS && msg->ps_msg->type == USER) {
         if (!strcmp((char *)msg->ps_msg->message, "WakeUp")) {
             m_unbecome();
             m_log("Yawn...\n");

@@ -236,7 +236,7 @@ static void clear_elem(mod_map_t *m, map_elem *removed_entry) {
 
 /** Private API **/
 
-void *map_get_last(const mod_map_t *m) {
+void *map_peek(const mod_map_t *m) {
     MOD_RET_ASSERT(map_length(m) > 0, NULL);
     return m->last_insert->data;
 }

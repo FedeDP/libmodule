@@ -129,11 +129,24 @@ Where not specified, these functions return a list_ret_code.
 
   :param l: pointer to list_t
   :param val: value to be removed from list
-  :param comp: comparator's callback. Its return value behaves like strcmp. Cannot be NULL.
+  :param comp: comparator's callback. Its return value behaves like strcmp. If NULL, check val pointer equality.
+  :type l: :c:type:`list_t *`
+  :type val: :c:type:`void *`
+  :type comp: :c:type:`const list_comp`
+  
+.. c:function:: list_find(l, val, comp)
+
+  Remove a value from list.
+
+  :param l: pointer to list_t
+  :param val: value to be searched inside list
+  :param comp: comparator's callback. Its return value behaves like strcmp. If NULL, check val pointer equality.
   :type l: :c:type:`list_t *`
   :type val: :c:type:`void *`
   :type comp: :c:type:`const list_comp`
 
+  :returns: pointer to found userdata or NULL
+  
 .. c:function:: list_clear(l)
 
   Clears a list object by deleting any object inside list.
