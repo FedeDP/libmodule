@@ -34,7 +34,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Fix fire_once timers in uring
 - [x] Set TYPE_PS on pubsub fd! And avoid all checks (if fd == pubsub_fd[0])
 - [x] Fix module_dump
-- [x] Check TYPE_PS ...only pubsub_fd[0] should use it
+- [x] Check TYPE_PS ...only pubsub_fd[0] should use it in mod->srcs
 - [x] Drop is_pubsub field
 - [x] Fix tests
 - [x] Fix fd closing: timerfd/signalfd should be always closed on RM. In fd_priv_dtor we should only close FD_AUTOCLOSE fds
@@ -44,7 +44,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Manage SRC_ONESHOT for subscriptions too
 - [ ] Use sigset_t instead of mod_sgn_t?
 - [ ] Use struct timerspec instead of mod_tmr_t?
-- [ ] liburing does not work with signalfd :(
+- [x] liburing does not work with signalfd :( (issue: https://github.com/axboe/liburing/issues/5). Seems like kernel-side is moving towards a fix!
 - [x] fix libkqueue tests
 
 ### New Linked list api

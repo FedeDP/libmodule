@@ -178,7 +178,7 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     io_uring_cqe_seen(&up->ring, up->cqe[idx]);
     
     /* udata != NULL only if fd is still registered */
-    if (udata) {        
+    if (udata) {
         /* We need to re-arm it: IORING_OP_POLL_ADD interface works in oneshot mode */
         udata->ev = NULL;
         poll_set_new_evt(priv, udata, ADD);
