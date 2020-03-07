@@ -33,7 +33,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     }
     
     int f = flag == ADD ? EPOLL_CTL_ADD : EPOLL_CTL_DEL;
-    if (tmp->flags & SRC_RUNONCE) {
+    if (tmp->flags & SRC_ONESHOT) {
         f |= EPOLLONESHOT;
     }
     struct epoll_event *ev = (struct epoll_event *)tmp->ev;
@@ -54,7 +54,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             timerValue.it_value.tv_sec = tmp->tm_src.its.ms / 1000;
             timerValue.it_value.tv_nsec = (tmp->tm_src.its.ms % 1000) * 1000 * 1000;
             
-            if (!(tmp->flags & SRC_RUNONCE)) {
+            if (!(tmp->flags & SRC_ONESHOT)) {
                 /* Set interval */
                 timerValue.it_interval.tv_sec = tmp->tm_src.its.ms / 1000;
                 timerValue.it_interval.tv_nsec = (tmp->tm_src.its.ms % 1000) * 1000 * 1000;
@@ -67,7 +67,11 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     }
     case TYPE_SGN: {
         if (flag == ADD) {
-            tmp->sgn_src.f.fd = signalfd(-1, (sigset_t *) &tmp->sgn_src.sgs.signo, 0);
+            sigset_t mask;
+            sigemptyset(&mask);
+            sigaddset(&mask, tmp->sgn_src.sgs.signo);
+            sigprocmask(SIG_BLOCK, &mask, NULL);
+            tmp->sgn_src.f.fd = signalfd(-1, &mask, 0);
         }
         fd = tmp->sgn_src.f.fd;
         break;

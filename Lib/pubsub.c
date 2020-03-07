@@ -30,7 +30,7 @@ static void subscribtions_dtor(void *data) {
 
 static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
     /* Check if module is directly subscribed to topic */
-    const ev_src_t *sub = map_get(mod->subscriptions, msg->msg.topic);
+    ev_src_t *sub = map_get(mod->subscriptions, msg->msg.topic);
     if (sub) {
         goto found;
     }
@@ -50,7 +50,7 @@ static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
     return false;
     
 found:
-    msg->userptr = sub->userptr;
+    msg->sub = sub;
     return true;
 }
 
@@ -61,7 +61,7 @@ static mod_map_ret tell_if(void *data, const char *key, void *value) {
     if (_module_is(mod, RUNNING | PAUSED) &&                         // mod is running or paused
         ((msg->msg.type != USER && msg->msg.sender != &mod->self) || // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == USER &&                                    // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
-        (!msg->msg.topic || is_subscribed(mod, msg))))) {     
+        (!msg->msg.topic || is_subscribed(mod, msg))))) {
         
         MODULE_DEBUG("Telling a message to '%s'\n", mod->name);
         
@@ -76,14 +76,13 @@ static mod_map_ret tell_if(void *data, const char *key, void *value) {
 
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
                                ps_msg_type type, const size_t size, const bool autofree) {
-    ps_priv_t *m = memhook._malloc(sizeof(ps_priv_t));
+    ps_priv_t *m = memhook._calloc(1, sizeof(ps_priv_t));
     if (m) {
         m->msg.message = message;
         m->msg.sender = sender;
         m->msg.topic = topic;
         m->msg.type = type;
         m->msg.size = size;
-        m->refs = 0;
         m->autofree = autofree;
     }
     return m;
@@ -164,7 +163,8 @@ mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value) {
         if (!data && _module_is(mod, RUNNING)) {
             MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             msg_t msg = { .type = TYPE_PS, .ps_msg = &mm->msg };
-            run_pubsub_cb(mod, &msg, mm->userptr);
+            const void *userptr = mm->sub ? mm->sub : NULL;
+            run_pubsub_cb(mod, &msg, userptr);
         } else {
             MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
             pubsub_msg_unref(mm);
@@ -237,6 +237,7 @@ mod_ret module_subscribe(const self_t *self, const char *topic, mod_src_flags fl
         sub->type = TYPE_PS;
         sub->flags = flags;
         sub->userptr = userptr;
+        sub->self = self;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
         ps_src->topic = sub->flags & SRC_DUP ? mem_strdup(topic) : topic;
         if (map_put(mod->subscriptions, ps_src->topic, sub) == MAP_OK) {

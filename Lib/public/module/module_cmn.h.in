@@ -52,7 +52,7 @@ typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED,
 typedef enum { 
     SRC_AUTOCLOSE   =       0x01, // Automatically close source upon deregistation (ie: call close on fd).
     SRC_AUTOFREE    =       0x02, // Automatically free userdata upon deregistation.
-    SRC_RUNONCE     =       0x04, // Run just once then automatically deregister source.
+    SRC_ONESHOT     =       0x04, // Run just once then automatically deregister source.
     SRC_DUP         =       0x08  // Duplicate PubSub topic or source fd.
 } mod_src_flags;
 
@@ -60,7 +60,6 @@ typedef enum { TYPE_PS, TYPE_FD, TYPE_TIMER, TYPE_SGN } mod_src_type;
 
 typedef struct {
     int clock_id; // unsupported on libkqueue/kqueue
-    int id;
     uint64_t ms;
 } mod_timer_t;
 
@@ -81,7 +80,7 @@ typedef struct {
 } fd_msg_t;
 
 typedef struct {
-    int id;
+    uint64_t ms;
 } tm_msg_t;
 
 typedef struct {

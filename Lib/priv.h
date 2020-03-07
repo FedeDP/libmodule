@@ -122,7 +122,7 @@ typedef struct {
     ps_msg_t msg;
     uint64_t refs;
     bool autofree;
-    const void *userptr;
+    ev_src_t *sub;
 } ps_priv_t;
 
 typedef struct {

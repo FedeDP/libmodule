@@ -232,7 +232,7 @@ static int is_its_same(void *my_data, void *list_data) {
     const mod_timer_t *its = (const mod_timer_t *)my_data;
     
     if (src->type == TYPE_TIMER) {
-        return !(src->tm_src.its.id == its->id);
+        return !(src->tm_src.its.ms == its->ms);
     }
     return 1;
 }
@@ -638,8 +638,8 @@ mod_ret module_dump(const self_t *self) {
             module_log(self, "-> SGN: %d Fl: %d UP: %p\n", t->sgn_src.sgs.signo, t->flags, t->userptr);
             break;
         case TYPE_TIMER:
-            module_log(self, "-> TMR_ID: %d TMR_MS: %lu TMR_CID: %d Fl: %d UP: %p\n", 
-                       t->tm_src.its.id, t->tm_src.its.ms, t->tm_src.its.clock_id, t->flags, t->userptr);
+            module_log(self, "-> TMR_MS: %lu TMR_CID: %d Fl: %d UP: %p\n", 
+                       t->tm_src.its.ms, t->tm_src.its.clock_id, t->flags, t->userptr);
             break;
         default:
             break;

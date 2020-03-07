@@ -136,8 +136,8 @@ mod_list_ret list_insert(mod_list_t *l, void *data, const mod_list_comp comp) {
     LIST_PARAM_ASSERT(data);
     
     list_node **tmp = &l->data;
-    for (int i = 0; i < l->len; i++) {
-        if (comp && comp(data, (*tmp)->userptr) == 0) {
+    for (int i = 0; i < l->len && comp; i++) {
+        if (comp(data, (*tmp)->userptr) == 0) {
             break;
         }
         tmp = &(*tmp)->next;

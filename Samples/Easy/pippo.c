@@ -21,7 +21,7 @@ static void module_pre_start(void) {
 }
 
 static bool init(void) {
-    mod_sgn_t sig = { SIGINT | SIGTERM };
+    mod_sgn_t sig = { SIGINT };
     m_register_src(&sig, SRC_AUTOCLOSE, &myData);
     
     /* Register stdin fd */
@@ -49,11 +49,11 @@ static void receive(const msg_t *msg, const void *userdata) {
         char c;
         
         /* Forcefully quit if we received a signal */
-        if (msg->fd_msg->fd != STDIN_FILENO) {
+        if (msg->type == TYPE_SGN) {
             c = 'q';
             int *data = (int *)userdata;
             if (data) {
-                m_log("Data is %d\n", *data);
+                m_log("Data is %d. Received %d.\n", *data, msg->sgn_msg->signo);
             }
         } else {
             read(msg->fd_msg->fd, &c, sizeof(char));

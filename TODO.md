@@ -38,9 +38,14 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Drop is_pubsub field
 - [x] Fix tests
 - [x] Fix fd closing: timerfd/signalfd should be always closed on RM. In fd_priv_dtor we should only close FD_AUTOCLOSE fds
-- [ ] Port examples
 - [x] Add a FD_AUTOFREE flag to mimic PS_AUTOFREE flag?
-- [ ] Fix!!
+- [ ] Port examples
+- [x] Rename SRC_RUNONCE to SRC_ONESHOT
+- [x] Manage SRC_ONESHOT for subscriptions too
+- [ ] Use sigset_t instead of mod_sgn_t?
+- [ ] Use struct timerspec instead of mod_tmr_t?
+- [ ] liburing does not work with signalfd :(
+- [x] fix libkqueue tests
 
 ### New Linked list api
 
@@ -48,6 +53,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Use it for fds
 - [x] Add linked list tests
 - [x] Add linked list doc
+- [x] List_insert to insert to head (O(1))
+- [ ] Use a list internally in stack and queue
 
 ### Generic
 

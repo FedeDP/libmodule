@@ -161,6 +161,7 @@ static int recv_events(ctx_t *c, int timeout) {
                     MODULE_DEBUG("Failed to read message for '%s': %s\n", mod->name, strerror(errno));
                 } else {
                     msg.ps_msg = &ps_msg->msg;
+                    p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
                 }
                 break;
             case TYPE_SGN:
@@ -171,7 +172,7 @@ static int recv_events(ctx_t *c, int timeout) {
                 break;
             case TYPE_TIMER:
                 if (poll_consume_timer(&c->ppriv, p, &tm_msg) == MOD_OK) {
-                    tm_msg.id = p->tm_src.its.id;
+                    tm_msg.ms = p->tm_src.its.ms;
                     msg.tm_msg = &tm_msg;
                 }
                 break;
@@ -180,15 +181,19 @@ static int recv_events(ctx_t *c, int timeout) {
             }
 
             if (msg.type != TYPE_PS || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {
-                run_pubsub_cb(mod, &msg, p->userptr);
+                run_pubsub_cb(mod, &msg, p ? p->userptr : NULL);
             } else if (msg.ps_msg) {
                 MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
                 stop(mod, true);
             }
             
-            /* Remove it if it was a fireonce event */
-            if (p->flags & SRC_RUNONCE) {
-                list_remove(mod->srcs, p, NULL);
+            /* Remove it if it was a oneshot event */
+            if (p && p->flags & SRC_ONESHOT) {
+                if (p->type != TYPE_PS) {
+                    list_remove(mod->srcs, p, NULL);
+                } else {
+                    map_remove(mod->subscriptions, ps_msg->sub->ps_src.topic);
+                }
             }
             
         } else {

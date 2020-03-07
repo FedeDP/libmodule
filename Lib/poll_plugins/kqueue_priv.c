@@ -20,6 +20,7 @@ mod_ret poll_create(poll_priv_t *priv) {
 }
 
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
+    static int timer_ids = 1;
     GET_PRIV_DATA();
     
     /* Eventually alloc kqueue data if needed */
@@ -32,9 +33,9 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             return MOD_OK;
         }
     }
-    
+
     int f = flag == ADD ? EV_ADD : EV_DELETE;
-    if (tmp->flags & SRC_RUNONCE) {
+    if (tmp->flags & SRC_ONESHOT) {
         f |= EV_ONESHOT;
     }
     struct kevent *_ev = (struct kevent *)tmp->ev;
@@ -42,12 +43,9 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
     case TYPE_FD:
         EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, tmp);
-        if (flag == RM) {
-            close(tmp->fd_src.fd);
-        }
         break;
     case TYPE_TIMER:
-        EV_SET(_ev, tmp->tm_src.its.id, EVFILT_TIMER, f, 0, tmp->tm_src.its.ms, tmp);
+        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, 0, tmp->tm_src.its.ms, tmp);
         break;
     case TYPE_SGN:
         EV_SET(_ev, tmp->sgn_src.sgs.signo, EVFILT_SIGNAL, f, 0, 0, tmp);
