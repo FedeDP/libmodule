@@ -3,10 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef __linux__
-    #include <sys/signalfd.h>
-    #include <signal.h>
-#endif
+#include <time.h>
 
 static const self_t *doggo;
 
@@ -21,10 +18,8 @@ static void module_pre_start(void) {
 }
 
 static bool init(void) {
-    mod_sgn_t sig = { SIGINT };
-    m_register_src(&sig, SRC_AUTOCLOSE, &myData);
-    
-    /* Register stdin fd */
+    m_register_src(&((mod_sgn_t) { SIGINT }), SRC_AUTOCLOSE, &myData);    
+    m_register_src(&((mod_timer_t) { CLOCK_MONOTONIC, 5000 }), SRC_AUTOCLOSE | SRC_ONESHOT, NULL);
     m_register_src(STDIN_FILENO, 0, NULL);
     
     /* Get Doggo module reference */
@@ -55,6 +50,9 @@ static void receive(const msg_t *msg, const void *userdata) {
             if (data) {
                 m_log("Data is %d. Received %d.\n", *data, msg->sgn_msg->signo);
             }
+        } else if (msg->type == TYPE_TIMER) {
+            m_log("Timed out.\n");
+            c = 'q';
         } else {
             read(msg->fd_msg->fd, &c, sizeof(char));
         }

@@ -33,12 +33,12 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     }
     
     int f = flag == ADD ? EPOLL_CTL_ADD : EPOLL_CTL_DEL;
-    if (tmp->flags & SRC_ONESHOT) {
-        f |= EPOLLONESHOT;
-    }
     struct epoll_event *ev = (struct epoll_event *)tmp->ev;
     ev->data.ptr = tmp;
     ev->events = EPOLLIN;
+    if (tmp->flags & SRC_ONESHOT) {
+        ev->events |= EPOLLONESHOT;
+    }
     
     errno = 0;
     int fd = -1;
@@ -53,13 +53,11 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             struct itimerspec timerValue = {{0}};
             timerValue.it_value.tv_sec = tmp->tm_src.its.ms / 1000;
             timerValue.it_value.tv_nsec = (tmp->tm_src.its.ms % 1000) * 1000 * 1000;
-            
             if (!(tmp->flags & SRC_ONESHOT)) {
                 /* Set interval */
                 timerValue.it_interval.tv_sec = tmp->tm_src.its.ms / 1000;
                 timerValue.it_interval.tv_nsec = (tmp->tm_src.its.ms % 1000) * 1000 * 1000;
             }
-            
             timerfd_settime(tmp->tm_src.f.fd, 0, &timerValue, NULL);
         }
         fd = tmp->tm_src.f.fd;

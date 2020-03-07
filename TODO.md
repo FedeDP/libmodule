@@ -46,6 +46,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Use struct timerspec instead of mod_tmr_t?
 - [x] liburing does not work with signalfd :( (issue: https://github.com/axboe/liburing/issues/5). Seems like kernel-side is moving towards a fix!
 - [x] fix libkqueue tests
+- [ ] Implement a inotify mechanism (kqueue: EVFILT_VNODE)
+- [ ] Implement a proc watcher (kqueue: EVFILT_PROC) (linux: https://lwn.net/Articles/794707/ (pidfd))
 
 ### New Linked list api
 
