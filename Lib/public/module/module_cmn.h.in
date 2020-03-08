@@ -60,17 +60,17 @@ typedef enum { TYPE_PS, TYPE_FD, TYPE_TMR, TYPE_SGN, TYPE_PT } mod_src_type;
 
 /* module_register_src() request special types. */
 typedef struct {
-    int clock_id; // unsupported on libkqueue/kqueue
+    unsigned int clock_id; // unsupported on libkqueue/kqueue
     uint64_t ms;
 } mod_tmr_t;
 
 typedef struct {
-    int signo;
+    unsigned int signo;
 } mod_sgn_t;
 
 typedef struct {
     const char *path;
-    const int type;
+    unsigned int op_flag;
 } mod_pt_t;
 
 /* Libmodule messages received in receive() callback */
@@ -91,12 +91,12 @@ typedef struct {
 } tm_msg_t;
 
 typedef struct {
-    int signo;
+    unsigned int signo;
 } sgn_msg_t;
 
 typedef struct {
     const char *path;
-    int type;
+    unsigned int type;
 } pt_msg_t;
 
 typedef struct {

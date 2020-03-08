@@ -97,7 +97,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         case TYPE_PT: {
             if (flag == ADD) {
                 tmp->pt_src.f.fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
-                inotify_add_watch(tmp->pt_src.f.fd, tmp->pt_src.pt.path, tmp->pt_src.pt.type);
+                inotify_add_watch(tmp->pt_src.f.fd, tmp->pt_src.pt.path, tmp->pt_src.pt.op_flag);
             }
             fd = tmp->pt_src.f.fd;
             break;

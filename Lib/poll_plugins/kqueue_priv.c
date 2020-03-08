@@ -52,7 +52,11 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         break;
     case TYPE_PT: 
         tmp->pt_src.f.fd = open(tmp->pt_src.pt.path, O_RDONLY);
-        EV_SET(_ev, tmp->pt_src.f.fd, EVFILT_VNODE, f, tmp->pt_src.pt.type, 0, tmp);
+        if (tmp->pt_src.f.fd != -1) {
+            EV_SET(_ev, tmp->pt_src.f.fd, EVFILT_VNODE, f, tmp->pt_src.pt.op_flag, 0, tmp);
+        } else {
+            return -1;
+        }
         break;
     default: 
         break;
@@ -60,7 +64,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
 
     int ret = kevent(kp->fd, _ev, 1, NULL, 0, NULL);
     /* Workaround for STDIN_FILENO: it is actually pollable */
-    if (tmp->fd_src.fd == STDIN_FILENO) {
+    if (tmp->type == TYPE_FD && tmp->fd_src.fd == STDIN_FILENO) {
         ret = 0;
     }
     

@@ -4,7 +4,11 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
-#include <sys/inotify.h>
+#ifdef __linux__
+    #include <sys/inotify.h>
+#else
+    #include <sys/event.h>
+#endif
 
 static const self_t *doggo;
 
@@ -22,7 +26,11 @@ static bool init(void) {
     m_register_src(&((mod_sgn_t) { SIGINT }), SRC_AUTOCLOSE, &myData);
     m_register_src(&((mod_tmr_t) { CLOCK_MONOTONIC, 5000 }), SRC_AUTOCLOSE | SRC_ONESHOT, NULL);
     m_register_src(STDIN_FILENO, 0, NULL);
+#ifdef __linux__
     m_register_src(&((mod_pt_t) { "/home/federico", IN_CREATE }), SRC_AUTOCLOSE, &myData);
+#else
+    m_register_src(&((mod_pt_t) { "/home/federico", NOTE_WRITE }), SRC_AUTOCLOSE, &myData);
+#endif
     
     /* Get Doggo module reference */
     m_ref("Doggo", &doggo);

@@ -42,8 +42,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Port examples
 - [x] Rename SRC_RUNONCE to SRC_ONESHOT
 - [x] Manage SRC_ONESHOT for subscriptions too
-- [ ] Use sigset_t instead of mod_sgn_t?
-- [ ] Use struct timerspec instead of mod_tmr_t?
 - [x] liburing does not work with signalfd :( (issue: https://github.com/axboe/liburing/issues/5). Seems like kernel-side is moving towards a fix!
 - [x] fix libkqueue tests
 - [x] Rename module_(un)subscribe to module_(de)register_sub
@@ -51,7 +49,11 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Implement a inotify mechanism (kqueue: EVFILT_VNODE)
 - [ ] Implement a proc watcher (kqueue: EVFILT_PROC) (linux: https://lwn.net/Articles/794707/ (pidfd))
 
-- [ ] Abstact away internal fd closing mechanism from poll_plugins (ie: FDs used for inotify watcher, timerfd etc etc)
+- [ ] Abstact away internal fd closing mechanism from poll_plugins (ie: FDs used for inotify watcher, timerfd etc etc that are always closed on poll_set_new_evt() with RM)
+
+- [ ] Expose needed flags (eg: IN_CREATE for linux inotify) as mod_src_flags sub-flags, eg:
+SRC_PT_OPEN = 1 << 6 SRC_PT_MOVE = 2 << 6 ???
+- [ ] Rename SRC_AUTOCLOSE to SRC_FD_AUTOCLOSE ?
 
 - [x] Use TFD_CLOEXEC flag on timerfd on linux
 - [ ] Automatically detect absolute timers on linux? eg:
@@ -60,6 +62,9 @@ clock_gettime(tmp->tm_src.its.clock_id, &spec);
 long curr_ms = spec.tv_nsec / 1000 / 1000 + spec.tv_sec * 1000;
 const int abs_fl = tmp->tm_src.its.ms > curr_ms ? TFD_TIMER_ABSTIME : 0;
 tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK | TFD_CLOEXEC | abs_fl);
+
+- [ ] Add a common.c in poll_plugins?
+- [ ] Add a common_lin.c in poll_plugins (to manage timerfd/inotify/signalfd)
 
 ### New Linked list api
 

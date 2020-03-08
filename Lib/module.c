@@ -592,6 +592,7 @@ mod_ret module_deregister_fd(const self_t *self, const int fd) {
 
 mod_ret module_register_tmr(const self_t *self, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(its);
+    MOD_PARAM_ASSERT(its->ms);
     GET_MOD(self);
     
     return _register_timer(mod, its, flags, userptr);
@@ -599,6 +600,7 @@ mod_ret module_register_tmr(const self_t *self, const mod_tmr_t *its, const mod_
 
 mod_ret module_deregister_tmr(const self_t *self, const mod_tmr_t *its) {
     MOD_PARAM_ASSERT(its);
+    MOD_PARAM_ASSERT(its->ms);
     GET_MOD(self);
     MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
     
@@ -622,6 +624,9 @@ mod_ret module_deregister_sgn(const self_t *self, const mod_sgn_t *sgs) {
 
 mod_ret module_register_pt(const self_t *self, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(pt);
+    MOD_PARAM_ASSERT(pt->path);
+    MOD_PARAM_ASSERT(strlen(pt->path));
+    MOD_PARAM_ASSERT(pt->op_flag);
     GET_MOD(self);
     
     return _register_path(mod, pt, flags, userptr);
@@ -629,6 +634,8 @@ mod_ret module_register_pt(const self_t *self, const mod_pt_t *pt, const mod_src
 
 mod_ret module_deregister_pt(const self_t *self, const mod_pt_t *pt) {
     MOD_PARAM_ASSERT(pt);
+    MOD_PARAM_ASSERT(pt->path);
+    MOD_PARAM_ASSERT(strlen(pt->path));
     GET_MOD(self);
     MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
     
