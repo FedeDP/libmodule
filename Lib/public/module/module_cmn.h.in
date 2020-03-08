@@ -96,7 +96,7 @@ typedef struct {
 
 typedef struct {
     const char *path;
-    unsigned int type;
+    unsigned int events;
 } pt_msg_t;
 
 typedef struct {

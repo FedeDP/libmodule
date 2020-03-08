@@ -166,19 +166,19 @@ static int recv_events(ctx_t *c, int timeout) {
                 }
                 break;
             case TYPE_SGN:
-                if (poll_consume_sgn(&c->ppriv, p, &sgn_msg) == MOD_OK) {
+                if (poll_consume_sgn(&c->ppriv, i, p, &sgn_msg) == MOD_OK) {
                     sgn_msg.signo = p->sgn_src.sgs.signo;
                     msg.sgn_msg = &sgn_msg;
                 }
                 break;
             case TYPE_TMR:
-                if (poll_consume_tmr(&c->ppriv, p, &tm_msg) == MOD_OK) {
+                if (poll_consume_tmr(&c->ppriv, i, p, &tm_msg) == MOD_OK) {
                     tm_msg.ms = p->tm_src.its.ms;
                     msg.tm_msg = &tm_msg;
                 }
                 break;
             case TYPE_PT:
-                if (poll_consume_pt(&c->ppriv, p, &pt_msg) == MOD_OK) {
+                if (poll_consume_pt(&c->ppriv, i, p, &pt_msg) == MOD_OK) {
                     pt_msg.path = p->pt_src.pt.path;
                     msg.pt_msg = &pt_msg;
                 }

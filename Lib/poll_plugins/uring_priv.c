@@ -193,7 +193,7 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     return udata;
 }
 
-mod_ret poll_consume_sgn(poll_priv_t *priv, ev_src_t *src, sgn_msg_t *sgn_msg) {
+mod_ret poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {
     struct signalfd_siginfo fdsi;
     ssize_t s = read(src->sgn_src.f.fd, &fdsi, sizeof(struct signalfd_siginfo));
     if (s == sizeof(struct signalfd_siginfo)) {
@@ -202,7 +202,7 @@ mod_ret poll_consume_sgn(poll_priv_t *priv, ev_src_t *src, sgn_msg_t *sgn_msg) {
     return MOD_ERR;
 }
 
-mod_ret poll_consume_tmr(poll_priv_t *priv, ev_src_t *src, tm_msg_t *tm_msg) {
+mod_ret poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tm_msg_t *tm_msg) {
     uint64_t t;
     if (read(src->tm_src.f.fd, &t, sizeof(uint64_t)) == sizeof(uint64_t)) {
         return MOD_OK;
@@ -210,13 +210,13 @@ mod_ret poll_consume_tmr(poll_priv_t *priv, ev_src_t *src, tm_msg_t *tm_msg) {
     return MOD_ERR;
 }
 
-mod_ret poll_consume_pt(poll_priv_t *priv, ev_src_t *src, pt_msg_t *pt_msg) {
+mod_ret poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg) {
     char buffer[BUF_LEN];
     const size_t length = read(src->pt_src.f.fd, buffer, BUF_LEN);
     if (length > 0) {
         struct inotify_event *event = (struct inotify_event *) buffer;
         if (event->len) {
-            pt_msg->type = event->mask;
+            pt_msg->events = event->mask;
             return MOD_OK;
         }
     }

@@ -12,7 +12,7 @@ typedef struct {
 
 mod_ret poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(kqueue_priv_t));
-    MOD_ALLOC_ASSERT(priv->data);    
+    MOD_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
     kp->fd = kqueue();
     fcntl(kp->fd, F_SETFD, FD_CLOEXEC);
@@ -103,11 +103,17 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     return (ev_src_t *)kp->pevents[idx].udata;
 }
 
-mod_ret poll_consume_sgn(poll_priv_t *priv, ev_src_t *src, sgn_msg_t *sgn_msg) {
+mod_ret poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {
     return MOD_OK;
 }
 
-mod_ret poll_consume_timer(poll_priv_t *priv, ev_src_t *src, tm_msg_t *tm_msg) {
+mod_ret poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tm_msg_t *tm_msg) {
+    return MOD_OK;
+}
+
+mod_ret poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg) {
+    GET_PRIV_DATA();
+    pt_msg->events = kp->pevents[idx].fflags;
     return MOD_OK;
 }
 
