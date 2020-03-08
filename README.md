@@ -25,7 +25,7 @@ MODULE("Pippo");
 
 static void init(void) {
     /* Register STDIN fd, without autoclosing it at the end */
-    m_register_source(STDIN_FILENO, 0, NULL);
+    m_register_src(STDIN_FILENO, 0, NULL);
 }
 
 static bool check(void) {
@@ -43,7 +43,7 @@ static void destroy(void) {
 }
 
 static void receive(const msg_t *msg, const void *userdata) {
-    if (!msg->is_pubsub) {
+    if (msg->type == TYPE_FD) {
         char c;
         read(msg->fd_msg->fd, &c, sizeof(char));
         switch (tolower(c)) {
@@ -57,7 +57,7 @@ static void receive(const msg_t *msg, const void *userdata) {
                 }
                 break;
         }
-    } else if (msg->pubsub_msg->type == USER && 
+    } else if (msg->type == TYPE_PS && msg->pubsub_msg->type == USER && 
         !strcmp((char *)msg->pubsub_msg->message, "ByeBye")) {
             
         modules_quit(0);
