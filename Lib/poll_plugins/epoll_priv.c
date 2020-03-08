@@ -2,6 +2,11 @@
 #include <sys/epoll.h>
 #include <sys/signalfd.h>
 #include <sys/timerfd.h>
+#include <sys/inotify.h>
+#include <limits.h>
+
+/* Inotify related defines */
+#define BUF_LEN (sizeof(struct inotify_event) + NAME_MAX + 1)
 
 typedef struct {
     int fd;
@@ -47,9 +52,9 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     case TYPE_FD:
         fd = tmp->fd_src.fd;
         break;
-    case TYPE_TIMER: {
+    case TYPE_TMR: {
         if (flag == ADD) {
-            tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK);
+            tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK | TFD_CLOEXEC);
             struct itimerspec timerValue = {{0}};
             timerValue.it_value.tv_sec = tmp->tm_src.its.ms / 1000;
             timerValue.it_value.tv_nsec = (tmp->tm_src.its.ms % 1000) * 1000 * 1000;
@@ -74,6 +79,14 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         fd = tmp->sgn_src.f.fd;
         break;
     }
+    case TYPE_PT: {
+        if (flag == ADD) {
+            tmp->pt_src.f.fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+            inotify_add_watch(tmp->pt_src.f.fd, tmp->pt_src.pt.path, tmp->pt_src.pt.type);
+        }
+        fd = tmp->pt_src.f.fd;
+        break;
+    }
     default:
         break;
     }
@@ -90,8 +103,8 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         memhook._free(tmp->ev);
         tmp->ev = NULL;
         
-        if (tmp->type == TYPE_SGN || tmp->type == TYPE_TIMER) {
-            close(fd);
+        if (tmp->type == TYPE_SGN || tmp->type == TYPE_TMR || tmp->type == TYPE_PT) {
+            close(fd); // automatically close internally used FDs
         }
     }
     
@@ -127,10 +140,23 @@ mod_ret poll_consume_sgn(poll_priv_t *priv, ev_src_t *src, sgn_msg_t *sgn_msg) {
     return MOD_ERR;
 }
 
-mod_ret poll_consume_timer(poll_priv_t *priv, ev_src_t *src, tm_msg_t *tm_msg) {
+mod_ret poll_consume_tmr(poll_priv_t *priv, ev_src_t *src, tm_msg_t *tm_msg) {
     uint64_t t;
     if (read(src->tm_src.f.fd, &t, sizeof(uint64_t)) == sizeof(uint64_t)) {
         return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+mod_ret poll_consume_pt(poll_priv_t *priv, ev_src_t *src, pt_msg_t *pt_msg) {
+    char buffer[BUF_LEN];
+    const size_t length = read(src->pt_src.f.fd, buffer, BUF_LEN);
+    if (length > 0) {
+        struct inotify_event *event = (struct inotify_event *) buffer;
+        if (event->len) {
+            pt_msg->type = event->mask;
+            return MOD_OK;
+        }
     }
     return MOD_ERR;
 }

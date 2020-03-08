@@ -201,7 +201,7 @@ mod_ret module_ref(const self_t *self, const char *name, const self_t **modref) 
     return MOD_OK;
 }
 
-mod_ret module_subscribe(const self_t *self, const char *topic, mod_src_flags flags, const void *userptr) {
+mod_ret module_register_sub(const self_t *self, const char *topic, mod_src_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     GET_CTX(self);
@@ -247,7 +247,7 @@ mod_ret module_subscribe(const self_t *self, const char *topic, mod_src_flags fl
     return MOD_ERR;
 }
 
-mod_ret module_unsubscribe(const self_t *self, const char *topic) {
+mod_ret module_deregister_sub(const self_t *self, const char *topic) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     

@@ -18,4 +18,5 @@ mod_ret poll_clear(poll_priv_t *priv);
 mod_ret poll_destroy(poll_priv_t *priv);
 
 mod_ret poll_consume_sgn(poll_priv_t *priv, ev_src_t *src, sgn_msg_t *msg);
-mod_ret poll_consume_timer(poll_priv_t *priv, ev_src_t *src, tm_msg_t *msg);
+mod_ret poll_consume_tmr(poll_priv_t *priv, ev_src_t *src, tm_msg_t *msg);
+mod_ret poll_consume_pt(poll_priv_t *priv, ev_src_t *src, pt_msg_t *pt_msg);

@@ -43,7 +43,7 @@
 typedef struct _self self_t;
 
 /* Modules states */
-typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 } mod_states;
+typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4 } mod_states;
 
 /* PubSub message types */
 typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
@@ -56,17 +56,24 @@ typedef enum {
     SRC_DUP         =       0x08  // Duplicate PubSub topic or source fd.
 } mod_src_flags;
 
-typedef enum { TYPE_PS, TYPE_FD, TYPE_TIMER, TYPE_SGN } mod_src_type;
+typedef enum { TYPE_PS, TYPE_FD, TYPE_TMR, TYPE_SGN, TYPE_PT } mod_src_type;
 
+/* module_register_src() request special types. */
 typedef struct {
     int clock_id; // unsupported on libkqueue/kqueue
     uint64_t ms;
-} mod_timer_t;
+} mod_tmr_t;
 
 typedef struct {
     int signo;
 } mod_sgn_t;
 
+typedef struct {
+    const char *path;
+    const int type;
+} mod_pt_t;
+
+/* Libmodule messages received in receive() callback */
 typedef struct {
     const char *topic;
     const void *message;
@@ -88,12 +95,18 @@ typedef struct {
 } sgn_msg_t;
 
 typedef struct {
+    const char *path;
+    int type;
+} pt_msg_t;
+
+typedef struct {
     mod_src_type type;
     union {
         const fd_msg_t      *fd_msg;
         const ps_msg_t      *ps_msg;
         const tm_msg_t      *tm_msg;
         const sgn_msg_t     *sgn_msg;
+        const pt_msg_t      *pt_msg;
     };
 } msg_t;
 

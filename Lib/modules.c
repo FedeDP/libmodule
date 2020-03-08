@@ -146,6 +146,7 @@ static int recv_events(ctx_t *c, int timeout) {
             fd_msg_t fd_msg;
             tm_msg_t tm_msg;
             sgn_msg_t sgn_msg;
+            pt_msg_t pt_msg;
             ps_priv_t *ps_msg;
             
             msg.type = p->type;
@@ -170,10 +171,16 @@ static int recv_events(ctx_t *c, int timeout) {
                     msg.sgn_msg = &sgn_msg;
                 }
                 break;
-            case TYPE_TIMER:
-                if (poll_consume_timer(&c->ppriv, p, &tm_msg) == MOD_OK) {
+            case TYPE_TMR:
+                if (poll_consume_tmr(&c->ppriv, p, &tm_msg) == MOD_OK) {
                     tm_msg.ms = p->tm_src.its.ms;
                     msg.tm_msg = &tm_msg;
+                }
+                break;
+            case TYPE_PT:
+                if (poll_consume_pt(&c->ppriv, p, &pt_msg) == MOD_OK) {
+                    pt_msg.path = p->pt_src.pt.path;
+                    msg.pt_msg = &pt_msg;
                 }
                 break;
             default:

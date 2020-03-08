@@ -325,7 +325,7 @@ void test_module_subscribe_NULL_topic(void **state) {
     (void) state; /* unused */
     
     // module_register_source won't even let you use NULL as topic as it only expects "int" or "(const) char *"
-    mod_ret ret = module_subscribe(self, NULL, 0, NULL);
+    mod_ret ret = module_register_sub(self, NULL, 0, NULL);
     assert_false(ret == MOD_OK);
 }
 

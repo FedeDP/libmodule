@@ -3,6 +3,8 @@
 #include <sys/poll.h>
 #include <sys/signalfd.h>
 #include <sys/timerfd.h>
+#include <sys/inotify.h>
+#include <limits.h>
 
 /*
  * Doc: https://kernel.dk/io_uring.pdf
@@ -18,9 +20,10 @@
  * * Avoid io_uring_submit() in poll_wait() ?
  */
 
-static int is_src_same(void *userdata, void *data);
-static void convert_sgn_to_fd(ev_src_t *tmp);
 static void flush_reqs(poll_priv_t *priv);
+
+/* Inotify related defines */
+#define BUF_LEN (sizeof(struct inotify_event) + NAME_MAX + 1)
 
 typedef struct {
     struct io_uring ring;
@@ -40,10 +43,6 @@ mod_ret poll_create(poll_priv_t *priv) {
     return MOD_OK;
 }
 
-static int is_src_same(void *userdata, void *data) {
-    return !(userdata == data);
-}
-
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
     GET_PRIV_DATA();
     
@@ -59,7 +58,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
                 return MOD_OK;
             }
         }
-                
+        
         struct io_uring_sqe *sqe = (struct io_uring_sqe *)tmp->ev;
         int fd = -1;
         switch (tmp->type) {
@@ -67,9 +66,9 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         case TYPE_FD:
             fd = tmp->fd_src.fd;
             break;
-        case TYPE_TIMER: {
+        case TYPE_TMR: {
             if (flag == ADD) {
-                tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK);
+                tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK | TFD_CLOEXEC);
                 struct itimerspec timerValue = {{0}};
                 timerValue.it_value.tv_sec = tmp->tm_src.its.ms / 1000;
                 timerValue.it_value.tv_nsec = (tmp->tm_src.its.ms % 1000) * 1000 * 1000;
@@ -95,6 +94,14 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             fd = tmp->sgn_src.f.fd;
             break; 
         }
+        case TYPE_PT: {
+            if (flag == ADD) {
+                tmp->pt_src.f.fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+                inotify_add_watch(tmp->pt_src.f.fd, tmp->pt_src.pt.path, tmp->pt_src.pt.type);
+            }
+            fd = tmp->pt_src.f.fd;
+            break;
+        }
         default:
             break;
         }
@@ -109,8 +116,8 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
                 /* Eventually release uring sqe if needed */
                 tmp->ev = NULL;
                 
-                if (tmp->type == TYPE_SGN || tmp->type == TYPE_TIMER) {
-                    close(fd);
+                if (tmp->type == TYPE_SGN || tmp->type == TYPE_TMR || tmp->type == TYPE_PT) {
+                    close(fd); // automatically close internally used FDs
                 }
             }
         } else {
@@ -124,7 +131,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         if (flag == ADD) {
             list_insert(up->req_list, tmp, NULL);
         } else {
-            list_remove(up->req_list, tmp, is_src_same);
+            list_remove(up->req_list, tmp, NULL);
         }
     }
     return ret;
@@ -195,10 +202,23 @@ mod_ret poll_consume_sgn(poll_priv_t *priv, ev_src_t *src, sgn_msg_t *sgn_msg) {
     return MOD_ERR;
 }
 
-mod_ret poll_consume_timer(poll_priv_t *priv, ev_src_t *src, tm_msg_t *tm_msg) {
+mod_ret poll_consume_tmr(poll_priv_t *priv, ev_src_t *src, tm_msg_t *tm_msg) {
     uint64_t t;
     if (read(src->tm_src.f.fd, &t, sizeof(uint64_t)) == sizeof(uint64_t)) {
         return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+mod_ret poll_consume_pt(poll_priv_t *priv, ev_src_t *src, pt_msg_t *pt_msg) {
+    char buffer[BUF_LEN];
+    const size_t length = read(src->pt_src.f.fd, buffer, BUF_LEN);
+    if (length > 0) {
+        struct inotify_event *event = (struct inotify_event *) buffer;
+        if (event->len) {
+            pt_msg->type = event->mask;
+            return MOD_OK;
+        }
     }
     return MOD_ERR;
 }

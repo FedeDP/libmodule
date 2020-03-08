@@ -44,11 +44,15 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     case TYPE_FD:
         EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, tmp);
         break;
-    case TYPE_TIMER:
+    case TYPE_TMR:
         EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, 0, tmp->tm_src.its.ms, tmp);
         break;
     case TYPE_SGN:
         EV_SET(_ev, tmp->sgn_src.sgs.signo, EVFILT_SIGNAL, f, 0, 0, tmp);
+        break;
+    case TYPE_PT: 
+        tmp->pt_src.f.fd = open(tmp->pt_src.pt.path, O_RDONLY);
+        EV_SET(_ev, tmp->pt_src.f.fd, EVFILT_VNODE, f, tmp->pt_src.pt.type, 0, tmp);
         break;
     default: 
         break;
@@ -64,6 +68,10 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     if (flag == RM) {
         memhook._free(tmp->ev);
         tmp->ev = NULL;
+        
+        if (tmp->type == TYPE_PT) {
+            close(tmp->pt_src.f.fd);
+        }
     }
     
     return ret;

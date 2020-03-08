@@ -19,10 +19,10 @@ static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags,
 static int is_fd_same(void *my_data, void *list_data);
 static mod_ret _deregister_fd(mod_t *mod, const int fd);
 
-static mod_ret _register_timer(mod_t *mod, const mod_timer_t *its, 
+static mod_ret _register_timer(mod_t *mod, const mod_tmr_t *its, 
                                const mod_src_flags flags, const void *userptr);
 static int is_its_same(void *my_data, void *list_data);
-static mod_ret _deregister_timer(mod_t *mod, const mod_timer_t *its);
+static mod_ret _deregister_timer(mod_t *mod, const mod_tmr_t *its);
 
 static mod_ret _register_sgn(mod_t *mod, const mod_sgn_t *sgs, 
                              const mod_src_flags flags, const void *userptr);
@@ -169,9 +169,9 @@ static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *sr
         }
         break;
     }
-    case TYPE_TIMER: {
-        timer_src_t *tm_src = &src->tm_src;
-        memcpy(&tm_src->its, src_data, sizeof(mod_timer_t));
+    case TYPE_TMR: {
+        tmr_src_t *tm_src = &src->tm_src;
+        memcpy(&tm_src->its, src_data, sizeof(mod_tmr_t));
         tm_src->f.fd = -1;
         break;
     }
@@ -179,6 +179,12 @@ static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *sr
         sgn_src_t *sgn_src = &src->sgn_src;
         memcpy(&sgn_src->sgs, src_data, sizeof(mod_sgn_t));
         sgn_src->f.fd = -1;
+        break;
+    }
+    case TYPE_PT: {
+        pt_src_t *pt_src = &src->pt_src;
+        memcpy(&pt_src->pt, src_data, sizeof(mod_pt_t));
+        pt_src->f.fd = -1;
         break;
     }
     default:
@@ -223,22 +229,22 @@ static mod_ret _deregister_fd(mod_t *mod, const int fd) {
     return MOD_ERR;
 }
 
-static mod_ret _register_timer(mod_t *mod, const mod_timer_t *its, const mod_src_flags flags, const void *userptr) {
-    return _register_src(mod, TYPE_TIMER, its, flags, userptr);
+static mod_ret _register_timer(mod_t *mod, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr) {
+    return _register_src(mod, TYPE_TMR, its, flags, userptr);
 }
 
 static int is_its_same(void *my_data, void *list_data) {
     ev_src_t *src = (ev_src_t *)list_data;
-    const mod_timer_t *its = (const mod_timer_t *)my_data;
+    const mod_tmr_t *its = (const mod_tmr_t *)my_data;
     
-    if (src->type == TYPE_TIMER) {
+    if (src->type == TYPE_TMR) {
         return !(src->tm_src.its.ms == its->ms);
     }
     return 1;
 }
 
 /* Linearly search for its */
-static mod_ret _deregister_timer(mod_t *mod, const mod_timer_t *its) {    
+static mod_ret _deregister_timer(mod_t *mod, const mod_tmr_t *its) {    
     if (list_remove(mod->srcs, (void *)its, is_its_same) == LIST_OK) {
         return MOD_OK;
     }
@@ -260,8 +266,30 @@ static int is_sgs_same(void *my_data, void *list_data) {
 }
 
 /* Linearly search for sgs */
-static mod_ret _deregister_sgn(mod_t *mod, const mod_sgn_t *sgs) {    
+static mod_ret _deregister_sgn(mod_t *mod, const mod_sgn_t *sgs) {
     if (list_remove(mod->srcs, (void *)sgs, is_sgs_same) == LIST_OK) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+static mod_ret _register_path(mod_t *mod, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr) {
+    return _register_src(mod, TYPE_PT, pt, flags, userptr);
+}
+
+static int is_pt_same(void *my_data, void *list_data) {
+    ev_src_t *src = (ev_src_t *)list_data;
+    const mod_pt_t *pt = (const mod_pt_t *)my_data;
+    
+    if (src->type == TYPE_PT) {
+        return !(strcmp(src->pt_src.pt.path, pt->path));
+    }
+    return 1;
+}
+
+/* Linearly search for sgs */
+static mod_ret _deregister_path(mod_t *mod, const mod_pt_t *pt) {
+    if (list_remove(mod->srcs, (void *)pt, is_pt_same) == LIST_OK) {
         return MOD_OK;
     }
     return MOD_ERR;
@@ -562,14 +590,14 @@ mod_ret module_deregister_fd(const self_t *self, const int fd) {
     return _deregister_fd(mod, fd);
 }
 
-mod_ret module_register_timer(const self_t *self, const mod_timer_t *its, const mod_src_flags flags, const void *userptr) {
+mod_ret module_register_tmr(const self_t *self, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(its);
     GET_MOD(self);
     
     return _register_timer(mod, its, flags, userptr);
 }
 
-mod_ret module_deregister_timer(const self_t *self, const mod_timer_t *its) {
+mod_ret module_deregister_tmr(const self_t *self, const mod_tmr_t *its) {
     MOD_PARAM_ASSERT(its);
     GET_MOD(self);
     MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
@@ -590,6 +618,21 @@ mod_ret module_deregister_sgn(const self_t *self, const mod_sgn_t *sgs) {
     MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
     
     return _deregister_sgn(mod, sgs);
+}
+
+mod_ret module_register_pt(const self_t *self, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr) {
+    MOD_PARAM_ASSERT(pt);
+    GET_MOD(self);
+    
+    return _register_path(mod, pt, flags, userptr);
+}
+
+mod_ret module_deregister_pt(const self_t *self, const mod_pt_t *pt) {
+    MOD_PARAM_ASSERT(pt);
+    GET_MOD(self);
+    MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
+    
+    return _deregister_path(mod, pt);
 }
 
 const char *module_get_name(const self_t *mod_self) {
@@ -637,7 +680,7 @@ mod_ret module_dump(const self_t *self) {
         case TYPE_SGN:
             module_log(self, "-> SGN: %d Fl: %d UP: %p\n", t->sgn_src.sgs.signo, t->flags, t->userptr);
             break;
-        case TYPE_TIMER:
+        case TYPE_TMR:
             module_log(self, "-> TMR_MS: %lu TMR_CID: %d Fl: %d UP: %p\n", 
                        t->tm_src.its.ms, t->tm_src.its.clock_id, t->flags, t->userptr);
             break;

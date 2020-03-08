@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <sys/inotify.h>
 
 static const self_t *doggo;
 
@@ -18,9 +19,10 @@ static void module_pre_start(void) {
 }
 
 static bool init(void) {
-    m_register_src(&((mod_sgn_t) { SIGINT }), SRC_AUTOCLOSE, &myData);    
-    m_register_src(&((mod_timer_t) { CLOCK_MONOTONIC, 5000 }), SRC_AUTOCLOSE | SRC_ONESHOT, NULL);
+    m_register_src(&((mod_sgn_t) { SIGINT }), SRC_AUTOCLOSE, &myData);
+    m_register_src(&((mod_tmr_t) { CLOCK_MONOTONIC, 5000 }), SRC_AUTOCLOSE | SRC_ONESHOT, NULL);
     m_register_src(STDIN_FILENO, 0, NULL);
+    m_register_src(&((mod_pt_t) { "/home/federico", IN_CREATE }), SRC_AUTOCLOSE, &myData);
     
     /* Get Doggo module reference */
     m_ref("Doggo", &doggo);
@@ -50,9 +52,12 @@ static void receive(const msg_t *msg, const void *userdata) {
             if (data) {
                 m_log("Data is %d. Received %d.\n", *data, msg->sgn_msg->signo);
             }
-        } else if (msg->type == TYPE_TIMER) {
+        } else if (msg->type == TYPE_TMR) {
             m_log("Timed out.\n");
             c = 'q';
+        } else if (msg->type == TYPE_PT) {
+            m_log("A file was created in %s.\n", msg->pt_msg->path);
+            c = 10;
         } else {
             read(msg->fd_msg->fd, &c, sizeof(char));
         }

@@ -46,8 +46,20 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Use struct timerspec instead of mod_tmr_t?
 - [x] liburing does not work with signalfd :( (issue: https://github.com/axboe/liburing/issues/5). Seems like kernel-side is moving towards a fix!
 - [x] fix libkqueue tests
-- [ ] Implement a inotify mechanism (kqueue: EVFILT_VNODE)
+- [x] Rename module_(un)subscribe to module_(de)register_sub
+- [x] Rename x_timer_t to x_tmr_t
+- [x] Implement a inotify mechanism (kqueue: EVFILT_VNODE)
 - [ ] Implement a proc watcher (kqueue: EVFILT_PROC) (linux: https://lwn.net/Articles/794707/ (pidfd))
+
+- [ ] Abstact away internal fd closing mechanism from poll_plugins (ie: FDs used for inotify watcher, timerfd etc etc)
+
+- [x] Use TFD_CLOEXEC flag on timerfd on linux
+- [ ] Automatically detect absolute timers on linux? eg:
+struct timespec spec;
+clock_gettime(tmp->tm_src.its.clock_id, &spec);
+long curr_ms = spec.tv_nsec / 1000 / 1000 + spec.tv_sec * 1000;
+const int abs_fl = tmp->tm_src.its.ms > curr_ms ? TFD_TIMER_ABSTIME : 0;
+tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK | TFD_CLOEXEC | abs_fl);
 
 ### New Linked list api
 
@@ -56,7 +68,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Add linked list tests
 - [x] Add linked list doc
 - [x] List_insert to insert to head (O(1))
-- [ ] Use a list internally in stack and queue
 
 ### Generic
 

@@ -86,15 +86,20 @@ typedef struct {
 
 /* List that holds fds to self_t mapping for epoll/kqueue, ie: socket source data */
 typedef struct {
-    mod_timer_t its;                    
+    mod_tmr_t its;
     fd_src_t f;
-} timer_src_t;
+} tmr_src_t;
 
 /* List that holds fds to self_t mapping for epoll/kqueue, ie: socket source data */
 typedef struct {
-    mod_sgn_t sgs;                         
-    fd_src_t f;                                 
+    mod_sgn_t sgs;
+    fd_src_t f;
 } sgn_src_t;
+
+typedef struct {
+    mod_pt_t pt;
+    fd_src_t f;
+} pt_src_t;
 
 /* Struct that holds pubsub subscriptions source data */
 typedef struct {
@@ -105,10 +110,11 @@ typedef struct {
 /* Struct that holds generic "event source" data */
 typedef struct {
     union {
-        ps_src_t ps_src;
-        fd_src_t fd_src;
-        timer_src_t tm_src;
-        sgn_src_t sgn_src;
+        ps_src_t    ps_src;
+        fd_src_t    fd_src;
+        tmr_src_t   tm_src;
+        sgn_src_t   sgn_src;
+        pt_src_t    pt_src;
     };
     mod_src_type type;
     void *ev;                               // poll plugin defined data structure (used by kqueue and epoll)
