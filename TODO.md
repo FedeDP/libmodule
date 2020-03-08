@@ -47,7 +47,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename module_(un)subscribe to module_(de)register_sub
 - [x] Rename x_timer_t to x_tmr_t
 - [x] Implement a inotify mechanism (kqueue: EVFILT_VNODE)
-- [ ] Implement a proc watcher (kqueue: EVFILT_PROC) (linux: https://lwn.net/Articles/794707/ (pidfd))
+- [ ] Implement a proc watcher (kqueue: EVFILT_PROC) (linux: https://lwn.net/Articles/794707/ (http://man7.org/linux/man-pages/man2/pidfd_open.2.html))
 
 - [ ] Abstact away internal fd closing mechanism from poll_plugins (ie: FDs used for inotify watcher, timerfd etc etc that are always closed on poll_set_new_evt() with RM)
 
