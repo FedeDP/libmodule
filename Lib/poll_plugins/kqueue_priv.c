@@ -46,8 +46,17 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, tmp);
         break;
     case TYPE_TMR: {
-        int abs_flag = tmp->tm_src->absolute ? NOTE_ABSTIME : 0;
-        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, NOTE_MSECONDS | abs_flag, tmp->tm_src.its.ms, tmp);
+        int abs_flag = 0;
+        if (tmp->tm_src.absolute) {
+#if defined NOTE_ABSOLUTE
+            abs_flag = NOTE_ABSOLUTE;
+#elif defined NOTE_ABSTIME
+            abs_flag = NOTE_ABSTIME;
+#else
+            abs_flag = 0; // unsupported...
+#endif
+        }
+        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, abs_flag, tmp->tm_src.its.ms, tmp);
         break;
     }
     case TYPE_SGN:
