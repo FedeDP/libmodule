@@ -42,6 +42,9 @@ _public_ mod_ret module_deregister_sgn(const self_t *self, const mod_sgn_t *its)
 _public_ mod_ret module_register_pt(const self_t *self, const mod_pt_t *its, const mod_src_flags flags, const void *userptr);
 _public_ mod_ret module_deregister_pt(const self_t *self, const mod_pt_t *its);
 
+_public_ mod_ret module_register_pid(const self_t *self, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr);
+_public_ mod_ret module_deregister_pid(const self_t *self, const mod_pid_t *pid);
+
 /* Module PubSub interface */
 _public_ mod_ret module_become(const self_t *self, const recv_cb new_recv);
 _public_ mod_ret module_unbecome(const self_t *self);
@@ -66,7 +69,8 @@ _public_ mod_ret module_msg_unref(const self_t *self, const ps_msg_t *msg);
     char *: module_register_sub, \
     mod_tmr_t *: module_register_tmr, \
     mod_sgn_t *: module_register_sgn, \
-    mod_pt_t *: module_register_pt \
+    mod_pt_t *: module_register_pt, \
+    mod_pid_t *: module_register_pid \
     )(self, X, flags, userptr);
 
 #define module_deregister_src(self, X) _Generic((X) + 0, \
@@ -74,5 +78,6 @@ _public_ mod_ret module_msg_unref(const self_t *self, const ps_msg_t *msg);
     char *: module_deregister_sub, \
     mod_tmr_t *: module_deregister_tmr, \
     mod_sgn_t *: module_deregister_sgn, \
-    mod_pt_t *: module_deregister_pt \
+    mod_pt_t *: module_deregister_pt, \
+    mod_pid_t *: module_deregister_pid \
     )(self, X);

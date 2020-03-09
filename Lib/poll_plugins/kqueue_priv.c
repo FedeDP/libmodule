@@ -35,6 +35,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     }
 
     int f = flag == ADD ? EV_ADD : EV_DELETE;
+    f |= EV_CLEAR; // always clear event
     if (tmp->flags & SRC_ONESHOT) {
         f |= EV_ONESHOT;
     }
@@ -44,19 +45,24 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     case TYPE_FD:
         EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, tmp);
         break;
-    case TYPE_TMR:
-        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, 0, tmp->tm_src.its.ms, tmp);
+    case TYPE_TMR: {
+        int abs_flag = tmp->tm_src->absolute ? NOTE_ABSTIME : 0;
+        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, NOTE_MSECONDS | abs_flag, tmp->tm_src.its.ms, tmp);
         break;
+    }
     case TYPE_SGN:
         EV_SET(_ev, tmp->sgn_src.sgs.signo, EVFILT_SIGNAL, f, 0, 0, tmp);
         break;
     case TYPE_PT: 
         tmp->pt_src.f.fd = open(tmp->pt_src.pt.path, O_RDONLY);
         if (tmp->pt_src.f.fd != -1) {
-            EV_SET(_ev, tmp->pt_src.f.fd, EVFILT_VNODE, f, tmp->pt_src.pt.op_flag, 0, tmp);
+            EV_SET(_ev, tmp->pt_src.f.fd, EVFILT_VNODE, f, tmp->pt_src.pt.events, 0, tmp);
         } else {
             return -1;
         }
+        break;
+    case TYPE_PID:
+        EV_SET(_ev, tmp->pid_src.pid.pid, EVFILT_PROC, f, tmp->pid_src.pid.events, 0, tmp);
         break;
     default: 
         break;
@@ -74,7 +80,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         tmp->ev = NULL;
         
         if (tmp->type == TYPE_PT) {
-            close(tmp->pt_src.f.fd);
+            close(tmp->pt_src.f.fd); // automatically close internally used FDs
         }
     }
     
@@ -114,6 +120,12 @@ mod_ret poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tm_msg
 mod_ret poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg) {
     GET_PRIV_DATA();
     pt_msg->events = kp->pevents[idx].fflags;
+    return MOD_OK;
+}
+
+mod_ret poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg) {
+    GET_PRIV_DATA();
+    pid_msg->events = kp->pevents[idx].fflags;
     return MOD_OK;
 }
 

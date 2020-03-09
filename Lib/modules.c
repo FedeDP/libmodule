@@ -147,6 +147,7 @@ static int recv_events(ctx_t *c, int timeout) {
             tm_msg_t tm_msg;
             sgn_msg_t sgn_msg;
             pt_msg_t pt_msg;
+            pid_msg_t pid_msg;
             ps_priv_t *ps_msg;
             
             msg.type = p->type;
@@ -183,7 +184,17 @@ static int recv_events(ctx_t *c, int timeout) {
                     msg.pt_msg = &pt_msg;
                 }
                 break;
+            case TYPE_PID:
+                if (poll_consume_pid(&c->ppriv, i, p, &pid_msg) == MOD_OK) {
+                    pid_msg.pid = p->pid_src.pid.pid;
+                    msg.pid_msg = &pid_msg;
+                }
+                break;
             default:
+                MODULE_DEBUG("Unmanaged src %d.\n", msg.type);
+                p = NULL;
+                errno = EINVAL;
+                nfds = -1;
                 break;
             }
 

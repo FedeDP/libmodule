@@ -1,5 +1,6 @@
 #include "module.h"
 #include "poll_priv.h"
+#include <time.h>
 
 /** Generic module interface **/
 
@@ -19,15 +20,23 @@ static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags,
 static int is_fd_same(void *my_data, void *list_data);
 static mod_ret _deregister_fd(mod_t *mod, const int fd);
 
-static mod_ret _register_timer(mod_t *mod, const mod_tmr_t *its, 
+static mod_ret _register_tmr(mod_t *mod, const mod_tmr_t *its, 
                                const mod_src_flags flags, const void *userptr);
-static int is_its_same(void *my_data, void *list_data);
-static mod_ret _deregister_timer(mod_t *mod, const mod_tmr_t *its);
+static int is_tmr_same(void *my_data, void *list_data);
+static mod_ret _deregister_tmr(mod_t *mod, const mod_tmr_t *its);
 
 static mod_ret _register_sgn(mod_t *mod, const mod_sgn_t *sgs, 
                              const mod_src_flags flags, const void *userptr);
-static int is_sgs_same(void *my_data, void *list_data);
+static int is_sgn_same(void *my_data, void *list_data);
 static mod_ret _deregister_sgn(mod_t *mod, const mod_sgn_t *sgs);
+
+static mod_ret _register_pt(mod_t *mod, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr);
+static int is_pt_same(void *my_data, void *list_data);
+static mod_ret _deregister_pt(mod_t *mod, const mod_pt_t *pt);
+
+static mod_ret _register_pid(mod_t *mod, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr);
+static int is_pid_same(void *my_data, void *list_data);
+static mod_ret _deregister_pid(mod_t *mod, const mod_pid_t *pid);
 
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
 static void reset_module(mod_t *mod);
@@ -91,7 +100,7 @@ static mod_ret init_pubsub_fd(mod_t *mod) {
     if (_pipe(mod) == 0) {
         fd_src_t fd_src = {0};
         fd_src.fd = mod->pubsub_fd[0];
-        if (_register_src(mod, TYPE_PS, &fd_src, SRC_AUTOCLOSE, NULL) == MOD_OK) {
+        if (_register_src(mod, TYPE_PS, &fd_src, SRC_FD_AUTOCLOSE, NULL) == MOD_OK) {
             return MOD_OK;
         }
         close(mod->pubsub_fd[0]);
@@ -117,7 +126,7 @@ static void src_priv_dtor(void *data) {
     }
     
     /* Properly manage autoclose flag */
-    if (t->flags & SRC_AUTOCLOSE) {
+    if (t->flags & SRC_FD_AUTOCLOSE) {
         int fd = -1;
         switch (t->type) {
         case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
@@ -173,6 +182,12 @@ static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *sr
         tmr_src_t *tm_src = &src->tm_src;
         memcpy(&tm_src->its, src_data, sizeof(mod_tmr_t));
         tm_src->f.fd = -1;
+        
+        /* Is this an absolute timer? Ie: if requested ms > current time in ms */
+        struct timespec spec;
+        clock_gettime(CLOCK_MONOTONIC, &spec);
+        long curr_ms = spec.tv_nsec / 1000 / 1000 + spec.tv_sec * 1000;
+        tm_src->absolute = tm_src->its.ms > curr_ms;
         break;
     }
     case TYPE_SGN: {
@@ -185,6 +200,12 @@ static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *sr
         pt_src_t *pt_src = &src->pt_src;
         memcpy(&pt_src->pt, src_data, sizeof(mod_pt_t));
         pt_src->f.fd = -1;
+        break;
+    }
+    case TYPE_PID: {
+        pid_src_t *pid_src = &src->pid_src;
+        memcpy(&pid_src->pid, src_data, sizeof(mod_pid_t));
+        pid_src->f.fd = -1;
         break;
     }
     default:
@@ -229,11 +250,11 @@ static mod_ret _deregister_fd(mod_t *mod, const int fd) {
     return MOD_ERR;
 }
 
-static mod_ret _register_timer(mod_t *mod, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr) {
+static mod_ret _register_tmr(mod_t *mod, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr) {
     return _register_src(mod, TYPE_TMR, its, flags, userptr);
 }
 
-static int is_its_same(void *my_data, void *list_data) {
+static int is_tmr_same(void *my_data, void *list_data) {
     ev_src_t *src = (ev_src_t *)list_data;
     const mod_tmr_t *its = (const mod_tmr_t *)my_data;
     
@@ -244,8 +265,8 @@ static int is_its_same(void *my_data, void *list_data) {
 }
 
 /* Linearly search for its */
-static mod_ret _deregister_timer(mod_t *mod, const mod_tmr_t *its) {    
-    if (list_remove(mod->srcs, (void *)its, is_its_same) == LIST_OK) {
+static mod_ret _deregister_tmr(mod_t *mod, const mod_tmr_t *its) {    
+    if (list_remove(mod->srcs, (void *)its, is_tmr_same) == LIST_OK) {
         return MOD_OK;
     }
     return MOD_ERR;
@@ -255,7 +276,7 @@ static mod_ret _register_sgn(mod_t *mod, const mod_sgn_t *sgs, const mod_src_fla
     return _register_src(mod, TYPE_SGN, sgs, flags, userptr);
 }
 
-static int is_sgs_same(void *my_data, void *list_data) {
+static int is_sgn_same(void *my_data, void *list_data) {
     ev_src_t *src = (ev_src_t *)list_data;
     const mod_sgn_t *sgs = (const mod_sgn_t *)my_data;
     
@@ -267,13 +288,13 @@ static int is_sgs_same(void *my_data, void *list_data) {
 
 /* Linearly search for sgs */
 static mod_ret _deregister_sgn(mod_t *mod, const mod_sgn_t *sgs) {
-    if (list_remove(mod->srcs, (void *)sgs, is_sgs_same) == LIST_OK) {
+    if (list_remove(mod->srcs, (void *)sgs, is_sgn_same) == LIST_OK) {
         return MOD_OK;
     }
     return MOD_ERR;
 }
 
-static mod_ret _register_path(mod_t *mod, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr) {
+static mod_ret _register_pt(mod_t *mod, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr) {
     return _register_src(mod, TYPE_PT, pt, flags, userptr);
 }
 
@@ -288,8 +309,30 @@ static int is_pt_same(void *my_data, void *list_data) {
 }
 
 /* Linearly search for sgs */
-static mod_ret _deregister_path(mod_t *mod, const mod_pt_t *pt) {
+static mod_ret _deregister_pt(mod_t *mod, const mod_pt_t *pt) {
     if (list_remove(mod->srcs, (void *)pt, is_pt_same) == LIST_OK) {
+        return MOD_OK;
+    }
+    return MOD_ERR;
+}
+
+static mod_ret _register_pid(mod_t *mod, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr) {
+    return _register_src(mod, TYPE_PID, pid, flags, userptr);
+}
+
+static int is_pid_same(void *my_data, void *list_data) {
+    ev_src_t *src = (ev_src_t *)list_data;
+    const mod_pid_t *pid = (const mod_pid_t *)my_data;
+    
+    if (src->type == TYPE_PID) {
+        return !(src->pid_src.pid.pid == pid->pid);
+    }
+    return 1;
+}
+
+/* Linearly search for sgs */
+static mod_ret _deregister_pid(mod_t *mod, const mod_pid_t *pid) {
+    if (list_remove(mod->srcs, (void *)pid, is_pid_same) == LIST_OK) {
         return MOD_OK;
     }
     return MOD_ERR;
@@ -595,7 +638,7 @@ mod_ret module_register_tmr(const self_t *self, const mod_tmr_t *its, const mod_
     MOD_PARAM_ASSERT(its->ms);
     GET_MOD(self);
     
-    return _register_timer(mod, its, flags, userptr);
+    return _register_tmr(mod, its, flags, userptr);
 }
 
 mod_ret module_deregister_tmr(const self_t *self, const mod_tmr_t *its) {
@@ -604,7 +647,7 @@ mod_ret module_deregister_tmr(const self_t *self, const mod_tmr_t *its) {
     GET_MOD(self);
     MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
     
-    return _deregister_timer(mod, its);
+    return _deregister_tmr(mod, its);
 }
 
 mod_ret module_register_sgn(const self_t *self, const mod_sgn_t *sgs, const mod_src_flags flags, const void *userptr) {
@@ -626,10 +669,10 @@ mod_ret module_register_pt(const self_t *self, const mod_pt_t *pt, const mod_src
     MOD_PARAM_ASSERT(pt);
     MOD_PARAM_ASSERT(pt->path);
     MOD_PARAM_ASSERT(strlen(pt->path));
-    MOD_PARAM_ASSERT(pt->op_flag);
+    MOD_PARAM_ASSERT(pt->events);
     GET_MOD(self);
     
-    return _register_path(mod, pt, flags, userptr);
+    return _register_pt(mod, pt, flags, userptr);
 }
 
 mod_ret module_deregister_pt(const self_t *self, const mod_pt_t *pt) {
@@ -639,7 +682,24 @@ mod_ret module_deregister_pt(const self_t *self, const mod_pt_t *pt) {
     GET_MOD(self);
     MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
     
-    return _deregister_path(mod, pt);
+    return _deregister_pt(mod, pt);
+}
+
+mod_ret module_register_pid(const self_t *self, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr) {
+    MOD_PARAM_ASSERT(pid);
+    MOD_PARAM_ASSERT(pid->pid > 0);
+    GET_MOD(self);
+    
+    return _register_pid(mod, pid, flags, userptr);
+}
+
+mod_ret module_deregister_pid(const self_t *self, const mod_pid_t *pid) {
+    MOD_PARAM_ASSERT(pid);
+    MOD_PARAM_ASSERT(pid->pid > 0);
+    GET_MOD(self);
+    MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", MOD_ERR);
+    
+    return _deregister_pid(mod, pid);
 }
 
 const char *module_get_name(const self_t *mod_self) {
@@ -677,7 +737,7 @@ mod_ret module_dump(const self_t *self) {
         ev_src_t *sub = map_itr_get_data(itr);
         module_log(self, "-> T: %s: Fl: %d UP: %p\n", sub->ps_src.topic, sub->flags, sub->userptr);
     }
-    module_log(self, "* Fds:\n");
+    module_log(self, "* Srcs:\n");
     for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr; itr = list_itr_next(itr)) {
         ev_src_t *t = list_itr_get_data(itr);
         switch (t->type) {
@@ -691,11 +751,16 @@ mod_ret module_dump(const self_t *self) {
             module_log(self, "-> TMR_MS: %lu TMR_CID: %d Fl: %d UP: %p\n", 
                        t->tm_src.its.ms, t->tm_src.its.clock_id, t->flags, t->userptr);
             break;
+        case TYPE_PT:
+            module_log(self, "-> PT: '%s' PT_EV: %u Fl: %d UP: %p\n", 
+                       t->pt_src.pt.path, t->pt_src.pt.events, t->flags, t->userptr);
+            break;
+        case TYPE_PID:
+            module_log(self, "-> PID: %d PID_EV: %u Fl: %d UP: %p\n", 
+                       t->pid_src.pid.pid, t->pid_src.pid.events, t->flags, t->userptr);
+            break;
         default:
             break;
-        }
-        if (t->fd_src.fd != mod->pubsub_fd[0]) {
-            module_log(self, "-> FD: %d Fl: %d UP: %p\n", t->fd_src.fd, t->flags, t->userptr);
         }
     }
     return MOD_OK;

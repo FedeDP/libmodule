@@ -5,8 +5,6 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <unistd.h>
-#include <time.h>
-#include <signal.h>
 
 #define MODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
 #define MODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
@@ -48,15 +46,20 @@ typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4 } mod_states;
 /* PubSub message types */
 typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
 
-/* Module event sources' flags */
-typedef enum { 
-    SRC_AUTOCLOSE   =       0x01, // Automatically close source upon deregistation (ie: call close on fd).
-    SRC_AUTOFREE    =       0x02, // Automatically free userdata upon deregistation.
-    SRC_ONESHOT     =       0x04, // Run just once then automatically deregister source.
-    SRC_DUP         =       0x08  // Duplicate PubSub topic or source fd.
-} mod_src_flags;
+/* Module event sources' types */
+typedef enum { TYPE_PS, TYPE_FD, TYPE_TMR, TYPE_SGN, TYPE_PT, TYPE_PID } mod_src_type;
 
-typedef enum { TYPE_PS, TYPE_FD, TYPE_TMR, TYPE_SGN, TYPE_PT } mod_src_type;
+/* 
+ * Module event sources' flags:
+ * First 8 bytes are reserved for generic source flags.
+ * Then, each source type has 8 bytes reserved for its flags.
+ */
+typedef enum { 
+    SRC_AUTOFREE        =       0x01, // Automatically free userdata upon deregistation.
+    SRC_ONESHOT         =       0x02, // Run just once then automatically deregister source.
+    SRC_DUP             =       0x04, // Duplicate PubSub topic or source fd.
+    SRC_FD_AUTOCLOSE    =       0x01 << (8 * TYPE_FD), // Automatically close fd upon deregistation.
+} mod_src_flags;
 
 /* module_register_src() request special types. */
 typedef struct {
@@ -70,10 +73,15 @@ typedef struct {
 
 typedef struct {
     const char *path;
-    unsigned int op_flag;
+    unsigned int events;
 } mod_pt_t;
 
-/* Libmodule messages received in receive() callback */
+typedef struct {
+    pid_t pid;
+    unsigned int events; // unused on linux
+} mod_pid_t;
+
+/* Libmodule sub-messages received in receive() callback */
 typedef struct {
     const char *topic;
     const void *message;
@@ -100,6 +108,12 @@ typedef struct {
 } pt_msg_t;
 
 typedef struct {
+    pid_t pid;
+    unsigned int events;
+} pid_msg_t;
+
+/* Libmodule receive() main message type */
+typedef struct {
     mod_src_type type;
     union {
         const fd_msg_t      *fd_msg;
@@ -107,6 +121,7 @@ typedef struct {
         const tm_msg_t      *tm_msg;
         const sgn_msg_t     *sgn_msg;
         const pt_msg_t      *pt_msg;
+        const pid_msg_t     *pid_msg;
     };
 } msg_t;
 

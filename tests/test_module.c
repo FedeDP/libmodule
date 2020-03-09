@@ -268,21 +268,21 @@ void test_module_unbecome(void **state) {
 void test_module_add_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_register_fd(self, -1, SRC_AUTOCLOSE, NULL);
+    mod_ret ret = module_register_fd(self, -1, SRC_FD_AUTOCLOSE, NULL);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_add_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_register_fd(NULL, STDIN_FILENO, SRC_AUTOCLOSE, NULL);
+    mod_ret ret = module_register_fd(NULL, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_add_fd(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_register_fd(self, STDIN_FILENO, SRC_AUTOCLOSE, NULL);
+    mod_ret ret = module_register_fd(self, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == MOD_OK);
 }
 

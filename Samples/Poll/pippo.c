@@ -31,7 +31,7 @@ static bool init(void) {
     sigprocmask(SIG_BLOCK, &mask, NULL);
     
     int fd = signalfd(-1, &mask, 0);
-    m_register_src(fd, SRC_AUTOCLOSE, &myData);
+    m_register_src(fd, SRC_FD_AUTOCLOSE, &myData);
 #endif
     
     /* Add stdin fd */

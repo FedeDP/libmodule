@@ -39,7 +39,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Fix tests
 - [x] Fix fd closing: timerfd/signalfd should be always closed on RM. In fd_priv_dtor we should only close FD_AUTOCLOSE fds
 - [x] Add a FD_AUTOFREE flag to mimic PS_AUTOFREE flag?
-- [ ] Port examples
 - [x] Rename SRC_RUNONCE to SRC_ONESHOT
 - [x] Manage SRC_ONESHOT for subscriptions too
 - [x] liburing does not work with signalfd :( (issue: https://github.com/axboe/liburing/issues/5). Seems like kernel-side is moving towards a fix!
@@ -47,24 +46,23 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename module_(un)subscribe to module_(de)register_sub
 - [x] Rename x_timer_t to x_tmr_t
 - [x] Implement a inotify mechanism (kqueue: EVFILT_VNODE)
-- [ ] Implement a proc watcher (kqueue: EVFILT_PROC) (linux: https://lwn.net/Articles/794707/ (http://man7.org/linux/man-pages/man2/pidfd_open.2.html))
+- [x] Implement a proc watcher (kqueue: EVFILT_PROC) (linux: https://lwn.net/Articles/794707/ (http://man7.org/linux/man-pages/man2/pidfd_open.2.html))
 
-- [ ] Abstact away internal fd closing mechanism from poll_plugins (ie: FDs used for inotify watcher, timerfd etc etc that are always closed on poll_set_new_evt() with RM)
-
-- [ ] Expose needed flags (eg: IN_CREATE for linux inotify) as mod_src_flags sub-flags, eg:
-SRC_PT_OPEN = 1 << 6 SRC_PT_MOVE = 2 << 6 ???
-- [ ] Rename SRC_AUTOCLOSE to SRC_FD_AUTOCLOSE ?
+- [ ] Expose needed flags (eg: IN_CREATE for linux inotify) as pt_src_events, eg:
+ifdef __linux__ 
+#define SRC_PT_CREATE IN_CREATE
+#else
+#define SRC_PT_CREATE ...
+#endif
+- [x] Rename SRC_AUTOCLOSE to SRC_FD_AUTOCLOSE ?
 
 - [x] Use TFD_CLOEXEC flag on timerfd on linux
-- [ ] Automatically detect absolute timers on linux? eg:
-struct timespec spec;
-clock_gettime(tmp->tm_src.its.clock_id, &spec);
-long curr_ms = spec.tv_nsec / 1000 / 1000 + spec.tv_sec * 1000;
-const int abs_fl = tmp->tm_src.its.ms > curr_ms ? TFD_TIMER_ABSTIME : 0;
-tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK | TFD_CLOEXEC | abs_fl);
+- [x] Add a common_lin.c in poll_plugins (to manage timerfd/inotify/signalfd)
+- [x] Automatically detect absolute timers
+- [x] Use SFD_CLOEXEC flag on signalfd on linux
 
-- [ ] Add a common.c in poll_plugins?
-- [ ] Add a common_lin.c in poll_plugins (to manage timerfd/inotify/signalfd)
+- [x] Properly force EV_CLEAR flag in kqueue
+- [ ] Port examples
 
 ### New Linked list api
 
@@ -125,7 +123,7 @@ tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK | TFD_C
 
 - [x] module_is should return false if mod is NULL
 
-- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are ref'd and pushed on queue
+- [ ] Add mod_psg_flags -> PS_AUTOFREE, PS_GLOBAL (for module_broadcast) and change module_tell/publish/broadcast API?
 
 - [ ] Update examples
 - [ ] Update tests
@@ -142,3 +140,4 @@ tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK | TFD_C
 
 ### Generic
 - [ ] Akka-persistence like message store? (ie: store all messages and replay them)
+- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are ref'd and pushed on queue
