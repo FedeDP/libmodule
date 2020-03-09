@@ -35,7 +35,6 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     }
 
     int f = flag == ADD ? EV_ADD : EV_DELETE;
-    f |= EV_CLEAR; // always clear event
     if (tmp->flags & SRC_ONESHOT) {
         f |= EV_ONESHOT;
     }
