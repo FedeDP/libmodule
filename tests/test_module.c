@@ -374,28 +374,28 @@ void test_module_ref(void **state) {
 void test_module_tell_NULL_recipient(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_tell(self, NULL, (unsigned char *)"hi!", strlen("hi!"), false);
+    mod_ret ret = module_tell(self, NULL, (unsigned char *)"hi!", strlen("hi!"), 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_tell_NULL_self(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_tell(NULL, testSelf, (unsigned char *)"hi!", strlen("hi!"), false);
+    mod_ret ret = module_tell(NULL, testSelf, (unsigned char *)"hi!", strlen("hi!"), 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_tell_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_tell(self, testSelf, NULL, 10, false);
+    mod_ret ret = module_tell(self, testSelf, NULL, 10, 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_tell_wrong_size(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_tell(self, testSelf, (unsigned char *)"hi!", -1, false);
+    mod_ret ret = module_tell(self, testSelf, (unsigned char *)"hi!", -1, 0);
     assert_false(ret == MOD_OK);
 }
 
@@ -403,70 +403,70 @@ void test_module_tell_wrong_size(void **state) {
 void test_module_tell(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_tell(self, testSelf, (unsigned char *)strdup("hi1!"), strlen("hi!"), true);
+    mod_ret ret = module_tell(self, testSelf, (unsigned char *)strdup("hi1!"), strlen("hi!"), PS_AUTOFREE);
     assert_true(ret == MOD_OK);
 }
 
 void test_module_publish_NULL_self(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_publish(NULL, "topic", (unsigned char *)"hi!", strlen("hi!"), false);
+    mod_ret ret = module_publish(NULL, "topic", (unsigned char *)"hi!", strlen("hi!"), 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_publish_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_publish(self, "topic", NULL, 10, false);
+    mod_ret ret = module_publish(self, "topic", NULL, 10, 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_publish_NULL_topic(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_publish(self, NULL, (unsigned char *)"hi!", strlen("hi!"), false);
+    mod_ret ret = module_publish(self, NULL, (unsigned char *)"hi!", strlen("hi!"), 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_publish_wrong_size(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_publish(self, "topic", (unsigned char *)"hi!", -1, false);
+    mod_ret ret = module_publish(self, "topic", (unsigned char *)"hi!", -1, 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_publish(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_publish(self, "topic", (unsigned char *)"hi2!", strlen("hi!"), false);
+    mod_ret ret = module_publish(self, "topic", (unsigned char *)"hi2!", strlen("hi!"), 0);
     assert_true(ret == MOD_OK);
 }
 
 void test_module_broadcast_NULL_self(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_broadcast(NULL, (unsigned char *)"hi!", strlen("hi!"), false, false);
+    mod_ret ret = module_broadcast(NULL, (unsigned char *)"hi!", strlen("hi!"), 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_broadcast_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_broadcast(self, NULL, strlen("hi!"), false, false);
+    mod_ret ret = module_broadcast(self, NULL, strlen("hi!"), 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_broadcast_wrong_size(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_broadcast(self, (unsigned char *)"hi!", -1, false, false);
+    mod_ret ret = module_broadcast(self, (unsigned char *)"hi!", -1, 0);
     assert_false(ret == MOD_OK);
 }
 
 void test_module_broadcast(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_broadcast(self, (unsigned char *)"hi3!", strlen("hi!"), false, false);
+    mod_ret ret = module_broadcast(self, (unsigned char *)"hi3!", strlen("hi!"), 0);
     assert_true(ret == MOD_OK);
 }
 
@@ -486,7 +486,7 @@ static void recv(const msg_t *msg, const void *userdata) {
     static int ctr = 0;
     if (msg->type == TYPE_PS && msg->ps_msg->type == USER) {
         ctr++;
-        if (!strcmp((char *)msg->ps_msg->message, "hi3!")) {
+        if (!strcmp((char *)msg->ps_msg->data, "hi3!")) {
             modules_ctx_quit(CTX, ctr);
         }
     }

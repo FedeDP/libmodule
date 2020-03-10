@@ -53,14 +53,14 @@ _public_ mod_ret module_register_sub(const self_t *self, const char *topic, cons
 _public_ mod_ret module_deregister_sub(const self_t *self, const char *topic);
 
 _public_ mod_ret module_tell(const self_t *self, const self_t *recipient, const void *message,
-                                     const ssize_t size, const bool autofree);
+                             const ssize_t size,  const mod_ps_flags flags);
 _public_ mod_ret module_publish(const self_t *self, const char *topic, const void *message,
-                                        const ssize_t size, const bool autofree);
+                                const ssize_t size,  const mod_ps_flags flags);
 _public_ mod_ret module_broadcast(const self_t *self, const void *message,
-                                          const ssize_t size, const bool autofree, bool global);
+                                  const ssize_t size,  const mod_ps_flags flags);
 _public_ mod_ret module_poisonpill(const self_t *self, const self_t *recipient);
-_public_ mod_ret module_msg_ref(const self_t *self, const ps_msg_t *msg);
-_public_ mod_ret module_msg_unref(const self_t *self, const ps_msg_t *msg);
+_public_ mod_ret module_msg_ref(const self_t *self, ps_msg_t *msg);
+_public_ mod_ret module_msg_unref(const self_t *self, ps_msg_t *msg);
 
 
 /* Generic event source registering functions */

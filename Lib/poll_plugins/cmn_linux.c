@@ -13,7 +13,7 @@
 #define BUF_LEN (sizeof(struct inotify_event) + NAME_MAX + 1)
 
 void create_timerfd(ev_src_t *tmp) {
-    const int abs_fl = tmp->tm_src.absolute ? TFD_TIMER_ABSTIME : 0;
+    const int abs_fl = tmp->flags & SRC_TMR_ABSOLUTE ? TFD_TIMER_ABSTIME : 0;
     tmp->tm_src.f.fd = timerfd_create(tmp->tm_src.its.clock_id, TFD_NONBLOCK | TFD_CLOEXEC | abs_fl);
     
     struct itimerspec timerValue = {{0}};

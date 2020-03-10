@@ -7,14 +7,14 @@ static void subscribtions_dtor(void *data);
 static bool is_subscribed(mod_t *mod, ps_priv_t *msg);
 static mod_map_ret tell_if(void *data, const char *key, void *value);
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
-                               ps_msg_type type, const size_t size, const bool autofree);
+                                    ps_msg_type type, const size_t size, const mod_ps_flags flags);
 static mod_map_ret tell_global(void *data, const char *key, void *value);
 static void pubsub_msg_ref(ps_priv_t *pubsub_msg);
 static void pubsub_msg_unref(ps_priv_t *pubsub_msg);
-static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c, const bool global);
+static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c);
 static mod_ret send_msg(const mod_t *mod, mod_t *recipient, 
-                                   const char *topic, const void *message, 
-                                   const ssize_t size, const bool autofree, const bool global);
+                        const char *topic, const void *message, 
+                        const ssize_t size, const mod_ps_flags flags);
 
 static void subscribtions_dtor(void *data) {
     ev_src_t *sub = (ev_src_t *)data;
@@ -75,15 +75,21 @@ static mod_map_ret tell_if(void *data, const char *key, void *value) {
 }
 
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
-                               ps_msg_type type, const size_t size, const bool autofree) {
+                                    ps_msg_type type, const size_t size, const mod_ps_flags flags) {
     ps_priv_t *m = memhook._calloc(1, sizeof(ps_priv_t));
     if (m) {
-        m->msg.message = message;
         m->msg.sender = sender;
         m->msg.topic = topic;
         m->msg.type = type;
         m->msg.size = size;
-        m->autofree = autofree;
+        m->flags = flags;
+        /* Duplicate data if requested */
+        if (m->flags & PS_DUP_DATA) {
+            void *new_data = memhook._malloc(size);
+            memcpy(new_data, message, size);
+            message = new_data;
+        }
+        m->msg.data = message;
     }
     return m;
 }
@@ -104,17 +110,17 @@ static void pubsub_msg_ref(ps_priv_t *pubsub_msg) {
 static void pubsub_msg_unref(ps_priv_t *pubsub_msg) {
     /* Properly free pubsub msg if its ref count reaches 0 and autofree bit is true */
     if (pubsub_msg->refs == 0 || --pubsub_msg->refs == 0) {
-        if (pubsub_msg->autofree) {
-            memhook._free((void *)pubsub_msg->msg.message);
+        if (pubsub_msg->flags & PS_AUTOFREE) {
+            memhook._free((void *)pubsub_msg->msg.data);
         }
         memhook._free(pubsub_msg);
     }
 }
 
-static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c, const bool global) {
+static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
     if (mod) {
         tell_if(m, NULL, mod);
-    } else if (!global) {
+    } else if (!(m->flags & PS_GLOBAL)) {
         map_iterate(c->modules, tell_if, m);
     } else {
         map_iterate(ctx, tell_global, m);
@@ -129,22 +135,21 @@ static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c, const bool gl
 }
 
 static mod_ret send_msg(const mod_t *mod, mod_t *recipient, 
-                                   const char *topic, const void *message, 
-                                   const ssize_t size, const bool autofree, const bool global) {
+                        const char *topic, const void *message, 
+                        const ssize_t size, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
-    
     GET_CTX_PRIV((&mod->self));
     
-    ps_priv_t *m = create_pubsub_msg(message, &mod->self, topic, USER, size, autofree);
-    return tell_pubsub_msg(m, recipient, c, global);
+    ps_priv_t *m = create_pubsub_msg(message, &mod->self, topic, USER, size, flags);
+    return tell_pubsub_msg(m, recipient, c);
 }
 
 /** Private API **/
 
 mod_ret tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, const self_t *sender, const char *topic) {
-    ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, false);
-    return tell_pubsub_msg(m, mod, c, false);
+    ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, 0);
+    return tell_pubsub_msg(m, mod, c);
 }
 
 mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value) {
@@ -251,37 +256,37 @@ mod_ret module_deregister_sub(const self_t *self, const char *topic) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     
-    if (map_has_key(mod->subscriptions, topic) &&
-        map_remove(mod->subscriptions, topic) == MAP_OK) {
-        
+    if (map_remove(mod->subscriptions, topic) == MAP_OK) {
         return MOD_OK;
     }
     return MOD_ERR;
 }
 
 mod_ret module_tell(const self_t *self, const self_t *recipient, const void *message, 
-                            const ssize_t size, const bool autofree) {
+                    const ssize_t size, const mod_ps_flags flags) {
+    MOD_PARAM_ASSERT(!(flags & PS_GLOBAL))
     GET_MOD(self);
     MOD_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
     MOD_PARAM_ASSERT(self->ctx == recipient->ctx);
 
-    return send_msg(mod, recipient->mod, NULL, message, size, autofree, false);
+    return send_msg(mod, recipient->mod, NULL, message, size, flags);
 }
 
 mod_ret module_publish(const self_t *self, const char *topic, const void *message, 
-                               const ssize_t size, const bool autofree) {
+                       const ssize_t size, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(topic);
+    MOD_PARAM_ASSERT(!(flags & PS_GLOBAL))
     GET_MOD(self);
     
-    return send_msg(mod, NULL, topic, message, size, autofree, false);
+    return send_msg(mod, NULL, topic, message, size, flags);
 }
 
 mod_ret module_broadcast(const self_t *self, const void *message, 
-                                 const ssize_t size, const bool autofree, bool global) {
+                         const ssize_t size, const mod_ps_flags flags) {
     GET_MOD(self);
     
-    return send_msg(mod, NULL, NULL, message, size, autofree, global);
+    return send_msg(mod, NULL, NULL, message, size, flags);
 }
 
 mod_ret module_poisonpill(const self_t *self, const self_t *recipient) {
@@ -292,7 +297,7 @@ mod_ret module_poisonpill(const self_t *self, const self_t *recipient) {
     return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->self, NULL);
 }
 
-mod_ret module_msg_ref(const self_t *self, const ps_msg_t *msg) {
+mod_ret module_msg_ref(const self_t *self, ps_msg_t *msg) {
     /* You can only ref a msg from within a module context */
     MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF);
     MOD_PARAM_ASSERT(msg);
@@ -302,11 +307,11 @@ mod_ret module_msg_ref(const self_t *self, const ps_msg_t *msg) {
     return MOD_OK;
 }
     
-mod_ret module_msg_unref(const self_t *self, const ps_msg_t *msg) {
+mod_ret module_msg_unref(const self_t *self, ps_msg_t *msg) {
     /* You can only unref a msg from within a module context */
     MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF);
     MOD_PARAM_ASSERT(msg);
-            
+
     ps_priv_t *priv_msg = (ps_priv_t *)msg;
     pubsub_msg_unref(priv_msg);
     return MOD_OK;

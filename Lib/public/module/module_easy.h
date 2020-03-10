@@ -48,13 +48,13 @@ static void _ctor2_ module_pre_start(void)
 #define m_register_src(X, flags, userptr)       module_register_src(self(), X, flags, userptr)
 #define m_deregister_src(X)                     module_deregister_src(self(), X)
 
-#define m_tell(recipient, msg, size, free)      module_tell(self(), recipient, msg, size, free)
-#define m_publish(topic, msg, size, free)       module_publish(self(), topic, msg, size, free)
-#define m_broadcast(msg, size, free, global)    module_broadcast(self(), msg, size, free, global)
+#define m_tell(recipient, msg, size, flags)     module_tell(self(), recipient, msg, size, flags)
+#define m_publish(topic, msg, size, flags)      module_publish(self(), topic, msg, size, flags)
+#define m_broadcast(msg, size, flags)           module_broadcast(self(), msg, size, flags)
 #define m_poisonpill(recipient)                 module_poisonpill(self(), recipient)
-#define m_tell_str(recipient, msg)              module_tell(self(), recipient, (const void *)msg, strlen(msg), false)
-#define m_publish_str(topic, msg)               module_publish(self(), topic, (const void *)msg, strlen(msg), false)
-#define m_broadcast_str(msg, global)            module_broadcast(self(), (const void *)msg, strlen(msg), false, global)
+#define m_tell_str(recipient, msg, flags)       module_tell(self(), recipient, (const void *)msg, strlen(msg), flags)
+#define m_publish_str(topic, msg, flags)        module_publish(self(), topic, (const void *)msg, strlen(msg), flags)
+#define m_broadcast_str(msg, flags)             module_broadcast(self(), (const void *)msg, strlen(msg), flags)
 
 #define m_msg_ref(msg)                          module_msg_ref(self(), msg);
 #define m_msg_unref(msg)                        module_msg_unref(self(), msg);

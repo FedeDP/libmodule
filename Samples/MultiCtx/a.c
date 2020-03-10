@@ -56,7 +56,7 @@ static void receive(const msg_t *msg, const void *userdata) {
             m_become(ready);
             m_set_userdata(&counter);
         }
-    } else if (msg->ps_msg->type == USER && !strcmp((const char *)msg->ps_msg->message, "Leave")) {
+    } else if (msg->ps_msg->type == USER && !strcmp((const char *)msg->ps_msg->data, "Leave")) {
         m_log("Other context left. Leaving...\n");
         modules_ctx_quit(myCtx, 0);
     }
@@ -77,7 +77,7 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
         if (*counter == 10) {
             modules_ctx_quit(myCtx, 0);
         }
-    } else if (msg->ps_msg->type == USER && !strcmp((const char *)msg->ps_msg->message, "Leave")) {
+    } else if (msg->ps_msg->type == USER && !strcmp((const char *)msg->ps_msg->data, "Leave")) {
         m_log("Other context left. Leaving...\n");
         modules_ctx_quit(myCtx, 0);
     }

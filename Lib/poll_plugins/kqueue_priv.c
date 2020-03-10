@@ -45,17 +45,14 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, tmp);
         break;
     case TYPE_TMR: {
-        int abs_flag = 0;
-        if (tmp->tm_src.absolute) {
-#if defined NOTE_ABSOLUTE
-            abs_flag = NOTE_ABSOLUTE;
-#elif defined NOTE_ABSTIME
-            abs_flag = NOTE_ABSTIME;
+#if defined NOTE_ABSOLUTE // Apple (https://www.unix.com/man-page/osx/2/kqueue/)
+        const int abs_fl = tmp->flags & SRC_TMR_ABSOLUTE ? NOTE_ABSOLUTE : 0;
+#elif defined NOTE_ABSTIME // BSD (https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2)
+        const int abs_fl = tmp->flags & SRC_TMR_ABSOLUTE ? NOTE_ABSTIME : 0;
 #else
-            abs_flag = 0; // unsupported...
+        const int  abs_fl = 0; // unsupported...
 #endif
-        }
-        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, abs_flag, tmp->tm_src.its.ms, tmp);
+        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, abs_fl, tmp->tm_src.its.ms, tmp);
         break;
     }
     case TYPE_SGN:

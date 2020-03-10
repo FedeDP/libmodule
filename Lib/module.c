@@ -1,6 +1,5 @@
 #include "module.h"
 #include "poll_priv.h"
-#include <time.h>
 
 /** Generic module interface **/
 
@@ -182,12 +181,6 @@ static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *sr
         tmr_src_t *tm_src = &src->tm_src;
         memcpy(&tm_src->its, src_data, sizeof(mod_tmr_t));
         tm_src->f.fd = -1;
-        
-        /* Is this an absolute timer? Ie: if requested ms > current time in ms */
-        struct timespec spec;
-        clock_gettime(CLOCK_MONOTONIC, &spec);
-        long curr_ms = spec.tv_nsec / 1000 / 1000 + spec.tv_sec * 1000;
-        tm_src->absolute = tm_src->its.ms > curr_ms;
         break;
     }
     case TYPE_SGN: {

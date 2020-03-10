@@ -54,14 +54,13 @@ ifdef __linux__
 #else
 #define SRC_PT_CREATE ...
 #endif
+
 - [x] Rename SRC_AUTOCLOSE to SRC_FD_AUTOCLOSE ?
 
 - [x] Use TFD_CLOEXEC flag on timerfd on linux
 - [x] Add a common_lin.c in poll_plugins (to manage timerfd/inotify/signalfd)
-- [x] Automatically detect absolute timers
+- [x] SRC_TMR_ABSOLUTE for absolute timers
 - [x] Use SFD_CLOEXEC flag on signalfd on linux
-
-- [x] Properly force EV_CLEAR flag in kqueue
 - [ ] Port examples
 
 ### New Linked list api
@@ -84,11 +83,6 @@ ifdef __linux__
 - [x] Use this new parameter -> pass both fd_msg_t and ps_msg_t "userptr" as receive() userdata parameter (and drop it from ps_msg_t and fd_msg_t)
 
 - [x] Drop C++ support (useless...)
-
-- [x] module_message_ref()/ module_message_unref() 
-- [ ] remove autofree parameter to publish/broadcast and do not unref anything unless module_message_unref is called! (then, if message reaches 0 ref count, free it) (?)
--> what happens if nobody receives a message? Should it be destroyed?
--> what happens when flushing messages upon module destroy?
 
 - [x] Actually check userhook: at least init() and receive() must be defined
 - [x] Let users avoid passing other callbacks
@@ -123,11 +117,13 @@ ifdef __linux__
 
 - [x] module_is should return false if mod is NULL
 
-- [ ] Add mod_psg_flags -> PS_AUTOFREE, PS_GLOBAL (for module_broadcast) and change module_tell/publish/broadcast API?
+- [x] Add mod_ps_flags -> PS_AUTOFREE, PS_GLOBAL, PS_DUP_DATA (for module_broadcast) and change module_tell/publish/broadcast API?
+- [x] module_msg_ref()/ module_msg_unref() to keep a PubSub message alive (incrementing its ref counter)
 
 - [ ] Update examples
 - [ ] Update tests
 - [ ] Update DOC!
+- [ ] Add build options doc
 
 ## Ideas
 

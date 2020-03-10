@@ -87,7 +87,7 @@ static void A_recv(const msg_t *msg, const void *userdata) {
                 break;
         }
     } else {
-        if (msg->ps_msg->type == USER  && !strcmp((char *)msg->ps_msg->message, "BauBau")) {
+        if (msg->ps_msg->type == USER  && !strcmp((char *)msg->ps_msg->data, "BauBau")) {
             module_become(selfA, A_recv_ready);
             module_log(selfA, "Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
@@ -138,19 +138,19 @@ static void B_recv(const msg_t *msg, const void *userdata) {
     if (msg->type == TYPE_PS) {
         switch (msg->ps_msg->type) {
             case USER:
-                if (!strcmp((char *)msg->ps_msg->message, "ComeHere")) {
+                if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
                     module_log(selfB, "Running...\n");
                     module_tell(selfB, msg->ps_msg->sender, (unsigned char *)"BauBau", strlen("BauBau"), false);
-                } else if (!strcmp((char *)msg->ps_msg->message, "LetsPlay")) {
+                } else if (!strcmp((char *)msg->ps_msg->data, "LetsPlay")) {
                     module_log(selfB, "BauBau BauuBauuu!\n");
-                } else if (!strcmp((char *)msg->ps_msg->message, "LetsEat")) {
+                } else if (!strcmp((char *)msg->ps_msg->data, "LetsEat")) {
                     module_log(selfB, "Burp!\n");
-                } else if (!strcmp((char *)msg->ps_msg->message, "LetsSleep")) {
+                } else if (!strcmp((char *)msg->ps_msg->data, "LetsSleep")) {
                     module_become(selfB, B_recv_sleeping);
                     module_log(selfB, "ZzzZzz...\n");
-                } else if (!strcmp((char *)msg->ps_msg->message, "ByeBye")) {
+                } else if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
                     module_log(selfB, "Sob...\n");
-                } else if (!strcmp((char *)msg->ps_msg->message, "WakeUp")) {
+                } else if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
                     module_log(selfB, "???\n");
                 }
                 break;
@@ -162,7 +162,7 @@ static void B_recv(const msg_t *msg, const void *userdata) {
 
 static void B_recv_sleeping(const msg_t *msg, const void *userdata) {
     if (msg->type == TYPE_PS && msg->ps_msg->type == USER) {
-        if (!strcmp((char *)msg->ps_msg->message, "WakeUp")) {
+        if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
             module_become(selfB, B_recv);
             module_log(selfB, "Yawn...\n");
         } else {

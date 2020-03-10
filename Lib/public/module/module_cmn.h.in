@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <time.h>
 
 #define MODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
 #define MODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
@@ -47,66 +48,91 @@ typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4 } mod_states;
 typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
 
 /* Module event sources' types */
-typedef enum { TYPE_PS, TYPE_FD, TYPE_TMR, TYPE_SGN, TYPE_PT, TYPE_PID } mod_src_type;
+typedef enum { 
+    TYPE_PS,    // PubSub Source
+    TYPE_FD,    // FD Source
+    TYPE_TMR,   // Timer Source
+    TYPE_SGN,   // Signal Source
+    TYPE_PT,    // Path Source
+    TYPE_PID    // PID Source
+} mod_src_type;
 
 /* 
  * Module event sources' flags:
  * First 8 bytes are reserved for generic source flags.
  * Then, each source type has 8 bytes reserved for its flags.
  */
+#define FLAG_SHIFT(type, val)   val << (8 * (type + 1))
 typedef enum { 
     SRC_AUTOFREE        =       0x01, // Automatically free userdata upon deregistation.
     SRC_ONESHOT         =       0x02, // Run just once then automatically deregister source.
     SRC_DUP             =       0x04, // Duplicate PubSub topic or source fd.
-    SRC_FD_AUTOCLOSE    =       0x01 << (8 * TYPE_FD), // Automatically close fd upon deregistation.
+    SRC_FD_AUTOCLOSE    =       FLAG_SHIFT(TYPE_FD, 0x01), // Automatically close fd upon deregistation.
+    SRC_TMR_ABSOLUTE    =       FLAG_SHIFT(TYPE_TMR, 0x01) // Absolute timer
 } mod_src_flags;
+
+/* 
+ * Module's pubsub API flags (module_tell(), module_publish(), module_broadcast())
+ */
+typedef enum {
+    PS_AUTOFREE = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_msg ref counter goes to 0)
+    PS_GLOBAL   = 0x02,     // Only useful for module_broadcast. Broadcast a message to every context.
+    PS_DUP_DATA = 0x04      // Automatically duplicate sent data  (malloc message size + memcpy). Useful when sending data allocated on stack.
+} mod_ps_flags;
 
 /* module_register_src() request special types. */
 typedef struct {
-    unsigned int clock_id; // unsupported on libkqueue/kqueue
-    uint64_t ms;
+    clockid_t clock_id;     // Clock_id (eg: CLOCK_MONOTONIC). Unsupported on libkqueue/kqueue
+    uint64_t ms;            // Timer in ms
 } mod_tmr_t;
 
 typedef struct {
-    unsigned int signo;
+    unsigned int signo;     // Requested signal number source, as defined in signal.h
 } mod_sgn_t;
 
 typedef struct {
-    const char *path;
-    unsigned int events;
+    const char *path;       // Path of file/folder to which subscribe for events
+    unsigned int events;    // Desired events
 } mod_pt_t;
 
 typedef struct {
-    pid_t pid;
-    unsigned int events; // unused on linux
+    pid_t pid;              // Desired process id
+    unsigned int events;    // Desired events. Unused on linux: only process exit is supported
 } mod_pid_t;
 
-/* Libmodule sub-messages received in receive() callback */
+/** Libmodule sub-messages received in receive() callback **/
+
+/* PubSub message */
 typedef struct {
-    const char *topic;
-    const void *message;
+    const char *topic;      
+    const void *data;
     ssize_t size;
     const self_t *sender;
     ps_msg_type type;
 } ps_msg_t;
 
+/* FD event message */
 typedef struct {
     int fd;
 } fd_msg_t;
 
+/* Timer event message */
 typedef struct {
     uint64_t ms;
 } tm_msg_t;
 
+/* Signal event message */
 typedef struct {
     unsigned int signo;
 } sgn_msg_t;
 
+/* Path event message */
 typedef struct {
     const char *path;
     unsigned int events;
 } pt_msg_t;
 
+/* Pid event message */
 typedef struct {
     pid_t pid;
     unsigned int events;

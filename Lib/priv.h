@@ -79,29 +79,30 @@ struct _self {
     bool is_ref;                            // is this a reference?
 };
 
-/* List that holds fds to self_t mapping for epoll/kqueue, ie: socket source data */
+/* List that holds fds to self_t mapping for poll plugin */
 typedef struct {
-    int fd;                                 // file descriptor polled by main loop
+    int fd;
 } fd_src_t;
 
-/* List that holds fds to self_t mapping for epoll/kqueue, ie: socket source data */
+/* List that holds timers to self_t mapping for poll plugin */
 typedef struct {
     mod_tmr_t its;
-    bool absolute;
     fd_src_t f;
 } tmr_src_t;
 
-/* List that holds fds to self_t mapping for epoll/kqueue, ie: socket source data */
+/* List that holds signals to self_t mapping for poll plugin */
 typedef struct {
     mod_sgn_t sgs;
     fd_src_t f;
 } sgn_src_t;
 
+/* List that holds paths to self_t mapping for poll plugin */
 typedef struct {
     mod_pt_t pt;
     fd_src_t f;
 } pt_src_t;
 
+/* List that holds pids to self_t mapping for poll plugin */
 typedef struct {
     mod_pid_t pid;
     fd_src_t f;
@@ -124,8 +125,8 @@ typedef struct {
         pid_src_t   pid_src;
     };
     mod_src_type type;
-    void *ev;                               // poll plugin defined data structure (used by kqueue and epoll)
-    const self_t *self;                     // ptr needed to map a fd to a self_t in epoll
+    void *ev;                               // poll plugin defined data structure
+    const self_t *self;                     // ptr needed to map an event source to a self_t in poll_plugin
     mod_src_flags flags;
     const void *userptr;
 } ev_src_t;
@@ -134,7 +135,7 @@ typedef struct {
 typedef struct {
     ps_msg_t msg;
     uint64_t refs;
-    bool autofree;
+    mod_ps_flags flags;
     ev_src_t *sub;
 } ps_priv_t;
 
@@ -151,10 +152,10 @@ struct _module {
     mod_states state;                       // module's state
     const char *name;                       // module's name
     const char *local_path;                 // For runtime loaded modules: path of module
-    mod_list_t *srcs;                        // module's fds to be polled (list of ev_src_t)
-    mod_map_t *subscriptions;               // module's subscriptions (map of ev_src_t)
+    mod_list_t *srcs;                       // module's event sources (list of ev_src_t*)
+    mod_map_t *subscriptions;               // module's subscriptions (map of ev_src_t*)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
-    self_t self;                            // pointer to self (and thus context)
+    self_t self;                            // Module self reference
 };
 
 /* Struct that holds data for each context */
