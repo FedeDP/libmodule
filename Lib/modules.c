@@ -1,5 +1,5 @@
 #include "modules.h"
-#include "poll_priv.h"
+#include "fuse_priv.h"
 #include <pthread.h>
 #include <dlfcn.h> // dlopen
 
@@ -12,7 +12,6 @@ static mod_ret loop_start(ctx_t *c, const int max_events);
 static uint8_t loop_stop(ctx_t *c);
 static inline mod_ret loop_quit(ctx_t *c, const uint8_t quit_code);
 static int recv_events(ctx_t *c, int timeout);
-static void ctx_logger(ctx_t *c, const char *fmt, ...);
 
 mod_map_t *ctx;
 memhook_t memhook;
@@ -102,6 +101,7 @@ static void evaluate_new_state(ctx_t *c) {
 static mod_ret loop_start(ctx_t *c, const int max_events) {
     c->ppriv.max_events = max_events;
     if (poll_init(&c->ppriv) == MOD_OK) {
+        fuse_init(c);
         c->looping = true;
         c->quit = false;
         c->quit_code = 0;
@@ -122,7 +122,7 @@ static uint8_t loop_stop(ctx_t *c) {
 
     /* Flush pubsub msg to avoid memleaks */
     map_iterate(c->modules, flush_pubsub_msgs, NULL);
-
+    fuse_end(c);
     poll_clear(&c->ppriv);
     c->ppriv.max_events = 0;
     c->looping = false;
@@ -139,9 +139,16 @@ static int recv_events(ctx_t *c, int timeout) {
     int nfds = poll_wait(&c->ppriv, timeout);
     for (int i = 0; i < nfds; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
+        
+        if (p && p->type == TYPE_FD && p->self == NULL) {
+            /* Received from fuse */
+            fuse_process(c);
+            continue;
+        }
+        
         if (p && p->self && p->self->mod) {
             mod_t *mod = p->self->mod;
-            
+
             msg_t msg = {0};
             fd_msg_t fd_msg;
             tm_msg_t tm_msg;
@@ -160,7 +167,7 @@ static int recv_events(ctx_t *c, int timeout) {
             case TYPE_PS:
                 /* Received on pubsub interface */
                 if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-                    MODULE_DEBUG("Failed to read message for '%s': %s\n", mod->name, strerror(errno));
+                    MODULE_DEBUG("Failed to read message: %s\n", strerror(errno));
                 } else {
                     msg.ps_msg = &ps_msg->msg;
                     p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
@@ -213,7 +220,6 @@ static int recv_events(ctx_t *c, int timeout) {
                     map_remove(mod->subscriptions, ps_msg->sub->ps_src.topic);
                 }
             }
-            
         } else {
             /* Forward error to below handling code */
             errno = EAGAIN;
@@ -235,10 +241,12 @@ static int recv_events(ctx_t *c, int timeout) {
     return nfds;
 }
 
-static void ctx_logger(ctx_t *c, const char *fmt, ...) {
+/** Private API **/
+
+void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    c->logger(NULL, fmt, args);
+    c->logger(self, fmt, args);
     va_end(args);
 }
 
@@ -325,14 +333,14 @@ mod_ret modules_ctx_dispatch(const char *ctx_name, int *ret) {
 mod_ret modules_ctx_dump(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
-    ctx_logger(c, "Ctx: '%s'\n", ctx_name);
-    ctx_logger(c, "* State:\n");
-    ctx_logger(c, "-> Q: %d L: %d M: %d\n", c->quit, c->looping, c->ppriv.max_events);
-    ctx_logger(c, "* Modules (Running %d/%zd):\n", c->running_mods, map_length(c->modules));
+    ctx_logger(c, NULL, "Ctx: '%s'\n", ctx_name);
+    ctx_logger(c, NULL, "* State:\n");
+    ctx_logger(c, NULL, "-> Q: %d L: %d M: %d\n", c->quit, c->looping, c->ppriv.max_events);
+    ctx_logger(c, NULL, "* Modules (Running %d/%zd):\n", c->running_mods, map_length(c->modules));
     for (mod_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
         const char *mod_name = map_itr_get_key(itr);
         const char *mod = map_itr_get_data(itr);
-        ctx_logger(c, "-> '%s': %p\n", mod_name, mod);
+        ctx_logger(c, NULL, "-> '%s': %p\n", mod_name, mod);
     }
     return MOD_OK;
 }

@@ -2,7 +2,6 @@
 
 #include "priv.h"
 #include <errno.h>
-#include <string.h>
 #include <fcntl.h>
 
 /* Useful macros to smooth away differences between supported OS */

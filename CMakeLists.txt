@@ -12,9 +12,10 @@ include(GNUInstallDirs)
 
 find_package (Threads)
 
-#
+# Find sources
+file(GLOB SOURCES Lib/*.c Lib/data_structs/*.c)
+
 # Options
-#
 option(BUILD_TESTS "build ${PROJECT_NAME} tests" OFF)
 if(BUILD_TESTS)
     find_package(Cmocka)
@@ -51,16 +52,19 @@ else()
     set(LIBRARY_TYPE SHARED)
 endif()
 
-#
-# Configured files
-#
+option(WITH_FUSE "build ${PROJECT_NAME} with libfuse support" OFF)
+if (WITH_FUSE)
+    find_package(PkgConfig)
+    pkg_check_modules(FUSE REQUIRED fuse3)
+    add_compile_definitions(WITH_FUSE)
+    set(SOURCES ${SOURCES} Lib/fuse/fuse_priv.c)
+endif()
+
+# Configure files
 configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
 configure_file(Lib/public/module/module_cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/public/module/module_cmn.h @ONLY)
 
-#
-# Set source files
-#
-file(GLOB SOURCES Lib/*.c)
+# Set requested poll plugin
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     option(WITH_LIBURING "build ${PROJECT_NAME} with liburing support" OFF)
     option(WITH_LIBKQUEUE "build ${PROJECT_NAME} with libkqueue support" OFF)
@@ -69,7 +73,6 @@ else()
     include(CheckFunctionExists)
     check_function_exists(kqueue KQUEUE_IN_LIBC)
     if(NOT KQUEUE_IN_LIBC)
-        find_package(Kqueue REQUIRED)
         set(WITH_LIBKQUEUE true)
     else()
         set(WITH_KQUEUE true)
@@ -93,9 +96,7 @@ else()
     set(POLL_PLUGIN "epoll")
 endif()
 
-#
 # Some pretty printings
-#
 message(STATUS "Building ${PROJECT_NAME}-${PROJECT_VERSION}")
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Library Type: ${LIBRARY_TYPE}")
@@ -114,9 +115,8 @@ set_target_properties(
     PUBLIC_HEADER "${PUBLIC_H}"
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} Lib/ Lib/public/module/)
-
-target_link_libraries(${PROJECT_NAME} ${URING_LIBRARIES} ${KQUEUE_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} dl)
+target_include_directories(${PROJECT_NAME} PRIVATE ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS} Lib/ Lib/fuse/ Lib/poll_plugins/ Lib/public/module/)
+target_link_libraries(${PROJECT_NAME} ${URING_LIBRARIES} ${KQUEUE_LIBRARIES} ${FUSE_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} dl)
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -133,10 +133,8 @@ install(FILES LICENSE
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -fvisibility=hidden")
 
-#
 # Packaging support
 # THANKS to libkqueue CMakeLists.txt for packaging support :)
-#
 SET(CPACK_SET_DESTDIR "on")
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
@@ -144,20 +142,19 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 
-#
-#  Metadata common to all packaging systems
-#
+# Metadata common to all packaging systems
 set(CPACK_PACKAGE_CONTACT "Federico Di Pierro <nierro92@gmail.com>")
 set(CPACK_PACKAGE_DESCRIPTION "Libmodule offers a small and simple implementation of an actor library, aiming at letting developers easily create modular C projects in a way which is both simple and elegant.")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Small and simple implementation of an actor library for C.")
 
-#
-#  RPM Specific configuration
-#
+# RPM Specific configuration
 set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_URL "https://github.com/FedeDP/libmodule")
 set(CPACK_RPM_PACKAGE_GROUP "System Environment/Libraries")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "${CMAKE_INSTALL_DATAROOTDIR}/licenses ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig")
+if(WITH_FUSE)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "fuse3-libs")
+endif()
 if(WITH_LIBURING)
     set(CPACK_RPM_PACKAGE_REQUIRES "liburing")
 elseif(WITH_LIBKQUEUE)
@@ -166,11 +163,12 @@ endif()
 set(CPACK_RPM_PACKAGE_DESCRIPTION ${CPACK_PACKAGE_DESCRIPTION})
 set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
 
-#
-#  DEB Specific configuration
-#
+# DEB Specific configuration
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/FedeDP/libmodule")
 set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+if(WITH_FUSE)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libfuse3-3")
+endif()
 if(WITH_LIBURING)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "liburing")
 elseif(WITH_LIBKQUEUE)

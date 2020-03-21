@@ -51,10 +51,11 @@ As previously mentioned, a registered module, before being started, is in IDLE s
 IDLE state means that it has still no source of events; it won't receive any PubSub message and even if it registers any fd, they won't be polled. |br|
 When module is started, thus reaching RUNNING state, all its registered fds will start being polled; moreover, it can finally receive PubSub messages. Fds registered while in RUNNING state, are automatically polled. |br|
 If a module is PAUSED, it will stop polling on its fds and PubSub messages, but PubSub messages will still be queued on its write end of pipe. Thus, as soon as module is resumed, all PubSub messages received during PAUSED state will trigger receive() callback. |br|
-If a module gets stopped, it will stop polling on its fds and PubSub messages, and every autoclose fd will be closed. Moreover, all its registered fds are freed and its enqueued pubsub messages are destroyed. Its state is then set back to IDLE. |br|
+If a module gets STOPPED, it will stop polling on its fds and PubSub messages, and every autoclose fd will be closed. Moreover, all its registered fds are freed and its enqueued pubsub messages are destroyed. |br|
 If you instead wish to stop a module letting it manage any already-enqueued pubsub message, you need to send a POISONPILL message to it, through module_poisonpill() function. |br|
+The difference between IDLE and STOPPED states is that IDLE modules will be evaluated to be started, while STOPPED modules won't be automatically restarted. |br|
 
-module_start() needs to be called on an IDLE module. |br|
+module_start() needs to be called on an IDLE or STOPPED module. |br|
 module_pause() needs to be called on a RUNNING module. |br|
 module_resume() needs to  be called on a PAUSED module. |br|
 module_stop() needs to be called on a RUNNING or PAUSED module.

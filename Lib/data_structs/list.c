@@ -16,6 +16,7 @@ struct _list {
 struct _list_itr {
     list_node **elem;
     mod_list_t *l;
+    ssize_t diff;
 };
 
 static mod_list_ret insert_node(mod_list_t *l, list_node **elem, void *data);
@@ -60,7 +61,7 @@ mod_list_t *list_new(const mod_list_dtor fn) {
 mod_list_itr_t *list_itr_new(const mod_list_t *l) {
     MOD_RET_ASSERT(list_length(l) > 0, NULL);
     
-    mod_list_itr_t *itr = memhook._malloc(sizeof(mod_list_itr_t));
+    mod_list_itr_t *itr = memhook._calloc(1, sizeof(mod_list_itr_t));
     if (itr) {
         itr->elem = (list_node **)&(l->data);
         itr->l = (mod_list_t *)l;
@@ -72,7 +73,10 @@ mod_list_itr_t *list_itr_next(mod_list_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     
     if (*itr->elem) {
-        itr->elem = &((*itr->elem)->next);
+        if (itr->diff >= 0) {
+            itr->elem = &((*itr->elem)->next);
+        } 
+        itr->diff = 0;
     }
     if (!*(itr->elem)) {
         memhook._free(itr);
@@ -101,6 +105,7 @@ mod_list_ret list_itr_insert(mod_list_itr_t *itr, void *value) {
     LIST_PARAM_ASSERT(itr);
     LIST_PARAM_ASSERT(value);
     
+    itr->diff++;
     return insert_node(itr->l, itr->elem, value);
 }
 
@@ -108,6 +113,7 @@ mod_list_ret list_itr_remove(mod_list_itr_t *itr) {
     LIST_PARAM_ASSERT(itr);
     MOD_RET_ASSERT(*itr->elem, LIST_ERR);
     
+    itr->diff--; // notify list to avoid skipping 1 element on next list_itr_next() call
     return remove_node(itr->l, itr->elem);
 }
 

@@ -3,6 +3,7 @@ packages:
   - libcmocka-dev
   - valgrind
   - cmake
+  - libfuse3-dev
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <regex.h>
+#include <string.h>
 #include "map.h"
 #include "stack.h"
 #include "list.h"
@@ -125,16 +126,16 @@ typedef struct {
         pid_src_t   pid_src;
     };
     mod_src_type type;
+    mod_src_flags flags;
     void *ev;                               // poll plugin defined data structure
     const self_t *self;                     // ptr needed to map an event source to a self_t in poll_plugin
-    mod_src_flags flags;
     const void *userptr;
 } ev_src_t;
 
 /* Struct that holds pubsub messaging, private. It keeps reference count */
 typedef struct {
     ps_msg_t msg;
-    uint64_t refs;
+    size_t refs;
     mod_ps_flags flags;
     ev_src_t *sub;
 } ps_priv_t;
@@ -150,24 +151,28 @@ struct _module {
     mod_stack_t *recvs;                     // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
     mod_states state;                       // module's state
+    bool from_fuse;                         // Does it come from a fuse fs file creation?
+    void *fuse_ph;                          // Fuse poll data
     const char *name;                       // module's name
     const char *local_path;                 // For runtime loaded modules: path of module
     mod_list_t *srcs;                       // module's event sources (list of ev_src_t*)
     mod_map_t *subscriptions;               // module's subscriptions (map of ev_src_t*)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
-    self_t self;                            // Module self reference
+    self_t ref;                             // Module self reference
+    self_t *self;                           // Module self handler
 };
 
 /* Struct that holds data for each context */
 struct _context {
     const char *name;                       // Context's name'
+    bool looping;                           // Whether context is looping
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
-    bool looping;                           // Whether context is looping
     log_cb logger;                          // Context's log callback
     mod_map_t *modules;                     // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     size_t running_mods;                    // Number of RUNNING modules in context
+    void *fuse;                             // fuse handler. Null if unsupported
 };
 
 /* Defined in module.c */
@@ -175,6 +180,9 @@ _pure_ bool _module_is(const mod_t *mod, const mod_states st);
 mod_map_ret evaluate_module(void *data, const char *key, void *value);
 mod_ret start(mod_t *mod, const bool starting);
 mod_ret stop(mod_t *mod, const bool stopping);
+
+/* Defined in modules.c */
+void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...);
 
 /* Defined in pubsub.c */
 mod_ret tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, 

@@ -51,6 +51,11 @@ static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
     
 found:
     msg->sub = sub;
+    /* 
+     * Replace user provided pointer with source one, 
+     * to allow stack-allocated topic to be used
+     */
+    msg->msg.topic = sub->ps_src.topic;
     return true;
 }
 
@@ -59,7 +64,7 @@ static mod_map_ret tell_if(void *data, const char *key, void *value) {
     ps_priv_t *msg = (ps_priv_t *)data;
 
     if (_module_is(mod, RUNNING | PAUSED) &&                         // mod is running or paused
-        ((msg->msg.type != USER && msg->msg.sender != &mod->self) || // system messages with sender != this module (avoid sending ourselves system messages produced by us)
+        ((msg->msg.type != USER && msg->msg.sender != &mod->ref) || // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == USER &&                                    // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || is_subscribed(mod, msg))))) {
         
@@ -139,9 +144,9 @@ static mod_ret send_msg(const mod_t *mod, mod_t *recipient,
                         const ssize_t size, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
-    GET_CTX_PRIV((&mod->self));
+    GET_CTX_PRIV((&mod->ref));
     
-    ps_priv_t *m = create_pubsub_msg(message, &mod->self, topic, USER, size, flags);
+    ps_priv_t *m = create_pubsub_msg(message, &mod->ref, topic, USER, size, flags);
     return tell_pubsub_msg(m, recipient, c);
 }
 
@@ -185,6 +190,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr) {
         /* Fallback to module default receive */
         cb = mod->hook.recv;
     }
+    msg->self = mod->self;
     cb(msg, userptr);
 
     if (msg->type == TYPE_PS) {
@@ -202,7 +208,7 @@ mod_ret module_ref(const self_t *self, const char *name, const self_t **modref) 
     GET_CTX(self);
     CTX_GET_MOD(name, c);
     
-    *modref = &mod->self;
+    *modref = &mod->ref;
     return MOD_OK;
 }
 
@@ -294,7 +300,7 @@ mod_ret module_poisonpill(const self_t *self, const self_t *recipient) {
     GET_CTX(self);
     MOD_PARAM_ASSERT(module_is(recipient, RUNNING));
     
-    return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->self, NULL);
+    return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->ref, NULL);
 }
 
 mod_ret module_msg_ref(const self_t *self, ps_msg_t *msg) {

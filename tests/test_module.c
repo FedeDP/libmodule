@@ -109,7 +109,7 @@ void test_module_false_init(void **state) {
     
     ret = module_start(self);
     assert_false(ret == MOD_OK);
-    assert_true(module_is(self, IDLE));
+    assert_true(module_is(self, STOPPED));
     
     ret = module_deregister(&self);
     assert_true(ret == MOD_OK);
@@ -157,7 +157,7 @@ void test_module_stop_NULL_self(void **state) {
     
     mod_ret ret = module_stop(NULL);
     assert_false(ret == MOD_OK);
-    assert_false(module_is(self, IDLE));
+    assert_false(module_is(self, STOPPED));
 }
 
 void test_module_stop(void **state) {
@@ -165,7 +165,7 @@ void test_module_stop(void **state) {
     
     mod_ret ret = module_stop(self);
     assert_true(ret == MOD_OK);
-    assert_true(module_is(self, IDLE));
+    assert_true(module_is(self, STOPPED));
 }
 
 void test_module_start_NULL_self(void **state) {

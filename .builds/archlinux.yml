@@ -5,6 +5,7 @@ packages:
   - cmake
   - liburing
   - libkqueue
+  - fuse3
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:

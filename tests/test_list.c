@@ -50,13 +50,19 @@ void test_list_iterator(void **state) {
     assert_non_null(itr);
     
     int count = list_length(my_l);
-    while (itr) {
+
+    while (count) {
         count--;
         printf("%p\n", list_itr_get_data(itr));
+        
+        /* Insert a node */
         mod_list_ret ret = list_itr_insert(itr, &val1);
         assert_true(ret == LIST_OK);
+        
+        /* Remove previously inserted node */
         ret = list_itr_remove(itr);
         assert_true(ret == LIST_OK);
+        
         itr = list_itr_next(itr);
     }
     

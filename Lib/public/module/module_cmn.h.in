@@ -42,7 +42,7 @@
 typedef struct _self self_t;
 
 /* Modules states */
-typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4 } mod_states;
+typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 } mod_states;
 
 /* PubSub message types */
 typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
@@ -107,7 +107,7 @@ typedef struct {
     const char *topic;      
     const void *data;
     ssize_t size;
-    const self_t *sender;
+    const self_t *sender;   // Sender reference
     ps_msg_type type;
 } ps_msg_t;
 
@@ -140,6 +140,7 @@ typedef struct {
 
 /* Libmodule receive() main message type */
 typedef struct {
+    self_t *self;
     mod_src_type type;
     union {
         const fd_msg_t      *fd_msg;
@@ -184,7 +185,8 @@ typedef struct {
 
 /* Module return codes */
 typedef enum {
-    MOD_REF_ERR = -9,
+    MOD_UNSUPPORTED = -10,
+    MOD_REF_ERR,
     MOD_WRONG_PARAM,
     MOD_NO_MEM,
     MOD_WRONG_STATE,

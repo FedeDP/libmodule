@@ -61,7 +61,32 @@ ifdef __linux__
 - [x] Add a common_lin.c in poll_plugins (to manage timerfd/inotify/signalfd)
 - [x] SRC_TMR_ABSOLUTE for absolute timers
 - [x] Use SFD_CLOEXEC flag on signalfd on linux
+
 - [ ] Port examples
+
+### Libfuse support
+
+- [x] Optional build dep
+- [x] Integrate fuse fd into libmodule poll loop
+- [x] Read on a file, will module_dump()
+- [x] Writing to a file will tell the module; define a syntax, eg: 
+echo 'A -> "Hi!"' > B       means A is telling "Hi!" to B
+echo "Sub 'X'" > B          means B should subscribe to "X"
+echo "Pub 'X' 'Hi'" > B     means B should publish "Hi" on "X" topic
+etc etc
+- [x] Creating new file will register a new "fuse"-only module
+- [x] Deleting a previously created fuse module, will deregister it
+- [ ] Add an interface to customize fuse fs folder
+- [ ] by default, use "$HOME/.modules/$ctxname/"
+- [x] Notify with poll callback when fuse-module has new receive() events enqueued
+- [x] Test poll
+- [ ] How to send msg data to polling clients? 
+- [ ] Add an ioctl interface? https://libfuse.github.io/doxygen/ioctl_8c_source.html eg: MOD_RECV_MSG, MOD_PUB_MSG, MOD_TELL_MSG, MOD_REG_SRC, MOD_DEREG_SRC...
+- [ ] Drop write-based interface after ioctl?
+- [ ] Fix memleaks (only when using fuse)
+- [ ] Fix build on other OSes?
+- [ ] Fix FIXME inside fuse_priv.c!
+- [ ] Add new fuse dep to CI builds
 
 ### New Linked list api
 
@@ -70,6 +95,7 @@ ifdef __linux__
 - [x] Add linked list tests
 - [x] Add linked list doc
 - [x] List_insert to insert to head (O(1))
+- [x] Fix bug in list_itr_next() when a node was previously removed (ie: avoid skipping an element, as current element is already "next" after a node deletion)
 
 ### Generic
 
@@ -77,7 +103,10 @@ ifdef __linux__
 
 - [x] Add a module_get_userdata function
 
-- [x] Remove userdata parameter to log_cb
+- [x] Store self_t *self inside mod_t, and rename old self_t self as self_t ref
+- [x] Store a self_t* inside msg_t object to allow to easily recognize module which received a message when >1 modules share same receive() callback
+
+- [x] Remove userdata parameter from log_cb
 
 - [x] Add new userptr parameter to module_subscribe (just like module_register_fd())
 - [x] Use this new parameter -> pass both fd_msg_t and ps_msg_t "userptr" as receive() userdata parameter (and drop it from ps_msg_t and fd_msg_t)
@@ -118,8 +147,12 @@ ifdef __linux__
 - [x] module_is should return false if mod is NULL
 
 - [x] Add mod_ps_flags -> PS_AUTOFREE, PS_GLOBAL, PS_DUP_DATA (for module_broadcast) and change module_tell/publish/broadcast API?
+- [x] Always use registered subscriptions topic when sending a message to a module, instead of trusting user-provided topic parameter in module_publish
 - [x] module_msg_ref()/ module_msg_unref() to keep a PubSub message alive (incrementing its ref counter)
 
+- [ ] Use json as a module/modules_dump format?
+
+- [ ] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples
 - [ ] Update tests
 - [ ] Update DOC!

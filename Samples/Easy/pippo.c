@@ -107,8 +107,14 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
         if (msg->type == TYPE_SGN) {
             c = 'q';
             m_log("Received %d. Quit.\n", msg->sgn_msg->signo);
-        } else {
+        } else if (msg->type == TYPE_FD) {
             read(msg->fd_msg->fd, &c, sizeof(char));
+        } else if (msg->type == TYPE_TMR) {
+            m_log("Timer expired.\n");
+            c = 10;
+        } else if (msg->type == TYPE_PT) {
+            m_log("A file was created in %s.\n", msg->pt_msg->path);
+            c = 10;
         }
         
         switch (tolower(c)) {

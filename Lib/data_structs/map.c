@@ -334,8 +334,11 @@ mod_map_ret map_itr_set_data(const mod_map_itr_t *itr, void *value) {
     MAP_PARAM_ASSERT(itr);
     MAP_PARAM_ASSERT(value);
     
-    itr->curr->data = value;
-    return MAP_OK;
+    if (!itr->removed) {
+        itr->curr->data = value;
+        return MAP_OK;
+    }
+    return MAP_EPERM;
 }
 
 /*

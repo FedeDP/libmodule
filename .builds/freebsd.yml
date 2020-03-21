@@ -3,6 +3,7 @@ packages:
   - cmocka
   #- valgrind
   - cmake
+  - fusefs-libs3
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:

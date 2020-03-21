@@ -163,7 +163,7 @@ static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *sr
     src->flags = flags;
     src->userptr = userptr;
     src->type = type;
-    src->self = &mod->self;
+    src->self = &mod->ref;
     
     switch (type) {
     case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
@@ -208,7 +208,7 @@ static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *sr
     }
     
     list_insert(mod->srcs, src, NULL);
-    ctx_t *c = mod->self.ctx;
+    ctx_t *c = mod->ref.ctx;
     /* If a fd is registered at runtime, start polling on it */
     int ret = 0;
     if (_module_is(mod, RUNNING)) {
@@ -383,7 +383,7 @@ mod_map_ret evaluate_module(void *data, const char *key, void *value) {
 mod_ret start(mod_t *mod, const bool starting) {
     static const char *errors[] = { "Failed to resume module.", "Failed to start module." };
     
-    GET_CTX_PRIV((&mod->self));
+    GET_CTX_PRIV((&mod->ref));
 
     /* 
      * Starting module for the first time
@@ -406,7 +406,7 @@ mod_ret start(mod_t *mod, const bool starting) {
     /* Call module init() callback only if module is being (re)started */
     if (!starting || mod->hook.init()) {
         MODULE_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
-        tell_system_pubsub_msg(NULL, c, MODULE_STARTED, &mod->self, NULL);
+        tell_system_pubsub_msg(NULL, c, MODULE_STARTED, &mod->ref, NULL);
         
         return MOD_OK;
     }
@@ -419,14 +419,14 @@ mod_ret start(mod_t *mod, const bool starting) {
 mod_ret stop(mod_t *mod, const bool stopping) {
     static const char *errors[] = { "Failed to pause module.", "Failed to stop module." };
     
-    GET_CTX_PRIV((&mod->self));
+    GET_CTX_PRIV((&mod->ref));
     
     const bool was_running = _module_is(mod, RUNNING);
     
     int ret = manage_fds(mod, c, RM, stopping);
     MOD_ASSERT(!ret, errors[stopping], MOD_ERR);
     
-    mod->state = stopping ? IDLE : PAUSED;
+    mod->state = stopping ? STOPPED : PAUSED;
     
     /*
      * When module gets stopped, its write-end pubsub fd is closed too 
@@ -447,7 +447,7 @@ mod_ret stop(mod_t *mod, const bool stopping) {
      */
     self_t *self = NULL;
     if (map_has_key(c->modules, mod->name)) {
-        self = &mod->self;
+        self = &mod->ref;
     }
     tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, self, NULL);
     
@@ -500,18 +500,19 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
         }
         
         /* External handler */
-        *self = memhook._malloc(sizeof(self_t));
-        if (!*self) {
+        mod->self = memhook._malloc(sizeof(self_t));
+        if (!mod->self) {
             break;
         }
         
         /* External owner reference */
-        memcpy(*self, &((self_t){ mod, context, false }), sizeof(self_t));
+        memcpy(mod->self, &((self_t){ mod, context, false }), sizeof(self_t));
         
         /* Internal reference used as sender for pubsub messages */
-        memcpy(&mod->self, &((self_t){ mod, context, true }), sizeof(self_t));
+        memcpy(&mod->ref, &((self_t){ mod, context, true }), sizeof(self_t));
         
         if (map_put(context->modules, mod->name, mod) == MAP_OK) {
+            *self = mod->self;
             mod->pubsub_fd[0] = -1;
             mod->pubsub_fd[1] = -1;
             return MOD_OK;
@@ -547,6 +548,15 @@ mod_ret module_deregister(self_t **self) {
     list_free(mod->srcs);
     
     memhook._free((void *)mod->local_path);
+    
+    /* Fuse does strdup module name */
+    if (mod->from_fuse) {
+        memhook._free((void *)mod->name);
+    }
+    /* Free fuse poll internal data */
+    if (mod->fuse_ph) {
+        memhook._free(mod->fuse_ph);
+    }
     
     /* Destroy external handler */
     memhook._free(*self);
@@ -720,36 +730,37 @@ bool module_is(const self_t *mod_self, const mod_states st) {
 }
 
 mod_ret module_dump(const self_t *self) {
-    GET_MOD(self);
+    GET_MOD(self); 
+    GET_CTX(self);
 
-    module_log(self, "Mod '%s'\n", self->mod->name);
-    module_log(self, "* State: %u\n", mod->state);
-    module_log(self, "* Userdata: %p\n", mod->userdata);
-    module_log(self, "* Subscriptions:\n");
+    ctx_logger(c, self, "Mod '%s'\n", self->mod->name);
+    ctx_logger(c, self, "* State: %u\n", mod->state);
+    ctx_logger(c, self, "* Userdata: %p\n", mod->userdata);
+    ctx_logger(c, self, "* Subscriptions:\n");
     for (mod_map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr)) {
         ev_src_t *sub = map_itr_get_data(itr);
-        module_log(self, "-> T: %s: Fl: %d UP: %p\n", sub->ps_src.topic, sub->flags, sub->userptr);
+        ctx_logger(c, self, "-> T: %s: Fl: %d UP: %p\n", sub->ps_src.topic, sub->flags, sub->userptr);
     }
-    module_log(self, "* Srcs:\n");
+    ctx_logger(c, self, "* Srcs:\n");
     for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr; itr = list_itr_next(itr)) {
         ev_src_t *t = list_itr_get_data(itr);
         switch (t->type) {
         case TYPE_FD:
-            module_log(self, "-> FD: %d Fl: %d UP: %p\n", t->fd_src.fd, t->flags, t->userptr);
+            ctx_logger(c, self, "-> FD: %d Fl: %d UP: %p\n", t->fd_src.fd, t->flags, t->userptr);
             break;
         case TYPE_SGN:
-            module_log(self, "-> SGN: %d Fl: %d UP: %p\n", t->sgn_src.sgs.signo, t->flags, t->userptr);
+            ctx_logger(c, self, "-> SGN: %d Fl: %d UP: %p\n", t->sgn_src.sgs.signo, t->flags, t->userptr);
             break;
         case TYPE_TMR:
-            module_log(self, "-> TMR_MS: %lu TMR_CID: %d Fl: %d UP: %p\n", 
+            ctx_logger(c, self, "-> TMR_MS: %lu TMR_CID: %d Fl: %d UP: %p\n", 
                        t->tm_src.its.ms, t->tm_src.its.clock_id, t->flags, t->userptr);
             break;
         case TYPE_PT:
-            module_log(self, "-> PT: '%s' PT_EV: %u Fl: %d UP: %p\n", 
+            ctx_logger(c, self, "-> PT: '%s' PT_EV: %u Fl: %d UP: %p\n", 
                        t->pt_src.pt.path, t->pt_src.pt.events, t->flags, t->userptr);
             break;
         case TYPE_PID:
-            module_log(self, "-> PID: %d PID_EV: %u Fl: %d UP: %p\n", 
+            ctx_logger(c, self, "-> PID: %d PID_EV: %u Fl: %d UP: %p\n", 
                        t->pid_src.pid.pid, t->pid_src.pid.events, t->flags, t->userptr);
             break;
         default:
@@ -762,7 +773,7 @@ mod_ret module_dump(const self_t *self) {
 /** Module state setters **/
 
 mod_ret module_start(const self_t *self) {
-    GET_MOD_IN_STATE(self, IDLE);
+    GET_MOD_IN_STATE(self, IDLE | STOPPED);
     
     return start(mod, true);
 }

@@ -22,7 +22,7 @@ Types
     typedef struct _self self_t;
 
     /* Modules states */
-    typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4 } mod_states;
+    typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x08 } mod_states;
 
     /* PubSub message types */
     typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;

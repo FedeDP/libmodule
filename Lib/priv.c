@@ -1,5 +1,4 @@
 #include "priv.h"
-#include <string.h>
 
 char *mem_strdup(const char *s) {
     char *new = NULL;

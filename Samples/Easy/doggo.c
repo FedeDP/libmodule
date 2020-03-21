@@ -59,8 +59,12 @@ static void receive(const msg_t *msg, const void *userdata) {
             }
             break;
         case MODULE_STOPPED: {
-                const char *name = module_get_name(msg->ps_msg->sender);
-                m_log("Module '%s' has been stopped.\n", name);
+                if (msg->ps_msg->sender) {
+                    const char *name = module_get_name(msg->ps_msg->sender);
+                    m_log("Module '%s' has been stopped.\n", name);
+                } else {
+                    m_log("A module has been deregistered.\n");
+                }
             }
             break;
         default:
