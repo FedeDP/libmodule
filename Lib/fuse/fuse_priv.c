@@ -6,11 +6,32 @@
 #include <fuse3/fuse.h>
 #include <fuse3/fuse_lowlevel.h> // to get fuse fd to process events internally
 #include <sys/poll.h> // poll operation support
+#include <sys/ioctl.h> // ioctl support
 
 #define FUSE_PRIV()         fuse_priv_t *f = (fuse_priv_t *)c->fuse;
 #define FUSE_CTX()          ctx_t *c = fuse_get_context()->private_data;
 #define FUSE_ASSERT()       if (strlen(path) <= 1 || !map_has_key(c->modules, path + 1)) { return -ENOENT; }
 #define FUSE_MOD()          mod_t *mod = map_get(c->modules, path + 1);
+
+/* TODO: these will go in a separate public header! */
+typedef enum { M_START, M_STOP, M_RESUME, M_PAUSE } fs_mod_state_ops;
+
+typedef struct {
+    const char *recipient; // topic for publish, module's name for tell
+    const void *msg;
+    const size_t size;
+} fs_mod_ps_params;
+
+enum {
+    MOD_GET_STATE   = _IOR('L', 0, mod_states),
+    MOD_SET_STATE   = _IOW('L', 1, fs_mod_state_ops),
+    MOD_RECV_MSG    = _IOR('L', 2, msg_t),
+    MOD_SUBSCRIBE   = _IOW('L', 3, const char *),
+    MOD_TELL        = _IOW('L', 4, fs_mod_ps_params),
+    MOD_PUBLISH     = _IOW('L', 5, fs_mod_ps_params),
+};
+
+/* */
 
 typedef enum { D_TELL, D_START, D_STOP, D_RESUME, D_PAUSE, D_SUB, D_PUB, D_SIZE } dict_ops;
 
@@ -38,13 +59,6 @@ typedef struct {
     int in_evt;
     mod_list_t *poll_handlers;
 } fuse_poll_t;
-
-static void *do_init(struct fuse_conn_info *conn,
-                        struct fuse_config *cfg) {
-    cfg->kernel_cache = 1;
-    struct fuse_context *context = fuse_get_context();
-    return context->private_data;
-}
 
 static int do_getattr(const char *path, struct stat *stbuf,
                          struct fuse_file_info *fi) {
@@ -273,8 +287,55 @@ static int do_poll(const char *path, struct fuse_file_info *fi,
     return 0;
 }
 
+static int do_ioctl(const char *path, unsigned int cmd, void *arg,
+                      struct fuse_file_info *fi, unsigned int flags, void *data) {
+    FUSE_CTX();
+    FUSE_ASSERT();
+    FUSE_MOD();
+    
+    if (flags & FUSE_IOCTL_COMPAT)
+        return -ENOSYS;
+    
+    switch (cmd) {
+        case MOD_GET_STATE:
+            *(mod_states *)data = mod->state;
+            return 0;
+        case MOD_SET_STATE:
+            switch (*((fs_mod_state_ops *)data)) {
+            case M_START:
+                return module_start(mod->self);
+            case M_STOP:
+                return module_stop(mod->self);
+            case M_RESUME:
+                return module_resume(mod->self);
+            case M_PAUSE:
+                return module_pause(mod->self);
+            default:
+                break;
+            }
+            break;
+        case MOD_RECV_MSG:
+            data = NULL; // FIXME
+            break;
+        case MOD_SUBSCRIBE:
+            return module_register_sub(mod->self, data, SRC_DUP, NULL);
+        case MOD_TELL: {
+            fs_mod_ps_params *p = (fs_mod_ps_params *)data;
+            const self_t *other = NULL;
+            module_ref(mod->self, p->recipient, &other);
+            return module_tell(mod->self, other, p->msg, p->size, PS_DUP_DATA);
+        }
+        case MOD_PUBLISH: {
+            fs_mod_ps_params *p = (fs_mod_ps_params *)data;
+            return module_publish(mod->self, p->recipient, p->msg, p->size, PS_DUP_DATA);
+        }
+        default:
+            break;
+    }
+    return -EINVAL;
+}
+
 static const struct fuse_operations operations = {
-    .init       = do_init,
     .getattr    = do_getattr,
     .readdir    = do_readdir,
     .read       = do_read,
@@ -282,7 +343,8 @@ static const struct fuse_operations operations = {
     .unlink     = do_unlink,
     .create     = do_create,
     .utimens    = do_utimens,
-    .poll       = do_poll
+    .poll       = do_poll,
+    .ioctl      = do_ioctl
 };
 
 int fuse_init(ctx_t *c) {

@@ -93,6 +93,7 @@ static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, c
             void *new_data = memhook._malloc(size);
             memcpy(new_data, message, size);
             message = new_data;
+            m->flags |= PS_AUTOFREE; // force autofree flag if we duplicated data
         }
         m->msg.data = message;
     }

@@ -80,13 +80,13 @@ etc etc
 - [ ] by default, use "$HOME/.modules/$ctxname/"
 - [x] Notify with poll callback when fuse-module has new receive() events enqueued
 - [x] Test poll
-- [ ] How to send msg data to polling clients? 
+- [ ] Let normal modules notify poll too? (ie: every module should call fs_recv... may be renamed to fuse_notify())
 - [ ] Add an ioctl interface? https://libfuse.github.io/doxygen/ioctl_8c_source.html eg: MOD_RECV_MSG, MOD_PUB_MSG, MOD_TELL_MSG, MOD_REG_SRC, MOD_DEREG_SRC...
 - [ ] Drop write-based interface after ioctl?
 - [ ] Fix memleaks (only when using fuse)
 - [ ] Fix build on other OSes?
 - [ ] Fix FIXME inside fuse_priv.c!
-- [ ] Add new fuse dep to CI builds
+- [ ] Add new fuse dep to CI builds (WITH_FUSE=on)
 
 ### New Linked list api
 
@@ -127,6 +127,7 @@ etc etc
 
 - [x] modules_dump() (same as module_dump but for modules context!)
 - [x] DOCument module_dump and modules_dump odd letters!!
+- [ ] Json-ify module(s)_dump output?
 
 - [x] In epoll interface, check that events & EPOLLERR is false
 
@@ -146,9 +147,10 @@ etc etc
 
 - [x] module_is should return false if mod is NULL
 
-- [x] Add mod_ps_flags -> PS_AUTOFREE, PS_GLOBAL, PS_DUP_DATA (for module_broadcast) and change module_tell/publish/broadcast API?
+- [x] Add mod_ps_flags -> PS_AUTOFREE, PS_GLOBAL, PS_DUP_DATA and change module_tell/publish/broadcast API?
 - [x] Always use registered subscriptions topic when sending a message to a module, instead of trusting user-provided topic parameter in module_publish
 - [x] module_msg_ref()/ module_msg_unref() to keep a PubSub message alive (incrementing its ref counter)
+- [x] Force PS_AUTOFREE flag if PS_DUP_DATA bit is set
 
 - [ ] Use json as a module/modules_dump format?
 
