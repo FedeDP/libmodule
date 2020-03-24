@@ -5,7 +5,7 @@
 /* Module interface functions */
 
 /* Module registration */
-_public_ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook);
+_public_ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook, const mod_flags flags);
 _public_ mod_ret module_deregister(self_t **self);
 
 /* Module state getters */
@@ -20,16 +20,17 @@ _public_ mod_ret module_stop(const self_t *self);
 /* Module generic functions */
 _public_ __attribute__((format (printf, 2, 3))) mod_ret module_log(const self_t *self, const char *fmt, ...);
 _public_ mod_ret module_dump(const self_t *self);
+_public_ _pure_ mod_ret module_stats(const self_t *self, stats_t *stats);
 
 _public_ mod_ret module_set_userdata(const self_t *self, const void *userdata);
 _public_ const void *module_get_userdata(const self_t *self);
 
-_public_ const char *module_get_name(const self_t *mod_self);
-_public_ const char *module_get_ctx(const self_t *mod_self);
+_public_ _pure_ const char *module_name(const self_t *mod_self);
+_public_ _pure_ const char *module_ctx(const self_t *mod_self);
 
 _public_ mod_ret module_ref(const self_t *self, const char *name, const self_t **modref);
 
-/* Module fds functions */
+/* Module srcs functions */
 _public_ mod_ret module_register_fd(const self_t *self, const int fd, const mod_src_flags flags, const void *userptr);
 _public_ mod_ret module_deregister_fd(const self_t *self, const int fd);
 
@@ -59,8 +60,8 @@ _public_ mod_ret module_publish(const self_t *self, const char *topic, const voi
 _public_ mod_ret module_broadcast(const self_t *self, const void *message,
                                   const ssize_t size,  const mod_ps_flags flags);
 _public_ mod_ret module_poisonpill(const self_t *self, const self_t *recipient);
-_public_ mod_ret module_msg_ref(const self_t *self, ps_msg_t *msg);
-_public_ mod_ret module_msg_unref(const self_t *self, ps_msg_t *msg);
+_public_ mod_ret module_ps_msg_ref(const self_t *self, ps_msg_t *msg);
+_public_ mod_ret module_ps_msg_unref(const self_t *self, ps_msg_t *msg);
 
 
 /* Generic event source registering functions */

@@ -10,8 +10,8 @@
 static void *loop(void *param);
 
 static void logger(const self_t *self, const char *fmt, va_list args) {
-    const char *mname = module_get_name(self);
-    const char *cname = module_get_ctx(self);
+    const char *mname = module_name(self);
+    const char *cname = module_ctx(self);
     if (mname && cname) {
         printf("%s@%s:\t*", mname, cname);
         vprintf(fmt, args);

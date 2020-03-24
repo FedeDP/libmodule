@@ -1,3 +1,4 @@
+#include "module.h"
 #include "modules.h"
 #include "fuse_priv.h"
 #include <pthread.h>
@@ -101,7 +102,7 @@ static void evaluate_new_state(ctx_t *c) {
 static mod_ret loop_start(ctx_t *c, const int max_events) {
     c->ppriv.max_events = max_events;
     if (poll_init(&c->ppriv) == MOD_OK) {
-        fuse_init(c);
+        fs_init(c);
         c->looping = true;
         c->quit = false;
         c->quit_code = 0;
@@ -122,7 +123,7 @@ static uint8_t loop_stop(ctx_t *c) {
 
     /* Flush pubsub msg to avoid memleaks */
     map_iterate(c->modules, flush_pubsub_msgs, NULL);
-    fuse_end(c);
+    fs_end(c);
     poll_clear(&c->ppriv);
     c->ppriv.max_events = 0;
     c->looping = false;
@@ -142,7 +143,7 @@ static int recv_events(ctx_t *c, int timeout) {
         
         if (p && p->type == TYPE_FD && p->self == NULL) {
             /* Received from fuse */
-            fuse_process(c);
+            fs_process(c);
             continue;
         }
         
@@ -205,7 +206,7 @@ static int recv_events(ctx_t *c, int timeout) {
                 break;
             }
 
-            if (msg.type != TYPE_PS || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {
+            if (msg.type != TYPE_PS || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {                
                 run_pubsub_cb(mod, &msg, p ? p->userptr : NULL);
             } else if (msg.ps_msg) {
                 MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
@@ -333,20 +334,28 @@ mod_ret modules_ctx_dispatch(const char *ctx_name, int *ret) {
 mod_ret modules_ctx_dump(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
-    ctx_logger(c, NULL, "Ctx: '%s'\n", ctx_name);
-    ctx_logger(c, NULL, "* State:\n");
-    ctx_logger(c, NULL, "-> Q: %d L: %d M: %d\n", c->quit, c->looping, c->ppriv.max_events);
-    ctx_logger(c, NULL, "* Modules (Running %d/%zd):\n", c->running_mods, map_length(c->modules));
+    ctx_logger(c, NULL, "{\n");
+    
+    ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", ctx_name);
+    ctx_logger(c, NULL, "\t\"State\": {\n");
+    ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
+    ctx_logger(c, NULL, "\t\t\"Looping\": %d,\n", c->looping);
+    ctx_logger(c, NULL, "\t\t\"Max Events\": %d\n", c->ppriv.max_events);
+    ctx_logger(c, NULL, "\t},\n");
+    
+    ctx_logger(c, NULL, "\t\"Modules\": [\n");
     for (mod_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
         const char *mod_name = map_itr_get_key(itr);
         const char *mod = map_itr_get_data(itr);
-        ctx_logger(c, NULL, "-> '%s': %p\n", mod_name, mod);
+        ctx_logger(c, NULL, "\t\t\"%s\": %p,\n", mod_name, mod);
     }
+    ctx_logger(c, NULL, "\t]\n");
+    ctx_logger(c, NULL, "}\n");
     return MOD_OK;
 }
 
 
-mod_ret modules_load(const char *ctx_name, const char *module_path) {
+mod_ret modules_ctx_load(const char *ctx_name, const char *module_path) {
     MOD_PARAM_ASSERT(module_path);
     FIND_CTX(ctx_name);
     
@@ -372,7 +381,7 @@ mod_ret modules_load(const char *ctx_name, const char *module_path) {
     return MOD_OK;
 }
 
-mod_ret modules_unload(const char *ctx_name, const char *module_path) {
+mod_ret modules_ctx_unload(const char *ctx_name, const char *module_path) {
     MOD_PARAM_ASSERT(module_path);    
     FIND_CTX(ctx_name);
     
@@ -397,4 +406,28 @@ mod_ret modules_unload(const char *ctx_name, const char *module_path) {
     }
     MODULE_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, ctx_name);
     return MOD_NO_MOD;
+}
+
+size_t modules_ctx_trim(const char *ctx_name, const stats_t *thres) {
+    FIND_CTX(ctx_name);
+    MOD_PARAM_ASSERT(thres);
+
+    uint64_t curr_ms = 0;
+    fetch_ms(&curr_ms, NULL);
+    const size_t initial_size = map_length(c->modules);
+    for (mod_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
+        mod_t *mod = map_itr_get_data(itr);
+
+        if (curr_ms - mod->stats.last_seen >= thres->inactive_ms) {
+            module_deregister(&mod->self);
+        } else {
+            const double freq = (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
+            if (freq < thres->activity_freq) {
+                module_deregister(&mod->self);
+            }
+        }
+    }
+    
+    /* Number of deregistered modules */
+    return initial_size - map_length(c->modules);
 }

@@ -1,5 +1,5 @@
 #include "module.h"
-#include "poll_priv.h"     
+#include "poll_priv.h"
 
 /** Actor-like PubSub interface **/
 
@@ -12,9 +12,11 @@ static mod_map_ret tell_global(void *data, const char *key, void *value);
 static void pubsub_msg_ref(ps_priv_t *pubsub_msg);
 static void pubsub_msg_unref(ps_priv_t *pubsub_msg);
 static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c);
-static mod_ret send_msg(const mod_t *mod, mod_t *recipient, 
+static mod_ret send_msg(mod_t *mod, mod_t *recipient, 
                         const char *topic, const void *message, 
                         const ssize_t size, const mod_ps_flags flags);
+
+extern mod_ret fs_notify(const msg_t *msg);
 
 static void subscribtions_dtor(void *data) {
     ev_src_t *sub = (ev_src_t *)data;
@@ -140,21 +142,27 @@ static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
     return MOD_OK;
 }
 
-static mod_ret send_msg(const mod_t *mod, mod_t *recipient, 
+static mod_ret send_msg(mod_t *mod, mod_t *recipient, 
                         const char *topic, const void *message, 
                         const ssize_t size, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(message);
     MOD_PARAM_ASSERT(size > 0);
-    GET_CTX_PRIV((&mod->ref));
+    GET_CTX(mod->self);
     
+    fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     ps_priv_t *m = create_pubsub_msg(message, &mod->ref, topic, USER, size, flags);
+    MOD_ALLOC_ASSERT(m);
     return tell_pubsub_msg(m, recipient, c);
 }
 
 /** Private API **/
 
 mod_ret tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, const self_t *sender, const char *topic) {
+    if (mod) {
+        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
+    }
     ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, 0);
+    MOD_ALLOC_ASSERT(m);
     return tell_pubsub_msg(m, mod, c);
 }
 
@@ -193,10 +201,16 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr) {
     }
     msg->self = mod->self;
     cb(msg, userptr);
+    
+    /* Notify underlying fuse fs */
+    fs_notify(msg);
 
     if (msg->type == TYPE_PS) {
         pubsub_msg_unref((ps_priv_t *)msg->ps_msg);
     }
+    
+    mod->stats.msg_ctr++;
+    fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
 }
 
 /** Public API **/
@@ -253,6 +267,7 @@ mod_ret module_register_sub(const self_t *self, const char *topic, mod_src_flags
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
         ps_src->topic = sub->flags & SRC_DUP ? mem_strdup(topic) : topic;
         if (map_put(mod->subscriptions, ps_src->topic, sub) == MAP_OK) {
+            fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
             return MOD_OK;
         }
     }
@@ -264,6 +279,7 @@ mod_ret module_deregister_sub(const self_t *self, const char *topic) {
     GET_MOD(self);
     
     if (map_remove(mod->subscriptions, topic) == MAP_OK) {
+        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         return MOD_OK;
     }
     return MOD_ERR;
@@ -304,22 +320,20 @@ mod_ret module_poisonpill(const self_t *self, const self_t *recipient) {
     return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->ref, NULL);
 }
 
-mod_ret module_msg_ref(const self_t *self, ps_msg_t *msg) {
+mod_ret module_ps_msg_ref(const self_t *self, ps_msg_t *msg) {
     /* You can only ref a msg from within a module context */
-    MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF);
+    GET_MOD(self);
     MOD_PARAM_ASSERT(msg);
        
-    ps_priv_t *priv_msg = (ps_priv_t *)msg;
-    pubsub_msg_ref(priv_msg);
+    pubsub_msg_ref((ps_priv_t *)msg);
     return MOD_OK;
 }
     
-mod_ret module_msg_unref(const self_t *self, ps_msg_t *msg) {
+mod_ret module_ps_msg_unref(const self_t *self, ps_msg_t *msg) {
     /* You can only unref a msg from within a module context */
-    MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF);
+    GET_MOD(self);
     MOD_PARAM_ASSERT(msg);
 
-    ps_priv_t *priv_msg = (ps_priv_t *)msg;
-    pubsub_msg_unref(priv_msg);
+    pubsub_msg_unref((ps_priv_t *)msg);
     return MOD_OK;
 }

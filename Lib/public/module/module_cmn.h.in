@@ -41,6 +41,13 @@
 /* Incomplete structure declaration to self handler */
 typedef struct _self self_t;
 
+/* Modules flags */
+typedef enum { 
+    MOD_NAME_DUP = 0x1,         // Should module's name be strdupped?
+    MOD_NAME_AUTOFREE = 0x2,    // Should module's name be autofreed?
+    MOD_ALLOW_REPLACE = 0x4     // Can module be replaced by another module with same name?
+} mod_flags;
+
 /* Modules states */
 typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 } mod_states;
 
@@ -55,7 +62,7 @@ typedef enum {
     TYPE_SGN,   // Signal Source
     TYPE_PT,    // Path Source
     TYPE_PID    // PID Source
-} mod_src_type;
+} mod_src_types;
 
 /* 
  * Module event sources' flags:
@@ -104,11 +111,11 @@ typedef struct {
 
 /* PubSub message */
 typedef struct {
+    ps_msg_type type;
+    const self_t *sender;   // Sender reference
     const char *topic;      
     const void *data;
     ssize_t size;
-    const self_t *sender;   // Sender reference
-    ps_msg_type type;
 } ps_msg_t;
 
 /* FD event message */
@@ -141,7 +148,7 @@ typedef struct {
 /* Libmodule receive() main message type */
 typedef struct {
     self_t *self;
-    mod_src_type type;
+    mod_src_types type;
     union {
         const fd_msg_t      *fd_msg;
         const ps_msg_t      *ps_msg;
@@ -169,7 +176,7 @@ typedef void (*free_fn)(void *ptr);
 
 /* Struct that holds user defined callbacks */
 typedef struct {
-    init_cb init;                           // module's init function (should return a FD)
+    init_cb init;                           // module's init function
     evaluate_cb evaluate;                   // module's state changed function
     recv_cb recv;                           // module's recv function
     destroy_cb destroy;                     // module's destroy function
@@ -183,9 +190,15 @@ typedef struct {
     free_fn _free;
 } memhook_t;
 
+typedef struct {
+    uint64_t inactive_ms;
+    double activity_freq;
+} stats_t;
+
 /* Module return codes */
 typedef enum {
-    MOD_UNSUPPORTED = -10,
+    MOD_UNSUPPORTED = -11,
+    MOD_EEXIST,
     MOD_REF_ERR,
     MOD_WRONG_PARAM,
     MOD_NO_MEM,

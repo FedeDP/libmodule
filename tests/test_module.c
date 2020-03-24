@@ -20,7 +20,7 @@ void test_module_register_NULL_name(void **state) {
     (void) state; /* unused */
 
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    mod_ret ret = module_register(NULL, CTX, &self, &hook);
+    mod_ret ret = module_register(NULL, CTX, &self, &hook, 0);
     assert_false(ret == MOD_OK);
     assert_null(self);
 }
@@ -29,7 +29,7 @@ void test_module_register_NULL_ctx(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    mod_ret ret = module_register("testName", NULL, &self, &hook);
+    mod_ret ret = module_register("testName", NULL, &self, &hook, 0);
     assert_false(ret == MOD_OK);
     assert_null(self);
 }
@@ -38,7 +38,7 @@ void test_module_register_NULL_self(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    mod_ret ret = module_register("testName", CTX, NULL, &hook);
+    mod_ret ret = module_register("testName", CTX, NULL, &hook, 0);
     assert_false(ret == MOD_OK);
     assert_null(self);
 }
@@ -46,7 +46,7 @@ void test_module_register_NULL_self(void **state) {
 void test_module_register_NULL_hook(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_register("testName", CTX, &self, NULL);    
+    mod_ret ret = module_register("testName", CTX, &self, NULL, 0);    
     assert_false(ret == MOD_OK);
     assert_null(self);
 }
@@ -55,7 +55,7 @@ void test_module_register(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    mod_ret ret = module_register("testName", CTX, &self, &hook);
+    mod_ret ret = module_register("testName", CTX, &self, &hook, 0);
     assert_true(ret == MOD_OK);
     assert_non_null(self);
     assert_true(module_is(self, IDLE));
@@ -65,7 +65,7 @@ void test_module_register_already_registered(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    mod_ret ret = module_register("testName", CTX, &self, &hook);
+    mod_ret ret = module_register("testName", CTX, &self, &hook, 0);
     assert_false(ret == MOD_OK);
     assert_non_null(self);
     assert_true(module_is(self, IDLE));
@@ -77,7 +77,7 @@ void test_module_register_same_name(void **state) {
     self_t *self2 = NULL;
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    mod_ret ret = module_register("testName", CTX, &self2, &hook);
+    mod_ret ret = module_register("testName", CTX, &self2, &hook, 0);
     assert_false(ret == MOD_OK);
     assert_null(self2);
 }
@@ -102,7 +102,7 @@ void test_module_false_init(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init_false, evaluate, recv, destroy };
-    mod_ret ret = module_register("testName", CTX, &self, &hook);
+    mod_ret ret = module_register("testName", CTX, &self, &hook, 0);
     assert_true(ret == MOD_OK);
     assert_non_null(self);
     assert_true(module_is(self, IDLE));
@@ -403,7 +403,7 @@ void test_module_tell_wrong_size(void **state) {
 void test_module_tell(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = module_tell(self, testSelf, (unsigned char *)strdup("hi1!"), strlen("hi!"), PS_AUTOFREE);
+    mod_ret ret = module_tell(self, testSelf, (unsigned char *)"hi1!", strlen("hi!"), PS_DUP_DATA);
     assert_true(ret == MOD_OK);
 }
 

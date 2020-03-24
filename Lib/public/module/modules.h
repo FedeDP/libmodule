@@ -13,6 +13,8 @@ _public_ mod_ret modules_ctx_dispatch(const char *ctx_name, int *ret);
 
 _public_ mod_ret modules_ctx_dump(const char *ctx_name);
 
+_public_ size_t modules_ctx_trim(const char *ctx_name, const stats_t *thres);
+
 /* External shared object module runtime loading */
-_public_ mod_ret modules_load(const char *ctx_name, const char *module_path);
-_public_ mod_ret modules_unload(const char *ctx_name, const char *module_path);
+_public_ mod_ret modules_ctx_load(const char *ctx_name, const char *module_path);
+_public_ mod_ret modules_ctx_unload(const char *ctx_name, const char *module_path);

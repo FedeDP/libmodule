@@ -125,7 +125,7 @@ typedef struct {
         pt_src_t    pt_src;
         pid_src_t   pid_src;
     };
-    mod_src_type type;
+    mod_src_types type;
     mod_src_flags flags;
     void *ev;                               // poll plugin defined data structure
     const self_t *self;                     // ptr needed to map an event source to a self_t in poll_plugin
@@ -145,19 +145,27 @@ typedef struct {
     int max_events;                         // Max number of returned events for poll_plugin
 } poll_priv_t;
 
+typedef struct {
+    uint64_t registration_time;
+    uint64_t last_seen;
+    uint64_t action_ctr;
+    uint64_t msg_ctr;
+} mod_stats_t;
+
 /* Struct that holds data for each module */
 struct _module {
     userhook_t hook;                        // module's user defined callbacks
     mod_stack_t *recvs;                     // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
     mod_states state;                       // module's state
-    bool from_fuse;                         // Does it come from a fuse fs file creation?
     void *fuse_ph;                          // Fuse poll data
     const char *name;                       // module's name
     const char *local_path;                 // For runtime loaded modules: path of module
     mod_list_t *srcs;                       // module's event sources (list of ev_src_t*)
     mod_map_t *subscriptions;               // module's subscriptions (map of ev_src_t*)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
+    mod_stats_t stats;                      // Modules' stats
+    mod_flags flags;
     self_t ref;                             // Module self reference
     self_t *self;                           // Module self handler
 };
@@ -192,6 +200,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr);
 
 /* Defined in priv.c */
 char *mem_strdup(const char *s);
+void fetch_ms(uint64_t *val, uint64_t *ctr);
 
 /* Defined in map.c */
 void *map_peek(const mod_map_t *m);

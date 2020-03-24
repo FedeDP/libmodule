@@ -27,8 +27,8 @@ void create_modules(const char *ctx_name) {
     userhook_t hookA = (userhook_t) { A_init, evaluate, A_recv, destroy };
     userhook_t hookB = (userhook_t) { B_init, evaluate, B_recv, destroy };
     
-    module_register("Pippo", ctx_name, &selfA, &hookA);
-    module_register("Doggo", ctx_name, &selfB, &hookB);
+    module_register("Pippo", ctx_name, &selfA, &hookA, 0);
+    module_register("Doggo", ctx_name, &selfB, &hookB, 0);
     
     module_set_userdata(selfA, ctx_name);
     module_set_userdata(selfB, ctx_name);

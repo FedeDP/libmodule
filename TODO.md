@@ -80,9 +80,14 @@ etc etc
 - [ ] by default, use "$HOME/.modules/$ctxname/"
 - [x] Notify with poll callback when fuse-module has new receive() events enqueued
 - [x] Test poll
-- [ ] Let normal modules notify poll too? (ie: every module should call fs_recv... may be renamed to fuse_notify())
-- [ ] Add an ioctl interface? https://libfuse.github.io/doxygen/ioctl_8c_source.html eg: MOD_RECV_MSG, MOD_PUB_MSG, MOD_TELL_MSG, MOD_REG_SRC, MOD_DEREG_SRC...
-- [ ] Drop write-based interface after ioctl?
+- [x] Let non-fuse modules notify poll too? (ie: every module should call fs_recv... may be renamed to fs_notify())
+- [ ] Add an ioctl interface? https://libfuse.github.io/doxygen/ioctl_8c_source.html eg: MOD_RECV_MSG, MOD_PUB_MSG, MOD_TELL_MSG, MOD_REG_SRC, MOD_DEREG_SRC, MOD_STATS...
+- [ ] MOD_RECV_MSG -> every module keeps a reference on its latest received message; the reference is destroyed when a new message arrives, or when module is destroyed.
+Referenced message is then returned from ioctl.
+- [ ] Directly use read() instead of ioctl(MOD_RECV_MSG) ?
+- [x] Drop write-based interface
+- [ ] Allow looping context without running modules (drop c->running_mods)
+- [x] Allow to deregister non-fuse modules too on unlink
 - [ ] Fix memleaks (only when using fuse)
 - [ ] Fix build on other OSes?
 - [ ] Fix FIXME inside fuse_priv.c!
@@ -113,6 +118,11 @@ etc etc
 
 - [x] Drop C++ support (useless...)
 
+- [x] keep some module stats, eg: time_t last_msg ( last recved), and messages per millisecond
+- [x] add a modules_trim function to deregister "inactive" modules, ie modules whose values are below user settled thresholds
+- [x] Add a stats_t type and use that as parameter to modules_trim?
+- [x] Add module_get_stats() API
+
 - [x] Actually check userhook: at least init() and receive() must be defined
 - [x] Let users avoid passing other callbacks
 - [x] init() to return a bool -> if false -> init failed; automatically stop module
@@ -127,7 +137,7 @@ etc etc
 
 - [x] modules_dump() (same as module_dump but for modules context!)
 - [x] DOCument module_dump and modules_dump odd letters!!
-- [ ] Json-ify module(s)_dump output?
+- [x] Json-ify module(s)_dump output?
 
 - [x] In epoll interface, check that events & EPOLLERR is false
 
@@ -152,7 +162,9 @@ etc etc
 - [x] module_msg_ref()/ module_msg_unref() to keep a PubSub message alive (incrementing its ref counter)
 - [x] Force PS_AUTOFREE flag if PS_DUP_DATA bit is set
 
-- [ ] Use json as a module/modules_dump format?
+- [x] Rename module getters (w/o setters) to module_X() instead of module_get_X()
+
+- [x] module_register to take additional flags parameter
 
 - [ ] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples

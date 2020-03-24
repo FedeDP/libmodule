@@ -3,6 +3,7 @@
 
 /** Generic module interface **/
 
+static void _module_dtor(void *data);
 static mod_ret init_ctx(const char *ctx_name, ctx_t **context);
 static void destroy_ctx(ctx_t *context);
 static ctx_t *check_ctx(const char *ctx_name);
@@ -11,9 +12,9 @@ static mod_ret init_pubsub_fd(mod_t *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args);
 static void src_priv_dtor(void *data);
 
-static mod_ret _deregister_src(mod_t *mod, ev_src_t *src);
-static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *src_data, 
+static mod_ret _register_src(mod_t *mod, const mod_src_types type, const void *src_data, 
                              const mod_src_flags flags, const void *userptr);
+static mod_ret _deregister_src(mod_t *mod, void *src_data, const mod_list_comp comp);
 
 static mod_ret _register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr);
 static int is_fd_same(void *my_data, void *list_data);
@@ -40,6 +41,45 @@ static mod_ret _deregister_pid(mod_t *mod, const mod_pid_t *pid);
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
 static void reset_module(mod_t *mod);
 
+static void _module_dtor(void *data) {
+    mod_t *mod = (mod_t *)data;
+    if (mod) {
+        /* Only if module has been registered before */
+        if (mod->state != 0) {
+            stop(mod, true);
+        }
+        
+        map_free(mod->subscriptions);
+        stack_free(mod->recvs);
+        list_free(mod->srcs);
+        
+        memhook._free((void *)mod->local_path);
+        
+        if (mod->flags & MOD_NAME_AUTOFREE) {
+            memhook._free((void *)mod->name);
+        }
+        
+        /* Free fuse poll internal data */
+        if (mod->fuse_ph) {
+            memhook._free(mod->fuse_ph);
+        }
+        
+        memhook._free(mod->self);
+        mod->self = NULL;
+        
+        /*
+         * Call destroy once self is NULL 
+         * (ie: no more libmodule operations can be called on this handler) 
+         */
+        if (mod->hook.destroy) {
+            mod->hook.destroy();
+        }
+        
+        /* Finally free module */
+        memhook._free(mod);
+    }
+}
+
 static mod_ret init_ctx(const char *ctx_name, ctx_t **context) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
@@ -48,7 +88,7 @@ static mod_ret init_ctx(const char *ctx_name, ctx_t **context) {
 
     (*context)->logger = default_logger;
     
-    (*context)->modules = map_new(false, NULL);
+    (*context)->modules = map_new(false, _module_dtor);
     
     (*context)->name = ctx_name;
     if ((*context)->modules &&
@@ -111,7 +151,9 @@ static mod_ret init_pubsub_fd(mod_t *mod) {
 }
 
 static void default_logger(const self_t *self, const char *fmt, va_list args) {
-    printf("[%s]|%s|: ", self->ctx->name, self->mod->name);
+    if (self) {
+        printf("[%s]|%s|: ", self->ctx->name, self->mod->name);
+    }
     vprintf(fmt, args);
 }
 
@@ -147,14 +189,7 @@ static void src_priv_dtor(void *data) {
     memhook._free(t);
 }
 
-static mod_ret _deregister_src(mod_t *mod, ev_src_t *src) {
-    if (list_remove(mod->srcs, src, NULL) == LIST_OK) {
-        return MOD_OK;
-    }
-    return MOD_ERR;
-}
-
-static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *src_data, 
+static mod_ret _register_src(mod_t *mod, const mod_src_types type, const void *src_data, 
                              const mod_src_flags flags, const void *userptr) {
     
     ev_src_t *src = memhook._calloc(1, sizeof(ev_src_t));
@@ -207,6 +242,7 @@ static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *sr
         return MOD_ERR;
     }
     
+    fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     list_insert(mod->srcs, src, NULL);
     ctx_t *c = mod->ref.ctx;
     /* If a fd is registered at runtime, start polling on it */
@@ -215,6 +251,14 @@ static mod_ret _register_src(mod_t *mod, const mod_src_type type, const void *sr
         ret = poll_set_new_evt(&c->ppriv, src, ADD);
     }
     return !ret ? MOD_OK : MOD_ERR;
+}
+
+static mod_ret _deregister_src(mod_t *mod, void *src_data, const mod_list_comp comp) {
+    if (list_remove(mod->srcs, src_data, comp) == LIST_OK) {
+        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
+        return MOD_OK;
+    }
+    return MOD_ERR;
 }
 
 /* 
@@ -237,10 +281,7 @@ static int is_fd_same(void *my_data, void *list_data) {
 
 /* Linearly search for fd */
 static mod_ret _deregister_fd(mod_t *mod, const int fd) {
-    if (list_remove(mod->srcs, (void *)&fd, is_fd_same) == LIST_OK) {
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    return _deregister_src(mod, (void *)&fd, is_fd_same);
 }
 
 static mod_ret _register_tmr(mod_t *mod, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr) {
@@ -258,11 +299,8 @@ static int is_tmr_same(void *my_data, void *list_data) {
 }
 
 /* Linearly search for its */
-static mod_ret _deregister_tmr(mod_t *mod, const mod_tmr_t *its) {    
-    if (list_remove(mod->srcs, (void *)its, is_tmr_same) == LIST_OK) {
-        return MOD_OK;
-    }
-    return MOD_ERR;
+static mod_ret _deregister_tmr(mod_t *mod, const mod_tmr_t *its) { 
+    return _deregister_src(mod, (void *)its, is_tmr_same);
 }
 
 static mod_ret _register_sgn(mod_t *mod, const mod_sgn_t *sgs, const mod_src_flags flags, const void *userptr) {
@@ -281,10 +319,7 @@ static int is_sgn_same(void *my_data, void *list_data) {
 
 /* Linearly search for sgs */
 static mod_ret _deregister_sgn(mod_t *mod, const mod_sgn_t *sgs) {
-    if (list_remove(mod->srcs, (void *)sgs, is_sgn_same) == LIST_OK) {
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    return _deregister_src(mod, (void *)sgs, is_sgn_same);
 }
 
 static mod_ret _register_pt(mod_t *mod, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr) {
@@ -303,10 +338,7 @@ static int is_pt_same(void *my_data, void *list_data) {
 
 /* Linearly search for sgs */
 static mod_ret _deregister_pt(mod_t *mod, const mod_pt_t *pt) {
-    if (list_remove(mod->srcs, (void *)pt, is_pt_same) == LIST_OK) {
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    return _deregister_src(mod, (void *)pt, is_pt_same);
 }
 
 static mod_ret _register_pid(mod_t *mod, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr) {
@@ -325,10 +357,7 @@ static int is_pid_same(void *my_data, void *list_data) {
 
 /* Linearly search for sgs */
 static mod_ret _deregister_pid(mod_t *mod, const mod_pid_t *pid) {
-    if (list_remove(mod->srcs, (void *)pid, is_pid_same) == LIST_OK) {
-        return MOD_OK;
-    }
-    return MOD_ERR;
+    return _deregister_src(mod, (void *)pid, is_pid_same);
 }
 
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {    
@@ -346,7 +375,7 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
                  */
                 flush_pubsub_msgs(mod, NULL, mod);
             }
-            ret = _deregister_src(mod, t);
+            ret = _deregister_src(mod, t, NULL);
         } else {
             ret = poll_set_new_evt(&c->ppriv, t, flag);
         }
@@ -408,6 +437,7 @@ mod_ret start(mod_t *mod, const bool starting) {
         MODULE_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
         tell_system_pubsub_msg(NULL, c, MODULE_STARTED, &mod->ref, NULL);
         
+        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         return MOD_OK;
     }
     
@@ -455,12 +485,13 @@ mod_ret stop(mod_t *mod, const bool stopping) {
     if (was_running) {
         c->running_mods--;
     }
+    fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     return MOD_OK;
 }
 
 /** Public API **/
 
-mod_ret module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook) {
+mod_ret module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook, const mod_flags flags) {
     MOD_PARAM_ASSERT(name);
     MOD_PARAM_ASSERT(ctx_name);
     MOD_PARAM_ASSERT(self);
@@ -473,21 +504,29 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
     ctx_t *context = check_ctx(ctx_name);
     MOD_ASSERT(context, "Failed to create context.", MOD_ERR);
     
-    const bool present = map_has_key(context->modules, name);
-    MOD_ASSERT(!present, "Module with same name already registered in context.", MOD_ERR);
+    const mod_t *old_mod = map_get(context->modules, name);
+    if (old_mod) {
+        if (!(old_mod->flags & MOD_ALLOW_REPLACE)) { 
+            MODULE_DEBUG("Module with same name already registered in context.");
+            return MOD_EEXIST;
+        }
+        map_remove(context->modules, name);
+    }
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
     
     mod_t *mod = memhook._calloc(1, sizeof(mod_t));
     MOD_ALLOC_ASSERT(mod);
     
+    mod->flags = flags;
+    if (flags & MOD_NAME_DUP) {
+        mod->flags |= MOD_NAME_AUTOFREE;
+    }
+    
     mod_ret ret = MOD_NO_MEM;
     /* Let us gladly jump out with break on error */
-    while (true) {
-        mod->name = name;
-        
-        memcpy(&mod->hook, hook, sizeof(userhook_t));
-        mod->state = IDLE;
+    do {
+        mod->name = flags & MOD_NAME_DUP ? mem_strdup(name) : name;
         
         mod->srcs = list_new(src_priv_dtor);
         if (!mod->srcs) {
@@ -512,67 +551,37 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
         memcpy(&mod->ref, &((self_t){ mod, context, true }), sizeof(self_t));
         
         if (map_put(context->modules, mod->name, mod) == MAP_OK) {
+            memcpy(&mod->hook, hook, sizeof(userhook_t));
+            mod->state = IDLE;
+            
             *self = mod->self;
+            
             mod->pubsub_fd[0] = -1;
             mod->pubsub_fd[1] = -1;
+            
+            fetch_ms(&mod->stats.registration_time, NULL);
             return MOD_OK;
         }
         ret = MOD_ERR;
-        break;
-    }
-    memhook._free(*self);
-    *self = NULL;
-    stack_free(mod->recvs);
-    list_free(mod->srcs);
-    memhook._free(mod);
+    } while (false);
+    
+    _module_dtor(mod);
     return ret;
 }
 
 mod_ret module_deregister(self_t **self) {
     MOD_PARAM_ASSERT(self);
-    
     GET_MOD(*self);
+    GET_CTX(*self);
     MODULE_DEBUG("Deregistering module '%s'.\n", mod->name);
     
     /* Remove the module from the context */
-    map_remove((*self)->ctx->modules, mod->name);
-    
-    stop(mod, true);
-            
+    map_remove(c->modules, mod->name);
     /* Remove context without modules */
-    if (map_length((*self)->ctx->modules) == 0) {
-        destroy_ctx((*self)->ctx);
+    if (map_length(c->modules) == 0) {
+        destroy_ctx(c);
     }
-    map_free(mod->subscriptions);
-    stack_free(mod->recvs);
-    list_free(mod->srcs);
-    
-    memhook._free((void *)mod->local_path);
-    
-    /* Fuse does strdup module name */
-    if (mod->from_fuse) {
-        memhook._free((void *)mod->name);
-    }
-    /* Free fuse poll internal data */
-    if (mod->fuse_ph) {
-        memhook._free(mod->fuse_ph);
-    }
-    
-    /* Destroy external handler */
-    memhook._free(*self);
     *self = NULL;
-
-    /*
-     * Call destroy once self is NULL 
-     * (ie: no more libmodule operations can be called on this handler) 
-     */
-    if (mod->hook.destroy) {
-        mod->hook.destroy();
-    }
-
-    /* Finally free module */
-    memhook._free(mod);
-            
     return MOD_OK;
 }
 
@@ -581,6 +590,7 @@ mod_ret module_become(const self_t *self, const recv_cb new_recv) {
     GET_MOD_IN_STATE(self, RUNNING);
     
     if (stack_push(mod->recvs, new_recv) == STACK_OK) {
+        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         return MOD_OK;
     }
     return MOD_ERR;
@@ -590,6 +600,7 @@ mod_ret module_unbecome(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
     if (stack_pop(mod->recvs) != NULL) {
+        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         return MOD_OK;
     }
     return MOD_ERR;
@@ -705,7 +716,7 @@ mod_ret module_deregister_pid(const self_t *self, const mod_pid_t *pid) {
     return _deregister_pid(mod, pid);
 }
 
-const char *module_get_name(const self_t *mod_self) {
+const char *module_name(const self_t *mod_self) {
     MOD_ASSERT(mod_self, "NULL mod_self handler.", NULL);
     GET_MOD_PRIV(mod_self);
     MOD_ASSERT(mod, "Module not found.", NULL);
@@ -713,7 +724,7 @@ const char *module_get_name(const self_t *mod_self) {
     return mod->name;
 }
 
-const char *module_get_ctx(const self_t *mod_self) {
+const char *module_ctx(const self_t *mod_self) {
     MOD_ASSERT(mod_self, "NULL mod_self handler.", NULL);
     GET_CTX_PRIV(mod_self);
     MOD_ASSERT(c, "Context not found.", NULL);
@@ -732,41 +743,88 @@ bool module_is(const self_t *mod_self, const mod_states st) {
 mod_ret module_dump(const self_t *self) {
     GET_MOD(self); 
     GET_CTX(self);
+    
+    uint64_t curr_ms;
+    fetch_ms(&curr_ms, NULL);
 
-    ctx_logger(c, self, "Mod '%s'\n", self->mod->name);
-    ctx_logger(c, self, "* State: %u\n", mod->state);
-    ctx_logger(c, self, "* Userdata: %p\n", mod->userdata);
-    ctx_logger(c, self, "* Subscriptions:\n");
+    ctx_logger(c, self, "{\n");
+    ctx_logger(c, self, "\t\"Name\": \"'%s\",\n", self->mod->name);
+    ctx_logger(c, self, "\t\"State\": %#x,\n", mod->state);
+    if (mod->userdata) {
+        ctx_logger(c, self, "\t\"Userdata\": %p,\n", mod->userdata);
+    }
+    ctx_logger(c, self, "\t\"Stats\": {\n");
+    ctx_logger(c, self, "\t\t\"Registration time\": %lu,\n", mod->stats.registration_time);
+    ctx_logger(c, self, "\t\t\"Received messages\": %lu,\n", mod->stats.msg_ctr);
+    ctx_logger(c, self, "\t\t\"Last activity\": %lu,\n", mod->stats.last_seen);
+    ctx_logger(c, self, "\t\t\"Num actions\": %lu,\n", mod->stats.action_ctr);
+    ctx_logger(c, self, "\t\t\"Action frequency\": %lf\n", (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time));
+    ctx_logger(c, self, "\t},\n");
+    
+    ctx_logger(c, self, "\t\"Subs\": [\n");
     for (mod_map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr)) {
         ev_src_t *sub = map_itr_get_data(itr);
-        ctx_logger(c, self, "-> T: %s: Fl: %d UP: %p\n", sub->ps_src.topic, sub->flags, sub->userptr);
+        ctx_logger(c, self, "\t{\n");
+        ctx_logger(c, self, "\t\t\"Topic\": \"%s\",\n", sub->ps_src.topic);
+        if (sub->userptr) {
+            ctx_logger(c, self, "\t\t\"UP\": %p,\n", sub->userptr);
+        }
+        ctx_logger(c, self, "\t\t\"Flags\": %#x\n", sub->flags);
+        ctx_logger(c, self, "\t},\n");
     }
-    ctx_logger(c, self, "* Srcs:\n");
+    ctx_logger(c, self, "\t],\n");
+    
+    ctx_logger(c, self, "\t\"Srcs\": [\n");
     for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr; itr = list_itr_next(itr)) {
         ev_src_t *t = list_itr_get_data(itr);
+        if (t->type == TYPE_PS) {
+            /* Do not log information about internal pubsub pipe */
+            continue;
+        }
+        
+        ctx_logger(c, self, "\t{\n");
         switch (t->type) {
         case TYPE_FD:
-            ctx_logger(c, self, "-> FD: %d Fl: %d UP: %p\n", t->fd_src.fd, t->flags, t->userptr);
+            ctx_logger(c, self, "\t\t\"FD\": %d,\n", t->fd_src.fd);
             break;
         case TYPE_SGN:
-            ctx_logger(c, self, "-> SGN: %d Fl: %d UP: %p\n", t->sgn_src.sgs.signo, t->flags, t->userptr);
+            ctx_logger(c, self, "\t\t\"SGN\": %d,\n", t->sgn_src.sgs.signo);
             break;
         case TYPE_TMR:
-            ctx_logger(c, self, "-> TMR_MS: %lu TMR_CID: %d Fl: %d UP: %p\n", 
-                       t->tm_src.its.ms, t->tm_src.its.clock_id, t->flags, t->userptr);
+            ctx_logger(c, self, "\t\t\"TMR_MS\": %lu,\n", t->tm_src.its.ms);
+            ctx_logger(c, self, "\t\t\"TMR_CID\": %d,\n", t->tm_src.its.clock_id);
             break;
         case TYPE_PT:
-            ctx_logger(c, self, "-> PT: '%s' PT_EV: %u Fl: %d UP: %p\n", 
-                       t->pt_src.pt.path, t->pt_src.pt.events, t->flags, t->userptr);
+            ctx_logger(c, self, "\t\t\"PATH\": \"%s\",\n", t->pt_src.pt.path);
+            ctx_logger(c, self, "\t\t\"EV\": %u,\n", t->pt_src.pt.events);
             break;
         case TYPE_PID:
-            ctx_logger(c, self, "-> PID: %d PID_EV: %u Fl: %d UP: %p\n", 
-                       t->pid_src.pid.pid, t->pid_src.pid.events, t->flags, t->userptr);
+            ctx_logger(c, self, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);
+            ctx_logger(c, self, "\t\t\"EV\": %u,\n", t->pid_src.pid.events);
             break;
         default:
             break;
         }
+        if (t->userptr) {
+            ctx_logger(c, self, "\t\t\"UP\": %p,\n", t->userptr);
+        }
+        ctx_logger(c, self, "\t\t\"Flags\": %#x\n", t->flags);
+        ctx_logger(c, self, "\t},\n");
     }
+    ctx_logger(c, self, "\t]\n");
+    ctx_logger(c, self, "}\n");
+    return MOD_OK;
+}
+
+mod_ret module_stats(const self_t *self, stats_t *stats) {
+    GET_MOD_PURE(self);
+    MOD_PARAM_ASSERT(stats);
+    
+    uint64_t curr_ms;
+    fetch_ms(&curr_ms, NULL);
+    
+    stats->inactive_ms = curr_ms - mod->stats.last_seen;
+    stats->activity_freq = ((double)mod->stats.action_ctr) / (curr_ms - mod->stats.registration_time);
     return MOD_OK;
 }
 

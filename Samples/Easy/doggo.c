@@ -51,7 +51,7 @@ static void receive(const msg_t *msg, const void *userdata) {
                 m_log("ZzzZzz...\n");
                 
                 /* Test runtime module loading */
-                m_load("./libtestmod.so");
+                modules_load("./libtestmod.so");
             } else if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
                 m_log("Sob...\n");
             } else if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
@@ -60,7 +60,7 @@ static void receive(const msg_t *msg, const void *userdata) {
             break;
         case MODULE_STOPPED: {
                 if (msg->ps_msg->sender) {
-                    const char *name = module_get_name(msg->ps_msg->sender);
+                    const char *name = module_name(msg->ps_msg->sender);
                     m_log("Module '%s' has been stopped.\n", name);
                 } else {
                     m_log("A module has been deregistered.\n");
@@ -86,7 +86,7 @@ static void receive_sleeping(const msg_t *msg, const void *userdata) {
         } else if (msg->ps_msg->type == MODULE_STARTED) {
             new_mod = msg->ps_msg->sender;
             /* A new module has been started */
-            const char *name = module_get_name(new_mod);
+            const char *name = module_name(new_mod);
             m_log("Module '%s' has been started.\n", name);
         }
     }

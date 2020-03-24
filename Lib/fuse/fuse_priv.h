@@ -3,11 +3,12 @@
 #define dummy(x) x { return MOD_UNSUPPORTED; }
 
 #ifndef WITH_FUSE
-#define FuseExposed(x) dummy(x)
+#define FsExposed(x) dummy(x)
 #else
-#define FuseExposed(x) x
+#define FsExposed(x) x
 #endif
 
-FuseExposed(int fuse_init(ctx_t *c));
-FuseExposed(int fuse_process(ctx_t *c));
-FuseExposed(int fuse_end(ctx_t *c));
+FsExposed(mod_ret fs_init(ctx_t *c));
+FsExposed(mod_ret fs_process(ctx_t *c));
+FsExposed(mod_ret fs_notify(const msg_t *msg));
+FsExposed(mod_ret fs_end(ctx_t *c));
