@@ -206,7 +206,7 @@ static int recv_events(ctx_t *c, int timeout) {
                 break;
             }
 
-            if (msg.type != TYPE_PS || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {                
+            if (msg.type != TYPE_PS || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {
                 run_pubsub_cb(mod, &msg, p ? p->userptr : NULL);
             } else if (msg.ps_msg) {
                 MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);

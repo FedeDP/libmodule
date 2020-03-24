@@ -122,6 +122,7 @@ Referenced message is then returned from ioctl.
 - [x] add a modules_trim function to deregister "inactive" modules, ie modules whose values are below user settled thresholds
 - [x] Add a stats_t type and use that as parameter to modules_trim?
 - [x] Add module_get_stats() API
+- [ ] Split "recv_msg/sent_msg" from stats.msg_ctr
 
 - [x] Actually check userhook: at least init() and receive() must be defined
 - [x] Let users avoid passing other callbacks

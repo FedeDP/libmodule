@@ -126,6 +126,8 @@ static void pubsub_msg_unref(ps_priv_t *pubsub_msg) {
 }
 
 static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
+    MOD_ALLOC_ASSERT(m);
+    
     if (mod) {
         tell_if(m, NULL, mod);
     } else if (!(m->flags & PS_GLOBAL)) {
@@ -151,7 +153,6 @@ static mod_ret send_msg(mod_t *mod, mod_t *recipient,
     
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     ps_priv_t *m = create_pubsub_msg(message, &mod->ref, topic, USER, size, flags);
-    MOD_ALLOC_ASSERT(m);
     return tell_pubsub_msg(m, recipient, c);
 }
 
@@ -162,7 +163,6 @@ mod_ret tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, const sel
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     }
     ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, 0);
-    MOD_ALLOC_ASSERT(m);
     return tell_pubsub_msg(m, mod, c);
 }
 
