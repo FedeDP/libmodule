@@ -4,9 +4,9 @@
 /** Generic module interface **/
 
 static void _module_dtor(void *data);
-static mod_ret init_ctx(const char *ctx_name, ctx_t **context);
+static mod_ret init_ctx(const char *ctx_name, ctx_t **context, const mod_flags flags);
 static void destroy_ctx(ctx_t *context);
-static ctx_t *check_ctx(const char *ctx_name);
+static ctx_t *check_ctx(const char *ctx_name, const mod_flags flags);
 static int _pipe(mod_t *mod);
 static mod_ret init_pubsub_fd(mod_t *mod);
 static void default_logger(const self_t *self, const char *fmt, va_list args);
@@ -80,17 +80,25 @@ static void _module_dtor(void *data) {
     }
 }
 
-static mod_ret init_ctx(const char *ctx_name, ctx_t **context) {
+static mod_ret init_ctx(const char *ctx_name, ctx_t **context, const mod_flags flags) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
     *context = memhook._calloc(1, sizeof(ctx_t));
     MOD_ALLOC_ASSERT(*context);
+    
+    (*context)->flags = flags & ~(uint8_t)-1; // do not store useless module's flags (first byte)
 
     (*context)->logger = default_logger;
     
     (*context)->modules = map_new(false, _module_dtor);
     
-    (*context)->name = ctx_name;
+    if ((*context)->flags & CTX_NAME_DUP) {
+        (*context)->flags |= CTX_NAME_AUTOFREE;
+        (*context)->name = mem_strdup(ctx_name);
+    } else {
+        (*context)->name = ctx_name;
+    }
+    
     if ((*context)->modules &&
         map_put(ctx, (*context)->name, *context) == MAP_OK) {
         
@@ -109,13 +117,18 @@ static void destroy_ctx(ctx_t *context) {
     map_free(context->modules);
     poll_destroy(&context->ppriv);
     map_remove(ctx, context->name);
+    
+    if (context->flags & CTX_NAME_AUTOFREE) {
+        memhook._free((void *)context->name);
+    }
+    
     memhook._free(context);
 }
 
-static ctx_t *check_ctx(const char *ctx_name) {
+static ctx_t *check_ctx(const char *ctx_name, const mod_flags flags) {
     ctx_t *context = map_get(ctx, ctx_name);
     if (!context) {
-        init_ctx(ctx_name, &context);
+        init_ctx(ctx_name, &context, flags);
     }
     return context;
 }
@@ -430,7 +443,6 @@ mod_ret start(mod_t *mod, const bool starting) {
     MOD_ASSERT(!ret, errors[starting], MOD_ERR);
     
     mod->state = RUNNING;
-    c->running_mods++;
     
     /* Call module init() callback only if module is being (re)started */
     if (!starting || mod->hook.init()) {
@@ -450,9 +462,7 @@ mod_ret stop(mod_t *mod, const bool stopping) {
     static const char *errors[] = { "Failed to pause module.", "Failed to stop module." };
     
     GET_CTX_PRIV((&mod->ref));
-    
-    const bool was_running = _module_is(mod, RUNNING);
-    
+        
     int ret = manage_fds(mod, c, RM, stopping);
     MOD_ASSERT(!ret, errors[stopping], MOD_ERR);
     
@@ -480,11 +490,6 @@ mod_ret stop(mod_t *mod, const bool stopping) {
         self = &mod->ref;
     }
     tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, self, NULL);
-    
-    /* Decrement only if we were previously RUNNING */
-    if (was_running) {
-        c->running_mods--;
-    }
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     return MOD_OK;
 }
@@ -501,7 +506,7 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
     MOD_PARAM_ASSERT(hook->init);
     MOD_PARAM_ASSERT(hook->recv);
     
-    ctx_t *context = check_ctx(ctx_name);
+    ctx_t *context = check_ctx(ctx_name, flags);
     MOD_ASSERT(context, "Failed to create context.", MOD_ERR);
     
     const mod_t *old_mod = map_get(context->modules, name);
@@ -518,7 +523,7 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
     mod_t *mod = memhook._calloc(1, sizeof(mod_t));
     MOD_ALLOC_ASSERT(mod);
     
-    mod->flags = flags;
+    mod->flags = flags & (uint8_t)-1; // do not store context's flags (only store first byte)
     if (flags & MOD_NAME_DUP) {
         mod->flags |= MOD_NAME_AUTOFREE;
     }
@@ -755,7 +760,8 @@ mod_ret module_dump(const self_t *self) {
     }
     ctx_logger(c, self, "\t\"Stats\": {\n");
     ctx_logger(c, self, "\t\t\"Registration time\": %lu,\n", mod->stats.registration_time);
-    ctx_logger(c, self, "\t\t\"Received messages\": %lu,\n", mod->stats.msg_ctr);
+    ctx_logger(c, self, "\t\t\"Sent messages\": %lu,\n", mod->stats.sent_msgs);
+    ctx_logger(c, self, "\t\t\"Received messages\": %lu,\n", mod->stats.recv_msgs);
     ctx_logger(c, self, "\t\t\"Last activity\": %lu,\n", mod->stats.last_seen);
     ctx_logger(c, self, "\t\t\"Num actions\": %lu,\n", mod->stats.action_ctr);
     ctx_logger(c, self, "\t\t\"Action frequency\": %lf\n", (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time));

@@ -151,6 +151,7 @@ static mod_ret send_msg(mod_t *mod, mod_t *recipient,
     MOD_PARAM_ASSERT(size > 0);
     GET_CTX(mod->self);
     
+    mod->stats.sent_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     ps_priv_t *m = create_pubsub_msg(message, &mod->ref, topic, USER, size, flags);
     return tell_pubsub_msg(m, recipient, c);
@@ -209,7 +210,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr) {
         pubsub_msg_unref((ps_priv_t *)msg->ps_msg);
     }
     
-    mod->stats.msg_ctr++;
+    mod->stats.recv_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
 }
 

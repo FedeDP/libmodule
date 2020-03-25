@@ -283,7 +283,7 @@ mod_ret modules_ctx_loop_events(const char *ctx_name, const int max_events) {
     MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
 
     if (loop_start(c, max_events) == MOD_OK) {
-        while (!c->quit && c->running_mods) {
+        while (!c->quit) {
             recv_events(c, -1);
         }
         return loop_stop(c);
@@ -316,7 +316,7 @@ mod_ret modules_ctx_dispatch(const char *ctx_name, int *ret) {
         return loop_start(c, MODULES_MAX_EVENTS);
     }
     
-    if (c->quit || !c->running_mods) {
+    if (c->quit) {
         /* We are stopping! */
         *ret = loop_stop(c);
         /* 

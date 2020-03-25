@@ -149,7 +149,8 @@ typedef struct {
     uint64_t registration_time;
     uint64_t last_seen;
     uint64_t action_ctr;
-    uint64_t msg_ctr;
+    uint64_t sent_msgs;
+    uint64_t recv_msgs;
 } mod_stats_t;
 
 /* Struct that holds data for each module */
@@ -165,7 +166,7 @@ struct _module {
     mod_map_t *subscriptions;               // module's subscriptions (map of ev_src_t*)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     mod_stats_t stats;                      // Modules' stats
-    mod_flags flags;
+    mod_flags flags;                        // Module's flags
     self_t ref;                             // Module self reference
     self_t *self;                           // Module self handler
 };
@@ -179,7 +180,7 @@ struct _context {
     log_cb logger;                          // Context's log callback
     mod_map_t *modules;                     // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
-    size_t running_mods;                    // Number of RUNNING modules in context
+    mod_flags flags;                        // Context's flags
     void *fuse;                             // fuse handler. Null if unsupported
 };
 

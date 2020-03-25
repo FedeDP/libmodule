@@ -47,14 +47,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename x_timer_t to x_tmr_t
 - [x] Implement a inotify mechanism (kqueue: EVFILT_VNODE)
 - [x] Implement a proc watcher (kqueue: EVFILT_PROC) (linux: https://lwn.net/Articles/794707/ (http://man7.org/linux/man-pages/man2/pidfd_open.2.html))
-
-- [ ] Expose needed flags (eg: IN_CREATE for linux inotify) as pt_src_events, eg:
-ifdef __linux__ 
-#define SRC_PT_CREATE IN_CREATE
-#else
-#define SRC_PT_CREATE ...
-#endif
-
 - [x] Rename SRC_AUTOCLOSE to SRC_FD_AUTOCLOSE ?
 
 - [x] Use TFD_CLOEXEC flag on timerfd on linux
@@ -86,7 +78,7 @@ etc etc
 Referenced message is then returned from ioctl.
 - [ ] Directly use read() instead of ioctl(MOD_RECV_MSG) ?
 - [x] Drop write-based interface
-- [ ] Allow looping context without running modules (drop c->running_mods)
+- [x] Allow looping context without running modules (drop c->running_mods)
 - [x] Allow to deregister non-fuse modules too on unlink
 - [ ] Fix memleaks (only when using fuse)
 - [ ] Fix build on other OSes?
@@ -122,7 +114,7 @@ Referenced message is then returned from ioctl.
 - [x] add a modules_trim function to deregister "inactive" modules, ie modules whose values are below user settled thresholds
 - [x] Add a stats_t type and use that as parameter to modules_trim?
 - [x] Add module_get_stats() API
-- [ ] Split "recv_msg/sent_msg" from stats.msg_ctr
+- [x] Split "recv_msg/sent_msg" from stats.msg_ctr
 
 - [x] Actually check userhook: at least init() and receive() must be defined
 - [x] Let users avoid passing other callbacks
