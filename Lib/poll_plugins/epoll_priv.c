@@ -117,7 +117,7 @@ int poll_wait(poll_priv_t *priv, const int timeout) {
 
 ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     GET_PRIV_DATA();
-    if (ep->pevents->events & EPOLLERR) {
+    if (ep->pevents[idx].events & EPOLLERR) {
         return NULL;
     }
     return (ev_src_t *)ep->pevents[idx].data.ptr;

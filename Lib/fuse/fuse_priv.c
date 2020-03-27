@@ -9,21 +9,22 @@
 #include <sys/ioctl.h> // ioctl support
 #include <limits.h>
 
-#define MODULE_MAGIC        'L'
 #define FUSE_PRIV()         fuse_priv_t *f = (fuse_priv_t *)c->fuse;
 #define FUSE_CTX()          ctx_t *c = fuse_get_context()->private_data;
 #define FUSE_ASSERT()       if (strlen(path) <= 1 || !map_has_key(c->modules, path + 1)) { return -ENOENT; }
 #define FUSE_MOD()          mod_t *mod = map_get(c->modules, path + 1);
 
-/* TODO: these will go in a separate public header, eg: <module/fuse.h>! */
+/** TODO: these will go in a separate public header, eg: <module/fs.h>! **/
+#define MODULE_MAGIC        'L'
+
 typedef struct {
     union {
         const char recipient[NAME_MAX];
         const char topic[NAME_MAX];
     };
-    const uint8_t msg[4096];
+    const uint8_t msg[512];
     const size_t size;
-} fs_mod_ps_params;
+} fs_ps_t;
 
 enum {
     MOD_GET_STATE   = _IOR(MODULE_MAGIC, 0, mod_states),
@@ -32,12 +33,13 @@ enum {
     MOD_RESUME      = _IO(MODULE_MAGIC, 3),
     MOD_PAUSE       = _IO(MODULE_MAGIC, 4),
     MOD_STATS       = _IOR(MODULE_MAGIC, 5, stats_t),
-    MOD_PEEK_MSG    = _IOR(MODULE_MAGIC, 6, msg_t),
+    MOD_PEEK_MSG    = _IOR(MODULE_MAGIC, 6, msg_t), // TODO
     MOD_SUBSCRIBE   = _IOW(MODULE_MAGIC, 7, char *),
-    MOD_TELL        = _IOW(MODULE_MAGIC, 8, fs_mod_ps_params),
-    MOD_PUBLISH     = _IOW(MODULE_MAGIC, 9, fs_mod_ps_params),
-    MOD_BROADCAST   = _IOW(MODULE_MAGIC, 10, fs_mod_ps_params),
+    MOD_TELL        = _IOW(MODULE_MAGIC, 8, fs_ps_t),
+    MOD_PUBLISH     = _IOW(MODULE_MAGIC, 9, fs_ps_t),
+    MOD_BROADCAST   = _IOW(MODULE_MAGIC, 10, fs_ps_t),
 };
+/**                                                 **/
 
 typedef struct {
     struct fuse *handler;
@@ -53,6 +55,35 @@ typedef struct {
     int in_evt;
     mod_list_t *poll_handlers;
 } fuse_poll_t;
+
+static int fs_getattr(const char *path, struct stat *stbuf,
+                      struct fuse_file_info *fi);
+static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+                      off_t offset, struct fuse_file_info *fi,
+                      enum fuse_readdir_flags flags);
+static void fs_logger(const self_t *self, const char *fmt, va_list args);
+static int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
+static int fs_unlink(const char *path);
+static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi);
+static bool init(void);
+static void receive(const msg_t *msg, const void *userdata);
+static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi);
+static void poll_dtor(void *data);
+static int fs_poll(const char *path, struct fuse_file_info *fi,
+                   struct fuse_pollhandle *ph, unsigned *reventsp);
+static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
+                    struct fuse_file_info *fi, unsigned int flags, void *data);
+
+static const struct fuse_operations operations = {
+    .getattr    = fs_getattr,
+    .readdir    = fs_readdir,
+    .read       = fs_read,
+    .unlink     = fs_unlink,
+    .create     = fs_create,
+    .utimens    = fs_utimens,
+    .poll       = fs_poll,
+    .ioctl      = fs_ioctl
+};
 
 static int fs_getattr(const char *path, struct stat *stbuf,
                          struct fuse_file_info *fi) {
@@ -98,7 +129,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     return 0;
 }
 
-static void fuse_read(const self_t *self, const char *fmt, va_list args) {
+static void fs_logger(const self_t *self, const char *fmt, va_list args) {
     FUSE_CTX();
     FUSE_PRIV();
     f->write_len += vsnprintf(f->read_buf + f->write_len, f->read_len, fmt, args);
@@ -112,7 +143,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
     
     /* Store old context logger and replace it with a fuse one */
     log_cb old_log = c->logger;
-    c->logger = fuse_read;
+    c->logger = fs_logger;
     f->read_buf = buf;
     f->read_len = size;
     f->write_len = 0;
@@ -226,22 +257,17 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
         case MOD_SUBSCRIBE:
             return module_register_sub(mod->self, data, SRC_DUP, NULL);
         case MOD_TELL: {
-            // FIXME
-            fs_mod_ps_params *p = (fs_mod_ps_params *)data;
-            printf("topkek4 %s\n", p->recipient);
+            fs_ps_t *p = (fs_ps_t *)data;
             const self_t *other = NULL;
             module_ref(mod->self, p->recipient, &other);
             return module_tell(mod->self, other, p->msg, p->size, PS_DUP_DATA);
         }
         case MOD_PUBLISH: {
-            // FIXME
-            fs_mod_ps_params *p = (fs_mod_ps_params *)data;
-            printf("topkek5 %s \n", p->topic);
+            fs_ps_t *p = (fs_ps_t *)data;
             return module_publish(mod->self, p->topic, p->msg, p->size, PS_DUP_DATA);
         }
         case MOD_BROADCAST: {
-            // FIXME
-            fs_mod_ps_params *p = (fs_mod_ps_params *)data;
+            fs_ps_t *p = (fs_ps_t *)data;
             return module_broadcast(mod->self, p->msg, p->size, PS_DUP_DATA);
         }
         default:
@@ -250,16 +276,7 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
     return -EINVAL;
 }
 
-static const struct fuse_operations operations = {
-    .getattr    = fs_getattr,
-    .readdir    = fs_readdir,
-    .read       = fs_read,
-    .unlink     = fs_unlink,
-    .create     = fs_create,
-    .utimens    = fs_utimens,
-    .poll       = fs_poll,
-    .ioctl      = fs_ioctl
-};
+/** Private API **/
 
 mod_ret fs_init(ctx_t *c) {
     c->fuse = memhook._calloc(1, sizeof(fuse_priv_t));
@@ -276,11 +293,6 @@ mod_ret fs_init(ctx_t *c) {
     
     mkdir(c->name, 0777);
     if (fuse_mount(f->handler, c->name) == 0) {
-        // FIXME...?
-        f->buf.mem = memhook._malloc(1024);
-        f->buf.size = 1024;
-        MOD_ALLOC_ASSERT(f->buf.mem);
-        
         f->src = memhook._calloc(1, sizeof(ev_src_t));
         MOD_ALLOC_ASSERT(f->src);
         
@@ -335,9 +347,6 @@ mod_ret fs_end(ctx_t *c) {
     /* Destroy fuse handler */
     fuse_unmount(f->handler);
     fuse_destroy(f->handler);
-    
-    /* Free other resources */
-    memhook._free(f->buf.mem);
 
     /* Delete folder */
     remove(c->name);

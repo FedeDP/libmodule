@@ -126,10 +126,17 @@ static void destroy_ctx(ctx_t *context) {
 }
 
 static ctx_t *check_ctx(const char *ctx_name, const mod_flags flags) {
+    /* 
+     * Protect global variables: 
+     * in this case, ensure nobody else (any other thread)
+     * will create a ctx with same ctx_name.
+     */
+    pthread_mutex_lock(&mx);
     ctx_t *context = map_get(ctx, ctx_name);
     if (!context) {
         init_ctx(ctx_name, &context, flags);
     }
+    pthread_mutex_unlock(&mx);
     return context;
 }
 
@@ -765,59 +772,84 @@ mod_ret module_dump(const self_t *self) {
     ctx_logger(c, self, "\t\t\"Last activity\": %lu,\n", mod->stats.last_seen);
     ctx_logger(c, self, "\t\t\"Num actions\": %lu,\n", mod->stats.action_ctr);
     ctx_logger(c, self, "\t\t\"Action frequency\": %lf\n", (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time));
-    ctx_logger(c, self, "\t},\n");
     
-    ctx_logger(c, self, "\t\"Subs\": [\n");
-    for (mod_map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr)) {
-        ev_src_t *sub = map_itr_get_data(itr);
-        ctx_logger(c, self, "\t{\n");
-        ctx_logger(c, self, "\t\t\"Topic\": \"%s\",\n", sub->ps_src.topic);
-        if (sub->userptr) {
-            ctx_logger(c, self, "\t\t\"UP\": %p,\n", sub->userptr);
-        }
-        ctx_logger(c, self, "\t\t\"Flags\": %#x\n", sub->flags);
+    bool closed_stats = false;
+    int i = 0;
+    if (map_length(mod->subscriptions) > 0) {
+        closed_stats = true;
         ctx_logger(c, self, "\t},\n");
+        ctx_logger(c, self, "\t\"Subs\": [\n");
+        for (mod_map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr), i++) {
+            ev_src_t *sub = map_itr_get_data(itr);
+            if (i > 0) {
+                ctx_logger(c, self, "\t},\n");
+            }
+            ctx_logger(c, self, "\t{\n");
+            ctx_logger(c, self, "\t\t\"Topic\": \"%s\",\n", sub->ps_src.topic);
+            if (sub->userptr) {
+                ctx_logger(c, self, "\t\t\"UP\": %p,\n", sub->userptr);
+            }
+            ctx_logger(c, self, "\t\t\"Flags\": %#x\n", sub->flags);
+        }
+        ctx_logger(c, self, "\t}\n");
+        ctx_logger(c, self, "\t],\n");
     }
-    ctx_logger(c, self, "\t],\n");
     
-    ctx_logger(c, self, "\t\"Srcs\": [\n");
-    for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr; itr = list_itr_next(itr)) {
-        ev_src_t *t = list_itr_get_data(itr);
-        if (t->type == TYPE_PS) {
-            /* Do not log information about internal pubsub pipe */
-            continue;
+    
+    if (list_length(mod->srcs) > 1) {
+        if (!closed_stats) {
+            ctx_logger(c, self, "\t},\n");
+            closed_stats = true;
         }
-        
-        ctx_logger(c, self, "\t{\n");
-        switch (t->type) {
-        case TYPE_FD:
-            ctx_logger(c, self, "\t\t\"FD\": %d,\n", t->fd_src.fd);
-            break;
-        case TYPE_SGN:
-            ctx_logger(c, self, "\t\t\"SGN\": %d,\n", t->sgn_src.sgs.signo);
-            break;
-        case TYPE_TMR:
-            ctx_logger(c, self, "\t\t\"TMR_MS\": %lu,\n", t->tm_src.its.ms);
-            ctx_logger(c, self, "\t\t\"TMR_CID\": %d,\n", t->tm_src.its.clock_id);
-            break;
-        case TYPE_PT:
-            ctx_logger(c, self, "\t\t\"PATH\": \"%s\",\n", t->pt_src.pt.path);
-            ctx_logger(c, self, "\t\t\"EV\": %u,\n", t->pt_src.pt.events);
-            break;
-        case TYPE_PID:
-            ctx_logger(c, self, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);
-            ctx_logger(c, self, "\t\t\"EV\": %u,\n", t->pid_src.pid.events);
-            break;
-        default:
-            break;
+        ctx_logger(c, self, "\t\"Srcs\": [\n");
+        i = 0;
+        for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr; itr = list_itr_next(itr), i++) {
+            ev_src_t *t = list_itr_get_data(itr);
+            if (t->type == TYPE_PS) {
+                /* Do not log information about internal pubsub pipe */
+                continue;
+            }
+            
+            if (i > 0) {
+                ctx_logger(c, self, "\t},\n");
+            }
+            
+            ctx_logger(c, self, "\t{\n");
+            switch (t->type) {
+            case TYPE_FD:
+                ctx_logger(c, self, "\t\t\"FD\": %d,\n", t->fd_src.fd);
+                break;
+            case TYPE_SGN:
+                ctx_logger(c, self, "\t\t\"SGN\": %d,\n", t->sgn_src.sgs.signo);
+                break;
+            case TYPE_TMR:
+                ctx_logger(c, self, "\t\t\"TMR_MS\": %lu,\n", t->tm_src.its.ms);
+                ctx_logger(c, self, "\t\t\"TMR_CID\": %d,\n", t->tm_src.its.clock_id);
+                break;
+            case TYPE_PT:
+                ctx_logger(c, self, "\t\t\"PATH\": \"%s\",\n", t->pt_src.pt.path);
+                ctx_logger(c, self, "\t\t\"EV\": %u,\n", t->pt_src.pt.events);
+                break;
+            case TYPE_PID:
+                ctx_logger(c, self, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);
+                ctx_logger(c, self, "\t\t\"EV\": %u,\n", t->pid_src.pid.events);
+                break;
+            default:
+                break;
+            }
+            if (t->userptr) {
+                ctx_logger(c, self, "\t\t\"UP\": %p,\n", t->userptr);
+            }
+            ctx_logger(c, self, "\t\t\"Flags\": %#x\n", t->flags);
         }
-        if (t->userptr) {
-            ctx_logger(c, self, "\t\t\"UP\": %p,\n", t->userptr);
-        }
-        ctx_logger(c, self, "\t\t\"Flags\": %#x\n", t->flags);
-        ctx_logger(c, self, "\t},\n");
+        ctx_logger(c, self, "\t}\n");
+        ctx_logger(c, self, "\t]\n");
     }
-    ctx_logger(c, self, "\t]\n");
+    
+    if (!closed_stats) {
+        ctx_logger(c, self, "\t}\n");
+    }
+    
     ctx_logger(c, self, "}\n");
     return MOD_OK;
 }

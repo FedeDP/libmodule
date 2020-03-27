@@ -92,12 +92,18 @@ static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, c
         m->flags = flags;
         /* Duplicate data if requested */
         if (m->flags & PS_DUP_DATA) {
-            void *new_data = memhook._malloc(size);
-            memcpy(new_data, message, size);
-            message = new_data;
             m->flags |= PS_AUTOFREE; // force autofree flag if we duplicated data
+            void *new_data = memhook._malloc(size);
+            if (new_data) {
+                memcpy(new_data, message, size);
+                m->msg.data = new_data;
+            } else {
+                memhook._free(m);
+                m = NULL;
+            }
+        } else {
+            m->msg.data = message;
         }
-        m->msg.data = message;
     }
     return m;
 }
@@ -183,7 +189,7 @@ mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value) {
         if (!data && _module_is(mod, RUNNING)) {
             MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             msg_t msg = { .type = TYPE_PS, .ps_msg = &mm->msg };
-            const void *userptr = mm->sub ? mm->sub : NULL;
+            const void *userptr = mm->sub ? mm->sub->userptr : NULL;
             run_pubsub_cb(mod, &msg, userptr);
         } else {
             MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
@@ -281,6 +287,10 @@ mod_ret module_deregister_sub(const self_t *self, const char *topic) {
     
     if (map_remove(mod->subscriptions, topic) == MAP_OK) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
+        if (map_length(mod->subscriptions) == 0) {
+            map_free(mod->subscriptions);
+            mod->subscriptions = NULL;
+        }
         return MOD_OK;
     }
     return MOD_ERR;
@@ -288,22 +298,22 @@ mod_ret module_deregister_sub(const self_t *self, const char *topic) {
 
 mod_ret module_tell(const self_t *self, const self_t *recipient, const void *message, 
                     const ssize_t size, const mod_ps_flags flags) {
-    MOD_PARAM_ASSERT(!(flags & PS_GLOBAL))
     GET_MOD(self);
     MOD_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
     MOD_PARAM_ASSERT(self->ctx == recipient->ctx);
 
-    return send_msg(mod, recipient->mod, NULL, message, size, flags);
+    /* Eventually cleanup PS_GLOBAL flag */    
+    return send_msg(mod, recipient->mod, NULL, message, size, flags & ~PS_GLOBAL);
 }
 
 mod_ret module_publish(const self_t *self, const char *topic, const void *message, 
                        const ssize_t size, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(topic);
-    MOD_PARAM_ASSERT(!(flags & PS_GLOBAL))
     GET_MOD(self);
     
-    return send_msg(mod, NULL, topic, message, size, flags);
+    /* Eventually cleanup PS_GLOBAL flag */    
+    return send_msg(mod, NULL, topic, message, size, flags & ~PS_GLOBAL);
 }
 
 mod_ret module_broadcast(const self_t *self, const void *message, 
@@ -319,22 +329,4 @@ mod_ret module_poisonpill(const self_t *self, const self_t *recipient) {
     MOD_PARAM_ASSERT(module_is(recipient, RUNNING));
     
     return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->ref, NULL);
-}
-
-mod_ret module_ps_msg_ref(const self_t *self, ps_msg_t *msg) {
-    /* You can only ref a msg from within a module context */
-    GET_MOD(self);
-    MOD_PARAM_ASSERT(msg);
-       
-    pubsub_msg_ref((ps_priv_t *)msg);
-    return MOD_OK;
-}
-    
-mod_ret module_ps_msg_unref(const self_t *self, ps_msg_t *msg) {
-    /* You can only unref a msg from within a module context */
-    GET_MOD(self);
-    MOD_PARAM_ASSERT(msg);
-
-    pubsub_msg_unref((ps_priv_t *)msg);
-    return MOD_OK;
 }

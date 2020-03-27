@@ -73,16 +73,15 @@ etc etc
 - [x] Notify with poll callback when fuse-module has new receive() events enqueued
 - [x] Test poll
 - [x] Let non-fuse modules notify poll too? (ie: every module should call fs_recv... may be renamed to fs_notify())
-- [ ] Add an ioctl interface? https://libfuse.github.io/doxygen/ioctl_8c_source.html eg: MOD_RECV_MSG, MOD_PUB_MSG, MOD_TELL_MSG, MOD_REG_SRC, MOD_DEREG_SRC, MOD_STATS...
-- [ ] MOD_RECV_MSG -> every module keeps a reference on its latest received message; the reference is destroyed when a new message arrives, or when module is destroyed.
-Referenced message is then returned from ioctl.
-- [ ] Directly use read() instead of ioctl(MOD_RECV_MSG) ?
-- [x] Drop write-based interface
+- [x] Add an ioctl interface? https://libfuse.github.io/doxygen/ioctl_8c_source.html eg: MOD_PEEK_MSG, MOD_PUB_MSG, MOD_TELL_MSG, MOD_REG_SRC, MOD_DEREG_SRC, MOD_STATS...
+- [ ] Add MOD_PREP_RECV and MOD_PREP_SEND to allow reading/writing data to fd. MOD_PREP_RECV return 0 if there is a msg to be sent to client
+- [ ] MOD_PREP_RECV and MOD_PREP_SEND cannot be called from different clients at the same time; MOD_PREP_RECV -> mod->recving_data = 1; 
+- [ ] Read: if (mod->recving_data) { write_msg } else { module_dump }
+- [ ] Write: if (mod->sending_data) { read } else return -EPERM
 - [x] Allow looping context without running modules (drop c->running_mods)
 - [x] Allow to deregister non-fuse modules too on unlink
 - [ ] Fix memleaks (only when using fuse)
-- [ ] Fix build on other OSes?
-- [ ] Fix FIXME inside fuse_priv.c!
+- [x] Fix FIXME inside fuse_priv.c!
 - [ ] Add new fuse dep to CI builds (WITH_FUSE=on)
 
 ### New Linked list api
@@ -158,6 +157,11 @@ Referenced message is then returned from ioctl.
 - [x] Rename module getters (w/o setters) to module_X() instead of module_get_X()
 
 - [x] module_register to take additional flags parameter
+
+- [x] Protect internal global variables with mutex
+
+- [x] When deregistering a subscription, if no subs are left, destroy map to free memory
+- [x] Drop module_ps_msg_(un)ref API?
 
 - [ ] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples

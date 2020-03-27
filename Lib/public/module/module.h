@@ -60,9 +60,6 @@ _public_ mod_ret module_publish(const self_t *self, const char *topic, const voi
 _public_ mod_ret module_broadcast(const self_t *self, const void *message,
                                   const ssize_t size,  const mod_ps_flags flags);
 _public_ mod_ret module_poisonpill(const self_t *self, const self_t *recipient);
-_public_ mod_ret module_ps_msg_ref(const self_t *self, ps_msg_t *msg);
-_public_ mod_ret module_ps_msg_unref(const self_t *self, ps_msg_t *msg);
-
 
 /* Generic event source registering functions */
 #define module_register_src(self, X, flags, userptr) _Generic((X) + 0, \

@@ -1,7 +1,6 @@
 #include "module.h"
 #include "modules.h"
 #include "fuse_priv.h"
-#include <pthread.h>
 #include <dlfcn.h> // dlopen
 
 static void *thread_loop(void *param);
@@ -16,6 +15,7 @@ static int recv_events(ctx_t *c, int timeout);
 
 mod_map_t *ctx;
 memhook_t memhook;
+pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
 _public_ void _ctor0_ _weak_ modules_pre_start(void) {
     MODULE_DEBUG("Pre-starting libmodule.");
@@ -137,10 +137,10 @@ static inline mod_ret loop_quit(ctx_t *c, const uint8_t quit_code) {
 }
 
 static int recv_events(ctx_t *c, int timeout) {
+    errno = 0;
     int nfds = poll_wait(&c->ppriv, timeout);
     for (int i = 0; i < nfds; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
-        
         if (p && p->type == TYPE_FD && p->self == NULL) {
             /* Received from fuse */
             fs_process(c);
@@ -159,6 +159,7 @@ static int recv_events(ctx_t *c, int timeout) {
             ps_priv_t *ps_msg;
             
             msg.type = p->type;
+            MODULE_DEBUG("'%s' received %u type msg.\n", mod->name, msg.type);
             switch (msg.type) {
             case TYPE_FD:
                 /* Received from FD */
@@ -202,7 +203,6 @@ static int recv_events(ctx_t *c, int timeout) {
                 MODULE_DEBUG("Unmanaged src %d.\n", msg.type);
                 p = NULL;
                 errno = EINVAL;
-                nfds = -1;
                 break;
             }
 
@@ -224,19 +224,17 @@ static int recv_events(ctx_t *c, int timeout) {
         } else {
             /* Forward error to below handling code */
             errno = EAGAIN;
-            nfds = -1;
         }
     }
     
-    if (nfds > 0) {
+    if (nfds > 0 && errno == 0) {
         evaluate_new_state(c);
-    } else if (nfds < 0) {
+    } else if (errno) {
         /* Quit and return < 0 only for real errors */
         if (errno != EINTR && errno != EAGAIN) {
             fprintf(stderr, "Ctx '%s' loop error: %s.\n", c->name, strerror(errno));
             loop_quit(c, errno);
-        } else {
-            nfds = 0;
+            nfds = -1; // error!
         }
     }
     return nfds;
@@ -254,6 +252,12 @@ void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...) {
 /** Public API **/
 
 mod_ret modules_set_memhook(const memhook_t *hook) {
+    /* 
+     * Protect global variables: 
+     * in this case, ensure memhook is correctly filled
+     * when called by multiple threads.
+     */
+    pthread_mutex_lock(&mx);
     if (hook) {
         MOD_ASSERT(hook->_malloc, "NULL malloc fn.", MOD_ERR);
         MOD_ASSERT(hook->_realloc, "NULL realloc fn.", MOD_ERR);
@@ -266,6 +270,7 @@ mod_ret modules_set_memhook(const memhook_t *hook) {
         memhook._calloc = calloc;
         memhook._free = free;
     }
+    pthread_mutex_unlock(&mx);
     return MOD_OK;
 }
 
@@ -344,10 +349,11 @@ mod_ret modules_ctx_dump(const char *ctx_name) {
     ctx_logger(c, NULL, "\t},\n");
     
     ctx_logger(c, NULL, "\t\"Modules\": [\n");
+    int i = 0;
     for (mod_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
         const char *mod_name = map_itr_get_key(itr);
-        const char *mod = map_itr_get_data(itr);
-        ctx_logger(c, NULL, "\t\t\"%s\": %p,\n", mod_name, mod);
+        const mod_t *mod = map_itr_get_data(itr);
+        ctx_logger(c, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < map_length(c->modules) ? ',' : ' ');
     }
     ctx_logger(c, NULL, "\t]\n");
     ctx_logger(c, NULL, "}\n");

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <regex.h>
 #include <string.h>
+#include <pthread.h>
 #include "map.h"
 #include "stack.h"
 #include "list.h"
@@ -206,5 +207,7 @@ void fetch_ms(uint64_t *val, uint64_t *ctr);
 /* Defined in map.c */
 void *map_peek(const mod_map_t *m);
 
+/* Gglobal variables are defined in modules.c */
 extern mod_map_t *ctx;
 extern memhook_t memhook;
+extern pthread_mutex_t mx;
