@@ -6,20 +6,20 @@
 #define self() *(get_self())
 
 #define MODULE_CTX(name, ctx) \
-static bool init(void); \
-static bool check(void); \
-static bool evaluate(void); \
-static void receive(const msg_t *const msg, const void *userdata); \
-static void destroy(void); \
-static inline const self_t **get_self() { static const self_t *_self = NULL; return &_self; } \
-static void _ctor3_ constructor(void) { \
-    if (check()) { \
-        userhook_t hook = { init, evaluate, receive, destroy }; \
-        module_register(name, ctx, (self_t **)get_self(), &hook, 0); \
+    static bool init(void); \
+    static bool check(void); \
+    static bool evaluate(void); \
+    static void receive(const msg_t *const msg, const void *userdata); \
+    static void destroy(void); \
+    static inline const self_t **get_self() { static const self_t *_self = NULL; return &_self; } \
+    static void _ctor3_ constructor(void) { \
+        if (check()) { \
+            userhook_t hook = { init, evaluate, receive, destroy }; \
+            module_register(name, ctx, (self_t **)get_self(), &hook, 0); \
+        } \
     } \
-} \
-static void _dtor1_ destructor(void) { module_deregister((self_t **)&self()); } \
-static void _ctor2_ module_pre_start(void)
+    static void _dtor1_ destructor(void) { module_deregister((self_t **)&self()); } \
+    static void _ctor2_ module_pre_start(void)
 
 #define MODULE(name) MODULE_CTX(name, MODULES_DEFAULT_CTX)
 

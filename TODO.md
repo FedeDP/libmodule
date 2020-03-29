@@ -165,7 +165,7 @@ etc etc
 
 - [x] Cleanup some unused internal functions (eg: _module_is())
 
-- [ ] Add a new module type that only acts as "router" between contexts?
+- [ ] Add a new module type that only acts as "router" between contexts? eg: ROUTER(name, ctxA, ctxB) -> any message received from ctxA will be published in ctxB, else any message received on ctxB will be published in ctxA. eg module_add_route(self, ctxStart, ctxEnd) ?
 
 - [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are pushed on queue
 
