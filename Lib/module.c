@@ -49,9 +49,9 @@ static void _module_dtor(void *data) {
             stop(mod, true);
         }
         
-        map_free(mod->subscriptions);
-        stack_free(mod->recvs);
-        list_free(mod->srcs);
+        map_free(&mod->subscriptions);
+        stack_free(&mod->recvs);
+        list_free(&mod->srcs);
         
         memhook._free((void *)mod->local_path);
         
@@ -114,7 +114,7 @@ static mod_ret init_ctx(const char *ctx_name, ctx_t **context, const mod_flags f
 
 static void destroy_ctx(ctx_t *context) {
     MODULE_DEBUG("Destroying context '%s'.\n", context->name);
-    map_free(context->modules);
+    map_free(&context->modules);
     poll_destroy(&context->ppriv);
     map_remove(ctx, context->name);
     
@@ -587,7 +587,9 @@ mod_ret module_deregister(self_t **self) {
     map_remove(c->modules, mod->name);
     /* Remove context without modules */
     if (map_length(c->modules) == 0) {
+        pthread_mutex_lock(&mx);
         destroy_ctx(c);
+        pthread_mutex_unlock(&mx);
     }
     *self = NULL;
     return MOD_OK;

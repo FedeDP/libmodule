@@ -148,8 +148,9 @@ void test_map_free(void **state) {
     mod_map_ret ret = map_free(NULL);
     assert_false(ret == MOD_OK);
     
-    ret = map_free(my_map);
+    ret = map_free(&my_map);
     assert_true(ret == MOD_OK);
+    assert_null(my_map);
 }
 
 void test_map_stress(void **state) {
@@ -172,6 +173,7 @@ void test_map_stress(void **state) {
     assert_true(ret == MAP_OK);
     assert_int_equal(count, map_length(my_map));
     
-    ret = map_free(my_map);
+    ret = map_free(&my_map);
     assert_true(ret == MOD_OK);
+    assert_null(my_map);
 }

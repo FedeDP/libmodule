@@ -34,5 +34,5 @@ _public_ mod_queue_ret queue_enqueue(mod_queue_t *q, void *data);
 _public_ void *queue_dequeue(mod_queue_t *q);
 _public_ void *queue_peek(const mod_queue_t *q);
 _public_ mod_queue_ret queue_clear(mod_queue_t *q);
-_public_ mod_queue_ret queue_free(mod_queue_t *q);
+_public_ mod_queue_ret queue_free(mod_queue_t **q);
 _public_ ssize_t queue_length(const mod_queue_t *q);

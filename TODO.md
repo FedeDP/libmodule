@@ -169,7 +169,7 @@ etc etc
 
 - [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are pushed on queue
 
-- [ ] Update map, list, stash, queue api to nullify param in free().
+- [x] Update map, list, stash, queue api to nullify param in free().
 
 - [ ] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples

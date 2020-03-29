@@ -255,8 +255,7 @@ mod_map_t *map_new(const bool keysdup, const mod_map_dtor fn) {
             m->dtor = fn;
             m->dupkeys = keysdup;
         } else {
-            map_free(m);
-            m = NULL;
+            map_free(&m);
         }
     }
     return m;
@@ -436,11 +435,14 @@ mod_map_ret map_clear(mod_map_t *m) {
 }
 
 /* Deallocate the hashmap (it clears it too) */
-mod_map_ret map_free(mod_map_t *m) {
-    mod_map_ret ret = map_clear(m);
+mod_map_ret map_free(mod_map_t **m) {
+    MAP_PARAM_ASSERT(m);
+    
+    mod_map_ret ret = map_clear(*m);
     if (ret == MAP_OK) {
-        memhook._free(m->table);
-        memhook._free(m);
+        memhook._free((*m)->table);
+        memhook._free(*m);
+        *m = NULL;
     }
     return ret;
 }

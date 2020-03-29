@@ -324,8 +324,7 @@ mod_ret fs_notify(const msg_t *msg) {
         fuse_poll_t *fp = (fuse_poll_t *)mod->fuse_ph;
         if (msg->type == TYPE_PS && msg->ps_msg->type == LOOP_STOPPED) {
             /* When loop gets stopped, destroy the list */
-            list_free(fp->poll_handlers);
-            fp->poll_handlers = NULL;
+            list_free(&fp->poll_handlers);
         } else {
             fp->in_evt = list_length(fp->poll_handlers);
             for (mod_list_itr_t *itr = list_itr_new(fp->poll_handlers); itr; itr = list_itr_next(itr)) {

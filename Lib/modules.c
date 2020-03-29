@@ -80,19 +80,14 @@ _public_ int _weak_ main(int argc, char *argv[]) {
 static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     modules_set_memhook(NULL);
+    pthread_mutex_init(&mx, NULL);
     ctx = map_new(false, NULL);
 }
 
 static void modules_destroy(void) {
     MODULE_DEBUG("Destroying libmodule.\n");
-    map_free(ctx);
-    
-    /* 
-     * When module_load() loads any module, they'll get unloaded after modules_destroy(),
-     * when they're unlinked from program.
-     * Avoid dereferencing a freed ctx map then.
-     */
-    ctx = NULL; 
+    map_free(&ctx);
+    pthread_mutex_destroy(&mx);
 }
 
 static void evaluate_new_state(ctx_t *c) {

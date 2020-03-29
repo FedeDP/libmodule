@@ -39,5 +39,5 @@ _public_ void *map_get(const mod_map_t *m, const char *key);
 _public_ bool map_has_key(const mod_map_t *m, const char *key);
 _public_ mod_map_ret map_remove(mod_map_t *m, const char *key);
 _public_ mod_map_ret map_clear(mod_map_t *m);
-_public_ mod_map_ret map_free(mod_map_t *m);
+_public_ mod_map_ret map_free(mod_map_t **m);
 _public_ ssize_t map_length(const mod_map_t *m);

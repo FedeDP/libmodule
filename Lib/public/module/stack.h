@@ -34,5 +34,5 @@ _public_ mod_stack_ret stack_push(mod_stack_t *s, void *data);
 _public_ void *stack_pop(mod_stack_t *s);
 _public_ void *stack_peek(const mod_stack_t *s);
 _public_ mod_stack_ret stack_clear(mod_stack_t *s);
-_public_ mod_stack_ret stack_free(mod_stack_t *s);
+_public_ mod_stack_ret stack_free(mod_stack_t **s);
 _public_ ssize_t stack_length(const mod_stack_t *s);

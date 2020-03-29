@@ -138,10 +138,13 @@ mod_queue_ret queue_clear(mod_queue_t *q) {
     return QUEUE_OK;
 }
 
-mod_queue_ret queue_free(mod_queue_t *q) {
-    mod_queue_ret ret = queue_clear(q);
+mod_queue_ret queue_free(mod_queue_t **q) {
+    QUEUE_PARAM_ASSERT(q);
+    
+    mod_queue_ret ret = queue_clear(*q);
     if (ret == QUEUE_OK) {
-        memhook._free(q);
+        memhook._free(*q);
+        *q = NULL;
     }
     return ret;
 }

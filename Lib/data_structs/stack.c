@@ -127,10 +127,13 @@ mod_stack_ret stack_clear(mod_stack_t *s) {
     return STACK_OK;
 }
 
-mod_stack_ret stack_free(mod_stack_t *s) {
-    mod_stack_ret ret = stack_clear(s);
+mod_stack_ret stack_free(mod_stack_t **s) {
+    STACK_PARAM_ASSERT(s);
+    
+    mod_stack_ret ret = stack_clear(*s);
     if (ret == STACK_OK) {
-        memhook._free(s);
+        memhook._free(*s);
+        *s = NULL;
     }
     return ret;
 }

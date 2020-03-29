@@ -287,8 +287,7 @@ mod_ret module_deregister_sub(const self_t *self, const char *topic) {
     if (map_remove(mod->subscriptions, topic) == MAP_OK) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         if (map_length(mod->subscriptions) == 0) {
-            map_free(mod->subscriptions);
-            mod->subscriptions = NULL;
+            map_free(&mod->subscriptions);
         }
         return MOD_OK;
     }

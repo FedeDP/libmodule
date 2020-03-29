@@ -201,7 +201,7 @@ mod_ret poll_destroy(poll_priv_t *priv) {
     if (up->inited) { 
         poll_clear(priv);
     }
-    list_free(up->req_list);
+    list_free(&up->req_list);
     memhook._free(up);
     return MOD_OK;
 }

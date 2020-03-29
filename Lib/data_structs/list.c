@@ -190,12 +190,13 @@ mod_list_ret list_clear(mod_list_t *l) {
     return LIST_OK;
 }
 
-mod_list_ret list_free(mod_list_t *l) {
+mod_list_ret list_free(mod_list_t **l) {
     LIST_PARAM_ASSERT(l);
     
-    mod_list_ret ret = list_clear(l);
+    mod_list_ret ret = list_clear(*l);
     if (ret == LIST_OK) {
-        memhook._free(l);
+        memhook._free(*l);
+        *l = NULL;
     }
     return ret;
 }

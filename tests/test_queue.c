@@ -108,7 +108,8 @@ void test_queue_free(void **state) {
     mod_queue_ret ret = queue_free(NULL);
     assert_false(ret == QUEUE_OK);
     
-    ret = queue_free(my_q);
+    ret = queue_free(&my_q);
     assert_true(ret == QUEUE_OK);
+    assert_null(my_q);
 }
 

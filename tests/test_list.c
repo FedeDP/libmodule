@@ -135,6 +135,7 @@ void test_list_free(void **state) {
     mod_list_ret ret = list_free(NULL);
     assert_false(ret == LIST_OK);
     
-    ret = list_free(my_l);
+    ret = list_free(&my_l);
     assert_true(ret == LIST_OK);
+    assert_null(my_l);
 }

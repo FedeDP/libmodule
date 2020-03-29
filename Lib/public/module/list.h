@@ -39,6 +39,6 @@ _public_ mod_list_ret list_insert(mod_list_t *l, void *data, const mod_list_comp
 _public_ mod_list_ret list_remove(mod_list_t *l, void *data, const mod_list_comp comp);
 _public_ void *list_find(mod_list_t *l, void *data, const mod_list_comp comp);
 _public_ mod_list_ret list_clear(mod_list_t *l);
-_public_ mod_list_ret list_free(mod_list_t *l);
+_public_ mod_list_ret list_free(mod_list_t **l);
 _public_ ssize_t list_length(const mod_list_t *l);
 

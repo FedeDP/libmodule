@@ -108,6 +108,7 @@ void test_stack_free(void **state) {
     mod_stack_ret ret = stack_free(NULL);
     assert_false(ret == STACK_OK);
     
-    ret = stack_free(my_st);
+    ret = stack_free(&my_st);
     assert_true(ret == STACK_OK);
+    assert_null(my_st);
 }
