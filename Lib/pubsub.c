@@ -65,9 +65,9 @@ static mod_map_ret tell_if(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
 
-    if (_module_is(mod, RUNNING | PAUSED) &&                         // mod is running or paused
-        ((msg->msg.type != USER && msg->msg.sender != &mod->ref) || // system messages with sender != this module (avoid sending ourselves system messages produced by us)
-        (msg->msg.type == USER &&                                    // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
+    if (module_is(mod->self, RUNNING | PAUSED) &&                       // mod is running or paused
+        ((msg->msg.type != USER && msg->msg.sender != &mod->ref) ||     // system messages with sender != this module (avoid sending ourselves system messages produced by us)
+        (msg->msg.type == USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || is_subscribed(mod, msg))))) {
         
         MODULE_DEBUG("Telling a message to '%s'\n", mod->name);
@@ -119,7 +119,6 @@ static mod_map_ret tell_global(void *data, const char *key, void *value) {
 static void pubsub_msg_ref(ps_priv_t *pubsub_msg) {
     pubsub_msg->refs++;
 }
-    
 
 static void pubsub_msg_unref(ps_priv_t *pubsub_msg) {
     /* Properly free pubsub msg if its ref count reaches 0 and autofree bit is true */
@@ -186,7 +185,7 @@ mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value) {
          * While stopping module, manage_fds() will call this with data != NULL
          * to let us know we should destroy all enqueued messages.
          */
-        if (!data && _module_is(mod, RUNNING)) {
+        if (!data && module_is(mod->self, RUNNING)) {
             MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             msg_t msg = { .type = TYPE_PS, .ps_msg = &mm->msg };
             const void *userptr = mm->sub ? mm->sub->userptr : NULL;

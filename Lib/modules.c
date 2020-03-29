@@ -242,7 +242,7 @@ static int recv_events(ctx_t *c, int timeout) {
 
 /** Private API **/
 
-void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...) {
+void inline ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     c->logger(self, fmt, args);

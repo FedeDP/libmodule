@@ -21,7 +21,7 @@ static int is_fd_same(void *my_data, void *list_data);
 static mod_ret _deregister_fd(mod_t *mod, const int fd);
 
 static mod_ret _register_tmr(mod_t *mod, const mod_tmr_t *its, 
-                               const mod_src_flags flags, const void *userptr);
+                            const mod_src_flags flags, const void *userptr);
 static int is_tmr_same(void *my_data, void *list_data);
 static mod_ret _deregister_tmr(mod_t *mod, const mod_tmr_t *its);
 
@@ -182,7 +182,7 @@ static void src_priv_dtor(void *data) {
     
     ctx_t *c = t->self->ctx;
     /* If a fd is deregistered for a RUNNING module, stop polling on it */
-    if (_module_is(t->self->mod, RUNNING)) {
+    if (module_is(t->self, RUNNING)) {
         poll_set_new_evt(&c->ppriv, t, RM);
     }
     
@@ -267,7 +267,7 @@ static mod_ret _register_src(mod_t *mod, const mod_src_types type, const void *s
     ctx_t *c = mod->ref.ctx;
     /* If a fd is registered at runtime, start polling on it */
     int ret = 0;
-    if (_module_is(mod, RUNNING)) {
+    if (module_is(mod->self, RUNNING)) {
         ret = poll_set_new_evt(&c->ppriv, src, ADD);
     }
     return !ret ? MOD_OK : MOD_ERR;
@@ -415,13 +415,9 @@ static void reset_module(mod_t *mod) {
 
 /** Private API **/
 
-bool _module_is(const mod_t *mod, const mod_states st) {
-    return mod->state & st;
-}
-
 mod_map_ret evaluate_module(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
-    if (_module_is(mod, IDLE) && 
+    if (module_is(mod->self, IDLE) && 
         (!mod->hook.evaluate || mod->hook.evaluate())) {
         
         start(mod, true);
@@ -748,8 +744,9 @@ const char *module_ctx(const self_t *mod_self) {
 
 bool module_is(const self_t *mod_self, const mod_states st) {
     MOD_ASSERT((mod_self), "NULL self handler.", false);
-
-    return _module_is(mod_self->mod, st);
+    GET_MOD_PRIV(mod_self);
+    
+    return mod->state & st;
 }
 
 mod_ret module_dump(const self_t *self) {

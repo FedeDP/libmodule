@@ -163,6 +163,14 @@ etc etc
 - [x] When deregistering a subscription, if no subs are left, destroy map to free memory
 - [x] Drop module_ps_msg_(un)ref API?
 
+- [x] Cleanup some unused internal functions (eg: _module_is())
+
+- [ ] Add a new module type that only acts as "router" between contexts?
+
+- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are pushed on queue
+
+- [ ] Update map, list, stash, queue api to nullify param in free().
+
 - [ ] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples
 - [ ] Update tests
@@ -180,4 +188,3 @@ etc etc
 
 ### Generic
 - [ ] Akka-persistence like message store? (ie: store all messages and replay them)
-- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are ref'd and pushed on queue

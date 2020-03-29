@@ -69,7 +69,7 @@
  */
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
-    MOD_ASSERT(_module_is(mod, state), "Wrong module state.", MOD_WRONG_STATE);
+    MOD_ASSERT(module_is(self, state), "Wrong module state.", MOD_WRONG_STATE);
     
 typedef struct _module mod_t;
 typedef struct _context ctx_t;
@@ -186,7 +186,6 @@ struct _context {
 };
 
 /* Defined in module.c */
-_pure_ bool _module_is(const mod_t *mod, const mod_states st);
 mod_map_ret evaluate_module(void *data, const char *key, void *value);
 mod_ret start(mod_t *mod, const bool starting);
 mod_ret stop(mod_t *mod, const bool stopping);
