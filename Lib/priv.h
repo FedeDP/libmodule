@@ -81,33 +81,41 @@ struct _self {
     bool is_ref;                            // is this a reference?
 };
 
-/* List that holds fds to self_t mapping for poll plugin */
+/* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
     int fd;
 } fd_src_t;
 
-/* List that holds timers to self_t mapping for poll plugin */
+/* Struct that holds timers to self_t mapping for poll plugin */
 typedef struct {
-    mod_tmr_t its;
+#ifdef __linux__
     fd_src_t f;
+#endif
+    mod_tmr_t its;
 } tmr_src_t;
 
-/* List that holds signals to self_t mapping for poll plugin */
+/* Struct that holds signals to self_t mapping for poll plugin */
 typedef struct {
-    mod_sgn_t sgs;
+#ifdef __linux__
     fd_src_t f;
+#endif
+    mod_sgn_t sgs;
 } sgn_src_t;
 
-/* List that holds paths to self_t mapping for poll plugin */
+/* Struct that holds paths to self_t mapping for poll plugin */
 typedef struct {
-    mod_pt_t pt;
+#ifdef __linux__
     fd_src_t f;
+#endif
+    mod_pt_t pt;
 } pt_src_t;
 
-/* List that holds pids to self_t mapping for poll plugin */
+/* Struct that holds pids to self_t mapping for poll plugin */
 typedef struct {
-    mod_pid_t pid;
+#ifdef __linux__
     fd_src_t f;
+#endif
+    mod_pid_t pid;
 } pid_src_t;
 
 /* Struct that holds pubsub subscriptions source data */

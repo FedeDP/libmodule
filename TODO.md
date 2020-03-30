@@ -13,6 +13,7 @@
 - [x] Fix failing tests
 - [x] Fix valgrind-check tests? "WARNING: unhandled amd64-linux syscall: 425" not much we can do...
 - [x] Batch-recv cqes from io_uring_wait_cqe_timeout
+- [x] Fix: avoid opening a new internal fd (timerfd, signalfd etc etc) at each new poll_set_new_evt ADD call
 
 ### New Sources support
 
@@ -54,7 +55,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] SRC_TMR_ABSOLUTE for absolute timers
 - [x] Use SFD_CLOEXEC flag on signalfd on linux
 
-- [ ] Port examples
+- [x] Only use fd_src_t inside tmr_src_t/sgn_src_t etc etc on linux
 
 ### Libfuse support
 
@@ -82,7 +83,6 @@ etc etc
 - [x] Allow to deregister non-fuse modules too on unlink
 - [ ] Fix memleaks (only when using fuse)
 - [x] Fix FIXME inside fuse_priv.c!
-- [ ] Add new fuse dep to CI builds (WITH_FUSE=on)
 
 ### New Linked list api
 
@@ -171,7 +171,7 @@ etc etc
 
 - [x] Update map, list, stash, queue api to nullify param in free().
 
-- [ ] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
+- [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples
 - [ ] Update tests
 - [ ] Update DOC!

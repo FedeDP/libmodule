@@ -5,6 +5,7 @@ extern void create_timerfd(ev_src_t *tmp);
 extern void create_signalfd(ev_src_t *tmp);
 extern void create_inotifyfd(ev_src_t *tmp);
 extern void create_pidfd(ev_src_t *tmp);
+extern void reset_fd(ev_src_t *tmp);
 
 typedef struct {
     int fd;
@@ -94,10 +95,11 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         memhook._free(tmp->ev);
         tmp->ev = NULL;
         
-        /* Special internal fds */
-        if (tmp->type > TYPE_FD) {
-            close(fd); // automatically close internally used FDs
-        }
+        /*
+         * Automatically close internally used FDs 
+         * for special internal fds 
+         */
+        reset_fd(tmp); 
     }
     
     return ret;

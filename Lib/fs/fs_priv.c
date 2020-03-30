@@ -1,4 +1,4 @@
-#include "fuse_priv.h"
+#include "fs_priv.h"
 
 #define FUSE_USE_VERSION 35
 

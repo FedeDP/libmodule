@@ -2,7 +2,7 @@
 
 #define dummy(x) x { return MOD_UNSUPPORTED; }
 
-#ifndef WITH_FUSE
+#ifndef WITH_FS
 #define FsExposed(x) dummy(x)
 #else
 #define FsExposed(x) x

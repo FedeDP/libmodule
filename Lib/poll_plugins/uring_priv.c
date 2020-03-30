@@ -20,6 +20,7 @@ extern void create_timerfd(ev_src_t *tmp);
 extern void create_signalfd(ev_src_t *tmp);
 extern void create_inotifyfd(ev_src_t *tmp);
 extern void create_pidfd(ev_src_t *tmp);
+extern void reset_fd(ev_src_t *tmp);
 static void flush_reqs(poll_priv_t *priv);
 
 typedef struct {
@@ -46,7 +47,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     int ret = 0;
     if (up->inited) {
         /* Eventually request uring sqe if needed */
-        if (!tmp->ev) { // we can safely use fd_src.ev here as "ev" is first struct field.
+        if (!tmp->ev) {
             if (flag == ADD) {
                 tmp->ev = io_uring_get_sqe(&up->ring);
                 MOD_ALLOC_ASSERT(tmp->ev);
@@ -64,28 +65,28 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             fd = tmp->fd_src.fd;
             break;
         case TYPE_TMR: {
-            if (flag == ADD) {
+            if (flag == ADD && tmp->tm_src.f.fd == -1) {
                 create_timerfd(tmp);
             } 
             fd = tmp->tm_src.f.fd;
             break;
         }
         case TYPE_SGN: {
-            if (flag == ADD) {
+            if (flag == ADD && tmp->sgn_src.f.fd == -1) {
                 create_signalfd(tmp);
             }
             fd = tmp->sgn_src.f.fd;
             break; 
         }
         case TYPE_PT: {
-            if (flag == ADD) {
+            if (flag == ADD && tmp->pt_src.f.fd == -1) {
                 create_inotifyfd(tmp);
             }
             fd = tmp->pt_src.f.fd;
             break;
         }
         case TYPE_PID: {
-            if (flag == ADD) {
+            if (flag == ADD && tmp->pt_src.f.fd == -1) {
                 create_pidfd(tmp);
             }
             fd = tmp->pt_src.f.fd;
@@ -102,12 +103,13 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
                 io_uring_sqe_set_data(sqe, tmp);
             } else {
                 io_uring_prep_poll_remove(sqe, tmp);
-                /* Eventually release uring sqe if needed */
-                tmp->ev = NULL;
                 
-                if (tmp->type > TYPE_FD) {
-                    close(fd); // automatically close internally used FDs
-                }
+                tmp->ev = NULL;
+                /*
+                 * Automatically close internally used FDs 
+                 * for special internal fds 
+                 */
+                reset_fd(tmp); 
             }
         } else {
             ret = -1;

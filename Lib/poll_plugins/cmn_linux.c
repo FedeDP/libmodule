@@ -46,6 +46,30 @@ void create_pidfd(ev_src_t *tmp) {
 #endif
 }
 
+void reset_fd(ev_src_t *tmp) {
+    int *fd = NULL;
+    switch (tmp->type) {
+    case TYPE_TMR:
+        fd = &tmp->tm_src.f.fd;
+        break;
+    case TYPE_SGN:
+        fd = &tmp->sgn_src.f.fd;
+        break;
+    case TYPE_PT:
+        fd = &tmp->pt_src.f.fd;
+        break;
+    case TYPE_PID:
+        fd = &tmp->pid_src.f.fd;
+        break;
+    default:
+        break;
+    }
+    if (fd) {
+        close(*fd);
+        *fd = -1;
+    }
+}
+
 mod_ret poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {
     struct signalfd_siginfo fdsi;
     ssize_t s = read(src->sgn_src.f.fd, &fdsi, sizeof(struct signalfd_siginfo));

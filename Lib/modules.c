@@ -1,6 +1,6 @@
 #include "module.h"
 #include "modules.h"
-#include "fuse_priv.h"
+#include "fs_priv.h"
 #include <dlfcn.h> // dlopen
 
 static void *thread_loop(void *param);

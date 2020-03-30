@@ -15,6 +15,18 @@ find_package (Threads)
 # Find sources
 file(GLOB SOURCES Lib/*.c Lib/data_structs/*.c)
 
+set(PKG_DEPS "-ldl ${CMAKE_THREAD_LIBS_INIT}")
+
+# Useful macro to properly set pkg-config script deps
+macro(set_deps name)
+    foreach(INC ${${name}_INCLUDE_DIRS}) 
+        set(PKG_INCS "${PKG_INCS} -I${INC}")
+    endforeach()
+    foreach(LIB ${${name}_LIBRARIES}) 
+        set(PKG_DEPS "${PKG_DEPS} -l${LIB}")
+    endforeach()
+endmacro()
+
 # Options
 option(BUILD_TESTS "build ${PROJECT_NAME} tests" OFF)
 if(BUILD_TESTS)
@@ -52,17 +64,14 @@ else()
     set(LIBRARY_TYPE SHARED)
 endif()
 
-option(WITH_FUSE "build ${PROJECT_NAME} with libfuse support" OFF)
-if (WITH_FUSE)
+option(WITH_FS "build ${PROJECT_NAME} with libfuse support" OFF)
+if (WITH_FS)
     find_package(PkgConfig)
     pkg_check_modules(FUSE REQUIRED fuse3)
-    add_compile_definitions(WITH_FUSE)
-    set(SOURCES ${SOURCES} Lib/fuse/fuse_priv.c)
+    add_compile_definitions(WITH_FS)
+    set(SOURCES ${SOURCES} Lib/fs/fs_priv.c)
+    set_deps(FUSE)
 endif()
-
-# Configure files
-configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
-configure_file(Lib/public/module/module_cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/public/module/module_cmn.h @ONLY)
 
 # Set requested poll plugin
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -84,10 +93,13 @@ if(WITH_LIBURING)
     pkg_check_modules(URING REQUIRED liburing)
     set(SOURCES ${SOURCES} Lib/poll_plugins/uring_priv.c Lib/poll_plugins/cmn_linux.c)
     set(POLL_PLUGIN "liburing")
+    set_deps(URING)
 elseif(WITH_LIBKQUEUE)
-    find_package(Kqueue REQUIRED)
+    find_package(PkgConfig)
+    pkg_check_modules(KQUEUE REQUIRED libkqueue)
     set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
     set(POLL_PLUGIN "libkqueue")
+    set_deps(KQUEUE)
 elseif(WITH_KQUEUE)
     set(SOURCES ${SOURCES} Lib/poll_plugins/kqueue_priv.c)
     set(POLL_PLUGIN "kqueue")
@@ -103,6 +115,10 @@ MESSAGE(STATUS "Library Type: ${LIBRARY_TYPE}")
 MESSAGE(STATUS "Poll plugin: ${POLL_PLUGIN}")
 MESSAGE(STATUS "Target OS: ${CMAKE_SYSTEM_NAME}")
 
+# Configure files
+configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
+configure_file(Lib/public/module/module_cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/public/module/module_cmn.h @ONLY)
+
 file(GLOB PUBLIC_H Lib/public/module/*.h)
 
 add_library(${PROJECT_NAME} ${LIBRARY_TYPE} ${SOURCES})
@@ -115,7 +131,7 @@ set_target_properties(
     PUBLIC_HEADER "${PUBLIC_H}"
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS} Lib/ Lib/fuse/ Lib/poll_plugins/ Lib/public/module/)
+target_include_directories(${PROJECT_NAME} PRIVATE ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS} Lib/ Lib/fs/ Lib/poll_plugins/ Lib/public/module/)
 target_link_libraries(${PROJECT_NAME} ${URING_LIBRARIES} ${KQUEUE_LIBRARIES} ${FUSE_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} dl)
 
 install(TARGETS ${PROJECT_NAME}
@@ -152,7 +168,7 @@ set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_URL "https://github.com/FedeDP/libmodule")
 set(CPACK_RPM_PACKAGE_GROUP "System Environment/Libraries")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "${CMAKE_INSTALL_DATAROOTDIR}/licenses ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig")
-if(WITH_FUSE)
+if(WITH_FS)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "fuse3-libs")
 endif()
 if(WITH_LIBURING)
@@ -166,7 +182,7 @@ set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
 # DEB Specific configuration
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/FedeDP/libmodule")
 set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
-if(WITH_FUSE)
+if(WITH_FS)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libfuse3-3")
 endif()
 if(WITH_LIBURING)

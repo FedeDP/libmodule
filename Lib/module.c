@@ -220,6 +220,12 @@ static mod_ret _register_src(mod_t *mod, const mod_src_types type, const void *s
     src->type = type;
     src->self = &mod->ref;
     
+    /*
+     * Same storage is used for all linux's internal fds, eg: for timerfd, signalfd...
+     * as fd_src_t is always first struct field on linux.
+     */
+    src->fd_src.fd = -1;
+    
     switch (type) {
     case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
     case TYPE_FD: {
@@ -235,25 +241,21 @@ static mod_ret _register_src(mod_t *mod, const mod_src_types type, const void *s
     case TYPE_TMR: {
         tmr_src_t *tm_src = &src->tm_src;
         memcpy(&tm_src->its, src_data, sizeof(mod_tmr_t));
-        tm_src->f.fd = -1;
         break;
     }
     case TYPE_SGN: {
         sgn_src_t *sgn_src = &src->sgn_src;
         memcpy(&sgn_src->sgs, src_data, sizeof(mod_sgn_t));
-        sgn_src->f.fd = -1;
         break;
     }
     case TYPE_PT: {
         pt_src_t *pt_src = &src->pt_src;
         memcpy(&pt_src->pt, src_data, sizeof(mod_pt_t));
-        pt_src->f.fd = -1;
         break;
     }
     case TYPE_PID: {
         pid_src_t *pid_src = &src->pid_src;
         memcpy(&pid_src->pid, src_data, sizeof(mod_pid_t));
-        pid_src->f.fd = -1;
         break;
     }
     default:
@@ -265,7 +267,8 @@ static mod_ret _register_src(mod_t *mod, const mod_src_types type, const void *s
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     list_insert(mod->srcs, src, NULL);
     ctx_t *c = mod->ref.ctx;
-    /* If a fd is registered at runtime, start polling on it */
+    
+    /* If a src is registered at runtime, start receiving its events */
     int ret = 0;
     if (module_is(mod->self, RUNNING)) {
         ret = poll_set_new_evt(&c->ppriv, src, ADD);
