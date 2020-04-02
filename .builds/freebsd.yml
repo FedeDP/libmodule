@@ -4,6 +4,7 @@ packages:
   #- valgrind
   - cmake
   - fusefs-libs3
+  - pkgconf
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:

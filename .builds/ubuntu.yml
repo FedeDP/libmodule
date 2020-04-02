@@ -4,6 +4,7 @@ packages:
   - valgrind
   - cmake
   - libfuse3-dev
+  - pkgconf
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:

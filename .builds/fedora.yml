@@ -6,6 +6,7 @@ packages:
   - gcc-c++
   - rpm-build
   - fuse3-devel
+  - fuse3
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:
