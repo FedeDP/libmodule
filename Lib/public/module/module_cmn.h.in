@@ -128,7 +128,7 @@ typedef struct {
 /* Timer event message */
 typedef struct {
     uint64_t ms;
-} tm_msg_t;
+} tmr_msg_t;
 
 /* Signal event message */
 typedef struct {
@@ -149,12 +149,12 @@ typedef struct {
 
 /* Libmodule receive() main message type */
 typedef struct {
-    self_t *self;
-    mod_src_types type;
+    const self_t *self;
+    const mod_src_types type;
     union {
         const fd_msg_t      *fd_msg;
         const ps_msg_t      *ps_msg;
-        const tm_msg_t      *tm_msg;
+        const tmr_msg_t     *tmr_msg;
         const sgn_msg_t     *sgn_msg;
         const pt_msg_t      *pt_msg;
         const pid_msg_t     *pid_msg;

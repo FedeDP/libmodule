@@ -11,18 +11,21 @@ sources:
 tasks:
   - prepare: |
       cd libmodule
-      mkdir build_kqueue build_uring build_epoll
+      mkdir build_kqueue build_uring build_epoll build_fs
       (cd build_kqueue && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_LIBKQUEUE=true ..)
       (cd build_uring && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_LIBURING=true ..)
       (cd build_epoll && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true ..)
+      (cd build_fs && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_FS=true ..)
   - build: |
       cd libmodule
       (cd build_kqueue && make)
       (cd build_uring && make)
       (cd build_epoll && make)
+      (cd build_fs && make)
   - test: |
       cd libmodule
       (cd build_epoll && ctest -V)
+      (cd build_fs && ctest -V)
 triggers:
   - action: email
     condition: failure

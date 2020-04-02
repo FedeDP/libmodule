@@ -52,7 +52,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
 #else
         const int  abs_fl = 0; // unsupported...
 #endif
-        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, abs_fl, tmp->tm_src.its.ms, tmp);
+        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, abs_fl, tmp->tmr_src.its.ms, tmp);
         break;
     }
     case TYPE_SGN:
@@ -86,6 +86,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         
         if (tmp->type == TYPE_PT) {
             close(tmp->pt_src.f.fd); // automatically close internally used FDs
+            tmp->pt_src.f.fd = -1;
         }
     }
     
@@ -118,7 +119,7 @@ mod_ret poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_ms
     return MOD_OK;
 }
 
-mod_ret poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tm_msg_t *tm_msg) {
+mod_ret poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t *tm_msg) {
     return MOD_OK;
 }
 

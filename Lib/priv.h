@@ -104,9 +104,7 @@ typedef struct {
 
 /* Struct that holds paths to self_t mapping for poll plugin */
 typedef struct {
-#ifdef __linux__
     fd_src_t f;
-#endif
     mod_pt_t pt;
 } pt_src_t;
 
@@ -129,7 +127,7 @@ typedef struct {
     union {
         ps_src_t    ps_src;
         fd_src_t    fd_src;
-        tmr_src_t   tm_src;
+        tmr_src_t   tmr_src;
         sgn_src_t   sgn_src;
         pt_src_t    pt_src;
         pid_src_t   pid_src;
@@ -168,7 +166,7 @@ struct _module {
     mod_stack_t *recvs;                     // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
     mod_states state;                       // module's state
-    void *fuse_ph;                          // Fuse poll data
+    void *fs;                               // FS module priv data. NULL if unsupported
     const char *name;                       // module's name
     const char *local_path;                 // For runtime loaded modules: path of module
     mod_list_t *srcs;                       // module's event sources (list of ev_src_t*)
@@ -190,7 +188,7 @@ struct _context {
     mod_map_t *modules;                     // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     mod_flags flags;                        // Context's flags
-    void *fuse;                             // fuse handler. Null if unsupported
+    void *fs;                               // FS context handler. Null if unsupported
 };
 
 /* Defined in module.c */
@@ -202,8 +200,8 @@ mod_ret stop(mod_t *mod, const bool stopping);
 void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...);
 
 /* Defined in pubsub.c */
-mod_ret tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, 
-                                       const self_t *sender, const char *topic);
+mod_ret tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, 
+                                const self_t *sender, const char *topic);
 mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value);
 void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr);
 

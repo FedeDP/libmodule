@@ -87,7 +87,7 @@ void test_modules_ctx_loop_no_maxevents(void **state) {
 void test_modules_ctx_loop(void **state) {
     (void) state; /* unused */
     
-    mod_ret ret = modules_ctx_loop(CTX);
+    mod_ret ret = modules_ctx_loop(CTX); // modules_quit() is called with "number of USER PS messages" recv'd.
     assert_true(ret == 3);
 }
 
@@ -111,12 +111,14 @@ void test_modules_ctx_dispatch(void **state) {
     
     int r;
     mod_ret ret = modules_ctx_dispatch(CTX, &r);
-    assert_true(ret == MOD_OK && r == 0);  // number of messages dispatched
+    assert_true(ret == MOD_OK && r == 0);  // loop started
+    
+    ret = modules_ctx_dispatch(CTX, &r);
+    assert_true(ret == MOD_OK && r == 2); // number of messages dispatched: LOOP_STARTED msg + fuse init message
     
     ret = modules_ctx_quit(CTX, 0);
     assert_true(ret == MOD_OK);
     
-    
     ret = modules_ctx_dispatch(CTX, &r);
-    assert_true(ret == MOD_ERR);
+    assert_true(ret == MOD_ERR && r == 0); // loop stopped with exit code 0
 }

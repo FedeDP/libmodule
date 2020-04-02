@@ -164,12 +164,12 @@ static mod_ret send_msg(mod_t *mod, mod_t *recipient,
 
 /** Private API **/
 
-mod_ret tell_system_pubsub_msg(mod_t *mod, ctx_t *c, ps_msg_type type, const self_t *sender, const char *topic) {
-    if (mod) {
-        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
+mod_ret tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, const self_t *sender, const char *topic) {
+    if (sender) {
+        fetch_ms(&sender->mod->stats.last_seen, &sender->mod->stats.action_ctr);
     }
     ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, 0);
-    return tell_pubsub_msg(m, mod, c);
+    return tell_pubsub_msg(m, recipient, c);
 }
 
 mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value) {

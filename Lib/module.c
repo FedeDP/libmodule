@@ -44,7 +44,11 @@ static void reset_module(mod_t *mod);
 static void _module_dtor(void *data) {
     mod_t *mod = (mod_t *)data;
     if (mod) {
-        /* Only if module has been registered before */
+        /* 
+         * Only if module has been registered before,
+         * ie: module_dtor is not called by module_register()
+         * after some module init operation failed.
+         */
         if (mod->state != 0) {
             stop(mod, true);
         }
@@ -59,9 +63,9 @@ static void _module_dtor(void *data) {
             memhook._free((void *)mod->name);
         }
         
-        /* Free fuse poll internal data */
-        if (mod->fuse_ph) {
-            memhook._free(mod->fuse_ph);
+        /* Free FS internal data */
+        if (mod->fs) {
+            memhook._free(mod->fs);
         }
         
         memhook._free(mod->self);
@@ -239,7 +243,7 @@ static mod_ret _register_src(mod_t *mod, const mod_src_types type, const void *s
         break;
     }
     case TYPE_TMR: {
-        tmr_src_t *tm_src = &src->tm_src;
+        tmr_src_t *tm_src = &src->tmr_src;
         memcpy(&tm_src->its, src_data, sizeof(mod_tmr_t));
         break;
     }
@@ -316,7 +320,7 @@ static int is_tmr_same(void *my_data, void *list_data) {
     const mod_tmr_t *its = (const mod_tmr_t *)my_data;
     
     if (src->type == TYPE_TMR) {
-        return !(src->tm_src.its.ms == its->ms);
+        return !(src->tmr_src.its.ms == its->ms);
     }
     return 1;
 }
@@ -588,6 +592,7 @@ mod_ret module_deregister(self_t **self) {
     
     /* Remove the module from the context */
     map_remove(c->modules, mod->name);
+
     /* Remove context without modules */
     if (map_length(c->modules) == 0) {
         pthread_mutex_lock(&mx);
@@ -825,12 +830,12 @@ mod_ret module_dump(const self_t *self) {
                 ctx_logger(c, self, "\t\t\"SGN\": %d,\n", t->sgn_src.sgs.signo);
                 break;
             case TYPE_TMR:
-                ctx_logger(c, self, "\t\t\"TMR_MS\": %lu,\n", t->tm_src.its.ms);
-                ctx_logger(c, self, "\t\t\"TMR_CID\": %d,\n", t->tm_src.its.clock_id);
+                ctx_logger(c, self, "\t\t\"TMR_MS\": %lu,\n", t->tmr_src.its.ms);
+                ctx_logger(c, self, "\t\t\"TMR_CID\": %d,\n", t->tmr_src.its.clock_id);
                 break;
             case TYPE_PT:
                 ctx_logger(c, self, "\t\t\"PATH\": \"%s\",\n", t->pt_src.pt.path);
-                ctx_logger(c, self, "\t\t\"EV\": %u,\n", t->pt_src.pt.events);
+                ctx_logger(c, self, "\t\t\"EV\": %#x,\n", t->pt_src.pt.events);
                 break;
             case TYPE_PID:
                 ctx_logger(c, self, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);

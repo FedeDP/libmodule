@@ -5,7 +5,6 @@ extern void create_timerfd(ev_src_t *tmp);
 extern void create_signalfd(ev_src_t *tmp);
 extern void create_inotifyfd(ev_src_t *tmp);
 extern void create_pidfd(ev_src_t *tmp);
-extern void reset_fd(ev_src_t *tmp);
 
 typedef struct {
     int fd;
@@ -55,7 +54,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         if (flag == ADD) {
             create_timerfd(tmp);
         }
-        fd = tmp->tm_src.f.fd;
+        fd = tmp->tmr_src.f.fd;
         break;
     }
     case TYPE_SGN: {
@@ -84,12 +83,11 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     }
     
     int ret = epoll_ctl(ep->fd, f, fd, ev);
-
     /* Workaround for STDIN_FILENO: it returns EPERM but it is actually pollable */
     if (ret == -1 && fd == STDIN_FILENO && errno == EPERM) {
         ret = 0;
     }
-    
+
     /* Eventually free epoll data if needed */
     if (flag == RM) {
         memhook._free(tmp->ev);
@@ -99,7 +97,14 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
          * Automatically close internally used FDs 
          * for special internal fds 
          */
-        reset_fd(tmp); 
+        if (tmp->type > TYPE_FD) {
+            close(fd);
+            /* 
+             * Reset to -1. Note that fd_src has same
+             * memory space as other fds (inside union)
+             */
+            tmp->fd_src.fd = -1;
+        }
     }
     
     return ret;

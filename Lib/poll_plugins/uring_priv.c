@@ -65,10 +65,10 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             fd = tmp->fd_src.fd;
             break;
         case TYPE_TMR: {
-            if (flag == ADD && tmp->tm_src.f.fd == -1) {
+            if (flag == ADD && tmp->tmr_src.f.fd == -1) {
                 create_timerfd(tmp);
             } 
-            fd = tmp->tm_src.f.fd;
+            fd = tmp->tmr_src.f.fd;            
             break;
         }
         case TYPE_SGN: {
@@ -103,13 +103,19 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
                 io_uring_sqe_set_data(sqe, tmp);
             } else {
                 io_uring_prep_poll_remove(sqe, tmp);
-                
                 tmp->ev = NULL;
                 /*
                  * Automatically close internally used FDs 
                  * for special internal fds 
                  */
-                reset_fd(tmp); 
+                if (tmp->type > TYPE_FD) {
+                    close(fd);
+                    /* 
+                     * Reset to -1. Note that fd_src has same
+                     * memory space as other fds (inside union)
+                     */
+                    tmp->fd_src.fd = -1;
+                }
             }
         } else {
             ret = -1;
@@ -164,8 +170,7 @@ int poll_wait(poll_priv_t *priv, const int timeout) {
     t.tv_sec = timeout;
     int ret = io_uring_wait_cqe_timeout(&up->ring, up->cqe, timeout >= 0 ? &t : NULL);
     if (ret == 0) {
-        int cqe_count = io_uring_peek_batch_cqe(&up->ring, up->cqe, priv->max_events);
-        return cqe_count;
+        return io_uring_peek_batch_cqe(&up->ring, up->cqe, priv->max_events);
     }
     return ret; // errno error code
 }

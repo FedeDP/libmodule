@@ -118,7 +118,10 @@ static uint8_t loop_stop(ctx_t *c) {
 
     /* Flush pubsub msg to avoid memleaks */
     map_iterate(c->modules, flush_pubsub_msgs, NULL);
+    
+    /* Destroy FS */
     fs_end(c);
+    
     poll_clear(&c->ppriv);
     c->ppriv.max_events = 0;
     c->looping = false;
@@ -133,7 +136,7 @@ static inline mod_ret loop_quit(ctx_t *c, const uint8_t quit_code) {
 
 static int recv_events(ctx_t *c, int timeout) {
     errno = 0;
-    int nfds = poll_wait(&c->ppriv, timeout);
+    int nfds = poll_wait(&c->ppriv, timeout);    
     for (int i = 0; i < nfds; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
         if (p && p->type == TYPE_FD && p->self == NULL) {
@@ -145,15 +148,14 @@ static int recv_events(ctx_t *c, int timeout) {
         if (p && p->self && p->self->mod) {
             mod_t *mod = p->self->mod;
 
-            msg_t msg = {0};
+            msg_t msg = { .type = p->type };
             fd_msg_t fd_msg;
-            tm_msg_t tm_msg;
+            tmr_msg_t tm_msg;
             sgn_msg_t sgn_msg;
             pt_msg_t pt_msg;
             pid_msg_t pid_msg;
             ps_priv_t *ps_msg;
             
-            msg.type = p->type;
             MODULE_DEBUG("'%s' received %u type msg.\n", mod->name, msg.type);
             switch (msg.type) {
             case TYPE_FD:
@@ -178,8 +180,8 @@ static int recv_events(ctx_t *c, int timeout) {
                 break;
             case TYPE_TMR:
                 if (poll_consume_tmr(&c->ppriv, i, p, &tm_msg) == MOD_OK) {
-                    tm_msg.ms = p->tm_src.its.ms;
-                    msg.tm_msg = &tm_msg;
+                    tm_msg.ms = p->tmr_src.its.ms;
+                    msg.tmr_msg = &tm_msg;
                 }
                 break;
             case TYPE_PT:
@@ -201,19 +203,25 @@ static int recv_events(ctx_t *c, int timeout) {
                 break;
             }
 
-            if (msg.type != TYPE_PS || (msg.ps_msg && msg.ps_msg->type != MODULE_POISONPILL)) {
-                run_pubsub_cb(mod, &msg, p ? p->userptr : NULL);
-            } else if (msg.ps_msg) {
-                MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
-                stop(mod, true);
-            }
-            
-            /* Remove it if it was a oneshot event */
-            if (p && p->flags & SRC_ONESHOT) {
-                if (p->type != TYPE_PS) {
-                    list_remove(mod->srcs, p, NULL);
+            /* 
+             * Here we only check if fd_msg != NULL as 
+             * all internal *_msg pointers share same memory area (inside union)
+             */
+            if (msg.fd_msg) {
+                if (msg.type != TYPE_PS || msg.ps_msg->type != MODULE_POISONPILL) {
+                    run_pubsub_cb(mod, &msg, p ? p->userptr : NULL);
                 } else {
-                    map_remove(mod->subscriptions, ps_msg->sub->ps_src.topic);
+                    MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
+                    stop(mod, true);
+                }
+                
+                /* Remove it if it was a oneshot event */
+                if (p && p->flags & SRC_ONESHOT) {
+                    if (p->type != TYPE_PS) {
+                        list_remove(mod->srcs, p, NULL);
+                    } else {
+                        map_remove(mod->subscriptions, ps_msg->sub->ps_src.topic);
+                    }
                 }
             }
         } else {

@@ -14,6 +14,7 @@
 - [x] Fix valgrind-check tests? "WARNING: unhandled amd64-linux syscall: 425" not much we can do...
 - [x] Batch-recv cqes from io_uring_wait_cqe_timeout
 - [x] Fix: avoid opening a new internal fd (timerfd, signalfd etc etc) at each new poll_set_new_evt ADD call
+- [ ] Fix: liburing ... it does not work with timerfd, signalfd and inotifyfd... (well it works, but weirdly!) -> see https://github.com/axboe/liburing/issues/53
 
 ### New Sources support
 
@@ -62,11 +63,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Optional build dep
 - [x] Integrate fuse fd into libmodule poll loop
 - [x] Read on a file, will module_dump()
-- [x] Writing to a file will tell the module; define a syntax, eg: 
-echo 'A -> "Hi!"' > B       means A is telling "Hi!" to B
-echo "Sub 'X'" > B          means B should subscribe to "X"
-echo "Pub 'X' 'Hi'" > B     means B should publish "Hi" on "X" topic
-etc etc
 - [x] Creating new file will register a new "fuse"-only module
 - [x] Deleting a previously created fuse module, will deregister it
 - [ ] Add an interface to customize fuse fs folder
@@ -74,15 +70,18 @@ etc etc
 - [x] Notify with poll callback when fuse-module has new receive() events enqueued
 - [x] Test poll
 - [x] Let non-fuse modules notify poll too? (ie: every module should call fs_recv... may be renamed to fs_notify())
-- [x] Add an ioctl interface? https://libfuse.github.io/doxygen/ioctl_8c_source.html eg: MOD_PEEK_MSG, MOD_PUB_MSG, MOD_TELL_MSG, MOD_REG_SRC, MOD_DEREG_SRC, MOD_STATS...
-- [ ] Add MOD_PREP_RECV and MOD_PREP_SEND to allow reading/writing data to fd. MOD_PREP_RECV return 0 if there is a msg to be sent to client
-- [ ] MOD_PREP_RECV and MOD_PREP_SEND cannot be called from different clients at the same time; MOD_PREP_RECV -> mod->recving_data = 1; 
-- [ ] Read: if (mod->recving_data) { write_msg } else { module_dump }
-- [ ] Write: if (mod->sending_data) { read } else return -EPERM
+- [x] Add an ioctl interface? https://libfuse.github.io/doxygen/ioctl_8c_source.html eg: MOD_PEEK_MSG, MOD_PUB_MSG, MOD_TELL_MSG, MOD_REG_SRC, MOD_DEREG_SRC, MOD_STATS... 
+- [x] Use read() to read messages after poll wake-up: if (mod->has_msg) { write_msg } else { module_dump }
+- [x] Fix crashes...
+- [x] Fix memleaks (only when using fuse)
+- [x] Fix tests
+- [ ] Use write() to send messages?? if (mod->sending_data) { read } else return -EPERM
 - [x] Allow looping context without running modules (drop c->running_mods)
 - [x] Allow to deregister non-fuse modules too on unlink
-- [ ] Fix memleaks (only when using fuse)
 - [x] Fix FIXME inside fuse_priv.c!
+- [x] Avoid continuous lookup to modules map; store in fuse_file_info->fh our module
+- [ ] When deregistering a module through module_deregister(), notify fuse fs and destroy clients associated with that module if needed... call flush_pubsub_message() on that module?
+- [x] enable FS in CI builds + tests
 
 ### New Linked list api
 
@@ -92,6 +91,12 @@ etc etc
 - [x] Add linked list doc
 - [x] List_insert to insert to head (O(1))
 - [x] Fix bug in list_itr_next() when a node was previously removed (ie: avoid skipping an element, as current element is already "next" after a node deletion)
+
+### Ideas
+
+- [ ] Add a new module type that only acts as "router" between contexts? eg: ROUTER(name, ctxA, ctxB) 
+-> any message received from ctxA will be published in ctxB, else any message received on ctxB will be published in ctxA. eg module_add_route(self, ctxStart, ctxEnd) ?
+- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are pushed on queue
 
 ### Generic
 
@@ -165,11 +170,12 @@ etc etc
 
 - [x] Cleanup some unused internal functions (eg: _module_is())
 
-- [ ] Add a new module type that only acts as "router" between contexts? eg: ROUTER(name, ctxA, ctxB) -> any message received from ctxA will be published in ctxB, else any message received on ctxB will be published in ctxA. eg module_add_route(self, ctxStart, ctxEnd) ?
-
-- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are pushed on queue
-
 - [x] Update map, list, stash, queue api to nullify param in free().
+
+- [ ] Actually check that deregistering every module in context will destroy it and shut it down, even when context is looping.
+- [ ] -> if ctx is looping, avoid destroying it right away but call modules_ctx_quit() and let loop_stop destroy ctx if it has no modules
+- [ ] -> else dtor context right away
+- [ ] modules_init() should initialize ctx map with a ctx_dtor destructor (same as module.c destroy_ctx())
 
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples
