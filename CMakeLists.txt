@@ -28,6 +28,15 @@ macro(set_deps name)
 endmacro()
 
 # Options
+option(WITH_FS "build ${PROJECT_NAME} with libfuse support" OFF)
+if (WITH_FS)
+    find_package(PkgConfig)
+    pkg_check_modules(FUSE REQUIRED fuse3)
+    add_compile_definitions(WITH_FS)
+    set(SOURCES ${SOURCES} Lib/fs/fs_priv.c)
+    set_deps(FUSE)
+endif()
+
 option(BUILD_TESTS "build ${PROJECT_NAME} tests" OFF)
 if(BUILD_TESTS)
     find_package(Cmocka)
@@ -62,15 +71,6 @@ if(STATIC_MODULE)
     set(LIBRARY_TYPE STATIC)
 else()
     set(LIBRARY_TYPE SHARED)
-endif()
-
-option(WITH_FS "build ${PROJECT_NAME} with libfuse support" OFF)
-if (WITH_FS)
-    find_package(PkgConfig)
-    pkg_check_modules(FUSE REQUIRED fuse3)
-    add_compile_definitions(WITH_FS)
-    set(SOURCES ${SOURCES} Lib/fs/fs_priv.c)
-    set_deps(FUSE)
 endif()
 
 # Set requested poll plugin

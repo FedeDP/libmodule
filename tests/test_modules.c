@@ -114,8 +114,11 @@ void test_modules_ctx_dispatch(void **state) {
     assert_true(ret == MOD_OK && r == 0);  // loop started
     
     ret = modules_ctx_dispatch(CTX, &r);
+#ifdef WITH_FS
     assert_true(ret == MOD_OK && r == 2); // number of messages dispatched: LOOP_STARTED msg + fuse init message
-    
+#else
+    assert_true(ret == MOD_OK && r == 1); // number of messages dispatched: LOOP_STARTED
+#endif
     ret = modules_ctx_quit(CTX, 0);
     assert_true(ret == MOD_OK);
     
