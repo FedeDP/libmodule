@@ -20,7 +20,6 @@ extern void create_timerfd(ev_src_t *tmp);
 extern void create_signalfd(ev_src_t *tmp);
 extern void create_inotifyfd(ev_src_t *tmp);
 extern void create_pidfd(ev_src_t *tmp);
-extern void reset_fd(ev_src_t *tmp);
 static void flush_reqs(poll_priv_t *priv);
 
 typedef struct {

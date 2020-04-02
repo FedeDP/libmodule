@@ -82,6 +82,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Avoid continuous lookup to modules map; store in fuse_file_info->fh our module
 - [ ] When deregistering a module through module_deregister(), notify fuse fs and destroy clients associated with that module if needed... call flush_pubsub_message() on that module?
 - [x] enable FS in CI builds + tests
+- [ ] Fix open callback
 
 ### New Linked list api
 
