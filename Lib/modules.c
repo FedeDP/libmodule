@@ -136,7 +136,8 @@ static inline mod_ret loop_quit(ctx_t *c, const uint8_t quit_code) {
 
 static int recv_events(ctx_t *c, int timeout) {
     errno = 0;
-    int nfds = poll_wait(&c->ppriv, timeout);    
+    int recved = 0;
+    const int nfds = poll_wait(&c->ppriv, timeout);    
     for (int i = 0; i < nfds; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
         if (p && p->type == TYPE_FD && p->self == NULL) {
@@ -198,8 +199,6 @@ static int recv_events(ctx_t *c, int timeout) {
                 break;
             default:
                 MODULE_DEBUG("Unmanaged src %d.\n", msg.type);
-                p = NULL;
-                errno = EINVAL;
                 break;
             }
 
@@ -208,6 +207,7 @@ static int recv_events(ctx_t *c, int timeout) {
              * all internal *_msg pointers share same memory area (inside union)
              */
             if (msg.fd_msg) {
+                recved++;
                 if (msg.type != TYPE_PS || msg.ps_msg->type != MODULE_POISONPILL) {
                     run_pubsub_cb(mod, &msg, p ? p->userptr : NULL);
                 } else {
@@ -223,6 +223,8 @@ static int recv_events(ctx_t *c, int timeout) {
                         map_remove(mod->subscriptions, ps_msg->sub->ps_src.topic);
                     }
                 }
+            } else {
+                errno = EAGAIN;
             }
         } else {
             /* Forward error to below handling code */
@@ -230,17 +232,17 @@ static int recv_events(ctx_t *c, int timeout) {
         }
     }
     
-    if (nfds > 0 && errno == 0) {
+    if (recved > 0 && errno == 0) {
         evaluate_new_state(c);
     } else if (errno) {
         /* Quit and return < 0 only for real errors */
         if (errno != EINTR && errno != EAGAIN) {
             fprintf(stderr, "Ctx '%s' loop error: %s.\n", c->name, strerror(errno));
             loop_quit(c, errno);
-            nfds = -1; // error!
+            recved = -1; // error!
         }
     }
-    return nfds;
+    return recved;
 }
 
 /** Private API **/

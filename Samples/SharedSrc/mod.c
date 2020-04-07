@@ -73,6 +73,7 @@ static void A_recv(const msg_t *msg, const void *userdata) {
             case 'c':
                 module_log(selfA, "Doggo, come here!\n");
                 module_tell(selfA, selfB, (unsigned char *)"ComeHere", strlen("ComeHere"), false);
+                module_deregister(&selfA); // TODO: FIX CRASH HERE with FS
                 break;
             case 'q':
                 module_log(selfA, "I have to go now!\n");

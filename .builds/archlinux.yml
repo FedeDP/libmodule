@@ -12,10 +12,10 @@ tasks:
   - prepare: |
       cd libmodule
       mkdir build_kqueue build_uring build_epoll build_fs
-      (cd build_kqueue && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_LIBKQUEUE=true ..)
-      (cd build_uring && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_LIBURING=true ..)
-      (cd build_epoll && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true ..)
-      (cd build_fs && cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_FS=true ..)
+      (cd build_kqueue && cmake -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_LIBKQUEUE=true ..)
+      (cd build_uring && cmake -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_LIBURING=true ..)
+      (cd build_epoll && cmake -DBUILD_TESTS=true -DBUILD_SAMPLES=true ..)
+      (cd build_fs && cmake -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_FS=true ..)
   - build: |
       cd libmodule
       (cd build_kqueue && make)

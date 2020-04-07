@@ -3,10 +3,10 @@
 #define FUSE_USE_VERSION 35
 
 #include "module.h"
-#include <fuse3/fuse.h>
-#include <fuse3/fuse_lowlevel.h> // to get fuse fd to process events internally
-#include <sys/poll.h> // poll operation support
-#include <sys/ioctl.h> // ioctl support
+#include <fuse.h>
+#include <fuse_lowlevel.h>  // to get fuse fd to process events internally
+#include <sys/poll.h>       // poll operation support
+#include <sys/ioctl.h>      // ioctl support
 #include <limits.h>
 
 #define FS_PRIV()         fs_ctx_t *f = (fs_ctx_t *)c->fs;
@@ -14,7 +14,7 @@
 #define FS_CLIENT()       fs_client_t *cl = (fs_client_t *)fi->fh; if (!cl) { return -ENOENT; }
 #define FS_MOD()          FS_CLIENT(); mod_t *mod = cl->mod;
 
-/** TODO: these will go in a separate public header, eg: <module/fs.h>! **/
+/** TODO: these will go in a separate public header, eg: module/fs.h **/
 #define MODULE_MAGIC        'L'
 
 #define MOD_DATA_SIZE_LIMIT 512 
@@ -73,6 +73,7 @@ typedef struct {
 typedef struct {
     mod_t *mod;
     struct fuse_pollhandle *ph;
+    struct fuse_file_info *fi;
     bool in_evt;
     char *read_buf;
     size_t read_len;
@@ -85,26 +86,32 @@ typedef struct {
     fs_msg_t *msg;
 } fs_priv_t;
 
+/* FS-related functions */
 static int fs_getattr(const char *path, struct stat *stbuf,
                       struct fuse_file_info *fi);
-static void client_dtor(void *data);
 static int fs_open(const char *path, struct fuse_file_info *fi);
 static int fs_release(const char *path, struct fuse_file_info *fi);
 static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                       off_t offset, struct fuse_file_info *fi,
                       enum fuse_readdir_flags flags);
-static void fs_logger(const self_t *self, const char *fmt, va_list args);
+
 static int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 static int fs_unlink(const char *path);
 static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi);
-static bool init(void);
-static void receive(const msg_t *msg, const void *userdata);
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi);
 static int fs_poll(const char *path, struct fuse_file_info *fi,
                    struct fuse_pollhandle *ph, unsigned *reventsp);
 static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
                     struct fuse_file_info *fi, unsigned int flags, void *data);
+
+/* Internal functions */
+static void client_dtor(void *data);
+static void fs_logger(const self_t *self, const char *fmt, va_list args);
+static void msg_dump(fs_client_t *cl, const fs_priv_t *fp);
+static bool init(void);
+static void receive(const msg_t *msg, const void *userdata);
 static void fs_store_msg(fs_priv_t *fp, const msg_t *msg);
+static void fs_clean_mod(fs_priv_t *fp);
 
 static const struct fuse_operations operations = {
     .getattr    = fs_getattr,
@@ -119,6 +126,7 @@ static const struct fuse_operations operations = {
     .ioctl      = fs_ioctl
 };
 
+/** Fuse OPS Start **/
 static int fs_getattr(const char *path, struct stat *stbuf,
                          struct fuse_file_info *fi) {
     FS_CTX();
@@ -144,16 +152,9 @@ static int fs_getattr(const char *path, struct stat *stbuf,
     return -ENOENT;
 }
 
-static void client_dtor(void *data) {
-    fs_client_t *cl = (fs_client_t *)data;
-    if (cl->ph) {
-        fuse_pollhandle_destroy(cl->ph);
-    }
-    memhook._free(cl);
-}
-
 static int fs_open(const char *path, struct fuse_file_info *fi) {
     FS_CTX();
+    
     if (strlen(path) > 1) {
         mod_t *mod = map_get(c->modules, path + 1);
         if (mod) {
@@ -162,10 +163,11 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
                 return -ENOMEM;
             }
             cl->mod = mod;
-            
+            cl->fi = fi;
             if (!mod->fs) {
                 mod->fs = memhook._calloc(1, sizeof(fs_priv_t));
                 if (!mod->fs) {
+                    memhook._free(cl);
                     return -ENOMEM;
                 }
             }
@@ -173,16 +175,20 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
             if (!fp->clients) { 
                 fp->clients = list_new(client_dtor);
                 if (!fp->clients) {
+                    memhook._free(cl);
+                    memhook._free(fp);
                     return -ENOMEM;
                 }
             }
             list_insert(fp->clients, cl, NULL);
             fi->fh = (uint64_t) cl;
             fi->direct_io = 1;
+            fi->nonseekable = 1;
             return 0;
         }
+        return -ENOENT;
     }
-    return -ENOENT; 
+    return -EISDIR;
 }
 
 static int fs_release(const char *path, struct fuse_file_info *fi) {
@@ -211,26 +217,6 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         filler(buf, mod->name, NULL, 0, 0);
     }
     return 0;
-}
-
-static void fs_logger(const self_t *self, const char *fmt, va_list args) {
-    fs_client_t *cl = (fs_client_t *)self->mod->userdata;
-    if (cl->write_len < cl->read_len) {
-        /* 
-         * vsnprintf: If the output was truncated due to this limit then the return value 
-         * is the number of characters (excluding the terminating null byte) which would have been written 
-         * to the final string if enough space had been available.
-         * 
-         * After module_dump() call, f->write_len is enforced to be at maximum f->read_len.
-         */
-        cl->write_len += vsnprintf(cl->read_buf + cl->write_len, cl->read_len - cl->write_len, fmt, args);
-    }
-}
-
-static void msg_dump(fs_client_t *cl, const fs_priv_t *fp) {
-    const size_t msg_size = sizeof(fs_msg_t) + fp->msg->size;
-    memcpy(cl->read_buf, fp->msg, msg_size);
-    cl->write_len += msg_size;
 }
 
 /* NOTE: partial reads are unsupported!! */
@@ -283,8 +269,11 @@ static int fs_unlink(const char *path) {
     FS_CTX();
     if (strlen(path) > 1) {
         mod_t *mod = map_get(c->modules, path + 1);
-        if (mod && module_deregister(&mod->self) == MOD_OK) {
-            return 0;
+        if (mod) {
+            if (module_deregister(&mod->self) == MOD_OK) {
+                return 0;
+            }
+            return -EIO;
         }
     }
     return -ENOENT;
@@ -294,16 +283,8 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
     return 0;
 }
 
-static bool init(void) {
-    return true;
-}
-
-static void receive(const msg_t *msg, const void *userdata) {
-    
-}
-
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    static userhook_t fuse_hook = { init, NULL, receive, NULL };
+    const userhook_t fuse_hook = { init, NULL, receive, NULL };
     FS_CTX();
     
     if (strlen(path) > 1) {
@@ -319,7 +300,7 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
 static int fs_poll(const char *path, struct fuse_file_info *fi,
                      struct fuse_pollhandle *ph, unsigned *reventsp) {
     FS_CLIENT();
-    
+
     if (ph) {
         if (cl->in_evt) {
             *reventsp |= POLLIN;
@@ -383,6 +364,45 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
     }
     return -EINVAL;
 }
+/** Fuse OPS End **/
+
+static void client_dtor(void *data) {
+    fs_client_t *cl = (fs_client_t *)data;
+    if (cl->ph) {
+        fuse_pollhandle_destroy(cl->ph);
+        cl->ph = NULL;
+    }
+    cl->fi->fh = 0;
+    memhook._free(cl);
+}
+
+static void fs_logger(const self_t *self, const char *fmt, va_list args) {
+    fs_client_t *cl = (fs_client_t *)self->mod->userdata;
+    if (cl->write_len < cl->read_len) {
+        /* 
+         * vsnprintf: If the output was truncated due to this limit then the return value 
+         * is the number of characters (excluding the terminating null byte) which would have been written 
+         * to the final string if enough space had been available.
+         * 
+         * After module_dump() call, f->write_len is enforced to be at maximum f->read_len.
+         */
+        cl->write_len += vsnprintf(cl->read_buf + cl->write_len, cl->read_len - cl->write_len, fmt, args);
+    }
+}
+
+static void msg_dump(fs_client_t *cl, const fs_priv_t *fp) {
+    const size_t msg_size = sizeof(fs_msg_t) + fp->msg->size;
+    memcpy(cl->read_buf, fp->msg, msg_size);
+    cl->write_len += msg_size;
+}
+
+static bool init(void) {
+    return true;
+}
+
+static void receive(const msg_t *msg, const void *userdata) {
+    
+}
 
 static void fs_store_msg(fs_priv_t *fp, const msg_t *msg) {
     fs_ps_msg_t ps_msg = {0};
@@ -441,6 +461,14 @@ static void fs_store_msg(fs_priv_t *fp, const msg_t *msg) {
     }
 }
 
+static void fs_clean_mod(fs_priv_t *fp) {
+    if (fp) {
+        list_free(&fp->clients);
+        memhook._free(fp->msg);
+        fp->msg = NULL;
+    }
+}
+
 /** Private API **/
 
 mod_ret fs_init(ctx_t *c) {
@@ -486,13 +514,11 @@ mod_ret fs_process(ctx_t *c) {
 
 mod_ret fs_notify(const msg_t *msg) {
     mod_t *mod = msg->self->mod;
-    if (mod->fs) {
+    if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         if (msg->type == TYPE_PS && msg->ps_msg->type == LOOP_STOPPED) {
             /* When loop gets stopped, destroy clients list */
-            list_free(&fp->clients);
-            memhook._free(fp->msg);
-            fp->msg = NULL;
+            fs_clean_mod(fp);
         } else {
             for (mod_list_itr_t *itr = list_itr_new(fp->clients); itr; itr = list_itr_next(itr)) {
                 fs_client_t *cl = list_itr_get_data(itr);
@@ -508,6 +534,12 @@ mod_ret fs_notify(const msg_t *msg) {
             fs_store_msg(fp, msg);
         }
     }
+    return MOD_OK;
+}
+
+mod_ret fs_cleanup(mod_t *mod) {
+    fs_clean_mod(mod->fs);
+    memhook._free(mod->fs);
     return MOD_OK;
 }
 

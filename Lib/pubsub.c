@@ -205,11 +205,14 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr) {
         /* Fallback to module default receive */
         cb = mod->hook.recv;
     }
+    
     msg->self = mod->self;
-    cb(msg, userptr);
     
     /* Notify underlying fuse fs */
     fs_notify(msg);
+        
+    /* Finally call user callback */
+    cb(msg, userptr);
 
     if (msg->type == TYPE_PS) {
         pubsub_msg_unref((ps_priv_t *)msg->ps_msg);

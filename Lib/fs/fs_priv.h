@@ -11,4 +11,5 @@
 FsExposed(mod_ret fs_init(ctx_t *c));
 FsExposed(mod_ret fs_process(ctx_t *c));
 FsExposed(mod_ret fs_notify(const msg_t *msg));
+FsExposed(mod_ret fs_cleanup(mod_t *mod));
 FsExposed(mod_ret fs_end(ctx_t *c));

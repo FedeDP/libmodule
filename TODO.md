@@ -80,9 +80,9 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Allow to deregister non-fuse modules too on unlink
 - [x] Fix FIXME inside fuse_priv.c!
 - [x] Avoid continuous lookup to modules map; store in fuse_file_info->fh our module
-- [ ] When deregistering a module through module_deregister(), notify fuse fs and destroy clients associated with that module if needed... call flush_pubsub_message() on that module?
+- [ ] When deregistering a module through module_deregister(), notify fuse fs and destroy clients associated with that module if needed...
 - [x] enable FS in CI builds + tests
-- [ ] Fix open callback
+- [x] Fix open callback checks
 
 ### New Linked list api
 
@@ -172,6 +172,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Cleanup some unused internal functions (eg: _module_is())
 
 - [x] Update map, list, stash, queue api to nullify param in free().
+
+- [x] modules_ctx_loop() to return real number of dispatched messages
 
 - [ ] Actually check that deregistering every module in context will destroy it and shut it down, even when context is looping.
 - [ ] -> if ctx is looping, avoid destroying it right away but call modules_ctx_quit() and let loop_stop destroy ctx if it has no modules

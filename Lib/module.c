@@ -41,6 +41,8 @@ static mod_ret _deregister_pid(mod_t *mod, const mod_pid_t *pid);
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
 static void reset_module(mod_t *mod);
 
+extern mod_ret fs_cleanup(mod_t *mod);
+
 static void _module_dtor(void *data) {
     mod_t *mod = (mod_t *)data;
     if (mod) {
@@ -64,9 +66,7 @@ static void _module_dtor(void *data) {
         }
         
         /* Free FS internal data */
-        if (mod->fs) {
-            memhook._free(mod->fs);
-        }
+        fs_cleanup(mod);
         
         memhook._free(mod->self);
         mod->self = NULL;
