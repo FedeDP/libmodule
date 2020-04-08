@@ -208,7 +208,7 @@ mod_ret tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type,
 mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value);
 void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src);
 
-/* Defined in priv.c */
+/* Defined in utils.c */
 char *mem_strdup(const char *s);
 void fetch_ms(uint64_t *val, uint64_t *ctr);
 void *mem_ref_new(size_t size, ref_dtor dtor);

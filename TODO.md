@@ -186,8 +186,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] modules_ctx_loop() to return real number of dispatched messages
 
-- [ ] Rename "poll_plugins/" folder to "poll/"
-- [ ] Rename priv.c to utils.c
+- [x] Rename "poll_plugins/" folder to "poll/"
+- [x] Rename priv.c to utils.c
 - [x] Move context creation functions to modules.c
 
 - [x] Added queue_remove API to remove instead of dequeueing head of queue
