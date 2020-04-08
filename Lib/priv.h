@@ -7,6 +7,7 @@
 #include "map.h"
 #include "stack.h"
 #include "list.h"
+#include "queue.h"
 
 #ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
@@ -142,9 +143,8 @@ typedef struct {
 /* Struct that holds pubsub messaging, private. It keeps reference count */
 typedef struct {
     ps_msg_t msg;
-    size_t refs;
     mod_ps_flags flags;
-    ev_src_t *sub;
+    mod_queue_t *subs;
 } ps_priv_t;
 
 typedef struct {
@@ -206,7 +206,7 @@ void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...);
 mod_ret tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, 
                                 const self_t *sender, const char *topic);
 mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value);
-void run_pubsub_cb(mod_t *mod, msg_t *msg, const void *userptr);
+void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src);
 
 /* Defined in priv.c */
 char *mem_strdup(const char *s);

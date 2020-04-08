@@ -1,7 +1,7 @@
 #include "priv.h"
 
 typedef struct {
-    uint32_t refs;
+    size_t refs;
     ref_dtor dtor;
 } m_header_t;
 

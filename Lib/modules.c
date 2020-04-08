@@ -223,7 +223,7 @@ static int recv_events(ctx_t *c, int timeout) {
                     MODULE_DEBUG("Failed to read message: %s\n", strerror(errno));
                 } else {
                     msg.ps_msg = &ps_msg->msg;
-                    p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
+                    p = queue_peek(ps_msg->subs);            // Use real event source, ie: topic subscription if any
                 }
                 break;
             case TYPE_SGN:
@@ -262,7 +262,7 @@ static int recv_events(ctx_t *c, int timeout) {
             if (msg.fd_msg) {
                 recved++;
                 if (msg.type != TYPE_PS || msg.ps_msg->type != MODULE_POISONPILL) {
-                    run_pubsub_cb(mod, &msg, p ? p->userptr : NULL);
+                    run_pubsub_cb(mod, &msg, p);
                 } else {
                     MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
                     stop(mod, true);
@@ -273,7 +273,7 @@ static int recv_events(ctx_t *c, int timeout) {
                     if (p->type != TYPE_PS) {
                         list_remove(mod->srcs, p, NULL);
                     } else {
-                        map_remove(mod->subscriptions, ps_msg->sub->ps_src.topic);
+                        map_remove(mod->subscriptions, p->ps_src.topic);
                     }
                 }
             } else {
