@@ -5,6 +5,8 @@ typedef struct {
     ref_dtor dtor;
 } m_header_t;
 
+static inline m_header_t *get_header(void *src);
+
 char *mem_strdup(const char *s) {
     char *new = NULL;
     if (s) {
@@ -41,17 +43,21 @@ void *mem_ref_new(size_t size, ref_dtor dtor) {
 
 /* Gain a new ref on a memory area */
 void mem_ref(void *src) {
-    m_header_t *header = get_header(src);
-    header->refs++;
+    if (src) {
+        m_header_t *header = get_header(src);
+        header->refs++;
+    }
 }
 
 /* Remove a ref from a memory area */
 void mem_unref(void *src) {
-    m_header_t *header = get_header(src);
-    if (--header->refs == 0) {
-        if (header->dtor) {
-            header->dtor(src); // destroy internal data
+    if (src) {
+        m_header_t *header = get_header(src);
+        if (--header->refs == 0) {
+            if (header->dtor) {
+                header->dtor(src); // destroy internal data
+            }
+            memhook._free(header);
         }
-        memhook._free(header);
     }
 }

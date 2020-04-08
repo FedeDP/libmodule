@@ -119,16 +119,12 @@ static mod_map_ret tell_global(void *data, const char *key, void *value) {
 }
 
 static void pubsub_msg_ref(ps_priv_t *pubsub_msg) {
-    if (pubsub_msg->sub) {
-        mem_ref(pubsub_msg->sub);
-    }
+    mem_ref(pubsub_msg->sub);
     pubsub_msg->refs++;
 }
 
 static void pubsub_msg_unref(ps_priv_t *pubsub_msg) {
-    if (pubsub_msg->sub) {
-        mem_unref(pubsub_msg->sub);
-    }
+    mem_unref(pubsub_msg->sub);
     
     /* Properly free pubsub msg if its ref count reaches 0 and autofree bit is true */
     if (pubsub_msg->refs == 0 || --pubsub_msg->refs == 0) {

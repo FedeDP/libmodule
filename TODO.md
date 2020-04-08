@@ -8,6 +8,7 @@
 - [x] Actually leave loop as soon as there are no more modules inside
 - [x] Keep module's alive while any message references it as sender
 - [ ] Fix ref'd FS support
+- [ ] Use mem_ref for create_pubsub_message too! and drop ps_msg->refs counter
 
 ### liburing
 
