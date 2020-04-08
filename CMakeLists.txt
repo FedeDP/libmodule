@@ -19,12 +19,9 @@ set(PKG_DEPS "-ldl ${CMAKE_THREAD_LIBS_INIT}")
 
 # Useful macro to properly set pkg-config script deps
 macro(set_deps name)
-    foreach(INC ${${name}_INCLUDE_DIRS}) 
-        set(PKG_INCS "${PKG_INCS} -I${INC}")
-    endforeach()
-    foreach(LIB ${${name}_LIBRARIES}) 
-        set(PKG_DEPS "${PKG_DEPS} -l${LIB}")
-    endforeach()
+    string(REPLACE ";" " " PKG_DIRS "${PKG_DIRS} ${${name}_LIBRARY_DIRS}")  # -L flags
+    string(REPLACE ";" " " PKG_DEPS "${PKG_DEPS} ${${name}_LDFLAGS}")       # -l flags
+    string(REPLACE ";" " " PKG_INCS "${PKG_INCS} ${${name}_CFLAGS}")        # -I flags
 endmacro()
 
 # Options
@@ -109,7 +106,7 @@ else()
 endif()
 
 # Some pretty printings
-message(STATUS "Building ${PROJECT_NAME}-${PROJECT_VERSION}")
+MESSAGE(STATUS "Building ${PROJECT_NAME}-${PROJECT_VERSION}")
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Library Type: ${LIBRARY_TYPE}")
 MESSAGE(STATUS "Poll plugin: ${POLL_PLUGIN}")
@@ -133,6 +130,7 @@ set_target_properties(
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS} Lib/ Lib/fs/ Lib/poll_plugins/ Lib/public/module/)
 target_link_libraries(${PROJECT_NAME} ${URING_LIBRARIES} ${KQUEUE_LIBRARIES} ${FUSE_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} dl)
+target_link_directories(${PROJECT_NAME} PRIVATE ${URING_LIBRARY_DIRS} ${KQUEUE_LIBRARY_DIRS} ${FUSE_LIBRARY_DIRS})
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

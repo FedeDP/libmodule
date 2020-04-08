@@ -7,7 +7,9 @@ static void *thread_loop(void *param);
 static mod_map_ret main_loop(void *data, const char *key, void *value);
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
-static void evaluate_new_state(ctx_t *c);
+static mod_ret ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags);
+static void ctx_dtor(void *data);
+static void default_logger(const self_t *self, const char *fmt, va_list args);
 static mod_ret loop_start(ctx_t *c, const int max_events);
 static uint8_t loop_stop(ctx_t *c);
 static inline mod_ret loop_quit(ctx_t *c, const uint8_t quit_code);
@@ -81,7 +83,7 @@ static void modules_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     modules_set_memhook(NULL);
     pthread_mutex_init(&mx, NULL);
-    ctx = map_new(false, NULL);
+    ctx = map_new(false, mem_unref);
 }
 
 static void modules_destroy(void) {
@@ -90,20 +92,67 @@ static void modules_destroy(void) {
     pthread_mutex_destroy(&mx);
 }
 
-static void evaluate_new_state(ctx_t *c) {
-    map_iterate(c->modules, evaluate_module, NULL);
+static mod_ret ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags) {
+    MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
+    
+    *context = mem_ref_new(sizeof(ctx_t), ctx_dtor);
+    MOD_ALLOC_ASSERT(*context);
+    
+    (*context)->flags = flags & ~(uint8_t)-1; // do not store useless module's flags (first byte)
+    
+    (*context)->logger = default_logger;
+    
+    (*context)->modules = map_new(false, mem_unref);
+    
+    if ((*context)->flags & CTX_NAME_DUP) {
+        (*context)->flags |= CTX_NAME_AUTOFREE;
+        (*context)->name = mem_strdup(ctx_name);
+    } else {
+        (*context)->name = ctx_name;
+    }
+    
+    if ((*context)->modules &&
+        map_put(ctx, (*context)->name, *context) == MAP_OK) {
+        
+        if (poll_create(&(*context)->ppriv) == MOD_OK) {
+            return MOD_OK;
+        }
+        }
+        
+        mem_unref(*context);
+    *context = NULL;
+    return MOD_ERR;
+}
+
+static void ctx_dtor(void *data) {    
+    ctx_t *context = (ctx_t *)data;
+    MODULE_DEBUG("Destroying context '%s'.\n", context->name);
+    map_free(&context->modules);
+    poll_destroy(&context->ppriv);
+    if (context->flags & CTX_NAME_AUTOFREE) {
+        memhook._free((void *)context->name);
+    }
+}
+
+static void default_logger(const self_t *self, const char *fmt, va_list args) {
+    if (self) {
+        printf("[%s]|%s|: ", self->ctx->name, self->mod->name);
+    }
+    vprintf(fmt, args);
 }
 
 static mod_ret loop_start(ctx_t *c, const int max_events) {
     c->ppriv.max_events = max_events;
     if (poll_init(&c->ppriv) == MOD_OK) {
+        mem_ref(c); // Ensure ctx keeps existing while we loop
+        
         fs_init(c);
         c->looping = true;
         c->quit = false;
         c->quit_code = 0;
-
+        
         /* Eventually start any IDLE module */
-        evaluate_new_state(c);
+        map_iterate(c->modules, evaluate_module, NULL);
 
         /* Tell every RUNNING module that loop is started */
         tell_system_pubsub_msg(NULL, c, LOOP_STARTED, NULL, NULL);
@@ -125,7 +174,11 @@ static uint8_t loop_stop(ctx_t *c) {
     poll_clear(&c->ppriv);
     c->ppriv.max_events = 0;
     c->looping = false;
-    return c->quit_code;
+    
+    int ret = c->quit_code;
+    
+    mem_unref(c);
+    return ret;
 }
 
 static inline mod_ret loop_quit(ctx_t *c, const uint8_t quit_code) {
@@ -134,7 +187,7 @@ static inline mod_ret loop_quit(ctx_t *c, const uint8_t quit_code) {
     return MOD_OK;
 }
 
-static int recv_events(ctx_t *c, int timeout) {
+static int recv_events(ctx_t *c, int timeout) {    
     errno = 0;
     int recved = 0;
     const int nfds = poll_wait(&c->ppriv, timeout);    
@@ -233,7 +286,7 @@ static int recv_events(ctx_t *c, int timeout) {
     }
     
     if (recved > 0 && errno == 0) {
-        evaluate_new_state(c);
+        map_iterate(c->modules, evaluate_module, NULL);
     } else if (errno) {
         /* Quit and return < 0 only for real errors */
         if (errno != EINTR && errno != EAGAIN) {
@@ -246,6 +299,23 @@ static int recv_events(ctx_t *c, int timeout) {
 }
 
 /** Private API **/
+
+ctx_t *check_ctx(const char *ctx_name, const mod_flags flags) {
+    /* 
+     * Protect global variables: 
+     * in this case, ensure nobody else (any other thread)
+     * will create a ctx with same ctx_name at the same time.
+     */
+    pthread_mutex_lock(&mx);
+    
+    ctx_t *context = map_get(ctx, ctx_name);
+    if (!context) {
+        ctx_new(ctx_name, &context, flags);
+    }
+    
+    pthread_mutex_unlock(&mx);
+    return context;
+}
 
 void inline ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...) {
     va_list args;
@@ -293,7 +363,7 @@ mod_ret modules_ctx_loop_events(const char *ctx_name, const int max_events) {
     MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
 
     if (loop_start(c, max_events) == MOD_OK) {
-        while (!c->quit) {
+        while (!c->quit && map_length(c->modules) > 0) {
             recv_events(c, -1);
         }
         return loop_stop(c);
@@ -326,7 +396,7 @@ mod_ret modules_ctx_dispatch(const char *ctx_name, int *ret) {
         return loop_start(c, MODULES_MAX_EVENTS);
     }
     
-    if (c->quit) {
+    if (c->quit || map_length(c->modules) == 0) {
         /* We are stopping! */
         *ret = loop_stop(c);
         /* 

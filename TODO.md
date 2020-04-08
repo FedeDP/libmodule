@@ -1,5 +1,14 @@
 ## 6.0.0
 
+### Reference-counted objects' life management
+
+- [x] Keep objects alive as long as someone references them
+- [x] Keep module's subscription source alive until all messages on the source are received
+- [x] Keep context alive while looping
+- [x] Actually leave loop as soon as there are no more modules inside
+- [x] Keep module's alive while any message references it as sender
+- [ ] Fix ref'd FS support
+
 ### liburing
 
 - [x] Introduce an uring poll plugin
@@ -175,10 +184,9 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] modules_ctx_loop() to return real number of dispatched messages
 
-- [ ] Actually check that deregistering every module in context will destroy it and shut it down, even when context is looping.
-- [ ] -> if ctx is looping, avoid destroying it right away but call modules_ctx_quit() and let loop_stop destroy ctx if it has no modules
-- [ ] -> else dtor context right away
-- [ ] modules_init() should initialize ctx map with a ctx_dtor destructor (same as module.c destroy_ctx())
+- [ ] Rename "poll_plugins/" folder to "poll/"
+- [ ] Rename priv.c to utils.c
+- [x] Move context creation functions to modules.c
 
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples

@@ -3,13 +3,9 @@
 
 /** Generic module interface **/
 
-static void _module_dtor(void *data);
-static mod_ret init_ctx(const char *ctx_name, ctx_t **context, const mod_flags flags);
-static void destroy_ctx(ctx_t *context);
-static ctx_t *check_ctx(const char *ctx_name, const mod_flags flags);
+static void module_dtor(void *data);
 static int _pipe(mod_t *mod);
 static mod_ret init_pubsub_fd(mod_t *mod);
-static void default_logger(const self_t *self, const char *fmt, va_list args);
 static void src_priv_dtor(void *data);
 
 static mod_ret _register_src(mod_t *mod, const mod_src_types type, const void *src_data, 
@@ -43,17 +39,10 @@ static void reset_module(mod_t *mod);
 
 extern mod_ret fs_cleanup(mod_t *mod);
 
-static void _module_dtor(void *data) {
+static void module_dtor(void *data) {
     mod_t *mod = (mod_t *)data;
     if (mod) {
-        /* 
-         * Only if module has been registered before,
-         * ie: module_dtor is not called by module_register()
-         * after some module init operation failed.
-         */
-        if (mod->state != 0) {
-            stop(mod, true);
-        }
+        mem_unref(mod->self->ctx);
         
         map_free(&mod->subscriptions);
         stack_free(&mod->recvs);
@@ -69,79 +58,7 @@ static void _module_dtor(void *data) {
         fs_cleanup(mod);
         
         memhook._free(mod->self);
-        mod->self = NULL;
-        
-        /*
-         * Call destroy once self is NULL 
-         * (ie: no more libmodule operations can be called on this handler) 
-         */
-        if (mod->hook.destroy) {
-            mod->hook.destroy();
-        }
-        
-        /* Finally free module */
-        memhook._free(mod);
     }
-}
-
-static mod_ret init_ctx(const char *ctx_name, ctx_t **context, const mod_flags flags) {
-    MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
-    
-    *context = memhook._calloc(1, sizeof(ctx_t));
-    MOD_ALLOC_ASSERT(*context);
-    
-    (*context)->flags = flags & ~(uint8_t)-1; // do not store useless module's flags (first byte)
-
-    (*context)->logger = default_logger;
-    
-    (*context)->modules = map_new(false, _module_dtor);
-    
-    if ((*context)->flags & CTX_NAME_DUP) {
-        (*context)->flags |= CTX_NAME_AUTOFREE;
-        (*context)->name = mem_strdup(ctx_name);
-    } else {
-        (*context)->name = ctx_name;
-    }
-    
-    if ((*context)->modules &&
-        map_put(ctx, (*context)->name, *context) == MAP_OK) {
-        
-        if (poll_create(&(*context)->ppriv) == MOD_OK) {
-            return MOD_OK;
-        }
-    }
-    
-    destroy_ctx(*context);
-    *context = NULL;
-    return MOD_ERR;
-}
-
-static void destroy_ctx(ctx_t *context) {
-    MODULE_DEBUG("Destroying context '%s'.\n", context->name);
-    map_free(&context->modules);
-    poll_destroy(&context->ppriv);
-    map_remove(ctx, context->name);
-    
-    if (context->flags & CTX_NAME_AUTOFREE) {
-        memhook._free((void *)context->name);
-    }
-    
-    memhook._free(context);
-}
-
-static ctx_t *check_ctx(const char *ctx_name, const mod_flags flags) {
-    /* 
-     * Protect global variables: 
-     * in this case, ensure nobody else (any other thread)
-     * will create a ctx with same ctx_name.
-     */
-    pthread_mutex_lock(&mx);
-    ctx_t *context = map_get(ctx, ctx_name);
-    if (!context) {
-        init_ctx(ctx_name, &context, flags);
-    }
-    pthread_mutex_unlock(&mx);
-    return context;
 }
 
 static int _pipe(mod_t *mod) {
@@ -172,13 +89,6 @@ static mod_ret init_pubsub_fd(mod_t *mod) {
         mod->pubsub_fd[1] = -1;
     }
     return MOD_ERR;
-}
-
-static void default_logger(const self_t *self, const char *fmt, va_list args) {
-    if (self) {
-        printf("[%s]|%s|: ", self->ctx->name, self->mod->name);
-    }
-    vprintf(fmt, args);
 }
 
 static void src_priv_dtor(void *data) {
@@ -270,11 +180,11 @@ static mod_ret _register_src(mod_t *mod, const mod_src_types type, const void *s
     
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     list_insert(mod->srcs, src, NULL);
-    ctx_t *c = mod->ref.ctx;
     
     /* If a src is registered at runtime, start receiving its events */
     int ret = 0;
     if (module_is(mod->self, RUNNING)) {
+        ctx_t *c = mod->ref.ctx;
         ret = poll_set_new_evt(&c->ppriv, src, ADD);
     }
     return !ret ? MOD_OK : MOD_ERR;
@@ -489,17 +399,7 @@ mod_ret stop(mod_t *mod, const bool stopping) {
     
     MODULE_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
     
-    /*
-     * Check that we are not deregistering; this is needed to
-     * avoid sending a &mod->self that will be freed right after 
-     * (thus pointing to freed data).
-     * When deregistering, module has already been removed from c->modules map.
-     */
-    self_t *self = NULL;
-    if (map_has_key(c->modules, mod->name)) {
-        self = &mod->ref;
-    }
-    tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, self, NULL);
+    tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, &mod->ref, NULL);
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     return MOD_OK;
 }
@@ -530,8 +430,10 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
     
-    mod_t *mod = memhook._calloc(1, sizeof(mod_t));
+    mod_t *mod = mem_ref_new(sizeof(mod_t), module_dtor);
     MOD_ALLOC_ASSERT(mod);
+    
+    mem_ref(context);
     
     mod->flags = flags & (uint8_t)-1; // do not store context's flags (only store first byte)
     if (flags & MOD_NAME_DUP) {
@@ -580,7 +482,7 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
         ret = MOD_ERR;
     } while (false);
     
-    _module_dtor(mod);
+    mem_unref(mod);
     return ret;
 }
 
@@ -590,16 +492,36 @@ mod_ret module_deregister(self_t **self) {
     GET_CTX(*self);
     MODULE_DEBUG("Deregistering module '%s'.\n", mod->name);
     
+    /* Stop module */
+    stop(mod, true);
+    
+    /* 
+     * Store destroy callback before removing 
+     * module from context.
+     * This is needed to avoid referencing 
+     * mod once it can be destroyed
+     */
+    destroy_cb dtor = mod->hook.destroy;
+    
     /* Remove the module from the context */
     map_remove(c->modules, mod->name);
-
-    /* Remove context without modules */
+    
+    /*
+     * Call destroy once self is NULL and module has been removed from context;
+     * ie: no more libmodule operations can be called on this handler 
+     * neither it can be ref'd through module_ref.
+     */
+    *self = NULL;
+    if (dtor) {
+        dtor();
+    }
+    
+    /* Destroy context if needed */
     if (map_length(c->modules) == 0) {
         pthread_mutex_lock(&mx);
-        destroy_ctx(c);
+        map_remove(ctx, c->name);
         pthread_mutex_unlock(&mx);
     }
-    *self = NULL;
     return MOD_OK;
 }
 

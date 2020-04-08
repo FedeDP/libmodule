@@ -27,7 +27,6 @@ static void subscribtions_dtor(void *data) {
     if (sub->flags & SRC_AUTOFREE) {
         memhook._free((void *)sub->userptr);
     }
-    memhook._free(sub);
 }
 
 static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
@@ -86,6 +85,9 @@ static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, c
     ps_priv_t *m = memhook._calloc(1, sizeof(ps_priv_t));
     if (m) {
         m->msg.sender = sender;
+        if (sender) {
+            mem_ref(sender->mod); // keep module alive until message is dispatched
+        }
         m->msg.topic = topic;
         m->msg.type = type;
         m->msg.size = size;
@@ -117,14 +119,24 @@ static mod_map_ret tell_global(void *data, const char *key, void *value) {
 }
 
 static void pubsub_msg_ref(ps_priv_t *pubsub_msg) {
+    if (pubsub_msg->sub) {
+        mem_ref(pubsub_msg->sub);
+    }
     pubsub_msg->refs++;
 }
 
 static void pubsub_msg_unref(ps_priv_t *pubsub_msg) {
+    if (pubsub_msg->sub) {
+        mem_unref(pubsub_msg->sub);
+    }
+    
     /* Properly free pubsub msg if its ref count reaches 0 and autofree bit is true */
     if (pubsub_msg->refs == 0 || --pubsub_msg->refs == 0) {
         if (pubsub_msg->flags & PS_AUTOFREE) {
             memhook._free((void *)pubsub_msg->msg.data);
+        }
+        if (pubsub_msg->msg.sender) {
+            mem_unref(pubsub_msg->msg.sender->mod);
         }
         memhook._free(pubsub_msg);
     }
@@ -249,7 +261,7 @@ mod_ret module_register_sub(const self_t *self, const char *topic, mod_src_flags
         
         /* Lazy subscriptions map init */
         if (!mod->subscriptions)  {
-            mod->subscriptions = map_new(false, subscribtions_dtor);
+            mod->subscriptions = map_new(false, mem_unref);
             MOD_ALLOC_ASSERT(mod->subscriptions);
         } else {
             ev_src_t *old_sub = map_get(mod->subscriptions, topic);
@@ -264,8 +276,8 @@ mod_ret module_register_sub(const self_t *self, const char *topic, mod_src_flags
             }
         }
         
-        /* Store regex on heap */
-        ev_src_t *sub = memhook._calloc(1, sizeof(ev_src_t));
+        /* Store new sub as ref'd memory */
+        ev_src_t *sub = mem_ref_new(sizeof(ev_src_t), subscribtions_dtor);
         MOD_ALLOC_ASSERT(sub);
         
         ps_src_t *ps_src = &sub->ps_src;
