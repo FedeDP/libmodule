@@ -146,7 +146,7 @@ static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
     
     /* 
      * If nobody received our message; destroy it right away;
-     * otherwise num of refs for this message == number of modules that received it.
+     * else: num of refs for this message == number of modules that received it.
      */
     mem_unref(m);
     return MOD_OK;
@@ -194,6 +194,7 @@ mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value) {
             run_pubsub_cb(mod, &msg, queue_peek(mm->subs));
         } else {
             MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
+            queue_remove(mm->subs);
             mem_unref(mm);
         }
     }
@@ -217,7 +218,9 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
     cb(msg, src ? src->userptr : NULL);
 
     if (msg->type == TYPE_PS) {
-        mem_unref((ps_priv_t *)msg->ps_msg);
+        ps_priv_t *mm = (ps_priv_t *)msg->ps_msg;
+        queue_remove(mm->subs);
+        mem_unref(mm);
     }
     
     mod->stats.recv_msgs++;

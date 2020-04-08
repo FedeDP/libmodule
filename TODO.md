@@ -190,6 +190,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Rename priv.c to utils.c
 - [x] Move context creation functions to modules.c
 
+- [x] Added queue_remove API to remove instead of dequeueing head of queue
+
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples
 - [ ] Update tests

@@ -125,15 +125,21 @@ void *queue_peek(const mod_queue_t *q) {
     return q->head->userptr;
 }
 
+mod_queue_ret queue_remove(mod_queue_t *q) {
+    void *data = queue_dequeue(q);
+    if (data && q->dtor) {
+        q->dtor(data);
+        return QUEUE_OK;
+    }
+    return QUEUE_WRONG_PARAM;
+}
+
 mod_queue_ret queue_clear(mod_queue_t *q) {
     QUEUE_PARAM_ASSERT(q);
     
     queue_elem *elem = NULL;
     while ((elem = q->head) && q->len > 0) {
-        void *data = queue_dequeue(q);
-        if (q->dtor) {
-            q->dtor(data);
-        }
+        queue_remove(q);
     }
     return QUEUE_OK;
 }
