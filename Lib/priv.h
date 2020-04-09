@@ -191,8 +191,6 @@ struct _context {
     void *fs;                               // FS context handler. Null if unsupported
 };
 
-typedef void (*ref_dtor)(void *);
-
 /* Defined in module.c */
 mod_map_ret evaluate_module(void *data, const char *key, void *value);
 mod_ret start(mod_t *mod, const bool starting);
@@ -211,9 +209,6 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src);
 /* Defined in utils.c */
 char *mem_strdup(const char *s);
 void fetch_ms(uint64_t *val, uint64_t *ctr);
-void *mem_ref_new(size_t size, ref_dtor dtor);
-void mem_ref(void *src);
-void mem_unref(void *src);
 
 /* Defined in map.c */
 void *map_peek(const mod_map_t *m);

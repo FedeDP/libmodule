@@ -1,4 +1,5 @@
 #include "module.h"
+#include "mem.h"
 #include "poll_priv.h"
 
 /** Generic module interface **/
@@ -430,7 +431,7 @@ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, c
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
     
-    mod_t *mod = mem_ref_new(sizeof(mod_t), module_dtor);
+    mod_t *mod = mem_new(sizeof(mod_t), module_dtor);
     MOD_ALLOC_ASSERT(mod);
     
     mem_ref(context);
@@ -492,29 +493,25 @@ mod_ret module_deregister(self_t **self) {
     GET_CTX(*self);
     MODULE_DEBUG("Deregistering module '%s'.\n", mod->name);
     
-    /* Stop module */
-    stop(mod, true);
-    
-    /* 
-     * Store destroy callback before removing 
-     * module from context.
-     * This is needed to avoid referencing 
-     * mod once it can be destroyed
-     */
-    destroy_cb dtor = mod->hook.destroy;
-    
-    /* Remove the module from the context */
-    map_remove(c->modules, mod->name);
-    
-    /*
-     * Call destroy once self is NULL and module has been removed from context;
-     * ie: no more libmodule operations can be called on this handler 
-     * neither it can be ref'd through module_ref.
-     */
-    *self = NULL;
-    if (dtor) {
-        dtor();
-    }
+    /* Keep module alive untile destroy() callback is called */
+    MEM_LOCK(mod, {
+        /* Stop module */
+        stop(mod, true);
+        
+        /* Remove the module from the context */
+        map_remove(c->modules, mod->name);
+        
+        /*
+        * Call destroy once self is NULL and module has been removed from context;
+        * ie: no more libmodule operations can be called on this handler 
+        * neither it can be ref'd through module_ref.
+        */
+        *self = NULL;
+        
+        if (mod->hook.destroy) {
+            mod->hook.destroy();
+        }
+    });
     
     /* Destroy context if needed */
     if (map_length(c->modules) == 0) {

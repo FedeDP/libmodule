@@ -10,6 +10,8 @@
 - [ ] Fix ref'd FS support
 - [x] Use mem_ref for create_pubsub_message too! and drop ps_msg->refs counter
 - [x] Fix: fix ps_priv_t->sub mem_ref/unref
+- [x] Expose new public header <module/mem.h>?
+- [x] Add a MEM_LOCK macro to keep a referenced memory alive
 
 ### liburing
 
@@ -104,12 +106,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] List_insert to insert to head (O(1))
 - [x] Fix bug in list_itr_next() when a node was previously removed (ie: avoid skipping an element, as current element is already "next" after a node deletion)
 
-### Ideas
-
-- [ ] Add a new module type that only acts as "router" between contexts? eg: ROUTER(name, ctxA, ctxB) 
--> any message received from ctxA will be published in ctxB, else any message received on ctxB will be published in ctxA. eg module_add_route(self, ctxStart, ctxEnd) ?
-- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are pushed on queue
-
 ### Generic
 
 - [x] Finally avoid injecting _self into file-global variables
@@ -199,6 +195,10 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Add build options doc
 
 ## Ideas
+
+- [ ] Add a new module type that only acts as "router" between contexts? eg: ROUTER(name, ctxA, ctxB) 
+-> any message received from ctxA will be published in ctxB, else any message received on ctxB will be published in ctxA. eg module_add_route(self, ctxStart, ctxEnd) ?
+- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are pushed on queue
 
 ### Submodules
 - [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);

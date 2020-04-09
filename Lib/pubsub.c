@@ -1,4 +1,5 @@
 #include "module.h"
+#include "mem.h"
 #include "poll_priv.h"
 
 /** Actor-like PubSub interface **/
@@ -82,7 +83,7 @@ static mod_map_ret tell_if(void *data, const char *key, void *value) {
 
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
                                     ps_msg_type type, const size_t size, const mod_ps_flags flags) {
-    ps_priv_t *m = mem_ref_new(sizeof(ps_priv_t), ps_msg_dtor);
+    ps_priv_t *m = mem_new(sizeof(ps_priv_t), ps_msg_dtor);
     if (m) {
         m->msg.sender = sender;
         if (sender) {
@@ -270,7 +271,7 @@ mod_ret module_register_sub(const self_t *self, const char *topic, mod_src_flags
         }
         
         /* Store new sub as ref'd memory */
-        ev_src_t *sub = mem_ref_new(sizeof(ev_src_t), subscribtions_dtor);
+        ev_src_t *sub = mem_new(sizeof(ev_src_t), subscribtions_dtor);
         MOD_ALLOC_ASSERT(sub);
         
         ps_src_t *ps_src = &sub->ps_src;

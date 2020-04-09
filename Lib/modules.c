@@ -1,6 +1,7 @@
 #include "module.h"
 #include "modules.h"
 #include "fs_priv.h"
+#include "mem.h"
 #include <dlfcn.h> // dlopen
 
 static void *thread_loop(void *param);
@@ -95,7 +96,7 @@ static void modules_destroy(void) {
 static mod_ret ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
-    *context = mem_ref_new(sizeof(ctx_t), ctx_dtor);
+    *context = mem_new(sizeof(ctx_t), ctx_dtor);
     MOD_ALLOC_ASSERT(*context);
     
     (*context)->flags = flags & ~(uint8_t)-1; // do not store useless module's flags (first byte)

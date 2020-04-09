@@ -1,11 +1,12 @@
 #include "priv.h"
+#include "mem.h"
 
 typedef struct {
     size_t refs;
     ref_dtor dtor;
-} m_header_t;
+} header_t;
 
-static inline m_header_t *get_header(void *src);
+static inline header_t *get_header(void *src);
 
 char *mem_strdup(const char *s) {
     char *new = NULL;
@@ -29,13 +30,13 @@ void fetch_ms(uint64_t *val, uint64_t *ctr) {
     }
 }
 
-static inline m_header_t *get_header(void *src) {
-    return (m_header_t *)(((uint8_t *)src) - sizeof(m_header_t));
+static inline header_t *get_header(void *src) {
+    return (header_t *)(((uint8_t *)src) - sizeof(header_t));
 }
 
 /* Create new ref counted memory area */
-void *mem_ref_new(size_t size, ref_dtor dtor) {
-    m_header_t *header = memhook._calloc(1, size + sizeof(m_header_t));
+void *mem_new(size_t size, ref_dtor dtor) {
+    header_t *header = memhook._calloc(1, size + sizeof(header_t));
     header->refs = 1;
     header->dtor = dtor;
     return &header[1];
@@ -44,7 +45,7 @@ void *mem_ref_new(size_t size, ref_dtor dtor) {
 /* Gain a new ref on a memory area */
 void mem_ref(void *src) {
     if (src) {
-        m_header_t *header = get_header(src);
+        header_t *header = get_header(src);
         header->refs++;
     }
 }
@@ -52,7 +53,7 @@ void mem_ref(void *src) {
 /* Remove a ref from a memory area */
 void mem_unref(void *src) {
     if (src) {
-        m_header_t *header = get_header(src);
+        header_t *header = get_header(src);
         if (--header->refs == 0) {
             if (header->dtor) {
                 header->dtor(src); // destroy internal data
