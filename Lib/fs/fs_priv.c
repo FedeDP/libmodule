@@ -175,6 +175,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
                 if (!fp->clients) {
                     memhook._free(cl);
                     memhook._free(fp);
+                    mod->fs = NULL;
                     return -ENOMEM;
                 }
             }
@@ -313,8 +314,9 @@ static int fs_poll(const char *path, struct fuse_file_info *fi,
             } else {
                 *reventsp |= POLLERR;
             }
+            fuse_pollhandle_destroy(ph);
         } else {
-            cl->ph = ph;
+            cl->ph = ph; // store pollhandle for future notifications
         }
     }
     return 0;
@@ -539,6 +541,8 @@ mod_ret fs_notify(const msg_t *msg) {
             list_free(&fp->clients);
             memhook._free(fp->msg);
             fp->msg = NULL;
+            memhook._free(fp);
+            mod->fs = NULL;
         } else {
             fs_wakeup_clients(fp);
             fs_store_msg(fp, msg);

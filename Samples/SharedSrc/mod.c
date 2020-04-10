@@ -141,7 +141,6 @@ static void B_recv(const msg_t *msg, const void *userdata) {
                 if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
                     module_log(selfB, "Running...\n");
                     module_tell(selfB, msg->ps_msg->sender, (unsigned char *)"BauBau", strlen("BauBau"), false);
-                    module_deregister(&selfB); // TODO: FIX CRASH HERE with FS
                 } else if (!strcmp((char *)msg->ps_msg->data, "LetsPlay")) {
                     module_log(selfB, "BauBau BauuBauuu!\n");
                 } else if (!strcmp((char *)msg->ps_msg->data, "LetsEat")) {
