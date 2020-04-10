@@ -3,6 +3,7 @@
 #define FUSE_USE_VERSION 35
 
 #include "module.h"
+#include "mem.h"
 #include <fuse.h>
 #include <fuse_lowlevel.h>  // to get fuse fd to process events internally
 #include <sys/poll.h>       // poll operation support
@@ -73,7 +74,6 @@ typedef struct {
 typedef struct {
     mod_t *mod;
     struct fuse_pollhandle *ph;
-    struct fuse_file_info *fi;
     bool in_evt;
     char *read_buf;
     size_t read_len;
@@ -111,7 +111,7 @@ static void msg_dump(fs_client_t *cl, const fs_priv_t *fp);
 static bool init(void);
 static void receive(const msg_t *msg, const void *userdata);
 static void fs_store_msg(fs_priv_t *fp, const msg_t *msg);
-static void fs_clean_mod(fs_priv_t *fp);
+static void fs_wakeup_clients(fs_priv_t *fp);
 
 static const struct fuse_operations operations = {
     .getattr    = fs_getattr,
@@ -162,8 +162,6 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
             if (!cl) {
                 return -ENOMEM;
             }
-            cl->mod = mod;
-            cl->fi = fi;
             if (!mod->fs) {
                 mod->fs = memhook._calloc(1, sizeof(fs_priv_t));
                 if (!mod->fs) {
@@ -180,6 +178,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
                     return -ENOMEM;
                 }
             }
+            cl->mod = mem_ref(mod); // keep module alive while any client uses it
             list_insert(fp->clients, cl, NULL);
             fi->fh = (uint64_t) cl;
             fi->direct_io = 1;
@@ -193,9 +192,14 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
 
 static int fs_release(const char *path, struct fuse_file_info *fi) {
     FS_MOD();
+    fi->fh = 0;
     fs_priv_t *fp = (fs_priv_t *)mod->fs;
     if (fp) {
         list_remove(fp->clients, cl, NULL);
+        if (list_length(fp->clients) == 0) {
+            list_free(&fp->clients);
+            memhook._free(fp);
+        }
         return 0;
     }
     return -ENOENT;
@@ -299,11 +303,16 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
 
 static int fs_poll(const char *path, struct fuse_file_info *fi,
                      struct fuse_pollhandle *ph, unsigned *reventsp) {
-    FS_CLIENT();
+    FS_MOD();
 
     if (ph) {
         if (cl->in_evt) {
-            *reventsp |= POLLIN;
+            fs_priv_t *fp = (fs_priv_t *)mod->fs;
+            if (fp->msg) {
+                *reventsp |= POLLIN;
+            } else {
+                *reventsp |= POLLERR;
+            }
         } else {
             cl->ph = ph;
         }
@@ -356,7 +365,12 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
         case MOD_GET_MSGDATA_SIZE: {
             if (cl->in_evt) {
                 fs_priv_t *fp = (fs_priv_t *)mod->fs;
-                *(size_t *)data = fp->msg->size;
+                if (fp->msg) {
+                    *(size_t *)data = fp->msg->size;
+                } else {
+                    *(size_t *)data = -1;
+                }
+                return 0;
             }
         }
         default:
@@ -372,7 +386,7 @@ static void client_dtor(void *data) {
         fuse_pollhandle_destroy(cl->ph);
         cl->ph = NULL;
     }
-    cl->fi->fh = 0;
+    mem_unref(cl->mod);
     memhook._free(cl);
 }
 
@@ -461,11 +475,15 @@ static void fs_store_msg(fs_priv_t *fp, const msg_t *msg) {
     }
 }
 
-static void fs_clean_mod(fs_priv_t *fp) {
-    if (fp) {
-        list_free(&fp->clients);
-        memhook._free(fp->msg);
-        fp->msg = NULL;
+static void fs_wakeup_clients(fs_priv_t *fp) {
+    for (mod_list_itr_t *itr = list_itr_new(fp->clients); itr; itr = list_itr_next(itr)) {
+        fs_client_t *cl = list_itr_get_data(itr);
+        if (cl->ph) {
+            cl->in_evt = true;
+            fuse_notify_poll(cl->ph);
+            fuse_pollhandle_destroy(cl->ph);
+            cl->ph = NULL;
+        }
     }
 }
 
@@ -518,19 +536,11 @@ mod_ret fs_notify(const msg_t *msg) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         if (msg->type == TYPE_PS && msg->ps_msg->type == LOOP_STOPPED) {
             /* When loop gets stopped, destroy clients list */
-            fs_clean_mod(fp);
+            list_free(&fp->clients);
+            memhook._free(fp->msg);
+            fp->msg = NULL;
         } else {
-            for (mod_list_itr_t *itr = list_itr_new(fp->clients); itr; itr = list_itr_next(itr)) {
-                fs_client_t *cl = list_itr_get_data(itr);
-                if (cl->ph) {
-                    cl->in_evt = true;
-                    fuse_notify_poll(cl->ph);
-                    fuse_pollhandle_destroy(cl->ph);
-                    cl->ph = NULL;
-                }
-            }
-            
-            /* Update last message! */
+            fs_wakeup_clients(fp);
             fs_store_msg(fp, msg);
         }
     }
@@ -538,8 +548,14 @@ mod_ret fs_notify(const msg_t *msg) {
 }
 
 mod_ret fs_cleanup(mod_t *mod) {
-    fs_clean_mod(mod->fs);
-    memhook._free(mod->fs);
+    if (mod->fs) {
+        fs_priv_t *fp = (fs_priv_t *)mod->fs;
+        /* Destroy stored message, if any */
+        memhook._free(fp->msg);
+        fp->msg = NULL;
+        
+        fs_wakeup_clients(fp);
+    }
     return MOD_OK;
 }
 
@@ -549,7 +565,7 @@ mod_ret fs_end(ctx_t *c) {
     /* Deregister fuse fd */
     poll_set_new_evt(&c->ppriv, f->src, RM);
     memhook._free(f->src);
-        
+
     /* Free fuse recv buf */
     memhook._free(f->buf.mem);
     

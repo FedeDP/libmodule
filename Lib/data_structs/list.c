@@ -184,7 +184,7 @@ void *list_find(mod_list_t *l, void *data, const mod_list_comp comp) {
 mod_list_ret list_clear(mod_list_t *l) {
     LIST_PARAM_ASSERT(l);
     
-    for (mod_list_itr_t *itr = list_itr_new(l); itr; itr = list_itr_next(itr)) {        
+    for (mod_list_itr_t *itr = list_itr_new(l); itr; itr = list_itr_next(itr)) {
         list_itr_remove(itr);
     }
     return LIST_OK;

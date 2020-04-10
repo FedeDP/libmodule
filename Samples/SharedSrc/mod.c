@@ -73,7 +73,6 @@ static void A_recv(const msg_t *msg, const void *userdata) {
             case 'c':
                 module_log(selfA, "Doggo, come here!\n");
                 module_tell(selfA, selfB, (unsigned char *)"ComeHere", strlen("ComeHere"), false);
-                module_deregister(&selfA); // TODO: FIX CRASH HERE with FS
                 break;
             case 'q':
                 module_log(selfA, "I have to go now!\n");
@@ -142,6 +141,7 @@ static void B_recv(const msg_t *msg, const void *userdata) {
                 if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
                     module_log(selfB, "Running...\n");
                     module_tell(selfB, msg->ps_msg->sender, (unsigned char *)"BauBau", strlen("BauBau"), false);
+                    module_deregister(&selfB); // TODO: FIX CRASH HERE with FS
                 } else if (!strcmp((char *)msg->ps_msg->data, "LetsPlay")) {
                     module_log(selfB, "BauBau BauuBauuu!\n");
                 } else if (!strcmp((char *)msg->ps_msg->data, "LetsEat")) {

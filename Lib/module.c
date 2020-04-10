@@ -55,9 +55,6 @@ static void module_dtor(void *data) {
             memhook._free((void *)mod->name);
         }
         
-        /* Free FS internal data */
-        fs_cleanup(mod);
-        
         memhook._free(mod->self);
     }
 }
@@ -301,6 +298,7 @@ static mod_ret _deregister_pid(mod_t *mod, const mod_pid_t *pid) {
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {    
     int ret = 0;
     
+    fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr && !ret; itr = list_itr_next(itr)) {
         ev_src_t *t = list_itr_get_data(itr);
         if (flag == RM && stop) {
@@ -313,7 +311,7 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
                  */
                 flush_pubsub_msgs(mod, NULL, mod);
             }
-            ret = _deregister_src(mod, t, NULL);
+            ret = list_itr_remove(itr);
         } else {
             ret = poll_set_new_evt(&c->ppriv, t, flag);
         }
@@ -369,8 +367,6 @@ mod_ret start(mod_t *mod, const bool starting) {
     if (!starting || mod->hook.init()) {
         MODULE_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
         tell_system_pubsub_msg(NULL, c, MODULE_STARTED, &mod->ref, NULL);
-        
-        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         return MOD_OK;
     }
     
@@ -401,7 +397,6 @@ mod_ret stop(mod_t *mod, const bool stopping) {
     MODULE_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
     
     tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, &mod->ref, NULL);
-    fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     return MOD_OK;
 }
 
@@ -505,6 +500,9 @@ mod_ret module_deregister(self_t **self) {
         
         /* Remove the module from the context */
         map_remove(c->modules, mod->name);
+        
+        /* Free FS internal data */
+        fs_cleanup(mod);
         
         /*
         * Call destroy once self is NULL and module has been removed from context;

@@ -7,7 +7,7 @@
 - [x] Keep context alive while looping
 - [x] Actually leave loop as soon as there are no more modules inside
 - [x] Keep module's alive while any message references it as sender
-- [ ] Fix ref'd FS support
+- [x] Fix ref'd FS support
 - [x] Use mem_ref for create_pubsub_message too! and drop ps_msg->refs counter
 - [x] Fix: fix ps_priv_t->sub mem_ref/unref
 - [x] Expose new public header <module/mem.h>?
@@ -93,7 +93,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Allow to deregister non-fuse modules too on unlink
 - [x] Fix FIXME inside fuse_priv.c!
 - [x] Avoid continuous lookup to modules map; store in fuse_file_info->fh our module
-- [ ] When deregistering a module through module_deregister(), notify fuse fs and destroy clients associated with that module if needed...
+- [x] When deregistering a module through module_deregister(), notify fuse fs and destroy clients associated with that module if needed...
 - [x] enable FS in CI builds + tests
 - [x] Fix open callback checks
 
