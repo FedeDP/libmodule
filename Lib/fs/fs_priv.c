@@ -273,7 +273,7 @@ static int fs_unlink(const char *path) {
             if (module_deregister(&mod->self) == MOD_OK) {
                 return 0;
             }
-            return -EIO;
+            return -EPERM;
         }
     }
     return -ENOENT;

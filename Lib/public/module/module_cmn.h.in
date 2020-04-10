@@ -46,6 +46,7 @@ typedef enum {
     MOD_NAME_DUP        = 0x01,         // Should module's name be strdupped?
     MOD_NAME_AUTOFREE   = 0x02,         // Should module's name be autofreed?
     MOD_ALLOW_REPLACE   = 0x04,         // Can module be replaced by another module with same name?
+    MOD_PERSIST         = 0x08,         // Module cannot be deregistered by directly call to module_deregister (or by FS delete) while its context is looping
     CTX_NAME_DUP        = 0x01 << 8,    // Should ctx's name be strdupped? (only if a ctx is created during a register)
     CTX_NAME_AUTOFREE   = 0x02 << 8     // Should ctx's name be autofreed? (only if a ctx is created during a register)
 } mod_flags;
@@ -199,7 +200,8 @@ typedef struct {
 
 /* Module return codes */
 typedef enum {
-    MOD_UNSUPPORTED = -11,
+    MOD_EPERM = -12,
+    MOD_UNSUPPORTED,
     MOD_EEXIST,
     MOD_REF_ERR,
     MOD_WRONG_PARAM,

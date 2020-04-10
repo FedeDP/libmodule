@@ -10,5 +10,5 @@
 typedef void (*ref_dtor)(void *);
 
 void *mem_new(size_t size, ref_dtor dtor);
-void mem_ref(void *src);
+void *mem_ref(void *src);
 void mem_unref(void *src);

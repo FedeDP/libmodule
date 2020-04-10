@@ -43,11 +43,12 @@ void *mem_new(size_t size, ref_dtor dtor) {
 }
 
 /* Gain a new ref on a memory area */
-void mem_ref(void *src) {
+void *mem_ref(void *src) {
     if (src) {
         header_t *header = get_header(src);
         header->refs++;
     }
+    return src;
 }
 
 /* Remove a ref from a memory area */

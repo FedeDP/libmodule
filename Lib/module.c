@@ -491,6 +491,11 @@ mod_ret module_deregister(self_t **self) {
     MOD_PARAM_ASSERT(self);
     GET_MOD(*self);
     GET_CTX(*self);
+    
+    if ((mod->flags & MOD_PERSIST) && c->looping) {
+        return MOD_EPERM;
+    }
+    
     MODULE_DEBUG("Deregistering module '%s'.\n", mod->name);
     
     /* Keep module alive untile destroy() callback is called */

@@ -188,6 +188,9 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] Added queue_remove API to remove instead of dequeueing head of queue
 
+- [x] Add a MOD_PERSIST module's flag to disallow module_deregister on a module
+- [ ] Switch to errno for errors? (ie: only define MOD_OK/MOD_ERR return codes and then rely upon errno?)
+
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples
 - [ ] Update tests

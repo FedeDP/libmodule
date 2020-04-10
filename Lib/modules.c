@@ -197,6 +197,7 @@ static int recv_events(ctx_t *c, int timeout) {
         if (p && p->type == TYPE_FD && p->self == NULL) {
             /* Received from fuse */
             fs_process(c);
+            recved++;
             continue;
         }
         
