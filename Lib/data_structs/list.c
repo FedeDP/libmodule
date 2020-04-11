@@ -7,20 +7,20 @@ typedef struct _elem {
 
 struct _list {
     size_t len;
-    mod_list_dtor dtor;
+    m_list_dtor dtor;
     list_node *data;
 };
 
 struct _list_itr {
     list_node **elem;
-    mod_list_t *l;
+    m_list_t *l;
     ssize_t diff;
 };
 
-static int insert_node(mod_list_t *l, list_node **elem, void *data);
-static int remove_node(mod_list_t *l, list_node **elem);
+static int insert_node(m_list_t *l, list_node **elem, void *data);
+static int remove_node(m_list_t *l, list_node **elem);
 
-static int insert_node(mod_list_t *l, list_node **elem, void *data) {
+static int insert_node(m_list_t *l, list_node **elem, void *data) {
     list_node *node = memhook._malloc(sizeof(list_node));
     MOD_ALLOC_ASSERT(node);
     node->next = *elem;
@@ -30,7 +30,7 @@ static int insert_node(mod_list_t *l, list_node **elem, void *data) {
     return 0;
 }
 
-static int remove_node(mod_list_t *l, list_node **elem) {
+static int remove_node(m_list_t *l, list_node **elem) {
     list_node *tmp = *elem;
     if (tmp) {
         *elem = (*elem)->next;
@@ -46,26 +46,26 @@ static int remove_node(mod_list_t *l, list_node **elem) {
 
 /** Public API **/
 
-mod_list_t *list_new(const mod_list_dtor fn) {
-    mod_list_t *l = memhook._calloc(1, sizeof(mod_list_t));
+m_list_t *list_new(const m_list_dtor fn) {
+    m_list_t *l = memhook._calloc(1, sizeof(m_list_t));
     if (l) {
         l->dtor = fn;
     }
     return l;
 }
 
-mod_list_itr_t *list_itr_new(const mod_list_t *l) {
+m_list_itr_t *list_itr_new(const m_list_t *l) {
     MOD_RET_ASSERT(list_length(l) > 0, NULL);
     
-    mod_list_itr_t *itr = memhook._calloc(1, sizeof(mod_list_itr_t));
+    m_list_itr_t *itr = memhook._calloc(1, sizeof(m_list_itr_t));
     if (itr) {
         itr->elem = (list_node **)&(l->data);
-        itr->l = (mod_list_t *)l;
+        itr->l = (m_list_t *)l;
     }
     return itr;
 }
 
-mod_list_itr_t *list_itr_next(mod_list_itr_t *itr) {
+m_list_itr_t *list_itr_next(m_list_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     
     if (*itr->elem) {
@@ -81,14 +81,14 @@ mod_list_itr_t *list_itr_next(mod_list_itr_t *itr) {
     return itr;
 }
 
-void *list_itr_get_data(const mod_list_itr_t *itr) {
+void *list_itr_get_data(const m_list_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     MOD_RET_ASSERT(*itr->elem, NULL);
     
     return (*itr->elem)->userptr;
 }
 
-int list_itr_set_data(mod_list_itr_t *itr, void *value) {
+int list_itr_set_data(m_list_itr_t *itr, void *value) {
     MOD_PARAM_ASSERT(itr);
     MOD_PARAM_ASSERT(value);
     MOD_RET_ASSERT(*itr->elem, -EINVAL);
@@ -97,7 +97,7 @@ int list_itr_set_data(mod_list_itr_t *itr, void *value) {
     return 0;
 }
 
-int list_itr_insert(mod_list_itr_t *itr, void *value) {
+int list_itr_insert(m_list_itr_t *itr, void *value) {
     MOD_PARAM_ASSERT(itr);
     MOD_PARAM_ASSERT(value);
     
@@ -105,7 +105,7 @@ int list_itr_insert(mod_list_itr_t *itr, void *value) {
     return insert_node(itr->l, itr->elem, value);
 }
 
-int list_itr_remove(mod_list_itr_t *itr) {
+int list_itr_remove(m_list_itr_t *itr) {
     MOD_PARAM_ASSERT(itr);
     MOD_RET_ASSERT(*itr->elem, -EINVAL);
     
@@ -113,7 +113,7 @@ int list_itr_remove(mod_list_itr_t *itr) {
     return remove_node(itr->l, itr->elem);
 }
 
-int list_iterate(const mod_list_t *l, const mod_list_cb fn, void *userptr) {
+int list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr) {
     MOD_PARAM_ASSERT(fn);
     MOD_PARAM_ASSERT(list_length(l) > 0);
     
@@ -133,7 +133,7 @@ int list_iterate(const mod_list_t *l, const mod_list_cb fn, void *userptr) {
     return 0;
 }
 
-int list_insert(mod_list_t *l, void *data, const mod_list_comp comp) {
+int list_insert(m_list_t *l, void *data, const m_list_comp comp) {
     MOD_PARAM_ASSERT(l);
     MOD_PARAM_ASSERT(data);
     
@@ -148,7 +148,7 @@ int list_insert(mod_list_t *l, void *data, const mod_list_comp comp) {
     return insert_node(l, tmp, data);
 }
 
-int list_remove(mod_list_t *l, void *data, const mod_list_comp comp) {
+int list_remove(m_list_t *l, void *data, const m_list_comp comp) {
     MOD_PARAM_ASSERT(l);
     MOD_PARAM_ASSERT(data);
     
@@ -163,7 +163,7 @@ int list_remove(mod_list_t *l, void *data, const mod_list_comp comp) {
     return remove_node(l, tmp);
 }
 
-void *list_find(mod_list_t *l, void *data, const mod_list_comp comp) {
+void *list_find(m_list_t *l, void *data, const m_list_comp comp) {
     MOD_RET_ASSERT(l, NULL);
     MOD_RET_ASSERT(data, NULL);
     
@@ -177,16 +177,16 @@ void *list_find(mod_list_t *l, void *data, const mod_list_comp comp) {
     return NULL;
 }
 
-int list_clear(mod_list_t *l) {
+int list_clear(m_list_t *l) {
     MOD_PARAM_ASSERT(l);
     
-    for (mod_list_itr_t *itr = list_itr_new(l); itr; itr = list_itr_next(itr)) {
+    for (m_list_itr_t *itr = list_itr_new(l); itr; itr = list_itr_next(itr)) {
         list_itr_remove(itr);
     }
     return 0;
 }
 
-int list_free(mod_list_t **l) {
+int list_free(m_list_t **l) {
     MOD_PARAM_ASSERT(l);
     
     int ret = list_clear(*l);
@@ -197,7 +197,7 @@ int list_free(mod_list_t **l) {
     return ret;
 }
 
-ssize_t list_length(const mod_list_t *l) {
+ssize_t list_length(const m_list_t *l) {
     MOD_PARAM_ASSERT(l);
     
     return l->len;

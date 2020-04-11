@@ -1,7 +1,7 @@
 #include "test_queue.h"
 #include <module/queue.h>
 
-static mod_queue_t *my_q;
+static m_queue_t *my_q;
 static int val1 = 1;
 static int val2 = 2;
 static char val3[] = "Hello World";
@@ -54,7 +54,7 @@ void test_queue_iterator(void **state) {
     (void) state; /* unused */
     
     /* NULL queue */
-    mod_queue_itr_t *itr = queue_itr_new(NULL);
+    m_queue_itr_t *itr = queue_itr_new(NULL);
     assert_null(itr);
     
     itr = queue_itr_new(my_q);

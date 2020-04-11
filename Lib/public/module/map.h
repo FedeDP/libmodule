@@ -5,29 +5,29 @@
 /** Hashmap interface **/
 
 /* Callback for map_iterate; first parameter is userdata, second and third are {key,value} tuple */
-typedef int (*mod_map_cb)(void *, const char *, void *);
+typedef int (*m_map_cb)(void *, const char *, void *);
 
 /* Fn for map_set_dtor */
-typedef void (*mod_map_dtor)(void *);
+typedef void (*m_map_dtor)(void *);
 
 /* Incomplete struct declaration for hashmap */
-typedef struct _map mod_map_t;
+typedef struct _map m_map_t;
 
 /* Incomplete struct declaration for hashmap iterator */
-typedef struct _map_itr mod_map_itr_t;
+typedef struct _map_itr m_map_itr_t;
 
-_public_ mod_map_t *map_new(const bool keysdup, const mod_map_dtor fn);
-_public_ mod_map_itr_t *map_itr_new(const mod_map_t *m);
-_public_ mod_map_itr_t *map_itr_next(mod_map_itr_t *itr);
-_public_ int map_itr_remove(mod_map_itr_t *itr);
-_public_ const char *map_itr_get_key(const mod_map_itr_t *itr);
-_public_ void *map_itr_get_data(const mod_map_itr_t *itr);
-_public_ int map_itr_set_data(const mod_map_itr_t *itr, void *value);
-_public_ int map_iterate(mod_map_t *m, const mod_map_cb fn, void *userptr);
-_public_ int map_put(mod_map_t *m, const char *key, void *value);
-_public_ void *map_get(const mod_map_t *m, const char *key);
-_public_ bool map_has_key(const mod_map_t *m, const char *key);
-_public_ int map_remove(mod_map_t *m, const char *key);
-_public_ int map_clear(mod_map_t *m);
-_public_ int map_free(mod_map_t **m);
-_public_ ssize_t map_length(const mod_map_t *m);
+_public_ m_map_t *map_new(const bool keysdup, const m_map_dtor fn);
+_public_ m_map_itr_t *map_itr_new(const m_map_t *m);
+_public_ m_map_itr_t *map_itr_next(m_map_itr_t *itr);
+_public_ int map_itr_remove(m_map_itr_t *itr);
+_public_ const char *map_itr_get_key(const m_map_itr_t *itr);
+_public_ void *map_itr_get_data(const m_map_itr_t *itr);
+_public_ int map_itr_set_data(const m_map_itr_t *itr, void *value);
+_public_ int map_iterate(m_map_t *m, const m_map_cb fn, void *userptr);
+_public_ int map_put(m_map_t *m, const char *key, void *value);
+_public_ void *map_get(const m_map_t *m, const char *key);
+_public_ bool map_has_key(const m_map_t *m, const char *key);
+_public_ int map_remove(m_map_t *m, const char *key);
+_public_ int map_clear(m_map_t *m);
+_public_ int map_free(m_map_t **m);
+_public_ ssize_t map_length(const m_map_t *m);

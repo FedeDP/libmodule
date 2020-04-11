@@ -192,11 +192,13 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Actually call module_deregister() on old module when replacing it (MOD_ALLOW_REPLACE flag)
 - [x] Switch to errno for errors? (ie: only define MOD_OK/MOD_ERR return codes and then rely upon errno?)
 
-- [ ] Rename mod_stack_t/mod_map_t etc etc to m_map_t/m_stack_t
+- [x] Rename mod_stack_t/mod_map_t etc etc to m_map_t/m_stack_t
 
 - [ ] Rename modules* to ctx*
 - [ ] Rename modules_easy.h API to c_XXX ?
 - [ ] Rename modules.{c,h} to ctx.{c,h} ?
+
+- [ ] Rename other exposed APIs (types) to m_*
 
 - [x] Fix modules_ctx_dispatch() to just reutrn number of dispatched messages (or -errno)
 - [x] Fix modules_ctx_fd() to just reutrn context's fd (or -errno)

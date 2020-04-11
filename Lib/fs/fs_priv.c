@@ -82,7 +82,7 @@ typedef struct {
 } fs_client_t;
 
 typedef struct {
-    mod_list_t *clients;
+    m_list_t *clients;
     fs_msg_t *msg;
 } fs_priv_t;
 
@@ -217,7 +217,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     filler(buf, "..", NULL, 0, 0);
     
     FS_CTX();
-    for (mod_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
+    for (m_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
         mod_t *mod = map_itr_get_data(itr);
         filler(buf, mod->name, NULL, 0, 0);
     }
@@ -478,7 +478,7 @@ static void fs_store_msg(fs_priv_t *fp, const msg_t *msg) {
 }
 
 static void fs_wakeup_clients(fs_priv_t *fp) {
-    for (mod_list_itr_t *itr = list_itr_new(fp->clients); itr; itr = list_itr_next(itr)) {
+    for (m_list_itr_t *itr = list_itr_new(fp->clients); itr; itr = list_itr_next(itr)) {
         fs_client_t *cl = list_itr_get_data(itr);
         if (cl->ph) {
             cl->in_evt = true;

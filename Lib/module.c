@@ -11,7 +11,7 @@ static void src_priv_dtor(void *data);
 
 static int _register_src(mod_t *mod, const mod_src_types type, const void *src_data, 
                              const mod_src_flags flags, const void *userptr);
-static int _deregister_src(mod_t *mod, void *src_data, const mod_list_comp comp);
+static int _deregister_src(mod_t *mod, void *src_data, const m_list_comp comp);
 
 static int _register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr);
 static int is_fd_same(void *my_data, void *list_data);
@@ -188,7 +188,7 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
     return !ret ? 0 : -errno;
 }
 
-static int _deregister_src(mod_t *mod, void *src_data, const mod_list_comp comp) {
+static int _deregister_src(mod_t *mod, void *src_data, const m_list_comp comp) {
     int ret = list_remove(mod->srcs, src_data, comp);
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
@@ -299,7 +299,7 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
     int ret = 0;
     
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr && !ret; itr = list_itr_next(itr)) {
+    for (m_list_itr_t *itr = list_itr_new(mod->srcs); itr && !ret; itr = list_itr_next(itr)) {
         ev_src_t *t = list_itr_get_data(itr);
         if (flag == RM && stop) {
             if (t->type == TYPE_PS) {
@@ -713,7 +713,7 @@ int module_dump(const self_t *self) {
         closed_stats = true;
         ctx_logger(c, self, "\t},\n");
         ctx_logger(c, self, "\t\"Subs\": [\n");
-        for (mod_map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr), i++) {
+        for (m_map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr), i++) {
             ev_src_t *sub = map_itr_get_data(itr);
             if (i > 0) {
                 ctx_logger(c, self, "\t},\n");
@@ -737,7 +737,7 @@ int module_dump(const self_t *self) {
         }
         ctx_logger(c, self, "\t\"Srcs\": [\n");
         i = 0;
-        for (mod_list_itr_t *itr = list_itr_new(mod->srcs); itr; itr = list_itr_next(itr), i++) {
+        for (m_list_itr_t *itr = list_itr_new(mod->srcs); itr; itr = list_itr_next(itr), i++) {
             ev_src_t *t = list_itr_get_data(itr);
             if (t->type == TYPE_PS) {
                 /* Do not log information about internal pubsub pipe */

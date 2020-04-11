@@ -1,7 +1,7 @@
 #include "test_map.h"
 #include <module/map.h>
 
-static mod_map_t *my_map;
+static m_map_t *my_map;
 static int val = 5;
 static int count;
 
@@ -71,7 +71,7 @@ void test_map_iterator(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    mod_map_itr_t *itr = map_itr_new(NULL);
+    m_map_itr_t *itr = map_itr_new(NULL);
     assert_null(itr);
     
     itr = map_itr_new(my_map);

@@ -37,7 +37,7 @@ static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
     }
     
     /* Check if any stored subscriptions is a regex that matches topic */
-    mod_map_itr_t *itr = map_itr_new(mod->subscriptions);
+    m_map_itr_t *itr = map_itr_new(mod->subscriptions);
     for (; itr; itr = map_itr_next(itr)) {
         sub = map_itr_get_data(itr);
 

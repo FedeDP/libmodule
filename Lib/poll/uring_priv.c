@@ -26,7 +26,7 @@ typedef struct {
     struct io_uring ring;
     struct io_uring_cqe **cqe;
     bool inited;
-    mod_list_t *req_list;           // keep a list of all requests while ring is not yet inited
+    m_list_t *req_list;           // keep a list of all requests while ring is not yet inited
 } uring_priv_t;
 
 #define GET_PRIV_DATA()     uring_priv_t *up = (uring_priv_t *)priv->data
@@ -135,7 +135,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
 
 static void flush_reqs(poll_priv_t *priv) {
     GET_PRIV_DATA();
-    for (mod_list_itr_t *itr = list_itr_new(up->req_list); itr; itr = list_itr_next(itr)) {
+    for (m_list_itr_t *itr = list_itr_new(up->req_list); itr; itr = list_itr_next(itr)) {
         ev_src_t *tmp = list_itr_get_data(itr);
         poll_set_new_evt(priv, tmp, ADD);
     }

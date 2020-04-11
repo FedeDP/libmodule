@@ -146,7 +146,7 @@ typedef struct {
 typedef struct {
     ps_msg_t msg;
     mod_ps_flags flags;
-    mod_queue_t *subs;
+    m_queue_t *subs;
 } ps_priv_t;
 
 typedef struct {
@@ -165,14 +165,14 @@ typedef struct {
 /* Struct that holds data for each module */
 struct _module {
     userhook_t hook;                        // module's user defined callbacks
-    mod_stack_t *recvs;                     // Stack of recv functions for module_become/unbecome (stack of funpointers)
+    m_stack_t *recvs;                       // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
     mod_states state;                       // module's state
     void *fs;                               // FS module priv data. NULL if unsupported
     const char *name;                       // module's name
     const char *local_path;                 // For runtime loaded modules: path of module
-    mod_list_t *srcs;                       // module's event sources (list of ev_src_t*)
-    mod_map_t *subscriptions;               // module's subscriptions (map of ev_src_t*)
+    m_list_t *srcs;                         // module's event sources (list of ev_src_t*)
+    m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     mod_stats_t stats;                      // Modules' stats
     mod_flags flags;                        // Module's flags
@@ -187,7 +187,7 @@ struct _context {
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
     log_cb logger;                          // Context's log callback
-    mod_map_t *modules;                     // Context's modules
+    m_map_t *modules;                       // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     mod_flags flags;                        // Context's flags
     void *fs;                               // FS context handler. Null if unsupported
@@ -213,9 +213,9 @@ char *mem_strdup(const char *s);
 void fetch_ms(uint64_t *val, uint64_t *ctr);
 
 /* Defined in map.c */
-void *map_peek(const mod_map_t *m);
+void *map_peek(const m_map_t *m);
 
 /* Gglobal variables are defined in modules.c */
-extern mod_map_t *ctx;
+extern m_map_t *ctx;
 extern memhook_t memhook;
 extern pthread_mutex_t mx;

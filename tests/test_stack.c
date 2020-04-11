@@ -1,7 +1,7 @@
 #include "test_stack.h"
 #include <module/stack.h>
 
-static mod_stack_t *my_st;
+static m_stack_t *my_st;
 static int val1 = 1;
 static int val2 = 2;
 static char val3[] = "Hello World";
@@ -54,7 +54,7 @@ void test_stack_iterator(void **state) {
     (void) state; /* unused */
     
     /* NULL stack */
-    mod_stack_itr_t *itr = stack_itr_new(NULL);
+    m_stack_itr_t *itr = stack_itr_new(NULL);
     assert_null(itr);
     
     itr = stack_itr_new(my_st);

@@ -16,7 +16,7 @@ static uint8_t loop_stop(ctx_t *c);
 static inline int loop_quit(ctx_t *c, const uint8_t quit_code);
 static int recv_events(ctx_t *c, int timeout);
 
-mod_map_t *ctx;
+m_map_t *ctx;
 memhook_t memhook;
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
@@ -424,7 +424,7 @@ int modules_ctx_dump(const char *ctx_name) {
     
     ctx_logger(c, NULL, "\t\"Modules\": [\n");
     int i = 0;
-    for (mod_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
+    for (m_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
         const char *mod_name = map_itr_get_key(itr);
         const mod_t *mod = map_itr_get_data(itr);
         ctx_logger(c, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < map_length(c->modules) ? ',' : ' ');
@@ -467,7 +467,7 @@ int modules_ctx_unload(const char *ctx_name, const char *module_path) {
     
     /* Check if desired module is actually loaded in context */
     bool found = false;
-    for (mod_map_itr_t *itr = map_itr_new(c->modules); !found && itr; itr = map_itr_next(itr)) {
+    for (m_map_itr_t *itr = map_itr_new(c->modules); !found && itr; itr = map_itr_next(itr)) {
         mod_t *mod = map_itr_get_data(itr);
         if (mod->local_path && !strcmp(mod->local_path, module_path)) {
             found = true;
@@ -495,7 +495,7 @@ size_t modules_ctx_trim(const char *ctx_name, const stats_t *thres) {
     uint64_t curr_ms = 0;
     fetch_ms(&curr_ms, NULL);
     const size_t initial_size = map_length(c->modules);
-    for (mod_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
+    for (m_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
         mod_t *mod = map_itr_get_data(itr);
 
         if (curr_ms - mod->stats.last_seen >= thres->inactive_ms) {

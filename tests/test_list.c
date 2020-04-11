@@ -1,7 +1,7 @@
 #include "test_list.h"
 #include <module/list.h>
 
-static mod_list_t *my_l;
+static m_list_t *my_l;
 static int val1 = 1;
 static int val2 = 2;
 static int val3 = 3;
@@ -43,7 +43,7 @@ void test_list_iterator(void **state) {
     (void) state; /* unused */
     
     /* NULL list */
-    mod_list_itr_t *itr = list_itr_new(NULL);
+    m_list_itr_t *itr = list_itr_new(NULL);
     assert_null(itr);
     
     itr = list_itr_new(my_l);
