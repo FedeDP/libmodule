@@ -45,37 +45,37 @@ void create_pidfd(ev_src_t *tmp) {
 #endif
 }
 
-mod_ret poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {
+int poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {
     struct signalfd_siginfo fdsi;
     const size_t s = read(src->sgn_src.f.fd, &fdsi, sizeof(struct signalfd_siginfo));
     if (s == sizeof(struct signalfd_siginfo)) {
-        return MOD_OK;
+        return 0;
     }
-    return MOD_ERR;
+    return -errno;
 }
 
-mod_ret poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t *tm_msg) {
+int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t *tm_msg) {
     uint64_t t;
     if (read(src->tmr_src.f.fd, &t, sizeof(uint64_t)) == sizeof(uint64_t)) {
-        return MOD_OK;
+        return 0;
     }
-    return MOD_ERR;
+    return -errno;
 }
 
-mod_ret poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg) {
+int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg) {
     char buffer[BUF_LEN];
     const size_t length = read(src->pt_src.f.fd, buffer, BUF_LEN);
     if (length > 0) {
         struct inotify_event *event = (struct inotify_event *) buffer;
         if (event->len) {
             pt_msg->events = event->mask;
-            return MOD_OK;
+            return 0;
         }
     }
-    return MOD_ERR;
+    return -errno;
 }
 
-mod_ret poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg) {
+int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg) {
     pid_msg->events = 0;
-    return MOD_OK; // nothing to do
+    return 0; // nothing to do
 }

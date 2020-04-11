@@ -189,7 +189,18 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Added queue_remove API to remove instead of dequeueing head of queue
 
 - [x] Add a MOD_PERSIST module's flag to disallow module_deregister on a module
-- [ ] Switch to errno for errors? (ie: only define MOD_OK/MOD_ERR return codes and then rely upon errno?)
+- [x] Actually call module_deregister() on old module when replacing it (MOD_ALLOW_REPLACE flag)
+- [x] Switch to errno for errors? (ie: only define MOD_OK/MOD_ERR return codes and then rely upon errno?)
+
+- [ ] Rename mod_stack_t/mod_map_t etc etc to m_map_t/m_stack_t
+
+- [ ] Rename modules* to ctx*
+- [ ] Rename modules_easy.h API to c_XXX ?
+- [ ] Rename modules.{c,h} to ctx.{c,h} ?
+
+- [x] Fix modules_ctx_dispatch() to just reutrn number of dispatched messages (or -errno)
+- [x] Fix modules_ctx_fd() to just reutrn context's fd (or -errno)
+- [ ] Fix fetch_ms()! Do not accout for recv'd SYSTEM pubsub messages (ie: internal messages)
 
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples

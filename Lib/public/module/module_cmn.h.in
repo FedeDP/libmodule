@@ -197,20 +197,3 @@ typedef struct {
     uint64_t inactive_ms;
     double activity_freq;
 } stats_t;
-
-/* Module return codes */
-typedef enum {
-    MOD_EPERM = -12,
-    MOD_UNSUPPORTED,
-    MOD_EEXIST,
-    MOD_REF_ERR,
-    MOD_WRONG_PARAM,
-    MOD_NO_MEM,
-    MOD_WRONG_STATE,
-    MOD_NO_PARENT,
-    MOD_NO_CTX,
-    MOD_NO_MOD,
-    MOD_NO_SELF,
-    MOD_ERR,
-    MOD_OK
-} mod_ret;

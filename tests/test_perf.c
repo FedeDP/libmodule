@@ -18,8 +18,8 @@ void test_poll_perf(void **state) {
     (void) state; /* unused */
         
     userhook_t hook = (userhook_t) { init, NULL, my_recv, NULL };
-    mod_ret ret = module_register("testName", MODULES_DEFAULT_CTX, &self, &hook, 0);
-    assert_true(ret == MOD_OK);
+    int ret = module_register("testName", MODULES_DEFAULT_CTX, &self, &hook, 0);
+    assert_true(ret == 0);
     assert_non_null(self);
     assert_true(module_is(self, IDLE));
     

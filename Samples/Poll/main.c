@@ -14,15 +14,15 @@ void modules_pre_start() {
 
 int main(int argc, char *argv[]) {
     int ret = 0;
-    int fd = 0;
     
     /* Initial dispatch */
-    if (modules_dispatch(&ret) != MOD_OK) {
+    if (modules_dispatch() != 0) {
         return 1;
     }
     
     /* Get default context fd */
-    if (modules_get_fd(&fd) != MOD_OK) {
+    int fd = modules_fd();
+    if (fd < 0) {
         return 1;
     }
     
@@ -34,15 +34,13 @@ int main(int argc, char *argv[]) {
         ret = poll(&fds, 1, -1);
         if (ret > 0) {
             if (fds.revents & POLLIN) {
-                if (modules_dispatch(&ret) != MOD_OK) {
-                    if (ret >= 0) { // modules_quit(int retval) -> "retval" is returned here
-                        printf("Loop: return code %d.\n", ret);
-                    } else { // An error happened
-                        printf("Loop: error happened.\n");
-                    }
-                    ret = -1; // leave
-                } else {
+                ret = modules_dispatch();
+                if (ret < 0) {
+                    printf("Loop: error happened.\n");
+                } else if (ret > 0) {
                     printf("Loop: dispatched %d messages.\n", ret);
+                } else {
+                    printf("Loop exited.\n");
                 }
             }
         }

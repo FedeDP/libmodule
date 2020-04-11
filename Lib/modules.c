@@ -5,15 +5,15 @@
 #include <dlfcn.h> // dlopen
 
 static void *thread_loop(void *param);
-static mod_map_ret main_loop(void *data, const char *key, void *value);
+static int main_loop(void *data, const char *key, void *value);
 static _ctor1_ void modules_init(void);
 static _dtor0_ void modules_destroy(void);
-static mod_ret ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags);
+static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags);
 static void ctx_dtor(void *data);
 static void default_logger(const self_t *self, const char *fmt, va_list args);
-static mod_ret loop_start(ctx_t *c, const int max_events);
+static int loop_start(ctx_t *c, const int max_events);
 static uint8_t loop_stop(ctx_t *c);
-static inline mod_ret loop_quit(ctx_t *c, const uint8_t quit_code);
+static inline int loop_quit(ctx_t *c, const uint8_t quit_code);
 static int recv_events(ctx_t *c, int timeout);
 
 mod_map_t *ctx;
@@ -31,15 +31,15 @@ static void *thread_loop(void *param) {
     return NULL;
 }
 
-static mod_map_ret main_loop(void *data, const char *key, void *value) {
+static int main_loop(void *data, const char *key, void *value) {
     pthread_t *th = *(pthread_t **)data;
     if (th) {
         static int i = 0;
         pthread_create(&th[i++], NULL, thread_loop, (void *)key);
-        return MAP_OK;
+        return 0;
     }
     *(char **)data = (char *)key;
-    return MAP_ERR;
+    return -1;
 }
 
 /*
@@ -61,12 +61,12 @@ _public_ int _weak_ main(int argc, char *argv[]) {
     }
     
     /*
-     * main_loop returns MAP_ERR for single-ctx runs,
+     * main_loop returns -1 for single-ctx runs,
      * where we only need a pointer to ctx key.
      * Ugliness warning: passing a void** ptr that is either an array of pthreads
      * or is just a space to point to single-ctx key.
      */
-    if (map_iterate(ctx, main_loop, &th) == MAP_ERR) {
+    if (map_iterate(ctx, main_loop, &th) == -1) {
         MODULE_DEBUG("Running in single ctx mode: '%s'\n", (const char *)th);
         return modules_ctx_loop_events((const char *)th, MODULES_MAX_EVENTS);
     }
@@ -77,7 +77,7 @@ _public_ int _weak_ main(int argc, char *argv[]) {
         pthread_join(((pthread_t *)th)[i], NULL);
     }
     memhook._free(th);
-    return MOD_OK;
+    return 0;
 }
 
 static void modules_init(void) {
@@ -93,7 +93,7 @@ static void modules_destroy(void) {
     pthread_mutex_destroy(&mx);
 }
 
-static mod_ret ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags) {
+static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
     *context = mem_new(sizeof(ctx_t), ctx_dtor);
@@ -112,20 +112,26 @@ static mod_ret ctx_new(const char *ctx_name, ctx_t **context, const mod_flags fl
         (*context)->name = ctx_name;
     }
     
-    if ((*context)->modules &&
-        map_put(ctx, (*context)->name, *context) == MAP_OK) {
-        
-        if (poll_create(&(*context)->ppriv) == MOD_OK) {
-            return MOD_OK;
+    int ret = -ENOMEM;
+    if ((*context)->modules && (*context)->name) {
+        ret = map_put(ctx, (*context)->name, *context);
+        if (ret == 0) {
+            ret = poll_create(&(*context)->ppriv);
+            if (ret == 0) {
+                return 0;
+            }
         }
-        }
-        
+    }
+    
+    /* Map_remove automatically unref ctx for us */
+    if (map_remove(ctx, (*context)->name) != 0) {
         mem_unref(*context);
+    }
     *context = NULL;
-    return MOD_ERR;
+    return ret;
 }
 
-static void ctx_dtor(void *data) {    
+static void ctx_dtor(void *data) {
     ctx_t *context = (ctx_t *)data;
     MODULE_DEBUG("Destroying context '%s'.\n", context->name);
     map_free(&context->modules);
@@ -142,9 +148,10 @@ static void default_logger(const self_t *self, const char *fmt, va_list args) {
     vprintf(fmt, args);
 }
 
-static mod_ret loop_start(ctx_t *c, const int max_events) {
+static int loop_start(ctx_t *c, const int max_events) {
     c->ppriv.max_events = max_events;
-    if (poll_init(&c->ppriv) == MOD_OK) {
+    int ret = poll_init(&c->ppriv);
+    if (ret == 0) {
         mem_ref(c); // Ensure ctx keeps existing while we loop
         
         fs_init(c);
@@ -157,9 +164,8 @@ static mod_ret loop_start(ctx_t *c, const int max_events) {
 
         /* Tell every RUNNING module that loop is started */
         tell_system_pubsub_msg(NULL, c, LOOP_STARTED, NULL, NULL);
-        return MOD_OK;
     }
-    return MOD_ERR;
+    return ret;
 }
 
 static uint8_t loop_stop(ctx_t *c) {
@@ -182,10 +188,10 @@ static uint8_t loop_stop(ctx_t *c) {
     return ret;
 }
 
-static inline mod_ret loop_quit(ctx_t *c, const uint8_t quit_code) {
+static inline int loop_quit(ctx_t *c, const uint8_t quit_code) {
     c->quit = true;
     c->quit_code = quit_code;
-    return MOD_OK;
+    return 0;
 }
 
 static int recv_events(ctx_t *c, int timeout) {    
@@ -229,25 +235,25 @@ static int recv_events(ctx_t *c, int timeout) {
                 }
                 break;
             case TYPE_SGN:
-                if (poll_consume_sgn(&c->ppriv, i, p, &sgn_msg) == MOD_OK) {
+                if (poll_consume_sgn(&c->ppriv, i, p, &sgn_msg) == 0) {
                     sgn_msg.signo = p->sgn_src.sgs.signo;
                     msg.sgn_msg = &sgn_msg;
                 }
                 break;
             case TYPE_TMR:
-                if (poll_consume_tmr(&c->ppriv, i, p, &tm_msg) == MOD_OK) {
+                if (poll_consume_tmr(&c->ppriv, i, p, &tm_msg) == 0) {
                     tm_msg.ms = p->tmr_src.its.ms;
                     msg.tmr_msg = &tm_msg;
                 }
                 break;
             case TYPE_PT:
-                if (poll_consume_pt(&c->ppriv, i, p, &pt_msg) == MOD_OK) {
+                if (poll_consume_pt(&c->ppriv, i, p, &pt_msg) == 0) {
                     pt_msg.path = p->pt_src.pt.path;
                     msg.pt_msg = &pt_msg;
                 }
                 break;
             case TYPE_PID:
-                if (poll_consume_pid(&c->ppriv, i, p, &pid_msg) == MOD_OK) {
+                if (poll_consume_pid(&c->ppriv, i, p, &pid_msg) == 0) {
                     pid_msg.pid = p->pid_src.pid.pid;
                     msg.pid_msg = &pid_msg;
                 }
@@ -328,7 +334,7 @@ void inline ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...)
 
 /** Public API **/
 
-mod_ret modules_set_memhook(const memhook_t *hook) {
+int modules_set_memhook(const memhook_t *hook) {
     /* 
      * Protect global variables: 
      * in this case, ensure memhook is correctly filled
@@ -336,10 +342,10 @@ mod_ret modules_set_memhook(const memhook_t *hook) {
      */
     pthread_mutex_lock(&mx);
     if (hook) {
-        MOD_ASSERT(hook->_malloc, "NULL malloc fn.", MOD_ERR);
-        MOD_ASSERT(hook->_realloc, "NULL realloc fn.", MOD_ERR);
-        MOD_ASSERT(hook->_calloc, "NULL calloc fn.", MOD_ERR);
-        MOD_ASSERT(hook->_free, "NULL free fn.", MOD_ERR);
+        MOD_ASSERT(hook->_malloc, "NULL malloc fn.", -1);
+        MOD_ASSERT(hook->_realloc, "NULL realloc fn.", -1);
+        MOD_ASSERT(hook->_calloc, "NULL calloc fn.", -1);
+        MOD_ASSERT(hook->_free, "NULL free fn.", -1);
         memcpy(&memhook, hook, sizeof(memhook_t));
     } else {
         memhook._malloc = malloc;
@@ -348,72 +354,63 @@ mod_ret modules_set_memhook(const memhook_t *hook) {
         memhook._free = free;
     }
     pthread_mutex_unlock(&mx);
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret modules_ctx_set_logger(const char *ctx_name, const log_cb logger) {
+int modules_ctx_set_logger(const char *ctx_name, const log_cb logger) {
     MOD_PARAM_ASSERT(logger);
     FIND_CTX(ctx_name);
     
     c->logger = logger;
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret modules_ctx_loop_events(const char *ctx_name, const int max_events) {
+int modules_ctx_loop_events(const char *ctx_name, const int max_events) {
     MOD_PARAM_ASSERT(max_events > 0);
     FIND_CTX(ctx_name);
-    MOD_ASSERT(!c->looping, "Context already looping.", MOD_ERR);
+    MOD_ASSERT(!c->looping, "Context already looping.", -EINVAL);
 
-    if (loop_start(c, max_events) == MOD_OK) {
+    int ret = loop_start(c, max_events);
+    if (ret == 0) {
         while (!c->quit && map_length(c->modules) > 0) {
             recv_events(c, -1);
         }
         return loop_stop(c);
     }
-    return MOD_ERR;
+    return ret;
 }
 
-mod_ret modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) {
+int modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) {
     FIND_CTX(ctx_name);
-    MOD_ASSERT(c->looping, "Context not looping.", MOD_ERR);
+    MOD_ASSERT(c->looping, "Context not looping.", -EINVAL);
        
     return loop_quit(c, quit_code);
 }
 
-mod_ret modules_ctx_get_fd(const char *ctx_name, int *fd) {
-    MOD_PARAM_ASSERT(fd);
+int modules_ctx_fd(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
-    *fd = dup(poll_get_fd(&c->ppriv));
-    return MOD_OK;
+    return dup(poll_get_fd(&c->ppriv));
 }
 
-mod_ret modules_ctx_dispatch(const char *ctx_name, int *ret) {
-    MOD_PARAM_ASSERT(ret);
+int modules_ctx_dispatch(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
     if (!c->looping) {
         /* Ok, start now */
-        *ret = 0;
         return loop_start(c, MODULES_MAX_EVENTS);
     }
     
     if (c->quit || map_length(c->modules) == 0) {
         /* We are stopping! */
-        *ret = loop_stop(c);
-        /* 
-         * MOD_ERR to let client know it's time to quit.
-         * You've called dispatch (for the first time) on a quitted ctx.
-         */
-        return MOD_ERR; 
+        return loop_stop(c);
     }
     
     /* Recv new events, no timeout */
-    *ret = recv_events(c, 0);
-    return *ret >= 0 ? MOD_OK : MOD_ERR;
+    return recv_events(c, 0);
 }
 
-mod_ret modules_ctx_dump(const char *ctx_name) {
+int modules_ctx_dump(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
     ctx_logger(c, NULL, "{\n");
@@ -434,11 +431,11 @@ mod_ret modules_ctx_dump(const char *ctx_name) {
     }
     ctx_logger(c, NULL, "\t]\n");
     ctx_logger(c, NULL, "}\n");
-    return MOD_OK;
+    return 0;
 }
 
 
-mod_ret modules_ctx_load(const char *ctx_name, const char *module_path) {
+int modules_ctx_load(const char *ctx_name, const char *module_path) {
     MOD_PARAM_ASSERT(module_path);
     FIND_CTX(ctx_name);
     
@@ -447,7 +444,7 @@ mod_ret modules_ctx_load(const char *ctx_name, const char *module_path) {
     void *handle = dlopen(module_path, RTLD_NOW);
     if (!handle) {
         MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
-        return MOD_ERR;
+        return -errno;
     }
     
     /* 
@@ -456,15 +453,15 @@ mod_ret modules_ctx_load(const char *ctx_name, const char *module_path) {
      */
     if (module_size == map_length(c->modules)) { 
         dlclose(handle);
-        return MOD_ERR;
+        return -EPERM;
     }
     
     mod_t *mod = map_peek(c->modules);
     mod->local_path = mem_strdup(module_path);
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret modules_ctx_unload(const char *ctx_name, const char *module_path) {
+int modules_ctx_unload(const char *ctx_name, const char *module_path) {
     MOD_PARAM_ASSERT(module_path);    
     FIND_CTX(ctx_name);
     
@@ -482,13 +479,13 @@ mod_ret modules_ctx_unload(const char *ctx_name, const char *module_path) {
         void *handle = dlopen(module_path, RTLD_NOLOAD);
         if (handle) {
             dlclose(handle);
-            return MOD_OK;
+            return 0;
         }
         MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
-        return MOD_ERR;
+        return -errno;
     }
     MODULE_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, ctx_name);
-    return MOD_NO_MOD;
+    return -ENODEV;
 }
 
 size_t modules_ctx_trim(const char *ctx_name, const stats_t *thres) {

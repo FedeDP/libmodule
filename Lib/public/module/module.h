@@ -5,61 +5,61 @@
 /* Module interface functions */
 
 /* Module registration */
-_public_ mod_ret module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook, const mod_flags flags);
-_public_ mod_ret module_deregister(self_t **self);
+_public_ int module_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook, const mod_flags flags);
+_public_ int module_deregister(self_t **self);
 
 /* Module state getters */
 _public_ _pure_ bool module_is(const self_t *mod_self, const mod_states st);
 
 /* Module state setters */
-_public_ mod_ret module_start(const self_t *self);
-_public_ mod_ret module_pause(const self_t *self);
-_public_ mod_ret module_resume(const self_t *self);
-_public_ mod_ret module_stop(const self_t *self);
+_public_ int module_start(const self_t *self);
+_public_ int module_pause(const self_t *self);
+_public_ int module_resume(const self_t *self);
+_public_ int module_stop(const self_t *self);
 
 /* Module generic functions */
-_public_ __attribute__((format (printf, 2, 3))) mod_ret module_log(const self_t *self, const char *fmt, ...);
-_public_ mod_ret module_dump(const self_t *self);
-_public_ _pure_ mod_ret module_stats(const self_t *self, stats_t *stats);
+_public_ __attribute__((format (printf, 2, 3))) int module_log(const self_t *self, const char *fmt, ...);
+_public_ int module_dump(const self_t *self);
+_public_ _pure_ int module_stats(const self_t *self, stats_t *stats);
 
-_public_ mod_ret module_set_userdata(const self_t *self, const void *userdata);
+_public_ int module_set_userdata(const self_t *self, const void *userdata);
 _public_ const void *module_get_userdata(const self_t *self);
 
 _public_ _pure_ const char *module_name(const self_t *mod_self);
 _public_ _pure_ const char *module_ctx(const self_t *mod_self);
 
-_public_ mod_ret module_ref(const self_t *self, const char *name, const self_t **modref);
+_public_ int module_ref(const self_t *self, const char *name, const self_t **modref);
 
 /* Module srcs functions */
-_public_ mod_ret module_register_fd(const self_t *self, const int fd, const mod_src_flags flags, const void *userptr);
-_public_ mod_ret module_deregister_fd(const self_t *self, const int fd);
+_public_ int module_register_fd(const self_t *self, const int fd, const mod_src_flags flags, const void *userptr);
+_public_ int module_deregister_fd(const self_t *self, const int fd);
 
-_public_ mod_ret module_register_tmr(const self_t *self, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr);
-_public_ mod_ret module_deregister_tmr(const self_t *self, const mod_tmr_t *its);
+_public_ int module_register_tmr(const self_t *self, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr);
+_public_ int module_deregister_tmr(const self_t *self, const mod_tmr_t *its);
 
-_public_ mod_ret module_register_sgn(const self_t *self, const mod_sgn_t *its, const mod_src_flags flags, const void *userptr);
-_public_ mod_ret module_deregister_sgn(const self_t *self, const mod_sgn_t *its);
+_public_ int module_register_sgn(const self_t *self, const mod_sgn_t *its, const mod_src_flags flags, const void *userptr);
+_public_ int module_deregister_sgn(const self_t *self, const mod_sgn_t *its);
 
-_public_ mod_ret module_register_pt(const self_t *self, const mod_pt_t *its, const mod_src_flags flags, const void *userptr);
-_public_ mod_ret module_deregister_pt(const self_t *self, const mod_pt_t *its);
+_public_ int module_register_pt(const self_t *self, const mod_pt_t *its, const mod_src_flags flags, const void *userptr);
+_public_ int module_deregister_pt(const self_t *self, const mod_pt_t *its);
 
-_public_ mod_ret module_register_pid(const self_t *self, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr);
-_public_ mod_ret module_deregister_pid(const self_t *self, const mod_pid_t *pid);
+_public_ int module_register_pid(const self_t *self, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr);
+_public_ int module_deregister_pid(const self_t *self, const mod_pid_t *pid);
 
 /* Module PubSub interface */
-_public_ mod_ret module_become(const self_t *self, const recv_cb new_recv);
-_public_ mod_ret module_unbecome(const self_t *self);
+_public_ int module_become(const self_t *self, const recv_cb new_recv);
+_public_ int module_unbecome(const self_t *self);
 
-_public_ mod_ret module_register_sub(const self_t *self, const char *topic, const mod_src_flags flags, const void *userptr);
-_public_ mod_ret module_deregister_sub(const self_t *self, const char *topic);
+_public_ int module_register_sub(const self_t *self, const char *topic, const mod_src_flags flags, const void *userptr);
+_public_ int module_deregister_sub(const self_t *self, const char *topic);
 
-_public_ mod_ret module_tell(const self_t *self, const self_t *recipient, const void *message,
+_public_ int module_tell(const self_t *self, const self_t *recipient, const void *message,
                              const ssize_t size,  const mod_ps_flags flags);
-_public_ mod_ret module_publish(const self_t *self, const char *topic, const void *message,
+_public_ int module_publish(const self_t *self, const char *topic, const void *message,
                                 const ssize_t size,  const mod_ps_flags flags);
-_public_ mod_ret module_broadcast(const self_t *self, const void *message,
+_public_ int module_broadcast(const self_t *self, const void *message,
                                   const ssize_t size,  const mod_ps_flags flags);
-_public_ mod_ret module_poisonpill(const self_t *self, const self_t *recipient);
+_public_ int module_poisonpill(const self_t *self, const self_t *recipient);
 
 /* Generic event source registering functions */
 #define module_register_src(self, X, flags, userptr) _Generic((X) + 0, \

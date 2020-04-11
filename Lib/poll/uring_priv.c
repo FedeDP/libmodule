@@ -31,13 +31,13 @@ typedef struct {
 
 #define GET_PRIV_DATA()     uring_priv_t *up = (uring_priv_t *)priv->data
 
-mod_ret poll_create(poll_priv_t *priv) {
+int poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(uring_priv_t));
     MOD_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
     up->req_list = list_new(NULL);
     MOD_ALLOC_ASSERT(up->req_list);
-    return MOD_OK;
+    return 0;
 }
 
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
@@ -52,7 +52,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
                 MOD_ALLOC_ASSERT(tmp->ev);
             } else {
                 /* We need to RM an unregistered ev. Fine. */
-                return MOD_OK;
+                return 0;
             }
         }
         
@@ -142,16 +142,16 @@ static void flush_reqs(poll_priv_t *priv) {
     list_clear(up->req_list);
 }
 
-mod_ret poll_init(poll_priv_t *priv) {
+int poll_init(poll_priv_t *priv) {
     GET_PRIV_DATA();
-    if (io_uring_queue_init(priv->max_events, &up->ring, IORING_SETUP_IOPOLL) == 0) {
+    int ret = io_uring_queue_init(priv->max_events, &up->ring, IORING_SETUP_IOPOLL);
+    if (ret == 0) {
         up->cqe = memhook._calloc(priv->max_events, sizeof(struct io_uring_cqe *));
         MOD_ALLOC_ASSERT(up->cqe);
         up->inited = true;
         flush_reqs(priv);
-        return MOD_OK;
     }
-    return MOD_ERR;
+    return ret;
 }
 
 int poll_wait(poll_priv_t *priv, const int timeout) {
@@ -193,21 +193,21 @@ int poll_get_fd(poll_priv_t *priv) {
     return up->ring.ring_fd;
 }
 
-mod_ret poll_clear(poll_priv_t *priv) {
+int poll_clear(poll_priv_t *priv) {
     GET_PRIV_DATA();
     io_uring_queue_exit(&up->ring);
     memhook._free(up->cqe);
     up->cqe = NULL;
     up->inited = false;
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret poll_destroy(poll_priv_t *priv) {
+int poll_destroy(poll_priv_t *priv) {
     GET_PRIV_DATA();
     if (up->inited) { 
         poll_clear(priv);
     }
     list_free(&up->req_list);
     memhook._free(up);
-    return MOD_OK;
+    return 0;
 }

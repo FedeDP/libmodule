@@ -10,23 +10,23 @@ void test_queue_enqueue(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    mod_queue_ret ret = queue_enqueue(my_q, &val1);
-    assert_false(ret == QUEUE_OK);
+    int ret = queue_enqueue(my_q, &val1);
+    assert_false(ret == 0);
     
     my_q = queue_new(NULL);
     
     /* NULL value */
     ret = queue_enqueue(my_q, NULL);
-    assert_false(ret == QUEUE_OK);
+    assert_false(ret == 0);
     
     ret = queue_enqueue(my_q, &val1);
-    assert_true(ret == QUEUE_OK);
+    assert_true(ret == 0);
     
     ret = queue_enqueue(my_q, &val2);
-    assert_true(ret == QUEUE_OK);
+    assert_true(ret == 0);
     
     ret = queue_enqueue(my_q, val3);
-    assert_true(ret == QUEUE_OK);
+    assert_true(ret == 0);
 }
 
 void test_queue_peek(void **state) {
@@ -92,11 +92,11 @@ void test_queue_dequeue(void **state) {
 void test_queue_clear(void **state) {
     (void) state; /* unused */
     
-    mod_queue_ret ret = queue_clear(NULL);
-    assert_false(ret == QUEUE_OK);
+    int ret = queue_clear(NULL);
+    assert_false(ret == 0);
     
     ret = queue_clear(my_q);
-    assert_true(ret == QUEUE_OK);
+    assert_true(ret == 0);
     
     int len = queue_length(my_q);
     assert_int_equal(len, 0);
@@ -105,11 +105,11 @@ void test_queue_clear(void **state) {
 void test_queue_free(void **state) {
     (void) state; /* unused */
     
-    mod_queue_ret ret = queue_free(NULL);
-    assert_false(ret == QUEUE_OK);
+    int ret = queue_free(NULL);
+    assert_false(ret == 0);
     
     ret = queue_free(&my_q);
-    assert_true(ret == QUEUE_OK);
+    assert_true(ret == 0);
     assert_null(my_q);
 }
 

@@ -275,7 +275,7 @@ static int fs_unlink(const char *path) {
     if (strlen(path) > 1) {
         mod_t *mod = map_get(c->modules, path + 1);
         if (mod) {
-            if (module_deregister(&mod->self) == MOD_OK) {
+            if (module_deregister(&mod->self) == 0) {
                 return 0;
             }
             return -EPERM;
@@ -294,7 +294,7 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     
     if (strlen(path) > 1) {
         self_t *self = NULL;
-        if (module_register(path + 1, c->name, &self, &fuse_hook, MOD_NAME_DUP) == MOD_OK) {
+        if (module_register(path + 1, c->name, &self, &fuse_hook, MOD_NAME_DUP) == 0) {
             return 0;
         }
         return -EPERM;
@@ -491,7 +491,7 @@ static void fs_wakeup_clients(fs_priv_t *fp) {
 
 /** Private API **/
 
-mod_ret fs_init(ctx_t *c) {
+int fs_init(ctx_t *c) {
     c->fs = memhook._calloc(1, sizeof(fs_ctx_t));
     MOD_ALLOC_ASSERT(c->fs);
     
@@ -506,33 +506,33 @@ mod_ret fs_init(ctx_t *c) {
     f->start = time(NULL);
     
     mkdir(c->name, 0777);
-    if (fuse_mount(f->handler, c->name) == 0) {
+    int ret = fuse_mount(f->handler, c->name);
+    if (ret == 0) {
         f->src = memhook._calloc(1, sizeof(ev_src_t));
         MOD_ALLOC_ASSERT(f->src);
         
         /* Actually register fuse fd in poll plugin */
         f->src->type = TYPE_FD;
         f->src->fd_src.fd = fuse_session_fd(fuse_get_session(f->handler));
-        if (poll_set_new_evt(&c->ppriv, f->src, ADD) == 0) {
-            return MOD_OK;
-        }
+        ret = poll_set_new_evt(&c->ppriv, f->src, ADD);
    }
-   return MOD_ERR;
+   return ret;
 }
 
-mod_ret fs_process(ctx_t *c) {
+int fs_process(ctx_t *c) {
     FS_PRIV();
 
     struct fuse_session *sess = fuse_get_session(f->handler);
-    if (fuse_session_receive_buf(sess, &f->buf) > 0) {
+    int ret = fuse_session_receive_buf(sess, &f->buf);
+    if (ret > 0) {
         fuse_session_process_buf(sess, &f->buf);
-        return MOD_OK;
+        return 0;
     }
     MODULE_DEBUG("Fuse: failed to retrieve buffer.\n");
-    return MOD_ERR;
+    return ret;
 }
 
-mod_ret fs_notify(const msg_t *msg) {
+int fs_notify(const msg_t *msg) {
     mod_t *mod = msg->self->mod;
     if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
@@ -548,10 +548,10 @@ mod_ret fs_notify(const msg_t *msg) {
             fs_store_msg(fp, msg);
         }
     }
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret fs_cleanup(mod_t *mod) {
+int fs_cleanup(mod_t *mod) {
     if (mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         /* Destroy stored message, if any */
@@ -560,10 +560,10 @@ mod_ret fs_cleanup(mod_t *mod) {
         
         fs_wakeup_clients(fp);
     }
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret fs_end(ctx_t *c) {
+int fs_end(ctx_t *c) {
     FS_PRIV();
     
     /* Deregister fuse fd */
@@ -585,5 +585,5 @@ mod_ret fs_end(ctx_t *c) {
     
     memhook._free(c->fs);
     c->fs = NULL;
-    return MOD_OK;
+    return 0;
 }

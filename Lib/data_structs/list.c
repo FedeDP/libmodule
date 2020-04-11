@@ -1,7 +1,5 @@
 #include "poll_priv.h"
 
-#define LIST_PARAM_ASSERT(cond)    MOD_RET_ASSERT(cond, LIST_WRONG_PARAM);
-
 typedef struct _elem {
     void *userptr;
     struct _elem *next;
@@ -19,22 +17,20 @@ struct _list_itr {
     ssize_t diff;
 };
 
-static mod_list_ret insert_node(mod_list_t *l, list_node **elem, void *data);
-static mod_list_ret remove_node(mod_list_t *l, list_node **elem);
+static int insert_node(mod_list_t *l, list_node **elem, void *data);
+static int remove_node(mod_list_t *l, list_node **elem);
 
-static mod_list_ret insert_node(mod_list_t *l, list_node **elem, void *data) {
+static int insert_node(mod_list_t *l, list_node **elem, void *data) {
     list_node *node = memhook._malloc(sizeof(list_node));
-    if (node) {
-        node->next = *elem;
-        node->userptr = data;
-        *elem = node;
-        l->len++;
-        return LIST_OK;
-    }
-    return LIST_OMEM;
+    MOD_ALLOC_ASSERT(node);
+    node->next = *elem;
+    node->userptr = data;
+    *elem = node;
+    l->len++;
+    return 0;
 }
 
-static mod_list_ret remove_node(mod_list_t *l, list_node **elem) {
+static int remove_node(mod_list_t *l, list_node **elem) {
     list_node *tmp = *elem;
     if (tmp) {
         *elem = (*elem)->next;
@@ -43,9 +39,9 @@ static mod_list_ret remove_node(mod_list_t *l, list_node **elem) {
         }
         memhook._free(tmp);
         l->len--;
-        return LIST_OK;
+        return 0;
     }
-    return LIST_MISSING;
+    return -ENODEV;
 }
 
 /** Public API **/
@@ -92,54 +88,54 @@ void *list_itr_get_data(const mod_list_itr_t *itr) {
     return (*itr->elem)->userptr;
 }
 
-mod_list_ret list_itr_set_data(mod_list_itr_t *itr, void *value) {
-    LIST_PARAM_ASSERT(itr);
-    LIST_PARAM_ASSERT(value);
-    MOD_RET_ASSERT(*itr->elem, LIST_ERR);
+int list_itr_set_data(mod_list_itr_t *itr, void *value) {
+    MOD_PARAM_ASSERT(itr);
+    MOD_PARAM_ASSERT(value);
+    MOD_RET_ASSERT(*itr->elem, -EINVAL);
     
     (*itr->elem)->userptr = value;
-    return LIST_OK;
+    return 0;
 }
 
-mod_list_ret list_itr_insert(mod_list_itr_t *itr, void *value) {
-    LIST_PARAM_ASSERT(itr);
-    LIST_PARAM_ASSERT(value);
+int list_itr_insert(mod_list_itr_t *itr, void *value) {
+    MOD_PARAM_ASSERT(itr);
+    MOD_PARAM_ASSERT(value);
     
     itr->diff++;
     return insert_node(itr->l, itr->elem, value);
 }
 
-mod_list_ret list_itr_remove(mod_list_itr_t *itr) {
-    LIST_PARAM_ASSERT(itr);
-    MOD_RET_ASSERT(*itr->elem, LIST_ERR);
+int list_itr_remove(mod_list_itr_t *itr) {
+    MOD_PARAM_ASSERT(itr);
+    MOD_RET_ASSERT(*itr->elem, -EINVAL);
     
     itr->diff--; // notify list to avoid skipping 1 element on next list_itr_next() call
     return remove_node(itr->l, itr->elem);
 }
 
-mod_list_ret list_iterate(const mod_list_t *l, const mod_list_cb fn, void *userptr) {
-    LIST_PARAM_ASSERT(fn);
-    MOD_RET_ASSERT(list_length(l) > 0, LIST_MISSING);
+int list_iterate(const mod_list_t *l, const mod_list_cb fn, void *userptr) {
+    MOD_PARAM_ASSERT(fn);
+    MOD_PARAM_ASSERT(list_length(l) > 0);
     
     list_node *elem = l->data;
     while (elem) {
-        mod_list_ret rc = fn(userptr, elem->userptr);
-        if (rc < LIST_OK) {
+        int rc = fn(userptr, elem->userptr);
+        if (rc < 0) {
             /* Stop right now with error */
             return rc;
         }
-        if (rc > LIST_OK) {
-            /* Stop right now with LIST_OK */
-            return LIST_OK;
+        if (rc > 0) {
+            /* Stop right now with 0 */
+            return 0;
         }
         elem = elem->next;
     }
-    return LIST_OK;
+    return 0;
 }
 
-mod_list_ret list_insert(mod_list_t *l, void *data, const mod_list_comp comp) {
-    LIST_PARAM_ASSERT(l);
-    LIST_PARAM_ASSERT(data);
+int list_insert(mod_list_t *l, void *data, const mod_list_comp comp) {
+    MOD_PARAM_ASSERT(l);
+    MOD_PARAM_ASSERT(data);
     
     list_node **tmp = &l->data;
     for (int i = 0; i < l->len && comp; i++) {
@@ -152,9 +148,9 @@ mod_list_ret list_insert(mod_list_t *l, void *data, const mod_list_comp comp) {
     return insert_node(l, tmp, data);
 }
 
-mod_list_ret list_remove(mod_list_t *l, void *data, const mod_list_comp comp) {
-    LIST_PARAM_ASSERT(l);
-    LIST_PARAM_ASSERT(data);
+int list_remove(mod_list_t *l, void *data, const mod_list_comp comp) {
+    MOD_PARAM_ASSERT(l);
+    MOD_PARAM_ASSERT(data);
     
     list_node **tmp = &l->data;
     for (int i = 0; i < l->len; i++) {
@@ -181,20 +177,20 @@ void *list_find(mod_list_t *l, void *data, const mod_list_comp comp) {
     return NULL;
 }
 
-mod_list_ret list_clear(mod_list_t *l) {
-    LIST_PARAM_ASSERT(l);
+int list_clear(mod_list_t *l) {
+    MOD_PARAM_ASSERT(l);
     
     for (mod_list_itr_t *itr = list_itr_new(l); itr; itr = list_itr_next(itr)) {
         list_itr_remove(itr);
     }
-    return LIST_OK;
+    return 0;
 }
 
-mod_list_ret list_free(mod_list_t **l) {
-    LIST_PARAM_ASSERT(l);
+int list_free(mod_list_t **l) {
+    MOD_PARAM_ASSERT(l);
     
-    mod_list_ret ret = list_clear(*l);
-    if (ret == LIST_OK) {
+    int ret = list_clear(*l);
+    if (ret == 0) {
         memhook._free(*l);
         *l = NULL;
     }
@@ -202,7 +198,7 @@ mod_list_ret list_free(mod_list_t **l) {
 }
 
 ssize_t list_length(const mod_list_t *l) {
-    LIST_PARAM_ASSERT(l);
+    MOD_PARAM_ASSERT(l);
     
     return l->len;
 }

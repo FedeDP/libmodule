@@ -10,23 +10,23 @@ void test_stack_push(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    mod_stack_ret ret = stack_push(my_st, &val1);
-    assert_false(ret == STACK_OK);
+    int ret = stack_push(my_st, &val1);
+    assert_false(ret == 0);
     
     my_st = stack_new(NULL);
     
     /* NULL value */
     ret = stack_push(my_st, NULL);
-    assert_false(ret == STACK_OK);
+    assert_false(ret == 0);
     
     ret = stack_push(my_st, &val1);
-    assert_true(ret == STACK_OK);
+    assert_true(ret == 0);
     
     ret = stack_push(my_st, &val2);
-    assert_true(ret == STACK_OK);
+    assert_true(ret == 0);
     
     ret = stack_push(my_st, val3);
-    assert_true(ret == STACK_OK);
+    assert_true(ret == 0);
 }
 
 void test_stack_peek(void **state) {
@@ -92,11 +92,11 @@ void test_stack_pop(void **state) {
 void test_stack_clear(void **state) {
     (void) state; /* unused */
     
-    mod_stack_ret ret = stack_clear(NULL);
-    assert_false(ret == STACK_OK);
+    int ret = stack_clear(NULL);
+    assert_false(ret == 0);
     
     ret = stack_clear(my_st);
-    assert_true(ret == STACK_OK);
+    assert_true(ret == 0);
     
     int len = stack_length(my_st);
     assert_int_equal(len, 0);
@@ -105,10 +105,10 @@ void test_stack_clear(void **state) {
 void test_stack_free(void **state) {
     (void) state; /* unused */
     
-    mod_stack_ret ret = stack_free(NULL);
-    assert_false(ret == STACK_OK);
+    int ret = stack_free(NULL);
+    assert_false(ret == 0);
     
     ret = stack_free(&my_st);
-    assert_true(ret == STACK_OK);
+    assert_true(ret == 0);
     assert_null(my_st);
 }

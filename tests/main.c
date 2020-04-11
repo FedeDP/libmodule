@@ -118,7 +118,6 @@ int main(void) {
         cmocka_unit_test(test_modules_ctx_loop),
         
         /* We have 0 messages now */
-        cmocka_unit_test(test_modules_ctx_dispatch_NULL_param),
         cmocka_unit_test(test_modules_ctx_dispatch_NULL_ctx),
         cmocka_unit_test(test_modules_ctx_dispatch),
         

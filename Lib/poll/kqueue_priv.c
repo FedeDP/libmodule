@@ -10,13 +10,13 @@ typedef struct {
 
 #define GET_PRIV_DATA()     kqueue_priv_t *kp = (kqueue_priv_t *)priv->data
 
-mod_ret poll_create(poll_priv_t *priv) {
+int poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(kqueue_priv_t));
     MOD_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
     kp->fd = kqueue();
     fcntl(kp->fd, F_SETFD, FD_CLOEXEC);
-    return MOD_OK;
+    return 0;
 }
 
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
@@ -30,7 +30,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             MOD_ALLOC_ASSERT(tmp->ev);
         } else {
             /* We need to RM an unregistered ev. Fine. */
-            return MOD_OK;
+            return 0;
         }
     }
 
@@ -63,7 +63,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         if (tmp->pt_src.f.fd != -1) {
             EV_SET(_ev, tmp->pt_src.f.fd, EVFILT_VNODE, f, tmp->pt_src.pt.events, 0, tmp);
         } else {
-            return -1;
+            return -EBADFD;
         }
         break;
     case TYPE_PID:
@@ -93,11 +93,11 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     return ret;
 }
 
-mod_ret poll_init(poll_priv_t *priv) {
+int poll_init(poll_priv_t *priv) {
     GET_PRIV_DATA();
     kp->pevents = memhook._calloc(priv->max_events, sizeof(struct kevent));
     MOD_ALLOC_ASSERT(kp->pevents);
-    return MOD_OK;
+    return 0;
 }
 
 int poll_wait(poll_priv_t *priv, const int timeout) {
@@ -115,24 +115,24 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     return (ev_src_t *)kp->pevents[idx].udata;
 }
 
-mod_ret poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {
-    return MOD_OK;
+int poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {
+    return 0;
 }
 
-mod_ret poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t *tm_msg) {
-    return MOD_OK;
+int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t *tm_msg) {
+    return 0;
 }
 
-mod_ret poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg) {
+int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg) {
     GET_PRIV_DATA();
     pt_msg->events = kp->pevents[idx].fflags;
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg) {
+int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg) {
     GET_PRIV_DATA();
     pid_msg->events = kp->pevents[idx].fflags;
-    return MOD_OK;
+    return 0;
 }
 
 int poll_get_fd(poll_priv_t *priv) {
@@ -140,17 +140,17 @@ int poll_get_fd(poll_priv_t *priv) {
     return kp->fd;
 }
 
-mod_ret poll_clear(poll_priv_t *priv) {
+int poll_clear(poll_priv_t *priv) {
     GET_PRIV_DATA();
     memhook._free(kp->pevents);
     kp->pevents = NULL;
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret poll_destroy(poll_priv_t *priv) {
+int poll_destroy(poll_priv_t *priv) {
     GET_PRIV_DATA();
     poll_clear(priv);
     close(kp->fd);
     memhook._free(kp);
-    return MOD_OK;
+    return 0;
 }

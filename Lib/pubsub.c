@@ -6,17 +6,17 @@
 
 static void subscribtions_dtor(void *data);
 static bool is_subscribed(mod_t *mod, ps_priv_t *msg);
-static mod_map_ret tell_if(void *data, const char *key, void *value);
+static int tell_if(void *data, const char *key, void *value);
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
                                     ps_msg_type type, const size_t size, const mod_ps_flags flags);
-static mod_map_ret tell_global(void *data, const char *key, void *value);
+static int tell_global(void *data, const char *key, void *value);
 static void ps_msg_dtor(void *data);
-static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c);
-static mod_ret send_msg(mod_t *mod, mod_t *recipient, 
+static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c);
+static int send_msg(mod_t *mod, mod_t *recipient, 
                         const char *topic, const void *message, 
                         const ssize_t size, const mod_ps_flags flags);
 
-extern mod_ret fs_notify(const msg_t *msg);
+extern int fs_notify(const msg_t *msg);
 
 static void subscribtions_dtor(void *data) {
     ev_src_t *sub = (ev_src_t *)data;
@@ -61,7 +61,7 @@ found:
     return true;
 }
 
-static mod_map_ret tell_if(void *data, const char *key, void *value) {
+static int tell_if(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
 
@@ -78,7 +78,7 @@ static mod_map_ret tell_if(void *data, const char *key, void *value) {
             mem_ref(msg);
         }
     }
-    return MAP_OK;
+    return 0;
 }
 
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
@@ -112,12 +112,12 @@ static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, c
     return m;
 }
 
-static mod_map_ret tell_global(void *data, const char *key, void *value) {
+static int tell_global(void *data, const char *key, void *value) {
     ctx_t *c = (ctx_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
     
     map_iterate(c->modules, tell_if, msg);
-    return MAP_OK;
+    return 0;
 }
 
 static void ps_msg_dtor(void *data) {
@@ -134,7 +134,7 @@ static void ps_msg_dtor(void *data) {
 }
 
 
-static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
+static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
     MOD_ALLOC_ASSERT(m);
     
     if (mod) {
@@ -150,10 +150,10 @@ static mod_ret tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
      * else: num of refs for this message == number of modules that received it.
      */
     mem_unref(m);
-    return MOD_OK;
+    return 0;
 }
 
-static mod_ret send_msg(mod_t *mod, mod_t *recipient, 
+static int send_msg(mod_t *mod, mod_t *recipient, 
                         const char *topic, const void *message, 
                         const ssize_t size, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(message);
@@ -168,7 +168,7 @@ static mod_ret send_msg(mod_t *mod, mod_t *recipient,
 
 /** Private API **/
 
-mod_ret tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, const self_t *sender, const char *topic) {
+int tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, const self_t *sender, const char *topic) {
     if (sender) {
         fetch_ms(&sender->mod->stats.last_seen, &sender->mod->stats.action_ctr);
     }
@@ -176,7 +176,7 @@ mod_ret tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, con
     return tell_pubsub_msg(m, recipient, c);
 }
 
-mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value) {
+int flush_pubsub_msgs(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
     ps_priv_t *mm = NULL;
 
@@ -230,7 +230,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
 
 /** Public API **/
 
-mod_ret module_ref(const self_t *self, const char *name, const self_t **modref) {
+int module_ref(const self_t *self, const char *name, const self_t **modref) {
     MOD_PARAM_ASSERT(name);
     MOD_PARAM_ASSERT(modref);
     MOD_PARAM_ASSERT(!*modref);
@@ -239,10 +239,10 @@ mod_ret module_ref(const self_t *self, const char *name, const self_t **modref) 
     CTX_GET_MOD(name, c);
     
     *modref = &mod->ref;
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret module_register_sub(const self_t *self, const char *topic, mod_src_flags flags, const void *userptr) {
+int module_register_sub(const self_t *self, const char *topic, mod_src_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     GET_CTX(self);
@@ -263,7 +263,7 @@ mod_ret module_register_sub(const self_t *self, const char *topic, mod_src_flags
                 if (old_sub->flags == flags) {
                     /* Update just userptr. */
                     old_sub->userptr = userptr;
-                    return MOD_OK;
+                    return 0;
                 }
                 /* Remove old subscription object; requested flags are different! */
                 map_remove(mod->subscriptions, topic);
@@ -281,29 +281,29 @@ mod_ret module_register_sub(const self_t *self, const char *topic, mod_src_flags
         sub->self = self;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
         ps_src->topic = sub->flags & SRC_DUP ? mem_strdup(topic) : topic;
-        if (map_put(mod->subscriptions, ps_src->topic, sub) == MAP_OK) {
+        ret = map_put(mod->subscriptions, ps_src->topic, sub);
+        if (ret == 0) {
             fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-            return MOD_OK;
         }
     }
-    return MOD_ERR;
+    return ret;
 }
 
-mod_ret module_deregister_sub(const self_t *self, const char *topic) {
+int module_deregister_sub(const self_t *self, const char *topic) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     
-    if (map_remove(mod->subscriptions, topic) == MAP_OK) {
+    int ret = map_remove(mod->subscriptions, topic);
+    if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         if (map_length(mod->subscriptions) == 0) {
             map_free(&mod->subscriptions);
         }
-        return MOD_OK;
     }
-    return MOD_ERR;
+    return ret;
 }
 
-mod_ret module_tell(const self_t *self, const self_t *recipient, const void *message, 
+int module_tell(const self_t *self, const self_t *recipient, const void *message, 
                     const ssize_t size, const mod_ps_flags flags) {
     GET_MOD(self);
     MOD_PARAM_ASSERT(recipient);
@@ -314,7 +314,7 @@ mod_ret module_tell(const self_t *self, const self_t *recipient, const void *mes
     return send_msg(mod, recipient->mod, NULL, message, size, flags & ~PS_GLOBAL);
 }
 
-mod_ret module_publish(const self_t *self, const char *topic, const void *message, 
+int module_publish(const self_t *self, const char *topic, const void *message, 
                        const ssize_t size, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
@@ -323,14 +323,14 @@ mod_ret module_publish(const self_t *self, const char *topic, const void *messag
     return send_msg(mod, NULL, topic, message, size, flags & ~PS_GLOBAL);
 }
 
-mod_ret module_broadcast(const self_t *self, const void *message, 
+int module_broadcast(const self_t *self, const void *message, 
                          const ssize_t size, const mod_ps_flags flags) {
     GET_MOD(self);
     
     return send_msg(mod, NULL, NULL, message, size, flags);
 }
 
-mod_ret module_poisonpill(const self_t *self, const self_t *recipient) {
+int module_poisonpill(const self_t *self, const self_t *recipient) {
     GET_MOD(self);
     GET_CTX(self);
     MOD_PARAM_ASSERT(module_is(recipient, RUNNING));

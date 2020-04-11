@@ -13,12 +13,12 @@ typedef struct {
 
 #define GET_PRIV_DATA()     epoll_priv_t *ep = (epoll_priv_t *)priv->data
 
-mod_ret poll_create(poll_priv_t *priv) {
+int poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(epoll_priv_t));
     MOD_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
     ep->fd = epoll_create1(EPOLL_CLOEXEC);
-    return ep->fd != -1 ? MOD_OK : MOD_ERR;
+    return ep->fd != -1 ? 0 : -1;
 }
 
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
@@ -31,7 +31,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             MOD_ALLOC_ASSERT(tmp->ev);
         } else {
             /* We need to RM an unregistered ev. Fine. */
-            return MOD_OK;
+            return 0;
         }
     }
     
@@ -110,11 +110,11 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     return ret;
 }
 
-mod_ret poll_init(poll_priv_t *priv) {
+int poll_init(poll_priv_t *priv) {
     GET_PRIV_DATA();
     ep->pevents = memhook._calloc(priv->max_events, sizeof(struct epoll_event));
     MOD_ALLOC_ASSERT(ep->pevents);
-    return MOD_OK;
+    return 0;
 }
 
 int poll_wait(poll_priv_t *priv, const int timeout) {
@@ -135,17 +135,17 @@ int poll_get_fd(poll_priv_t *priv) {
     return ep->fd;
 }
 
-mod_ret poll_clear(poll_priv_t *priv) {
+int poll_clear(poll_priv_t *priv) {
     GET_PRIV_DATA();
     memhook._free(ep->pevents);
     ep->pevents = NULL;
-    return MOD_OK;
+    return 0;
 }
 
-mod_ret poll_destroy(poll_priv_t *priv) {
+int poll_destroy(poll_priv_t *priv) {
     GET_PRIV_DATA();
     poll_clear(priv);
     close(ep->fd);
     memhook._free(ep);
-    return MOD_OK;
+    return 0;
 }

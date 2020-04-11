@@ -19,14 +19,16 @@
 
 #define MOD_RET_ASSERT(cond, ret)   MOD_ASSERT(cond, "("#cond ") condition failed.", ret) 
 
-#define MOD_ALLOC_ASSERT(cond)      MOD_RET_ASSERT(cond, MOD_NO_MEM);
-#define MOD_PARAM_ASSERT(cond)      MOD_RET_ASSERT(cond, MOD_WRONG_PARAM);
+#define MOD_SRCS_ASSERT()           MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", -EINVAL);
+
+#define MOD_ALLOC_ASSERT(cond)      MOD_RET_ASSERT(cond, -ENOMEM);
+#define MOD_PARAM_ASSERT(cond)      MOD_RET_ASSERT(cond, -EINVAL);
 
 /* Finds a ctx inside our global map, given its name */
 #define FIND_CTX(name) \
-    MOD_ASSERT(name, "NULL ctx.", MOD_ERR); \
+    MOD_ASSERT(name, "NULL ctx.", -EINVAL); \
     ctx_t *c = map_get(ctx, (char *)name); \
-    MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
+    MOD_ASSERT(c, "Context not found.", -ENODEV);
 
 #define GET_CTX_PRIV(self)  ctx_t *c = self->ctx
 /* 
@@ -34,10 +36,10 @@
  * Skip reference check for pure functions.
  */
 #define _GET_CTX(self, pure) \
-    MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF); \
-    MOD_ASSERT(!(self)->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
+    MOD_ASSERT((self), "NULL self handler.", -EINVAL); \
+    MOD_ASSERT(!(self)->is_ref || pure, "Self is a reference object. It does not own module.", -EPERM); \
     GET_CTX_PRIV((self)); \
-    MOD_ASSERT(c, "Context not found.", MOD_NO_CTX);
+    MOD_ASSERT(c, "Context not found.", -ENODEV);
 
 /* Convenience macros for exposed API */
 #define GET_CTX(self)       _GET_CTX(self, false)
@@ -46,7 +48,7 @@
 /* Convenience macro to retrieve a module from a context, given its name */
 #define CTX_GET_MOD(name, ctx) \
     mod_t *mod = map_get(ctx->modules, (char *)name); \
-    MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
+    MOD_ASSERT(mod, "Module not found.", -ENODEV);
 
 #define GET_MOD_PRIV(self) mod_t *mod = self->mod
 
@@ -55,10 +57,10 @@
  * Skip reference check for pure functions.
  */
 #define _GET_MOD(self, pure) \
-    MOD_ASSERT((self), "NULL self handler.", MOD_NO_SELF); \
-    MOD_ASSERT(!(self)->is_ref || pure, "Self is a reference object. It does not own module.", MOD_REF_ERR); \
+    MOD_ASSERT((self), "NULL self handler.", -EINVAL); \
+    MOD_ASSERT(!(self)->is_ref || pure, "Self is a reference object. It does not own module.", -EPERM); \
     GET_MOD_PRIV((self)); \
-    MOD_ASSERT(mod, "Module not found.", MOD_NO_MOD);
+    MOD_ASSERT(mod, "Module not found.", -ENODEV);
 
 /* Convenience macros for exposed API */
 #define GET_MOD(self)         _GET_MOD(self, false)
@@ -70,7 +72,7 @@
  */
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
-    MOD_ASSERT(module_is(self, state), "Wrong module state.", MOD_WRONG_STATE);
+    MOD_ASSERT(module_is(self, state), "Wrong module state.", -EACCES);
     
 typedef struct _module mod_t;
 typedef struct _context ctx_t;
@@ -192,18 +194,18 @@ struct _context {
 };
 
 /* Defined in module.c */
-mod_map_ret evaluate_module(void *data, const char *key, void *value);
-mod_ret start(mod_t *mod, const bool starting);
-mod_ret stop(mod_t *mod, const bool stopping);
+int evaluate_module(void *data, const char *key, void *value);
+int start(mod_t *mod, const bool starting);
+int stop(mod_t *mod, const bool stopping);
 
 /* Defined in modules.c */
 ctx_t *check_ctx(const char *ctx_name, const mod_flags flags);
 void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...);
 
 /* Defined in pubsub.c */
-mod_ret tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, 
+int tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, 
                                 const self_t *sender, const char *topic);
-mod_map_ret flush_pubsub_msgs(void *data, const char *key, void *value);
+int flush_pubsub_msgs(void *data, const char *key, void *value);
 void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src);
 
 /* Defined in utils.c */

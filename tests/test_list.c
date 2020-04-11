@@ -10,23 +10,23 @@ void test_list_insert(void **state) {
     (void) state; /* unused */
     
     /* NULL map */
-    mod_list_ret ret = list_insert(my_l, &val1, NULL);
-    assert_false(ret == LIST_OK);
+    int ret = list_insert(my_l, &val1, NULL);
+    assert_false(ret == 0);
     
     my_l = list_new(NULL);
     
     /* NULL value */
     ret = list_insert(my_l, NULL, NULL);
-    assert_false(ret == LIST_OK);
+    assert_false(ret == 0);
     
     ret = list_insert(my_l, &val1, NULL);
-    assert_true(ret == LIST_OK);
+    assert_true(ret == 0);
     
     ret = list_insert(my_l, &val2, NULL);
-    assert_true(ret == LIST_OK);
+    assert_true(ret == 0);
     
     ret = list_insert(my_l, &val3, NULL);
-    assert_true(ret == LIST_OK);
+    assert_true(ret == 0);
 }
 
 void test_list_length(void **state) {
@@ -56,12 +56,12 @@ void test_list_iterator(void **state) {
         printf("%p\n", list_itr_get_data(itr));
         
         /* Insert a node */
-        mod_list_ret ret = list_itr_insert(itr, &val1);
-        assert_true(ret == LIST_OK);
+        int ret = list_itr_insert(itr, &val1);
+        assert_true(ret == 0);
         
         /* Remove previously inserted node */
         ret = list_itr_remove(itr);
-        assert_true(ret == LIST_OK);
+        assert_true(ret == 0);
         
         itr = list_itr_next(itr);
     }
@@ -100,17 +100,17 @@ void test_list_find(void **state) {
 void test_list_remove(void **state) {
     (void) state; /* unused */
     
-    mod_list_ret ret = list_remove(NULL, NULL, NULL);
-    assert_false(ret == LIST_OK);
+    int ret = list_remove(NULL, NULL, NULL);
+    assert_false(ret == 0);
     
     ret = list_remove(my_l, NULL, NULL);
-    assert_false(ret == LIST_OK);
+    assert_false(ret == 0);
     
     ret = list_remove(my_l, &val1, NULL);
-    assert_true(ret == LIST_OK);
+    assert_true(ret == 0);
     
     ret = list_remove(my_l, &val2, int_match);
-    assert_true(ret == LIST_OK);
+    assert_true(ret == 0);
     
     int len = list_length(my_l);
     assert_int_equal(len, 1); // one element left, ie: val3
@@ -119,11 +119,11 @@ void test_list_remove(void **state) {
 void test_list_clear(void **state) {
     (void) state; /* unused */
     
-    mod_list_ret ret = list_clear(NULL);
-    assert_false(ret == LIST_OK);
+    int ret = list_clear(NULL);
+    assert_false(ret == 0);
     
     ret = list_clear(my_l);
-    assert_true(ret == LIST_OK);
+    assert_true(ret == 0);
     
     int len = list_length(my_l);
     assert_int_equal(len, 0);
@@ -132,10 +132,10 @@ void test_list_clear(void **state) {
 void test_list_free(void **state) {
     (void) state; /* unused */
     
-    mod_list_ret ret = list_free(NULL);
-    assert_false(ret == LIST_OK);
+    int ret = list_free(NULL);
+    assert_false(ret == 0);
     
     ret = list_free(&my_l);
-    assert_true(ret == LIST_OK);
+    assert_true(ret == 0);
     assert_null(my_l);
 }

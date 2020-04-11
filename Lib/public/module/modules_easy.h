@@ -10,8 +10,8 @@
 /* Define for easy looping without having to set a events limit */
 #define modules_ctx_loop(ctx)           modules_ctx_loop_events(ctx, MODULES_MAX_EVENTS)
 
-#define modules_get_fd(fd)              modules_ctx_get_fd(MODULES_DEFAULT_CTX, fd)
-#define modules_dispatch(ret)           modules_ctx_dispatch(MODULES_DEFAULT_CTX, ret)
+#define modules_fd()                    modules_ctx_fd(MODULES_DEFAULT_CTX)
+#define modules_dispatch()              modules_ctx_dispatch(MODULES_DEFAULT_CTX)
 
 #define modules_trim(thres)             modules_ctx_trim(MODULES_DEFAULT_CTX, thres)
 
