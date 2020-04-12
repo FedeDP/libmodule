@@ -26,6 +26,7 @@ MODULE("Pippo");
 static void init(void) {
     /* Register STDIN fd, without autoclosing it at the end */
     m_register_src(STDIN_FILENO, 0, NULL);
+    return true;
 }
 
 static bool check(void) {
@@ -33,7 +34,7 @@ static bool check(void) {
     return true;
 }
 
-static bool evaluate(void) {
+static bool eval(void) {
     /* Should module be started? */
     return true;
 }

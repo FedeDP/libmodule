@@ -29,7 +29,7 @@ static bool check(void) {
     return true;
 }
 
-static bool evaluate(void) {
+static bool eval(void) {
     return true;
 }
 

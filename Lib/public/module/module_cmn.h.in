@@ -42,7 +42,7 @@
 typedef struct _self self_t;
 
 /* Modules flags */
-typedef enum { 
+typedef enum {
     MOD_NAME_DUP        = 0x01,         // Should module's name be strdupped?
     MOD_NAME_AUTOFREE   = 0x02,         // Should module's name be autofreed?
     MOD_ALLOW_REPLACE   = 0x04,         // Can module be replaced by another module with same name?
@@ -58,7 +58,7 @@ typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 } mod_stat
 typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
 
 /* Module event sources' types */
-typedef enum { 
+typedef enum {
     TYPE_PS,    // PubSub Source
     TYPE_FD,    // FD Source
     TYPE_TMR,   // Timer Source
@@ -164,7 +164,7 @@ typedef struct {
 
 /* Callbacks typedefs */
 typedef bool (*init_cb)(void);
-typedef bool (*evaluate_cb)(void);
+typedef bool (*eval_cb)(void);
 typedef void (*recv_cb)(const msg_t *const msg, const void *userdata);
 typedef void (*destroy_cb)(void);
 
@@ -180,7 +180,7 @@ typedef void (*free_fn)(void *ptr);
 /* Struct that holds user defined callbacks */
 typedef struct {
     init_cb init;                           // module's init function
-    evaluate_cb evaluate;                   // module's state changed function
+    eval_cb eval;                           // module's state changed function
     recv_cb recv;                           // module's recv function
     destroy_cb destroy;                     // module's destroy function
 } userhook_t;

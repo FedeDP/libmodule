@@ -194,11 +194,13 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] Rename mod_stack_t/mod_map_t etc etc to m_map_t/m_stack_t
 
-- [ ] Rename modules* to ctx*
-- [ ] Rename modules_easy.h API to c_XXX ?
-- [ ] Rename modules.{c,h} to ctx.{c,h} ?
+- [ ] Rename modules* API to module_ctx*
+- [ ] Rename modules_easy.h API to m_ctx_XXX ?
+- [ ] Rename modules.{c,h} to context.{c,h} ?
 
-- [ ] Rename other exposed APIs (types) to m_*
+- [ ] Rename other exposed APIs (types/enums/enum values) to m_*
+
+- [x] Rename evaluate() to eval()
 
 - [x] Fix modules_ctx_dispatch() to just reutrn number of dispatched messages (or -errno)
 - [x] Fix modules_ctx_fd() to just reutrn context's fd (or -errno)

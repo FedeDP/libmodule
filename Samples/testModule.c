@@ -40,7 +40,7 @@ static bool check(void) {
  * Eg: you can evaluate your global state to make this module start right after
  * certain conditions are met.
  */
-static bool evaluate(void) {
+static bool eval(void) {
     return true;
 }
 

@@ -8,13 +8,13 @@
 #define MODULE_CTX(name, ctx) \
     static bool init(void); \
     static bool check(void); \
-    static bool evaluate(void); \
+    static bool eval(void); \
     static void receive(const msg_t *const msg, const void *userdata); \
     static void destroy(void); \
     static inline const self_t **get_self() { static const self_t *_self = NULL; return &_self; } \
     static void _ctor3_ constructor(void) { \
         if (check()) { \
-            userhook_t hook = { init, evaluate, receive, destroy }; \
+            userhook_t hook = { init, eval, receive, destroy }; \
             module_register(name, ctx, (self_t **)get_self(), &hook, 0); \
         } \
     } \

@@ -334,7 +334,7 @@ static void reset_module(mod_t *mod) {
 int evaluate_module(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
     if (module_is(mod->self, IDLE) && 
-        (!mod->hook.evaluate || mod->hook.evaluate())) {
+        (!mod->hook.eval || mod->hook.eval())) {
         
         start(mod, true);
     }
