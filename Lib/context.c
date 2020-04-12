@@ -16,8 +16,8 @@ static uint8_t loop_stop(ctx_t *c);
 static inline int loop_quit(ctx_t *c, const uint8_t quit_code);
 static int recv_events(ctx_t *c, int timeout);
 
-m_map_t *ctx;
-memhook_t memhook;
+m_map_t *ctx = NULL;
+memhook_t memhook = {0};
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
 _public_ void _ctor0_ _weak_ m_pre_start(void) {
@@ -27,7 +27,7 @@ _public_ void _ctor0_ _weak_ m_pre_start(void) {
 static void *thread_loop(void *param) {
     const char *key = (const char *)param;
     
-    m_context_loop_events(key, MODULES_MAX_EVENTS);
+    m_context_loop_events(key, M_CTX_MAX_EVENTS);
     return NULL;
 }
 
@@ -68,7 +68,7 @@ _public_ int _weak_ main(int argc, char *argv[]) {
      */
     if (map_iterate(ctx, main_loop, &th) == -1) {
         MODULE_DEBUG("Running in single ctx mode: '%s'\n", (const char *)th);
-        return m_context_loop_events((const char *)th, MODULES_MAX_EVENTS);
+        return m_context_loop_events((const char *)th, M_CTX_MAX_EVENTS);
     }
     
     /* If more than 1 ctx is registered, we should join all threads */
@@ -82,7 +82,7 @@ _public_ int _weak_ main(int argc, char *argv[]) {
 
 static void libmodule_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
-    /* Check that memhook was not overridden during modules_pre_start() */
+    /* Check that memhook was not overridden during m_pre_start() */
     if (!memhook._free) {
         m_set_memhook(NULL);
     }
@@ -401,7 +401,7 @@ int m_context_dispatch(const char *ctx_name) {
     
     if (!c->looping) {
         /* Ok, start now */
-        return loop_start(c, MODULES_MAX_EVENTS);
+        return loop_start(c, M_CTX_MAX_EVENTS);
     }
     
     if (c->quit || map_length(c->modules) == 0) {
