@@ -65,7 +65,7 @@ static int tell_if(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
 
-    if (module_is(mod->self, RUNNING | PAUSED) &&                       // mod is running or paused
+    if (m_module_is(mod->self, RUNNING | PAUSED) &&                       // mod is running or paused
         ((msg->msg.type != USER && msg->msg.sender != &mod->ref) ||     // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || is_subscribed(mod, msg))))) {
@@ -189,7 +189,7 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
          * While stopping module, manage_fds() will call this with data != NULL
          * to let us know we should destroy all enqueued messages.
          */
-        if (!data && module_is(mod->self, RUNNING)) {
+        if (!data && m_module_is(mod->self, RUNNING)) {
             MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             msg_t msg = { .type = TYPE_PS, .ps_msg = &mm->msg };
             run_pubsub_cb(mod, &msg, queue_peek(mm->subs));
@@ -230,7 +230,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
 
 /** Public API **/
 
-int module_ref(const self_t *self, const char *name, const self_t **modref) {
+int m_module_ref(const self_t *self, const char *name, const self_t **modref) {
     MOD_PARAM_ASSERT(name);
     MOD_PARAM_ASSERT(modref);
     MOD_PARAM_ASSERT(!*modref);
@@ -242,7 +242,7 @@ int module_ref(const self_t *self, const char *name, const self_t **modref) {
     return 0;
 }
 
-int module_register_sub(const self_t *self, const char *topic, mod_src_flags flags, const void *userptr) {
+int m_module_register_sub(const self_t *self, const char *topic, mod_src_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     GET_CTX(self);
@@ -289,7 +289,7 @@ int module_register_sub(const self_t *self, const char *topic, mod_src_flags fla
     return ret;
 }
 
-int module_deregister_sub(const self_t *self, const char *topic) {
+int m_module_deregister_sub(const self_t *self, const char *topic) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     
@@ -303,7 +303,7 @@ int module_deregister_sub(const self_t *self, const char *topic) {
     return ret;
 }
 
-int module_tell(const self_t *self, const self_t *recipient, const void *message, 
+int m_module_tell(const self_t *self, const self_t *recipient, const void *message, 
                     const ssize_t size, const mod_ps_flags flags) {
     GET_MOD(self);
     MOD_PARAM_ASSERT(recipient);
@@ -314,7 +314,7 @@ int module_tell(const self_t *self, const self_t *recipient, const void *message
     return send_msg(mod, recipient->mod, NULL, message, size, flags & ~PS_GLOBAL);
 }
 
-int module_publish(const self_t *self, const char *topic, const void *message, 
+int m_module_publish(const self_t *self, const char *topic, const void *message, 
                        const ssize_t size, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
@@ -323,17 +323,17 @@ int module_publish(const self_t *self, const char *topic, const void *message,
     return send_msg(mod, NULL, topic, message, size, flags & ~PS_GLOBAL);
 }
 
-int module_broadcast(const self_t *self, const void *message, 
+int m_module_broadcast(const self_t *self, const void *message, 
                          const ssize_t size, const mod_ps_flags flags) {
     GET_MOD(self);
     
     return send_msg(mod, NULL, NULL, message, size, flags);
 }
 
-int module_poisonpill(const self_t *self, const self_t *recipient) {
+int m_module_poisonpill(const self_t *self, const self_t *recipient) {
     GET_MOD(self);
     GET_CTX(self);
-    MOD_PARAM_ASSERT(module_is(recipient, RUNNING));
+    MOD_PARAM_ASSERT(m_module_is(recipient, RUNNING));
     
     return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->ref, NULL);
 }

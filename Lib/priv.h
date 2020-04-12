@@ -72,7 +72,7 @@
  */
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
-    MOD_ASSERT(module_is(self, state), "Wrong module state.", -EACCES);
+    MOD_ASSERT(m_module_is(self, state), "Wrong module state.", -EACCES);
     
 typedef struct _module mod_t;
 typedef struct _context ctx_t;

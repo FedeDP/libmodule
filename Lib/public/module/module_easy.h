@@ -15,44 +15,44 @@
     static void _ctor3_ constructor(void) { \
         if (check()) { \
             userhook_t hook = { init, eval, receive, destroy }; \
-            module_register(name, ctx, (self_t **)get_self(), &hook, 0); \
+            m_module_register(name, ctx, (self_t **)get_self(), &hook, 0); \
         } \
     } \
-    static void _dtor1_ destructor(void) { module_deregister((self_t **)&self()); } \
-    static void _ctor2_ module_pre_start(void)
+    static void _dtor1_ destructor(void) { m_module_deregister((self_t **)&self()); } \
+    static void _ctor2_ m_module_pre_start(void)
 
 #define MODULE(name) MODULE_CTX(name, M_CTX_DEFAULT)
 
 /* Defines for easy API (with no need bothering with both _self and ctx) */
-#define m_is(state)                             module_is(self(), state)
-#define m_dump()                                module_dump(self())
-#define m_stats(stats)                          module_stats(self(), stats);
+#define m_mod_is(state)                             m_module_is(self(), state)
+#define m_mod_dump()                                m_module_dump(self())
+#define m_mod_stats(stats)                          m_module_stats(self(), stats);
 
-#define m_start()                               module_start(self())
-#define m_pause()                               module_pause(self())
-#define m_resume()                              module_resume(self())
-#define m_stop()                                module_stop(self())
+#define m_mod_start()                               m_module_start(self())
+#define m_mod_pause()                               m_module_pause(self())
+#define m_mod_resume()                              m_module_resume(self())
+#define m_mod_stop()                                m_module_stop(self())
 
-#define m_set_userdata(userdata)                module_set_userdata(self(), userdata)
-#define m_get_userdata()                        module_get_userdata(self())
+#define m_mod_set_userdata(userdata)                m_module_set_userdata(self(), userdata)
+#define m_mod_get_userdata()                        m_module_get_userdata(self())
 
-#define m_log(...)                              module_log(self(), ##__VA_ARGS__)
+#define m_mod_log(...)                              m_module_log(self(), ##__VA_ARGS__)
 
-#define m_name()                                module_name(self());
-#define m_ctx()                                 module_ctx(self());
-#define m_ref(name, modref)                     module_ref(self(), name, modref)
+#define m_mod_name()                                m_module_name(self());
+#define m_mod_ctx()                                 m_module_ctx(self());
+#define m_mod_ref(name, modref)                     m_module_ref(self(), name, modref)
 
-#define m_become(x)                             module_become(self(), receive_##x)
-#define m_unbecome()                            module_unbecome(self())
+#define m_mod_become(x)                             m_module_become(self(), receive_##x)
+#define m_mod_unbecome()                            m_module_unbecome(self())
 
 /* Generic event source registering functions */
-#define m_register_src(X, flags, userptr)       module_register_src(self(), X, flags, userptr)
-#define m_deregister_src(X)                     module_deregister_src(self(), X)
+#define m_mod_register_src(X, flags, userptr)       m_module_register_src(self(), X, flags, userptr)
+#define m_mod_deregister_src(X)                     m_module_deregister_src(self(), X)
 
-#define m_tell(recipient, msg, size, flags)     module_tell(self(), recipient, msg, size, flags)
-#define m_publish(topic, msg, size, flags)      module_publish(self(), topic, msg, size, flags)
-#define m_broadcast(msg, size, flags)           module_broadcast(self(), msg, size, flags)
-#define m_poisonpill(recipient)                 module_poisonpill(self(), recipient)
-#define m_tell_str(recipient, msg, flags)       module_tell(self(), recipient, (const void *)msg, strlen(msg), flags)
-#define m_publish_str(topic, msg, flags)        module_publish(self(), topic, (const void *)msg, strlen(msg), flags)
-#define m_broadcast_str(msg, flags)             module_broadcast(self(), (const void *)msg, strlen(msg), flags)
+#define m_mod_tell(recipient, msg, size, flags)     m_module_tell(self(), recipient, msg, size, flags)
+#define m_mod_publish(topic, msg, size, flags)      m_module_publish(self(), topic, msg, size, flags)
+#define m_mod_broadcast(msg, size, flags)           m_module_broadcast(self(), msg, size, flags)
+#define m_mod_poisonpill(recipient)                 m_module_poisonpill(self(), recipient)
+#define m_mod_tell_str(recipient, msg, flags)       m_module_tell(self(), recipient, (const void *)msg, strlen(msg), flags)
+#define m_mod_publish_str(topic, msg, flags)        m_module_publish(self(), topic, (const void *)msg, strlen(msg), flags)
+#define m_mod_broadcast_str(msg, flags)             m_module_broadcast(self(), (const void *)msg, strlen(msg), flags)

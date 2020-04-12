@@ -502,11 +502,11 @@ size_t m_context_trim(const char *ctx_name, const stats_t *thres) {
         mod_t *mod = map_itr_get_data(itr);
 
         if (curr_ms - mod->stats.last_seen >= thres->inactive_ms) {
-            module_deregister(&mod->self);
+            m_module_deregister(&mod->self);
         } else {
             const double freq = (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
             if (freq < thres->activity_freq) {
-                module_deregister(&mod->self);
+                m_module_deregister(&mod->self);
             }
         }
     }
