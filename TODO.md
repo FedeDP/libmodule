@@ -203,7 +203,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] "ctx_" -> context API prefix
 - [x] "" (no prefix) -> global API
 - [x] Rename module_* API to m_module_*
-- [ ] Rename module_easy API to m_mod_*
+- [x] Rename module_easy API to m_mod_*
 - [x] Rename mem API to m_mem*
 - [ ] Rename other exposed APIs (types/enums/enum values) to m_*
 - [x] Rename evaluate() to eval()
