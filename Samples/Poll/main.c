@@ -1,4 +1,4 @@
-#include <module/modules_easy.h>
+#include <module/context_easy.h>
 #include <poll.h>
 
 /*
@@ -16,12 +16,12 @@ int main(int argc, char *argv[]) {
     int ret = 0;
     
     /* Initial dispatch */
-    if (modules_dispatch() != 0) {
+    if (m_ctx_dispatch() != 0) {
         return 1;
     }
     
     /* Get default context fd */
-    int fd = modules_fd();
+    int fd = m_ctx_fd();
     if (fd < 0) {
         return 1;
     }
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
         ret = poll(&fds, 1, -1);
         if (ret > 0) {
             if (fds.revents & POLLIN) {
-                ret = modules_dispatch();
+                ret = m_ctx_dispatch();
                 if (ret < 0) {
                     printf("Loop: error happened.\n");
                 } else if (ret > 0) {

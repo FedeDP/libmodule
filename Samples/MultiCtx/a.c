@@ -1,5 +1,5 @@
 #include <module/module_easy.h>
-#include <module/modules.h>
+#include <module/context.h>
 #ifdef __linux__
     #include <sys/timerfd.h>
 #endif
@@ -58,7 +58,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         }
     } else if (msg->ps_msg->type == USER && !strcmp((const char *)msg->ps_msg->data, "Leave")) {
         m_log("Other context left. Leaving...\n");
-        modules_ctx_quit(myCtx, 0);
+        m_context_quit(myCtx, 0);
     }
 }
 
@@ -75,10 +75,10 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
             m_unbecome();
         }
         if (*counter == 10) {
-            modules_ctx_quit(myCtx, 0);
+            m_context_quit(myCtx, 0);
         }
     } else if (msg->ps_msg->type == USER && !strcmp((const char *)msg->ps_msg->data, "Leave")) {
         m_log("Other context left. Leaving...\n");
-        modules_ctx_quit(myCtx, 0);
+        m_context_quit(myCtx, 0);
     }
 }

@@ -1,5 +1,5 @@
 #include <module/module_easy.h>
-#include <module/modules.h>
+#include <module/context.h>
 #ifdef __linux__
     #include <sys/signalfd.h>
     #include <signal.h>
@@ -47,7 +47,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         }
         m_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
         m_broadcast_str("Leave", true);
-        modules_ctx_quit(myCtx, 0);
+        m_context_quit(myCtx, 0);
     }
 #endif
 }

@@ -1,13 +1,13 @@
 #include "module.h"
-#include "modules.h"
+#include "context.h"
 #include "fs_priv.h"
 #include "mem.h"
 #include <dlfcn.h> // dlopen
 
 static void *thread_loop(void *param);
 static int main_loop(void *data, const char *key, void *value);
-static _ctor1_ void modules_init(void);
-static _dtor0_ void modules_destroy(void);
+static _ctor1_ void libmodule_init(void);
+static _dtor0_ void libmodule_destroy(void);
 static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags);
 static void ctx_dtor(void *data);
 static void default_logger(const self_t *self, const char *fmt, va_list args);
@@ -20,14 +20,14 @@ m_map_t *ctx;
 memhook_t memhook;
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
-_public_ void _ctor0_ _weak_ modules_pre_start(void) {
+_public_ void _ctor0_ _weak_ m_prestart(void) {
     MODULE_DEBUG("Pre-starting libmodule.");
 }
 
 static void *thread_loop(void *param) {
     const char *key = (const char *)param;
     
-    modules_ctx_loop_events(key, MODULES_MAX_EVENTS);
+    m_context_loop_events(key, MODULES_MAX_EVENTS);
     return NULL;
 }
 
@@ -68,7 +68,7 @@ _public_ int _weak_ main(int argc, char *argv[]) {
      */
     if (map_iterate(ctx, main_loop, &th) == -1) {
         MODULE_DEBUG("Running in single ctx mode: '%s'\n", (const char *)th);
-        return modules_ctx_loop_events((const char *)th, MODULES_MAX_EVENTS);
+        return m_context_loop_events((const char *)th, MODULES_MAX_EVENTS);
     }
     
     /* If more than 1 ctx is registered, we should join all threads */
@@ -80,14 +80,17 @@ _public_ int _weak_ main(int argc, char *argv[]) {
     return 0;
 }
 
-static void modules_init(void) {
+static void libmodule_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
-    modules_set_memhook(NULL);
+    /* Check that memhook was not overridden during modules_pre_start() */
+    if (!memhook._free) {
+        m_set_memhook(NULL);
+    }
     pthread_mutex_init(&mx, NULL);
     ctx = map_new(false, mem_unref);
 }
 
-static void modules_destroy(void) {
+static void libmodule_destroy(void) {
     MODULE_DEBUG("Destroying libmodule.\n");
     map_free(&ctx);
     pthread_mutex_destroy(&mx);
@@ -334,7 +337,7 @@ void inline ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...)
 
 /** Public API **/
 
-int modules_set_memhook(const memhook_t *hook) {
+int m_set_memhook(const memhook_t *hook) {
     /* 
      * Protect global variables: 
      * in this case, ensure memhook is correctly filled
@@ -357,7 +360,7 @@ int modules_set_memhook(const memhook_t *hook) {
     return 0;
 }
 
-int modules_ctx_set_logger(const char *ctx_name, const log_cb logger) {
+int m_context_set_logger(const char *ctx_name, const log_cb logger) {
     MOD_PARAM_ASSERT(logger);
     FIND_CTX(ctx_name);
     
@@ -365,7 +368,7 @@ int modules_ctx_set_logger(const char *ctx_name, const log_cb logger) {
     return 0;
 }
 
-int modules_ctx_loop_events(const char *ctx_name, const int max_events) {
+int m_context_loop_events(const char *ctx_name, const int max_events) {
     MOD_PARAM_ASSERT(max_events > 0);
     FIND_CTX(ctx_name);
     MOD_ASSERT(!c->looping, "Context already looping.", -EINVAL);
@@ -380,20 +383,20 @@ int modules_ctx_loop_events(const char *ctx_name, const int max_events) {
     return ret;
 }
 
-int modules_ctx_quit(const char *ctx_name, const uint8_t quit_code) {
+int m_context_quit(const char *ctx_name, const uint8_t quit_code) {
     FIND_CTX(ctx_name);
     MOD_ASSERT(c->looping, "Context not looping.", -EINVAL);
        
     return loop_quit(c, quit_code);
 }
 
-int modules_ctx_fd(const char *ctx_name) {
+int m_context_fd(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
     return dup(poll_get_fd(&c->ppriv));
 }
 
-int modules_ctx_dispatch(const char *ctx_name) {
+int m_context_dispatch(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
     if (!c->looping) {
@@ -410,7 +413,7 @@ int modules_ctx_dispatch(const char *ctx_name) {
     return recv_events(c, 0);
 }
 
-int modules_ctx_dump(const char *ctx_name) {
+int m_context_dump(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
     ctx_logger(c, NULL, "{\n");
@@ -435,7 +438,7 @@ int modules_ctx_dump(const char *ctx_name) {
 }
 
 
-int modules_ctx_load(const char *ctx_name, const char *module_path) {
+int m_context_load(const char *ctx_name, const char *module_path) {
     MOD_PARAM_ASSERT(module_path);
     FIND_CTX(ctx_name);
     
@@ -461,7 +464,7 @@ int modules_ctx_load(const char *ctx_name, const char *module_path) {
     return 0;
 }
 
-int modules_ctx_unload(const char *ctx_name, const char *module_path) {
+int m_context_unload(const char *ctx_name, const char *module_path) {
     MOD_PARAM_ASSERT(module_path);    
     FIND_CTX(ctx_name);
     
@@ -488,7 +491,7 @@ int modules_ctx_unload(const char *ctx_name, const char *module_path) {
     return -ENODEV;
 }
 
-size_t modules_ctx_trim(const char *ctx_name, const stats_t *thres) {
+size_t m_context_trim(const char *ctx_name, const stats_t *thres) {
     FIND_CTX(ctx_name);
     MOD_PARAM_ASSERT(thres);
 

@@ -194,9 +194,15 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] Rename mod_stack_t/mod_map_t etc etc to m_map_t/m_stack_t
 
-- [ ] Rename modules* API to module_ctx*
-- [ ] Rename modules_easy.h API to m_ctx_XXX ?
-- [ ] Rename modules.{c,h} to context.{c,h} ?
+- [x] Rename modules_* API to m_context_*
+- [x] Rename modules_easy.h API to m_ctx_XXX ?
+- [x] Rename modules.{c,h} to context.{c,h} ?
+- [ ] "m_" -> libmodule prefix
+- [ ] "mod_" -> module API prefix
+- [ ] "ctx_" -> context API prefix
+- [ ] "" (no prefix) -> global API
+- [ ] Rename module_* API to m_module_*
+- [ ] Rename module_easy API to m_mod_*
 
 - [ ] Rename other exposed APIs (types/enums/enum values) to m_*
 
@@ -205,6 +211,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Fix modules_ctx_dispatch() to just reutrn number of dispatched messages (or -errno)
 - [x] Fix modules_ctx_fd() to just reutrn context's fd (or -errno)
 - [ ] Fix fetch_ms()! Do not accout for recv'd SYSTEM pubsub messages (ie: internal messages)
+- [x] Fix: actually check that modules_prestart did not modify memhook before overriding it in libmodule_init()
 
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples

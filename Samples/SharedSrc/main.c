@@ -1,4 +1,4 @@
-#include <module/modules_easy.h>
+#include <module/context_easy.h>
 
 extern void create_modules(const char *ctx_name);
 extern void destroy_modules(void);
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     /*
      * Loop on this context to get our modules' events
      */
-    modules_ctx_loop("test");
+    m_context_loop("test");
     
     /*
      * Finally, destroy our modules

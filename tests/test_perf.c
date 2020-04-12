@@ -1,6 +1,6 @@
 #include "test_perf.h"
 #include <module/module_easy.h>
-#include <module/modules_easy.h>
+#include <module/context_easy.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -33,7 +33,7 @@ void test_poll_perf(void **state) {
     double time_spent = (double)(end_tell - begin_tell);
     printf("Messages feeding took %.2lf us\n", time_spent);
     
-    modules_loop();
+    m_ctx_loop();
     
     clock_t end_recv = clock();
     time_spent = (double)(end_recv - end_tell);
@@ -51,6 +51,6 @@ static void my_recv(const msg_t *msg, const void *userdata) {
         msg->ps_msg->type == USER && 
         ++ctr == MAX_LEN) {
            
-        modules_quit(ctr);
+        m_ctx_quit(ctr);
     }
 }

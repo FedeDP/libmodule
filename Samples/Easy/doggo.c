@@ -1,5 +1,5 @@
 #include <module/module_easy.h> 
-#include <module/modules_easy.h> 
+#include <module/context_easy.h> 
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -51,7 +51,7 @@ static void receive(const msg_t *msg, const void *userdata) {
                 m_log("ZzzZzz...\n");
                 
                 /* Test runtime module loading */
-                modules_load("./libtestmod.so");
+                m_ctx_load("./libtestmod.so");
             } else if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
                 m_log("Sob...\n");
             } else if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {

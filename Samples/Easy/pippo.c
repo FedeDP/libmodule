@@ -1,5 +1,5 @@
 #include <module/module_easy.h>
-#include <module/modules_easy.h>
+#include <module/context_easy.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
@@ -78,7 +78,7 @@ static void receive(const msg_t *msg, const void *userdata) {
             case 'q':
                 m_log("I have to go now!\n");
                 m_publish_str("leaving", "ByeBye", 0);
-                modules_quit(0);
+                m_ctx_quit(0);
                 break;
             default:
                 /* Avoid newline */
@@ -90,7 +90,7 @@ static void receive(const msg_t *msg, const void *userdata) {
     } else if (msg->ps_msg->type == USER && 
         !strcmp((char *)msg->ps_msg->data, "BauBau")) {
         
-        modules_dump();
+        m_ctx_dump();
         
         m_become(ready);
         m_log("Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
@@ -140,7 +140,7 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
                 m_dump();
                 m_log("I have to go now!\n");
                 m_publish_str("leaving", "ByeBye", 0);
-                modules_quit(0);
+                m_ctx_quit(0);
                 break;
             default:
                 /* Avoid newline */

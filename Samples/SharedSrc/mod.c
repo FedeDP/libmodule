@@ -1,5 +1,5 @@
 #include <module/module.h>
-#include <module/modules.h>
+#include <module/context.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
@@ -77,7 +77,7 @@ static void A_recv(const msg_t *msg, const void *userdata) {
             case 'q':
                 module_log(selfA, "I have to go now!\n");
                 module_publish(selfA, "leaving", (unsigned char *)"ByeBye", strlen("ByeBye"), false);
-                modules_ctx_quit("test", 0);
+                m_context_quit("test", 0);
                 break;
             default:
                 /* Avoid newline */
@@ -119,7 +119,7 @@ static void A_recv_ready(const msg_t *msg, const void *userdata) {
             case 'q':
                 module_log(selfA, "I have to go now!\n");
                 module_publish(selfA, "leaving", (unsigned char *)"ByeBye", strlen("ByeBye"), false);
-                modules_ctx_quit("test", 0);
+                m_context_quit("test", 0);
                 break;
             default:
                 /* Avoid newline */

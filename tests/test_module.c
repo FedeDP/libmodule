@@ -1,6 +1,6 @@
 #include "test_module.h"
 #include <module/module.h>
-#include <module/modules.h>
+#include <module/context.h>
 #include <unistd.h>
 #include <sys/stat.h> 
 #include <fcntl.h>
@@ -487,7 +487,7 @@ static void recv(const msg_t *msg, const void *userdata) {
     if (msg->type == TYPE_PS && msg->ps_msg->type == USER) {
         ctr++;
         if (!strcmp((char *)msg->ps_msg->data, "hi3!")) {
-            modules_ctx_quit(CTX, ctr);
+            m_context_quit(CTX, ctr);
         }
     }
 }

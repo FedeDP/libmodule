@@ -14,13 +14,13 @@
 /* 
  * ctors order: 
  * 0) modules_pre_start()
- * 1) modules_init()
+ * 1) libmodule_init()
  * 2) each module_pre_start() (only module_easy API)
  * 3) each module ctor function (only module_easy API)
  * 
  * dtors order:
  * 1) each module's dtor function (only module_easy API)
- * 0) modules_destroy()
+ * 0) libmodule_destroy()
  */
 #define _ctor0_     __attribute__((constructor (110)))
 #define _ctor1_     __attribute__((constructor (111)))

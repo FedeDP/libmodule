@@ -1,5 +1,5 @@
 #include <module/module_easy.h>
-#include <module/modules_easy.h>
+#include <module/context_easy.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
@@ -61,7 +61,7 @@ static void receive(const msg_t *msg, const void *userdata) {
             case 'q':
                 m_log("I have to go now!\n");
                 m_publish_str("leaving", "ByeBye", 0);
-                modules_quit(0);
+                m_ctx_quit(0);
                 break;
             default:
                 /* Avoid newline */
@@ -114,7 +114,7 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
             case 'q':
                 m_log("I have to go now!\n");
                 m_publish_str("leaving", "ByeBye", 0);
-                modules_quit(0);
+                m_ctx_quit(0);
                 break;
             default:
                 /* Avoid newline */
