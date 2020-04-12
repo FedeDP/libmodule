@@ -16,7 +16,7 @@
 #define FS_MOD()          FS_CLIENT(); mod_t *mod = cl->mod;
 
 /** TODO: these will go in a separate public header, eg: module/fs.h **/
-#define MODULE_MAGIC        'L'
+#define MODULE_MAGIC        'm' // libmodule API global prefix
 
 #define MOD_DATA_SIZE_LIMIT 512 
 
@@ -179,7 +179,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
                     return -ENOMEM;
                 }
             }
-            cl->mod = mem_ref(mod); // keep module alive while any client uses it
+            cl->mod = m_mem_ref(mod); // keep module alive while any client uses it
             list_insert(fp->clients, cl, NULL);
             fi->fh = (uint64_t) cl;
             fi->direct_io = 1;
@@ -388,7 +388,7 @@ static void client_dtor(void *data) {
         fuse_pollhandle_destroy(cl->ph);
         cl->ph = NULL;
     }
-    mem_unref(cl->mod);
+    m_mem_unref(cl->mod);
     memhook._free(cl);
 }
 

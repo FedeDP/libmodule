@@ -43,7 +43,7 @@ extern int fs_cleanup(mod_t *mod);
 static void module_dtor(void *data) {
     mod_t *mod = (mod_t *)data;
     if (mod) {
-        mem_unref(mod->self->ctx);
+        m_mem_unref(mod->self->ctx);
         
         map_free(&mod->subscriptions);
         stack_free(&mod->recvs);
@@ -432,10 +432,10 @@ int module_register(const char *name, const char *ctx_name, self_t **self, const
     
     MODULE_DEBUG("Registering module '%s'.\n", name);
     
-    mod_t *mod = mem_new(sizeof(mod_t), module_dtor);
+    mod_t *mod = m_mem_new(sizeof(mod_t), module_dtor);
     MOD_ALLOC_ASSERT(mod);
     
-    mem_ref(context);
+    m_mem_ref(context);
     
     mod->flags = flags & (uint8_t)-1; // do not store context's flags (only store first byte)
     if (flags & MOD_NAME_DUP) {
@@ -483,7 +483,7 @@ int module_register(const char *name, const char *ctx_name, self_t **self, const
         }
     } while (false);
     
-    mem_unref(mod);
+    m_mem_unref(mod);
     return ret;
 }
 

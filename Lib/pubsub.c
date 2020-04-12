@@ -51,7 +51,7 @@ static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
     return false;
     
 found:
-    mem_ref(sub);
+m_mem_ref(sub);
     queue_enqueue(msg->subs, sub);
     /* 
      * Replace user provided pointer with source one, 
@@ -75,7 +75,7 @@ static int tell_if(void *data, const char *key, void *value) {
         if (write(mod->pubsub_fd[1], &msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
             MODULE_DEBUG("Failed to write message: %s\n", strerror(errno));
         } else {
-            mem_ref(msg);
+            m_mem_ref(msg);
         }
     }
     return 0;
@@ -83,13 +83,13 @@ static int tell_if(void *data, const char *key, void *value) {
 
 static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
                                     ps_msg_type type, const size_t size, const mod_ps_flags flags) {
-    ps_priv_t *m = mem_new(sizeof(ps_priv_t), ps_msg_dtor);
+    ps_priv_t *m = m_mem_new(sizeof(ps_priv_t), ps_msg_dtor);
     if (m) {
         m->msg.sender = sender;
         if (sender) {
-            mem_ref(sender->mod); // keep module alive until message is dispatched
+            m_mem_ref(sender->mod); // keep module alive until message is dispatched
         }
-        m->subs = queue_new(mem_unref);
+        m->subs = queue_new(m_mem_unref);
         m->msg.topic = topic;
         m->msg.type = type;
         m->msg.size = size;
@@ -129,7 +129,7 @@ static void ps_msg_dtor(void *data) {
         memhook._free((void *)pubsub_msg->msg.data);
     }
     if (pubsub_msg->msg.sender) {
-        mem_unref(pubsub_msg->msg.sender->mod);
+        m_mem_unref(pubsub_msg->msg.sender->mod);
     }
 }
 
@@ -149,7 +149,7 @@ static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
      * If nobody received our message; destroy it right away;
      * else: num of refs for this message == number of modules that received it.
      */
-    mem_unref(m);
+    m_mem_unref(m);
     return 0;
 }
 
@@ -196,7 +196,7 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
         } else {
             MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
             queue_remove(mm->subs);
-            mem_unref(mm);
+            m_mem_unref(mm);
         }
     }
     return 0;
@@ -221,7 +221,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
     if (msg->type == TYPE_PS) {
         ps_priv_t *mm = (ps_priv_t *)msg->ps_msg;
         queue_remove(mm->subs);
-        mem_unref(mm);
+        m_mem_unref(mm);
     }
     
     mod->stats.recv_msgs++;
@@ -255,7 +255,7 @@ int module_register_sub(const self_t *self, const char *topic, mod_src_flags fla
         
         /* Lazy subscriptions map init */
         if (!mod->subscriptions)  {
-            mod->subscriptions = map_new(false, mem_unref);
+            mod->subscriptions = map_new(false, m_mem_unref);
             MOD_ALLOC_ASSERT(mod->subscriptions);
         } else {
             ev_src_t *old_sub = map_get(mod->subscriptions, topic);
@@ -271,7 +271,7 @@ int module_register_sub(const self_t *self, const char *topic, mod_src_flags fla
         }
         
         /* Store new sub as ref'd memory */
-        ev_src_t *sub = mem_new(sizeof(ev_src_t), subscribtions_dtor);
+        ev_src_t *sub = m_mem_new(sizeof(ev_src_t), subscribtions_dtor);
         MOD_ALLOC_ASSERT(sub);
         
         ps_src_t *ps_src = &sub->ps_src;

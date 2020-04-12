@@ -198,7 +198,7 @@ int evaluate_module(void *data, const char *key, void *value);
 int start(mod_t *mod, const bool starting);
 int stop(mod_t *mod, const bool stopping);
 
-/* Defined in modules.c */
+/* Defined in context.c */
 ctx_t *check_ctx(const char *ctx_name, const mod_flags flags);
 void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...);
 

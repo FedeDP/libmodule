@@ -87,7 +87,7 @@ static void libmodule_init(void) {
         m_set_memhook(NULL);
     }
     pthread_mutex_init(&mx, NULL);
-    ctx = map_new(false, mem_unref);
+    ctx = map_new(false, m_mem_unref);
 }
 
 static void libmodule_destroy(void) {
@@ -99,14 +99,14 @@ static void libmodule_destroy(void) {
 static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags) {
     MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
     
-    *context = mem_new(sizeof(ctx_t), ctx_dtor);
+    *context = m_mem_new(sizeof(ctx_t), ctx_dtor);
     MOD_ALLOC_ASSERT(*context);
     
     (*context)->flags = flags & ~(uint8_t)-1; // do not store useless module's flags (first byte)
     
     (*context)->logger = default_logger;
     
-    (*context)->modules = map_new(false, mem_unref);
+    (*context)->modules = map_new(false, m_mem_unref);
     
     if ((*context)->flags & CTX_NAME_DUP) {
         (*context)->flags |= CTX_NAME_AUTOFREE;
@@ -128,7 +128,7 @@ static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags)
     
     /* Map_remove automatically unref ctx for us */
     if (map_remove(ctx, (*context)->name) != 0) {
-        mem_unref(*context);
+        m_mem_unref(*context);
     }
     *context = NULL;
     return ret;
@@ -155,7 +155,7 @@ static int loop_start(ctx_t *c, const int max_events) {
     c->ppriv.max_events = max_events;
     int ret = poll_init(&c->ppriv);
     if (ret == 0) {
-        mem_ref(c); // Ensure ctx keeps existing while we loop
+        m_mem_ref(c); // Ensure ctx keeps existing while we loop
         
         fs_init(c);
         c->looping = true;
@@ -187,7 +187,7 @@ static uint8_t loop_stop(ctx_t *c) {
     
     int ret = c->quit_code;
     
-    mem_unref(c);
+    m_mem_unref(c);
     return ret;
 }
 

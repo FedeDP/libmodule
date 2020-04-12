@@ -3,12 +3,12 @@
 #include "module_cmn.h"
 
 #define MEM_LOCK(ptr, fn) \
-    mem_ref(ptr); \
+    m_mem_ref(ptr); \
     fn; \
-    mem_unref(ptr);
+    m_mem_unref(ptr);
 
-typedef void (*ref_dtor)(void *);
+typedef void (*m_ref_dtor)(void *);
 
-_public_ void *mem_new(size_t size, ref_dtor dtor);
-_public_ void *mem_ref(void *src);
-_public_ void mem_unref(void *src);
+_public_ void *m_mem_new(size_t size, m_ref_dtor dtor);
+_public_ void *m_mem_ref(void *src);
+_public_ void m_mem_unref(void *src);
