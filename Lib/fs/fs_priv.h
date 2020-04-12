@@ -1,6 +1,6 @@
 #include "poll_priv.h"
 
-#define dummy(x) x { return MOD_UNSUPPORTED; }
+#define dummy(x) x { return -EPERM; }
 
 #ifndef WITH_FS
 #define FsExposed(x) dummy(x)

@@ -20,7 +20,7 @@ m_map_t *ctx;
 memhook_t memhook;
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
-_public_ void _ctor0_ _weak_ m_prestart(void) {
+_public_ void _ctor0_ _weak_ m_pre_start(void) {
     MODULE_DEBUG("Pre-starting libmodule.");
 }
 

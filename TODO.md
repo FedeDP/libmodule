@@ -197,6 +197,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename modules_* API to m_context_*
 - [x] Rename modules_easy.h API to m_ctx_XXX ?
 - [x] Rename modules.{c,h} to context.{c,h} ?
+- [ ] Rename context.c internal API to remove "modules" naming and use context_ instead
 - [ ] "m_" -> libmodule prefix
 - [ ] "mod_" -> module API prefix
 - [ ] "ctx_" -> context API prefix
