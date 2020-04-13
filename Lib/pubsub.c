@@ -255,7 +255,7 @@ int m_module_register_sub(const self_t *self, const char *topic, mod_src_flags f
         
         /* Lazy subscriptions map init */
         if (!mod->subscriptions)  {
-            mod->subscriptions = map_new(false, m_mem_unref);
+            mod->subscriptions = map_new(M_MAP_VAL_ALLOW_UPDATE, m_mem_unref);
             MOD_ALLOC_ASSERT(mod->subscriptions);
         } else {
             ev_src_t *old_sub = map_get(mod->subscriptions, topic);
@@ -265,8 +265,6 @@ int m_module_register_sub(const self_t *self, const char *topic, mod_src_flags f
                     old_sub->userptr = userptr;
                     return 0;
                 }
-                /* Remove old subscription object; requested flags are different! */
-                map_remove(mod->subscriptions, topic);
             }
         }
         
@@ -281,7 +279,7 @@ int m_module_register_sub(const self_t *self, const char *topic, mod_src_flags f
         sub->self = self;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
         ps_src->topic = sub->flags & SRC_DUP ? mem_strdup(topic) : topic;
-        ret = map_put(mod->subscriptions, ps_src->topic, sub);
+        ret = map_put(mod->subscriptions, ps_src->topic, sub); // M_MAP_VAL_ALLOW_UPDATE -> this will dtor old elem before updating
         if (ret == 0) {
             fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         }

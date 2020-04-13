@@ -16,7 +16,13 @@ typedef struct _map m_map_t;
 /* Incomplete struct declaration for hashmap iterator */
 typedef struct _map_itr m_map_itr_t;
 
-_public_ m_map_t *map_new(const bool keysdup, const m_map_dtor fn);
+typedef enum {
+    M_MAP_KEY_DUP           = 0x01,         // Should map keys be dupped?
+    M_MAP_KEY_AUTOFREE      = 0x02,         // Should map keys be freed automatically?
+    M_MAP_VAL_ALLOW_UPDATE  = 0X04          // Does map object allow for updating values?
+} m_map_flags;
+
+_public_ m_map_t *map_new(const m_map_flags flags, const m_map_dtor fn);
 _public_ m_map_itr_t *map_itr_new(const m_map_t *m);
 _public_ m_map_itr_t *map_itr_next(m_map_itr_t *itr);
 _public_ int map_itr_remove(m_map_itr_t *itr);

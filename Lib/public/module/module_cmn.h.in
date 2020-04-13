@@ -116,7 +116,7 @@ typedef struct {
 typedef struct {
     ps_msg_type type;
     const self_t *sender;   // Sender reference
-    const char *topic;      
+    const char *topic;
     const void *data;
     ssize_t size;
 } ps_msg_t;

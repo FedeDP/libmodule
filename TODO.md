@@ -201,6 +201,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] "m_" -> libmodule prefix
 - [x] "mod_" -> module API prefix
 - [x] "ctx_" -> context API prefix
+- [x] "mem_" -> ref'd mem API prefix
+- [x] "map/list/queue/stack_" -> data structures API prefix
 - [x] "" (no prefix) -> global API
 - [x] Rename module_* API to m_module_*
 - [x] Rename module_easy API to m_mod_*
@@ -212,6 +214,10 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Fix modules_ctx_fd() to just reutrn context's fd (or -errno)
 - [ ] Fix fetch_ms()! Do not accout for recv'd SYSTEM pubsub messages (ie: internal messages)
 - [x] Fix: actually check that modules_prestart did not modify memhook before overriding it in libmodule_init()
+
+- [x] MAP API: drop bool dupkeys and and m_map_flags flags!
+
+- [ ] Drop "size" from ps_msg_t?
 
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples

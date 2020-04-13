@@ -12,7 +12,7 @@ void test_map_put(void **state) {
     int ret = map_put(my_map, "key", &val);
     assert_false(ret == 0);
     
-    my_map = map_new(false, NULL);
+    my_map = map_new(0, NULL);
     
     /* NULL value */
     ret = map_put(my_map, "key", NULL);
@@ -157,7 +157,7 @@ void test_map_stress(void **state) {
     (void) state; /* unused */
     
     int ret;
-    my_map = map_new(true, NULL);
+    my_map = map_new(M_MAP_KEY_DUP, NULL);
     const int size = 1000000;
     for (int i = 0; i < size; i++) {
         char key[20];

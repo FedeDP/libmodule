@@ -87,7 +87,7 @@ static void libmodule_init(void) {
         m_set_memhook(NULL);
     }
     pthread_mutex_init(&mx, NULL);
-    ctx = map_new(false, m_mem_unref);
+    ctx = map_new(0, m_mem_unref);
 }
 
 static void libmodule_destroy(void) {
@@ -106,7 +106,7 @@ static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags)
     
     (*context)->logger = default_logger;
     
-    (*context)->modules = map_new(false, m_mem_unref);
+    (*context)->modules = map_new(0, m_mem_unref);
     
     if ((*context)->flags & CTX_NAME_DUP) {
         (*context)->flags |= CTX_NAME_AUTOFREE;

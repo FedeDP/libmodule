@@ -32,7 +32,7 @@ typedef struct {
 struct _map {
     size_t table_size;
     size_t length;
-    bool dupkeys;
+    m_map_flags flags;
     map_elem *table;
     m_map_dtor dtor;
     map_elem *last_insert; // used internally by libmodule. Not available in external API
@@ -177,16 +177,26 @@ static int hashmap_put(m_map_t *m, const char *key, void *value) {
             return -ENOMEM;
         }
     }
+    
+    bool insert = false;
     if (!entry->key) {
         entry->key = key;
         m->length++;
-    } else if (m->dtor && entry->data != value) {
-        /* Destroy old value if needed */
-        m->dtor(entry->data);
+        insert = true;
+    } 
+    
+    if (m->flags & M_MAP_VAL_ALLOW_UPDATE) {
+        if (m->dtor && entry->data != value) {
+            /* Destroy old value if needed */
+            m->dtor(entry->data);
+        }
+        insert = true;
     }
-    /* Update value in any case */
-    entry->data = value;
-    m->last_insert = entry;
+    
+    if (insert) {
+        entry->data = value;
+        m->last_insert = entry;
+    }
     return 0;
 }
 
@@ -197,7 +207,7 @@ static int hashmap_put(m_map_t *m, const char *key, void *value) {
  */
 static void clear_elem(m_map_t *m, map_elem *removed_entry) {
     /* Blank out the fields */
-    if (m->dupkeys) {
+    if (m->flags & M_MAP_KEY_AUTOFREE) {
         memhook._free((void *)removed_entry->key);
     }
     removed_entry->key = NULL;
@@ -244,14 +254,17 @@ void *map_peek(const m_map_t *m) {
 /*
  * Return an empty hashmap, or NULL on failure.
  */
-m_map_t *map_new(const bool keysdup, const m_map_dtor fn) {
+m_map_t *map_new(const m_map_flags flags, const m_map_dtor fn) {
     m_map_t *m = memhook._calloc(1, sizeof(m_map_t));
     if (m) {
         m->table = memhook._calloc(MAP_SIZE_DEFAULT, sizeof(map_elem));
         if (m->table) {
             m->table_size = MAP_SIZE_DEFAULT;
             m->dtor = fn;
-            m->dupkeys = keysdup;
+            m->flags = flags;
+            if (flags & M_MAP_KEY_DUP) {
+                m->flags |= M_MAP_KEY_AUTOFREE; // force autofree for dupped keys
+            }
         } else {
             map_free(&m);
         }
@@ -347,7 +360,7 @@ int map_put(m_map_t *m, const char *key, void *value) {
     MOD_PARAM_ASSERT(value);
     
     /* Find a place to put our value */
-    return hashmap_put(m, m->dupkeys ? mem_strdup(key) : key, value);
+    return hashmap_put(m, m->flags & M_MAP_KEY_DUP ? mem_strdup(key) : key, value);
 }
 
 /*
