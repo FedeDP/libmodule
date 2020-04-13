@@ -499,7 +499,7 @@ int m_module_deregister(self_t **self) {
     MODULE_DEBUG("Deregistering module '%s'.\n", mod->name);
     
     /* Keep module alive untile destroy() callback is called */
-    MEM_LOCK(mod, {
+    M_MEM_LOCK(mod, {
         /* Stop module */
         stop(mod, true);
         

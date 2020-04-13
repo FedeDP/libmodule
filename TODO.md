@@ -210,6 +210,9 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Rename other exposed APIs (types/enums/enum values) to m_*
 - [x] Rename evaluate() to eval()
 
+- [ ] Add m_context_(de)register() API
+- [ ] Split mod_flags into m_mod_flags and m_ctx_flags
+
 - [x] Fix modules_ctx_dispatch() to just reutrn number of dispatched messages (or -errno)
 - [x] Fix modules_ctx_fd() to just reutrn context's fd (or -errno)
 - [ ] Fix fetch_ms()! Do not accout for recv'd SYSTEM pubsub messages (ie: internal messages)

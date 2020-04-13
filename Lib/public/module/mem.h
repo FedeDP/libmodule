@@ -2,7 +2,7 @@
 
 #include "module_cmn.h"
 
-#define MEM_LOCK(ptr, fn) \
+#define M_MEM_LOCK(ptr, fn) \
     m_mem_ref(ptr); \
     fn; \
     m_mem_unref(ptr);
