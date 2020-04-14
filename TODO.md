@@ -222,6 +222,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [ ] Drop "size" from ps_msg_t?
 
+- [x] Create new "main.c" file with libmodule_init(), libmodule_end(), weak main() and m_pre_start()
+
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [ ] Update examples
 - [ ] Update tests

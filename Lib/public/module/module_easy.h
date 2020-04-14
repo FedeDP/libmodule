@@ -19,7 +19,7 @@
         } \
     } \
     static void _dtor1_ destructor(void) { m_module_deregister((self_t **)&self()); } \
-    static void _ctor2_ m_module_pre_start(void)
+    static void _ctor2_ module_pre_start(void)
 
 #define MODULE(name) MODULE_CTX(name, M_CTX_DEFAULT)
 
