@@ -20,7 +20,7 @@ tasks:
   - test: |
       cd libmodule
       (cd build && ctest -V)
-      (cd build_fs && ctest -V)
+      # (cd build_fs && ctest -V) -> This requires fuse module to be loaded
 triggers:
   - action: email
     condition: failure
