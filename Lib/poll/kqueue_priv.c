@@ -63,7 +63,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         if (tmp->pt_src.f.fd != -1) {
             EV_SET(_ev, tmp->pt_src.f.fd, EVFILT_VNODE, f, tmp->pt_src.pt.events, 0, tmp);
         } else {
-            return -EBADFD;
+            return -EBADF;
         }
         break;
     case TYPE_PID:
