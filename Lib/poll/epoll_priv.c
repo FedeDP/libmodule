@@ -1,10 +1,7 @@
 #include "poll_priv.h"
 #include <sys/epoll.h>
 
-extern void create_timerfd(ev_src_t *tmp);
-extern void create_signalfd(ev_src_t *tmp);
-extern void create_inotifyfd(ev_src_t *tmp);
-extern void create_pidfd(ev_src_t *tmp);
+extern void create_priv_fd(ev_src_t *tmp);
 
 typedef struct {
     int fd;
@@ -44,44 +41,15 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     }
     
     errno = 0;
-    int fd = -1;
-    switch (tmp->type) {
-    case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
-    case TYPE_FD:
-        fd = tmp->fd_src.fd;
-        break;
-    case TYPE_TMR: {
-        if (flag == ADD) {
-            create_timerfd(tmp);
-        }
-        fd = tmp->tmr_src.f.fd;
-        break;
-    }
-    case TYPE_SGN: {
-        if (flag == ADD) {
-            create_signalfd(tmp);
-        }
-        fd = tmp->sgn_src.f.fd;
-        break;
-    }
-    case TYPE_PT: {
-        if (flag == ADD) {
-            create_inotifyfd(tmp);
-        }
-        fd = tmp->pt_src.f.fd;
-        break;
-    }
-    case TYPE_PID: {
-        if (flag == ADD) {
-            create_pidfd(tmp);
-        }
-        fd = tmp->pt_src.f.fd;
-        break;
-    }
-    default:
-        break;
+    if (flag == ADD) {
+        create_priv_fd(tmp);
     }
     
+    /* 
+     * Note that fd_src shares
+     * memory space with other fds (inside union)
+     */
+    const int fd = tmp->fd_src.fd;
     int ret = epoll_ctl(ep->fd, f, fd, ev);
     /* Workaround for STDIN_FILENO: it returns EPERM but it is actually pollable */
     if (ret == -1 && fd == STDIN_FILENO && errno == EPERM) {

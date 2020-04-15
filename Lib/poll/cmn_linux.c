@@ -12,7 +12,12 @@
 /* Inotify related defines */
 #define BUF_LEN (sizeof(struct inotify_event) + NAME_MAX + 1)
 
-void create_timerfd(ev_src_t *tmp) {
+static void create_timerfd(ev_src_t *tmp);
+static void create_signalfd(ev_src_t *tmp);
+static void create_inotifyfd(ev_src_t *tmp);
+static void create_pidfd(ev_src_t *tmp);
+
+static void create_timerfd(ev_src_t *tmp) {
     tmp->tmr_src.f.fd = timerfd_create(tmp->tmr_src.its.clock_id, TFD_NONBLOCK | TFD_CLOEXEC);
     struct itimerspec timerValue = {{0}};
     timerValue.it_value.tv_sec = tmp->tmr_src.its.ms / 1000;
@@ -26,7 +31,7 @@ void create_timerfd(ev_src_t *tmp) {
     timerfd_settime(tmp->tmr_src.f.fd, abs_fl, &timerValue, NULL);
 }
 
-void create_signalfd(ev_src_t *tmp) {
+static void create_signalfd(ev_src_t *tmp) {
     sigset_t mask;
     sigemptyset(&mask);
     sigaddset(&mask, tmp->sgn_src.sgs.signo);
@@ -34,15 +39,34 @@ void create_signalfd(ev_src_t *tmp) {
     tmp->sgn_src.f.fd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
 }
 
-void create_inotifyfd(ev_src_t *tmp) {
+static void create_inotifyfd(ev_src_t *tmp) {
     tmp->pt_src.f.fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
     inotify_add_watch(tmp->pt_src.f.fd, tmp->pt_src.pt.path, tmp->pt_src.pt.events);
 }
 
-void create_pidfd(ev_src_t *tmp) {
+static void create_pidfd(ev_src_t *tmp) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
     tmp->pt_src.f.fd = syscall(__NR_pidfd_open, tmp->pid_src.pid.pid, 0);
 #endif
+}
+
+void create_priv_fd(ev_src_t *tmp) {
+    switch (tmp->type) {
+        case TYPE_TMR:
+            create_timerfd(tmp);
+            break;
+        case TYPE_SGN:
+            create_signalfd(tmp);
+            break;
+        case TYPE_PT:
+            create_inotifyfd(tmp);
+            break;
+        case TYPE_PID:
+            create_pidfd(tmp);
+            break;
+        default:
+            break;
+    }
 }
 
 int poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {

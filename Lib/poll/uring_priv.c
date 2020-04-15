@@ -16,10 +16,7 @@
  * * Avoid io_uring_submit() in poll_wait() ?
  */
 
-extern void create_timerfd(ev_src_t *tmp);
-extern void create_signalfd(ev_src_t *tmp);
-extern void create_inotifyfd(ev_src_t *tmp);
-extern void create_pidfd(ev_src_t *tmp);
+extern void create_priv_fd(ev_src_t *tmp);
 static void flush_reqs(poll_priv_t *priv);
 
 typedef struct {
@@ -57,44 +54,15 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         }
         
         struct io_uring_sqe *sqe = (struct io_uring_sqe *)tmp->ev;
-        int fd = -1;
-        switch (tmp->type) {
-        case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
-        case TYPE_FD:
-            fd = tmp->fd_src.fd;
-            break;
-        case TYPE_TMR: {
-            if (flag == ADD && tmp->tmr_src.f.fd == -1) {
-                create_timerfd(tmp);
-            } 
-            fd = tmp->tmr_src.f.fd;            
-            break;
+        if (flag == ADD && tmp->fd_src.fd == -1) {
+            create_priv_fd(tmp);
         }
-        case TYPE_SGN: {
-            if (flag == ADD && tmp->sgn_src.f.fd == -1) {
-                create_signalfd(tmp);
-            }
-            fd = tmp->sgn_src.f.fd;
-            break; 
-        }
-        case TYPE_PT: {
-            if (flag == ADD && tmp->pt_src.f.fd == -1) {
-                create_inotifyfd(tmp);
-            }
-            fd = tmp->pt_src.f.fd;
-            break;
-        }
-        case TYPE_PID: {
-            if (flag == ADD && tmp->pt_src.f.fd == -1) {
-                create_pidfd(tmp);
-            }
-            fd = tmp->pt_src.f.fd;
-            break;
-        }
-        default:
-            break;
-        }
-
+        
+        /* 
+         * Note that fd_src shares
+         * memory space with other fds (inside union)
+         */
+        const int fd = tmp->fd_src.fd;
         if (fd != -1) {
             if (flag == ADD) {
                 io_uring_prep_poll_add(sqe, fd, POLLIN);
