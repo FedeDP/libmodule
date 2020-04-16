@@ -52,7 +52,7 @@ typedef enum {
 } mod_flags;
 
 /* Modules states */
-typedef enum { IDLE = 0x1, RUNNING = 0x2, PAUSED = 0x4, STOPPED = 0x8 } mod_states;
+typedef enum { IDLE = 0x01, RUNNING = 0x02, PAUSED = 0x04, STOPPED = 0x08, ZOMBIE = 0x10 } mod_states;
 
 /* PubSub message types */
 typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;

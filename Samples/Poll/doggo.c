@@ -4,7 +4,7 @@
 
 static void receive_sleeping(const msg_t *msg, const void *userdata);
 
-MODULE("Doggo");
+M_MOD("Doggo");
 
 static void module_pre_start(void) {
 }

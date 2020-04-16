@@ -12,6 +12,7 @@
 - [x] Fix: fix ps_priv_t->sub mem_ref/unref
 - [x] Expose new public header <module/mem.h>?
 - [x] Add a MEM_LOCK macro to keep a referenced memory alive
+- [x] Fix: let user only use m_module_name()/m_module_ctx()/m_module_is() on module's reference on a deregistered module (kept alive by some PS messaging)
 
 ### liburing
 
@@ -96,6 +97,32 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] When deregistering a module through module_deregister(), notify fuse fs and destroy clients associated with that module if needed...
 - [x] enable FS in CI builds + tests
 - [x] Fix open callback checks
+
+### API renamings/refactor
+
+- [x] Rename mod_stack_t/mod_map_t etc etc to m_map_t/m_stack_t
+- [x] Rename modules_* API to m_context_*
+- [x] Rename modules_easy.h API to m_ctx_XXX ?
+- [x] Rename modules.{c,h} to context.{c,h} ?
+- [x] Rename context.c internal API to remove "modules" naming and use context_ instead
+- [x] "m_" -> libmodule prefix
+- [x] "mod_" -> module API prefix
+- [x] "ctx_" -> context API prefix
+- [x] "mem_" -> ref'd mem API prefix
+- [x] "map/list/queue/stack_" -> data structures API prefix
+- [x] "" (no prefix) -> global API
+- [x] Rename module_* API to m_module_*
+- [x] Rename module_easy API to m_mod_*
+- [x] Rename mem API to m_mem*
+- [ ] Rename other exposed APIs (types/enums/enum values) to m_*
+- [x] Rename MODULE() to M_MOD()
+- [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
+- [ ] Move away from module_cmn.h not common data structures (and put them in context.h or module.h)
+- [ ] Rename module_cmn.h to common.h
+- [x] Rename evaluate() to eval()
+
+- [ ] Add m_context_(de)register() API
+- [ ] Split mod_flags into m_mod_flags and m_ctx_flags
 
 ### New Linked list api
 
@@ -191,27 +218,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Add a MOD_PERSIST module's flag to disallow module_deregister on a module
 - [x] Actually call module_deregister() on old module when replacing it (MOD_ALLOW_REPLACE flag)
 - [x] Switch to errno for errors? (ie: only define MOD_OK/MOD_ERR return codes and then rely upon errno?)
-
-- [x] Rename mod_stack_t/mod_map_t etc etc to m_map_t/m_stack_t
-
-- [x] Rename modules_* API to m_context_*
-- [x] Rename modules_easy.h API to m_ctx_XXX ?
-- [x] Rename modules.{c,h} to context.{c,h} ?
-- [x] Rename context.c internal API to remove "modules" naming and use context_ instead
-- [x] "m_" -> libmodule prefix
-- [x] "mod_" -> module API prefix
-- [x] "ctx_" -> context API prefix
-- [x] "mem_" -> ref'd mem API prefix
-- [x] "map/list/queue/stack_" -> data structures API prefix
-- [x] "" (no prefix) -> global API
-- [x] Rename module_* API to m_module_*
-- [x] Rename module_easy API to m_mod_*
-- [x] Rename mem API to m_mem*
-- [ ] Rename other exposed APIs (types/enums/enum values) to m_*
-- [x] Rename evaluate() to eval()
-
-- [ ] Add m_context_(de)register() API
-- [ ] Split mod_flags into m_mod_flags and m_ctx_flags
 
 - [x] Fix modules_ctx_dispatch() to just reutrn number of dispatched messages (or -errno)
 - [x] Fix modules_ctx_fd() to just reutrn context's fd (or -errno)

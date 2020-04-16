@@ -57,7 +57,8 @@
  * Skip reference check for pure functions.
  */
 #define _GET_MOD(self, pure) \
-    MOD_ASSERT((self), "NULL self handler.", -EINVAL); \
+    MOD_ASSERT(self, "NULL self handler.", -EINVAL); \
+    MOD_ASSERT(!m_module_is(self, ZOMBIE), "Could not reference a zombie module.", -EACCES); \
     MOD_ASSERT(!(self)->is_ref || pure, "Self is a reference object. It does not own module.", -EPERM); \
     GET_MOD_PRIV((self)); \
     MOD_ASSERT(mod, "Module not found.", -ENODEV);
@@ -73,7 +74,7 @@
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
     MOD_ASSERT(m_module_is(self, state), "Wrong module state.", -EACCES);
-    
+
 typedef struct _module mod_t;
 typedef struct _context ctx_t;
 

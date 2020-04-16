@@ -5,7 +5,7 @@
 /* Interface Macros */
 #define self() *(get_self())
 
-#define MODULE_CTX(name, ctx) \
+#define M_MOD_FULL(name, ctx, flags) \
     static bool init(void); \
     static bool check(void); \
     static bool eval(void); \
@@ -15,13 +15,13 @@
     static void _ctor3_ constructor(void) { \
         if (check()) { \
             userhook_t hook = { init, eval, receive, destroy }; \
-            m_module_register(name, ctx, (self_t **)get_self(), &hook, 0); \
+            m_module_register(name, ctx, (self_t **)get_self(), &hook, flags); \
         } \
     } \
     static void _dtor1_ destructor(void) { m_module_deregister((self_t **)&self()); } \
     static void _ctor2_ module_pre_start(void)
 
-#define MODULE(name) MODULE_CTX(name, M_CTX_DEFAULT)
+#define M_MOD(name) M_MOD_FULL(name, M_CTX_DEFAULT, 0)
 
 /* Defines for easy API (with no need bothering with both _self and ctx) */
 #define m_mod_is(state)                             m_module_is(self(), state)

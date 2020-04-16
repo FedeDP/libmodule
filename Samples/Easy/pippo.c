@@ -12,7 +12,7 @@
 
 static const self_t *doggo;
 
-MODULE("Pippo");
+M_MOD("Pippo");
 
 static int myData = 5;
 

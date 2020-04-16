@@ -10,7 +10,7 @@
 
 static const char *myCtx = "SecondCtx";
 
-MODULE_CTX("B", myCtx);
+M_MOD_FULL("B", myCtx, 0);
 
 static bool init(void) {
 #ifdef __linux__

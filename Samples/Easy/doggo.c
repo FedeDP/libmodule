@@ -8,7 +8,7 @@ static void receive_sleeping(const msg_t *msg, const void *userdata);
 
 static const self_t *new_mod;
 
-MODULE("Doggo");
+M_MOD("Doggo");
 
 static void module_pre_start(void) {
     printf("Press 'c' to start playing with your own doggo...\n");

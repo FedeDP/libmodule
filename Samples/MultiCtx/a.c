@@ -9,7 +9,7 @@
 
 static const char *myCtx = "FirstCtx";
 
-MODULE_CTX("A", myCtx);
+M_MOD_FULL("A", myCtx, 0);
 
 static void module_pre_start(void) {
     

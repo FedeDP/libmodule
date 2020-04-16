@@ -502,6 +502,7 @@ int m_module_deregister(self_t **self) {
     M_MEM_LOCK(mod, {
         /* Stop module */
         stop(mod, true);
+        mod->state = ZOMBIE;
         
         /* Remove the module from the context */
         map_remove(c->modules, mod->name);
@@ -571,6 +572,7 @@ int m_module_set_userdata(const self_t *self, const void *userdata) {
 const void *m_module_get_userdata(const self_t *self) {
     MOD_ASSERT(self, "NULL self handler.", NULL);
     MOD_ASSERT(!self->is_ref, "Self is a reference object. It does not own module.", NULL);
+    MOD_ASSERT(!m_module_is(self, ZOMBIE), "Could not reference a zombie module.", NULL);
     GET_MOD_PRIV(self);
     MOD_ASSERT(mod, "Module not found.", NULL);
     

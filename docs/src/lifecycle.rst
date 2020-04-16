@@ -54,6 +54,9 @@ If a module is PAUSED, it will stop polling on its fds and PubSub messages, but 
 If a module gets STOPPED, it will stop polling on its fds and PubSub messages, and every autoclose fd will be closed. Moreover, all its registered fds are freed and its enqueued pubsub messages are destroyed. |br|
 If you instead wish to stop a module letting it manage any already-enqueued pubsub message, you need to send a POISONPILL message to it, through module_poisonpill() function. |br|
 The difference between IDLE and STOPPED states is that IDLE modules will be evaluated to be started, while STOPPED modules won't be automatically restarted. |br|
+When a module is deregistered, it will reach a final ZOMBIE state. It means that the module is no more reachable neither usable (user self_t is set to NULL), but it can still be ref'd by any previously sent message. |br|
+After all module's sent messages are received by respective recipients, module will finally be destroyed and its memory freed. |br|
+You can only call m_module_is(), m_module_name() and m_module_ctx() on a ZOMBIE module. |br|
 
 module_start() needs to be called on an IDLE or STOPPED module. |br|
 module_pause() needs to be called on a RUNNING module. |br|
