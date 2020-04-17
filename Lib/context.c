@@ -19,9 +19,8 @@ static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags)
     MOD_ALLOC_ASSERT(*context);
     
     (*context)->flags = flags & ~(uint8_t)-1; // do not store useless module's flags (first byte)
-    
+    (*context)->th_id = pthread_self();
     (*context)->logger = default_logger;
-    
     (*context)->modules = map_new(0, m_mem_unref);
     
     if ((*context)->flags & CTX_NAME_DUP) {
@@ -133,8 +132,9 @@ static int recv_events(ctx_t *c, int timeout) {
             fd_msg_t fd_msg;
             tmr_msg_t tm_msg;
             sgn_msg_t sgn_msg;
-            pt_msg_t pt_msg;
+            path_msg_t pt_msg;
             pid_msg_t pid_msg;
+            task_msg_t task_msg;
             ps_priv_t *ps_msg;
             
             MODULE_DEBUG("'%s' received %u type msg.\n", mod->name, msg.type);
@@ -165,7 +165,7 @@ static int recv_events(ctx_t *c, int timeout) {
                     msg.tmr_msg = &tm_msg;
                 }
                 break;
-            case TYPE_PT:
+            case TYPE_PATH:
                 if (poll_consume_pt(&c->ppriv, i, p, &pt_msg) == 0) {
                     pt_msg.path = p->pt_src.pt.path;
                     msg.pt_msg = &pt_msg;
@@ -176,6 +176,13 @@ static int recv_events(ctx_t *c, int timeout) {
                     pid_msg.pid = p->pid_src.pid.pid;
                     msg.pid_msg = &pid_msg;
                 }
+                break;
+            case TYPE_TASK:
+                if (poll_consume_task(&c->ppriv, i, p, &task_msg) == 0) {
+                    task_msg.tid = p->task_src.tid.tid;
+                    msg.task_msg = &task_msg;
+                }
+                pthread_join(p->task_src.th, NULL);
                 break;
             default:
                 MODULE_DEBUG("Unmanaged src %d.\n", msg.type);

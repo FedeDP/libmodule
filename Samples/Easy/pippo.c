@@ -27,9 +27,9 @@ static bool init(void) {
     m_mod_register_src(&((mod_tmr_t) { CLOCK_MONOTONIC, 5000 }), SRC_ONESHOT, NULL);
     m_mod_register_src(STDIN_FILENO, 0, NULL);
 #ifdef __linux__
-    m_mod_register_src(&((mod_pt_t) { "/home/federico", IN_CREATE }), 0, &myData);
+    m_mod_register_src(&((mod_path_t) { "/home/federico", IN_CREATE }), 0, &myData);
 #else
-    m_mod_register_src(&((mod_pt_t) { "/home/federico", NOTE_WRITE }), 0, &myData);
+    m_mod_register_src(&((mod_path_t) { "/home/federico", NOTE_WRITE }), 0, &myData);
 #endif
     
     /* Get Doggo module reference */
@@ -63,7 +63,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         } else if (msg->type == TYPE_TMR) {
             m_mod_log("Timed out.\n");
             c = 'q';
-        } else if (msg->type == TYPE_PT) {
+        } else if (msg->type == TYPE_PATH) {
             m_mod_log("A file was created in %s.\n", msg->pt_msg->path);
             c = 10;
         } else {
@@ -114,7 +114,7 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
         } else if (msg->type == TYPE_TMR) {
             m_mod_log("Timer expired.\n");
             c = 10;
-        } else if (msg->type == TYPE_PT) {
+        } else if (msg->type == TYPE_PATH) {
             m_mod_log("A file was created in %s.\n", msg->pt_msg->path);
             c = 10;
         }

@@ -72,6 +72,11 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] Only use fd_src_t inside tmr_src_t/sgn_src_t etc etc on linux
 
+- [x] Add a new TYPE_TASK source that will run a task asynchronously and at end notify user through receive() callback
+- [x] m_module_deregister_task() should pthread_cancel() the thread
+
+- [x] Rename TYPE_PT to TYPE_PATH and all its occurrencies
+
 ### Libfuse support
 
 - [x] Optional build dep
@@ -224,7 +229,9 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Fix fetch_ms()! Do not accout for recv'd SYSTEM pubsub messages (ie: internal messages)
 - [x] Fix: actually check that modules_prestart did not modify memhook before overriding it in libmodule_init()
 
-- [x] MAP API: drop bool dupkeys and and m_map_flags flags!
+- [ ] Only allow to call libmodule API from same thread in which modules/contexts were registered [...]
+
+- [x] MAP API: drop bool dupkeys and add m_map_flags flags!
 
 - [ ] Drop "size" from ps_msg_t?
 

@@ -8,7 +8,7 @@ static _ctor1_ void libmodule_init(void);
 static _dtor0_ void libmodule_destroy(void);
 
 m_map_t *ctx = NULL;
-memhook_t memhook = {0};
+memhook_t memhook = { malloc, realloc, calloc, free };
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
 _public_ void _ctor0_ _weak_ m_pre_start(void) {
@@ -73,10 +73,6 @@ _public_ int _weak_ main(int argc, char *argv[]) {
 
 static void libmodule_init(void) {
     MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
-    /* Check that memhook was not overridden during m_pre_start() */
-    if (!memhook._free) {
-        m_set_memhook(NULL);
-    }
     pthread_mutex_init(&mx, NULL);
     ctx = map_new(0, m_mem_unref);
 }

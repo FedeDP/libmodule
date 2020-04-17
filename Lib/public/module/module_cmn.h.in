@@ -63,8 +63,9 @@ typedef enum {
     TYPE_FD,    // FD Source
     TYPE_TMR,   // Timer Source
     TYPE_SGN,   // Signal Source
-    TYPE_PT,    // Path Source
-    TYPE_PID    // PID Source
+    TYPE_PATH,  // Path Source
+    TYPE_PID,   // PID Source
+    TYPE_TASK   // Task source -> SRC_ONESHOT flag is forced
 } mod_src_types;
 
 /* 
@@ -103,12 +104,17 @@ typedef struct {
 typedef struct {
     const char *path;       // Path of file/folder to which subscribe for events
     unsigned int events;    // Desired events
-} mod_pt_t;
+} mod_path_t;
 
 typedef struct {
     pid_t pid;              // Desired process id
     unsigned int events;    // Desired events. Unused on linux: only process exit is supported
 } mod_pid_t;
+
+typedef struct {
+    unsigned int tid;       // Desired thread id
+    int (*fn)(void *);      // Function to be run on thread
+} mod_task_t;
 
 /** Libmodule sub-messages received in receive() callback **/
 
@@ -140,13 +146,19 @@ typedef struct {
 typedef struct {
     const char *path;
     unsigned int events;
-} pt_msg_t;
+} path_msg_t;
 
 /* Pid event message */
 typedef struct {
     pid_t pid;
     unsigned int events;
 } pid_msg_t;
+
+/* Task event message */
+typedef struct {
+    unsigned int tid;
+    int retval;
+} task_msg_t;
 
 /* Libmodule receive() main message type */
 typedef struct {
@@ -157,8 +169,9 @@ typedef struct {
         const ps_msg_t      *ps_msg;
         const tmr_msg_t     *tmr_msg;
         const sgn_msg_t     *sgn_msg;
-        const pt_msg_t      *pt_msg;
+        const path_msg_t    *pt_msg;
         const pid_msg_t     *pid_msg;
+        const task_msg_t    *task_msg;
     };
 } msg_t;
 

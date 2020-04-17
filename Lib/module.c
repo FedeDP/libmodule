@@ -8,32 +8,18 @@ static void module_dtor(void *data);
 static int _pipe(mod_t *mod);
 static int init_pubsub_fd(mod_t *mod);
 static void src_priv_dtor(void *data);
+static void *task_thread(void *data);
 
 static int _register_src(mod_t *mod, const mod_src_types type, const void *src_data, 
                              const mod_src_flags flags, const void *userptr);
 static int _deregister_src(mod_t *mod, void *src_data, const m_list_comp comp);
 
-static int _register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr);
 static int is_fd_same(void *my_data, void *list_data);
-static int _deregister_fd(mod_t *mod, const int fd);
-
-static int _register_tmr(mod_t *mod, const mod_tmr_t *its, 
-                            const mod_src_flags flags, const void *userptr);
 static int is_tmr_same(void *my_data, void *list_data);
-static int _deregister_tmr(mod_t *mod, const mod_tmr_t *its);
-
-static int _register_sgn(mod_t *mod, const mod_sgn_t *sgs, 
-                             const mod_src_flags flags, const void *userptr);
 static int is_sgn_same(void *my_data, void *list_data);
-static int _deregister_sgn(mod_t *mod, const mod_sgn_t *sgs);
-
-static int _register_pt(mod_t *mod, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr);
-static int is_pt_same(void *my_data, void *list_data);
-static int _deregister_pt(mod_t *mod, const mod_pt_t *pt);
-
-static int _register_pid(mod_t *mod, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr);
+static int is_path_same(void *my_data, void *list_data);
 static int is_pid_same(void *my_data, void *list_data);
-static int _deregister_pid(mod_t *mod, const mod_pid_t *pid);
+static int is_task_same(void *my_data, void *list_data);
 
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop);
 static void reset_module(mod_t *mod);
@@ -121,6 +107,13 @@ static void src_priv_dtor(void *data) {
     memhook._free(t);
 }
 
+static void *task_thread(void *data) {
+    ev_src_t *src = (ev_src_t *)data;    
+    src->task_src.retval = src->task_src.tid.fn((void *)src->userptr);
+    poll_notify_task(src);
+    pthread_exit(NULL);
+}
+
 static int _register_src(mod_t *mod, const mod_src_types type, const void *src_data, 
                              const mod_src_flags flags, const void *userptr) {
     
@@ -160,14 +153,19 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
         memcpy(&sgn_src->sgs, src_data, sizeof(mod_sgn_t));
         break;
     }
-    case TYPE_PT: {
-        pt_src_t *pt_src = &src->pt_src;
-        memcpy(&pt_src->pt, src_data, sizeof(mod_pt_t));
+    case TYPE_PATH: {
+        path_src_t *pt_src = &src->pt_src;
+        memcpy(&pt_src->pt, src_data, sizeof(mod_path_t));
         break;
     }
     case TYPE_PID: {
         pid_src_t *pid_src = &src->pid_src;
         memcpy(&pid_src->pid, src_data, sizeof(mod_pid_t));
+        break;
+    }
+    case TYPE_TASK: {
+        task_src_t *task_src = &src->task_src;
+        memcpy(&task_src->tid, src_data, sizeof(mod_task_t));
         break;
     }
     default:
@@ -184,24 +182,23 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
     if (m_module_is(mod->self, RUNNING)) {
         ctx_t *c = mod->ref.ctx;
         ret = poll_set_new_evt(&c->ppriv, src, ADD);
+        
+        /* For type task: create task thread */
+        if (ret == 0 && src->type == TYPE_TASK) {
+            ret = pthread_create(&src->task_src.th, NULL, task_thread, src);
+        }
     }
     return !ret ? 0 : -errno;
 }
 
 static int _deregister_src(mod_t *mod, void *src_data, const m_list_comp comp) {
+    MOD_SRCS_ASSERT();
+    
     int ret = list_remove(mod->srcs, src_data, comp);
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     }
     return ret;
-}
-
-/* 
- * Append this fd to our list of fds and 
- * if module is in RUNNING state, start listening on its events 
- */
-static int _register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr) {
-    return _register_src(mod, TYPE_FD, &fd, flags, userptr);
 }
 
 static int is_fd_same(void *my_data, void *list_data) {
@@ -214,15 +211,6 @@ static int is_fd_same(void *my_data, void *list_data) {
     return 1;
 }
 
-/* Linearly search for fd */
-static int _deregister_fd(mod_t *mod, const int fd) {
-    return _deregister_src(mod, (void *)&fd, is_fd_same);
-}
-
-static int _register_tmr(mod_t *mod, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr) {
-    return _register_src(mod, TYPE_TMR, its, flags, userptr);
-}
-
 static int is_tmr_same(void *my_data, void *list_data) {
     ev_src_t *src = (ev_src_t *)list_data;
     const mod_tmr_t *its = (const mod_tmr_t *)my_data;
@@ -231,15 +219,6 @@ static int is_tmr_same(void *my_data, void *list_data) {
         return !(src->tmr_src.its.ms == its->ms);
     }
     return 1;
-}
-
-/* Linearly search for its */
-static int _deregister_tmr(mod_t *mod, const mod_tmr_t *its) { 
-    return _deregister_src(mod, (void *)its, is_tmr_same);
-}
-
-static int _register_sgn(mod_t *mod, const mod_sgn_t *sgs, const mod_src_flags flags, const void *userptr) {
-    return _register_src(mod, TYPE_SGN, sgs, flags, userptr);
 }
 
 static int is_sgn_same(void *my_data, void *list_data) {
@@ -252,32 +231,14 @@ static int is_sgn_same(void *my_data, void *list_data) {
     return 1;
 }
 
-/* Linearly search for sgs */
-static int _deregister_sgn(mod_t *mod, const mod_sgn_t *sgs) {
-    return _deregister_src(mod, (void *)sgs, is_sgn_same);
-}
-
-static int _register_pt(mod_t *mod, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr) {
-    return _register_src(mod, TYPE_PT, pt, flags, userptr);
-}
-
-static int is_pt_same(void *my_data, void *list_data) {
+static int is_path_same(void *my_data, void *list_data) {
     ev_src_t *src = (ev_src_t *)list_data;
-    const mod_pt_t *pt = (const mod_pt_t *)my_data;
+    const mod_path_t *pt = (const mod_path_t *)my_data;
     
-    if (src->type == TYPE_PT) {
+    if (src->type == TYPE_PATH) {
         return !(strcmp(src->pt_src.pt.path, pt->path));
     }
     return 1;
-}
-
-/* Linearly search for sgs */
-static int _deregister_pt(mod_t *mod, const mod_pt_t *pt) {
-    return _deregister_src(mod, (void *)pt, is_pt_same);
-}
-
-static int _register_pid(mod_t *mod, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr) {
-    return _register_src(mod, TYPE_PID, pid, flags, userptr);
 }
 
 static int is_pid_same(void *my_data, void *list_data) {
@@ -290,9 +251,18 @@ static int is_pid_same(void *my_data, void *list_data) {
     return 1;
 }
 
-/* Linearly search for sgs */
-static int _deregister_pid(mod_t *mod, const mod_pid_t *pid) {
-    return _deregister_src(mod, (void *)pid, is_pid_same);
+static int is_task_same(void *my_data, void *list_data) {
+    ev_src_t *src = (ev_src_t *)list_data;
+    const mod_task_t *tid = (const mod_task_t *)my_data;
+    
+    if (src->type == TYPE_TASK) {
+        if (src->task_src.tid.tid == tid->tid) {
+            pthread_cancel(src->task_src.th);
+            pthread_join(src->task_src.th, NULL);
+            return 0;
+        }
+    }
+    return 1;
 }
 
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {    
@@ -415,6 +385,7 @@ int m_module_register(const char *name, const char *ctx_name, self_t **self, con
     
     ctx_t *context = check_ctx(ctx_name, flags);
     MOD_ALLOC_ASSERT(context);
+    MOD_TH_ASSERT(context);
     
     int ret;
     const mod_t *old_mod = map_get(context->modules, name);
@@ -570,11 +541,10 @@ int m_module_set_userdata(const self_t *self, const void *userdata) {
 }
 
 const void *m_module_get_userdata(const self_t *self) {
-    MOD_ASSERT(self, "NULL self handler.", NULL);
-    MOD_ASSERT(!self->is_ref, "Self is a reference object. It does not own module.", NULL);
-    MOD_ASSERT(!m_module_is(self, ZOMBIE), "Could not reference a zombie module.", NULL);
+    MOD_RET_ASSERT(self, NULL);
+    MOD_RET_ASSERT(!self->is_ref, NULL);
+    MOD_RET_ASSERT(!m_module_is(self, ZOMBIE), NULL);
     GET_MOD_PRIV(self);
-    MOD_ASSERT(mod, "Module not found.", NULL);
     
     return mod->userdata;
 }
@@ -583,98 +553,101 @@ int m_module_register_fd(const self_t *self, const int fd, const mod_src_flags f
     MOD_PARAM_ASSERT(fd >= 0);
     GET_MOD(self);
 
-    return _register_fd(mod, fd, flags, userptr);
+    return _register_src(mod, TYPE_FD, &fd, flags, userptr);
 }
 
 int m_module_deregister_fd(const self_t *self, const int fd) {
     MOD_PARAM_ASSERT(fd >= 0);
     GET_MOD(self);
-    MOD_SRCS_ASSERT();
     
-    return _deregister_fd(mod, fd);
+    return _deregister_src(mod, (void *)&fd, is_fd_same);
 }
 
 int m_module_register_tmr(const self_t *self, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr) {
-    MOD_PARAM_ASSERT(its);
-    MOD_PARAM_ASSERT(its->ms);
+    MOD_PARAM_ASSERT(its && its->ms > 0);
     GET_MOD(self);
     
-    return _register_tmr(mod, its, flags, userptr);
+    return _register_src(mod, TYPE_TMR, its, flags, userptr);
 }
 
 int m_module_deregister_tmr(const self_t *self, const mod_tmr_t *its) {
-    MOD_PARAM_ASSERT(its);
-    MOD_PARAM_ASSERT(its->ms);
+    MOD_PARAM_ASSERT(its && its->ms > 0);
     GET_MOD(self);
-    MOD_SRCS_ASSERT();
     
-    return _deregister_tmr(mod, its);
+    return _deregister_src(mod, (void *)its, is_tmr_same);
 }
 
 int m_module_register_sgn(const self_t *self, const mod_sgn_t *sgs, const mod_src_flags flags, const void *userptr) {
-    MOD_PARAM_ASSERT(sgs);
+    MOD_PARAM_ASSERT(sgs && sgs->signo > 0);
     GET_MOD(self);
     
-    return _register_sgn(mod, sgs, flags, userptr);
+    return _register_src(mod, TYPE_SGN, sgs, flags, userptr);
 }
 
 int m_module_deregister_sgn(const self_t *self, const mod_sgn_t *sgs) {
-    MOD_PARAM_ASSERT(sgs);
+    MOD_PARAM_ASSERT(sgs && sgs->signo > 0);
     GET_MOD(self);
-    MOD_SRCS_ASSERT();
     
-    return _deregister_sgn(mod, sgs);
+    return _deregister_src(mod, (void *)sgs, is_sgn_same);
 }
 
-int m_module_register_pt(const self_t *self, const mod_pt_t *pt, const mod_src_flags flags, const void *userptr) {
+int m_module_register_path(const self_t *self, const mod_path_t *pt, const mod_src_flags flags, const void *userptr) {
     MOD_PARAM_ASSERT(pt);
-    MOD_PARAM_ASSERT(pt->path);
-    MOD_PARAM_ASSERT(strlen(pt->path));
-    MOD_PARAM_ASSERT(pt->events);
+    MOD_PARAM_ASSERT(pt->path && strlen(pt->path));
+    MOD_PARAM_ASSERT(pt->events > 0);
     GET_MOD(self);
     
-    return _register_pt(mod, pt, flags, userptr);
+    return _register_src(mod, TYPE_PATH, pt, flags, userptr);
 }
 
-int m_module_deregister_pt(const self_t *self, const mod_pt_t *pt) {
+int m_module_deregister_path(const self_t *self, const mod_path_t *pt) {
     MOD_PARAM_ASSERT(pt);
-    MOD_PARAM_ASSERT(pt->path);
-    MOD_PARAM_ASSERT(strlen(pt->path));
+    MOD_PARAM_ASSERT(pt->path && strlen(pt->path));
     GET_MOD(self);
-    MOD_SRCS_ASSERT();
     
-    return _deregister_pt(mod, pt);
+    return _deregister_src(mod, (void *)pt, is_path_same);
 }
 
 int m_module_register_pid(const self_t *self, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr) {
-    MOD_PARAM_ASSERT(pid);
-    MOD_PARAM_ASSERT(pid->pid > 0);
+    MOD_PARAM_ASSERT(pid && pid->pid > 0);
     GET_MOD(self);
     
-    return _register_pid(mod, pid, flags, userptr);
+    return _register_src(mod, TYPE_PID, pid, flags, userptr);
 }
 
 int m_module_deregister_pid(const self_t *self, const mod_pid_t *pid) {
-    MOD_PARAM_ASSERT(pid);
-    MOD_PARAM_ASSERT(pid->pid > 0);
+    MOD_PARAM_ASSERT(pid && pid->pid > 0);
     GET_MOD(self);
-    MOD_SRCS_ASSERT();
     
-    return _deregister_pid(mod, pid);
+    return _deregister_src(mod, (void *)pid, is_pid_same);
+}
+
+int m_module_register_task(const self_t *self, const mod_task_t *tid, const mod_src_flags flags, const void *userptr) {
+    MOD_PARAM_ASSERT(tid && tid->fn);
+    GET_MOD(self);
+    
+    return _register_src(mod, TYPE_TASK, tid, flags | SRC_ONESHOT, userptr); // force ONESHOT flag
+}
+
+int m_module_deregister_task(const self_t *self, const mod_task_t *tid) {
+    MOD_PARAM_ASSERT(tid);
+    GET_MOD(self);
+    
+    return _deregister_src(mod, (void *)tid, is_task_same);
 }
 
 const char *m_module_name(const self_t *mod_self) {
-    MOD_ASSERT(mod_self, "NULL mod_self handler.", NULL);
+    MOD_RET_ASSERT(mod_self, NULL);
     GET_MOD_PRIV(mod_self);
-    MOD_ASSERT(mod, "Module not found.", NULL);
+    MOD_RET_ASSERT(mod, NULL);
     
     return mod->name;
 }
 
 const char *m_module_ctx(const self_t *mod_self) {
-    MOD_ASSERT(mod_self, "NULL mod_self handler.", NULL);
+    MOD_RET_ASSERT(mod_self, NULL);
     GET_CTX_PRIV(mod_self);
-    MOD_ASSERT(c, "Context not found.", NULL);
+    MOD_RET_ASSERT(c, NULL);
     
     return c->name;
 }
@@ -682,7 +655,7 @@ const char *m_module_ctx(const self_t *mod_self) {
 /** Module state getters **/
 
 bool m_module_is(const self_t *mod_self, const mod_states st) {
-    MOD_ASSERT((mod_self), "NULL self handler.", false);
+    MOD_RET_ASSERT((mod_self),false);
     GET_MOD_PRIV(mod_self);
     
     return mod->state & st;
@@ -762,7 +735,7 @@ int m_module_dump(const self_t *self) {
                 ctx_logger(c, self, "\t\t\"TMR_MS\": %lu,\n", t->tmr_src.its.ms);
                 ctx_logger(c, self, "\t\t\"TMR_CID\": %d,\n", t->tmr_src.its.clock_id);
                 break;
-            case TYPE_PT:
+            case TYPE_PATH:
                 ctx_logger(c, self, "\t\t\"PATH\": \"%s\",\n", t->pt_src.pt.path);
                 ctx_logger(c, self, "\t\t\"EV\": %#x,\n", t->pt_src.pt.events);
                 break;

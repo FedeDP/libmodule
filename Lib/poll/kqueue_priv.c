@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
+#include <math.h>
 
 typedef struct {
     int fd;
@@ -58,7 +59,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     case TYPE_SGN:
         EV_SET(_ev, tmp->sgn_src.sgs.signo, EVFILT_SIGNAL, f, 0, 0, tmp);
         break;
-    case TYPE_PT: 
+    case TYPE_PATH: 
         tmp->pt_src.f.fd = open(tmp->pt_src.pt.path, O_RDONLY);
         if (tmp->pt_src.f.fd != -1) {
             EV_SET(_ev, tmp->pt_src.f.fd, EVFILT_VNODE, f, tmp->pt_src.pt.events, 0, tmp);
@@ -68,6 +69,9 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         break;
     case TYPE_PID:
         EV_SET(_ev, tmp->pid_src.pid.pid, EVFILT_PROC, f, tmp->pid_src.pid.events, 0, tmp);
+        break;
+    case TYPE_TASK:
+        EV_SET(_ev, tmp->task_src.tid.tid, EVFILT_USER, f, NOTE_FFNOP, 0, tmp);
         break;
     default: 
         break;
@@ -84,7 +88,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         memhook._free(tmp->ev);
         tmp->ev = NULL;
         
-        if (tmp->type == TYPE_PT) {
+        if (tmp->type == TYPE_PATH) {
             close(tmp->pt_src.f.fd); // automatically close internally used FDs
             tmp->pt_src.f.fd = -1;
         }
@@ -123,7 +127,7 @@ int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t 
     return 0;
 }
 
-int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg) {
+int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, path_msg_t *pt_msg) {
     GET_PRIV_DATA();
     pt_msg->events = kp->pevents[idx].fflags;
     return 0;
@@ -132,6 +136,12 @@ int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *p
 int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg) {
     GET_PRIV_DATA();
     pid_msg->events = kp->pevents[idx].fflags;
+    return 0;
+}
+
+int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, task_msg_t *task_msg) {
+    GET_PRIV_DATA();
+    task_msg->retval = src->task_src.retval;
     return 0;
 }
 
@@ -152,5 +162,11 @@ int poll_destroy(poll_priv_t *priv) {
     poll_clear(priv);
     close(kp->fd);
     memhook._free(kp);
+    return 0;
+}
+
+int poll_notify_task(ev_src_t *src) {
+    struct kevent *_ev = (struct kevent *)src->ev;
+    EV_SET(_ev, src->task_src.tid.tid, EVFILT_USER, EV_ENABLE, NOTE_FFNOP | NOTE_TRIGGER, 0, src);
     return 0;
 }

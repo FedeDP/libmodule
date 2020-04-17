@@ -18,5 +18,8 @@ int poll_destroy(poll_priv_t *priv);
 
 int poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *msg);
 int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t *msg);
-int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg);
+int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, path_msg_t *pt_msg);
 int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg);
+int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, task_msg_t *task_msg);
+
+int poll_notify_task(ev_src_t *src);

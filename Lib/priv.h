@@ -23,12 +23,14 @@
 
 #define MOD_ALLOC_ASSERT(cond)      MOD_RET_ASSERT(cond, -ENOMEM);
 #define MOD_PARAM_ASSERT(cond)      MOD_RET_ASSERT(cond, -EINVAL);
+#define MOD_TH_ASSERT(ctx)          MOD_RET_ASSERT(ctx->th_id == pthread_self(), -EPERM);
 
 /* Finds a ctx inside our global map, given its name */
 #define FIND_CTX(name) \
-    MOD_ASSERT(name, "NULL ctx.", -EINVAL); \
+    MOD_RET_ASSERT(name, -EINVAL); \
     ctx_t *c = map_get(ctx, (char *)name); \
-    MOD_ASSERT(c, "Context not found.", -ENODEV);
+    MOD_RET_ASSERT(c, -ENODEV); \
+    MOD_TH_ASSERT(c);
 
 #define GET_CTX_PRIV(self)  ctx_t *c = self->ctx
 /* 
@@ -36,10 +38,10 @@
  * Skip reference check for pure functions.
  */
 #define _GET_CTX(self, pure) \
-    MOD_ASSERT((self), "NULL self handler.", -EINVAL); \
-    MOD_ASSERT(!(self)->is_ref || pure, "Self is a reference object. It does not own module.", -EPERM); \
+    MOD_RET_ASSERT((self), -EINVAL); \
+    MOD_RET_ASSERT(!(self)->is_ref || pure, -EPERM); \
     GET_CTX_PRIV((self)); \
-    MOD_ASSERT(c, "Context not found.", -ENODEV);
+    MOD_RET_ASSERT(c, -ENODEV);
 
 /* Convenience macros for exposed API */
 #define GET_CTX(self)       _GET_CTX(self, false)
@@ -48,7 +50,7 @@
 /* Convenience macro to retrieve a module from a context, given its name */
 #define CTX_GET_MOD(name, ctx) \
     mod_t *mod = map_get(ctx->modules, (char *)name); \
-    MOD_ASSERT(mod, "Module not found.", -ENODEV);
+    MOD_RET_ASSERT(mod, -ENODEV);
 
 #define GET_MOD_PRIV(self) mod_t *mod = self->mod
 
@@ -57,11 +59,11 @@
  * Skip reference check for pure functions.
  */
 #define _GET_MOD(self, pure) \
-    MOD_ASSERT(self, "NULL self handler.", -EINVAL); \
-    MOD_ASSERT(!m_module_is(self, ZOMBIE), "Could not reference a zombie module.", -EACCES); \
-    MOD_ASSERT(!(self)->is_ref || pure, "Self is a reference object. It does not own module.", -EPERM); \
+    MOD_RET_ASSERT(self, -EINVAL); \
+    MOD_RET_ASSERT(!m_module_is(self, ZOMBIE), -EACCES); \
+    MOD_RET_ASSERT(!(self)->is_ref || pure, -EPERM); \
     GET_MOD_PRIV((self)); \
-    MOD_ASSERT(mod, "Module not found.", -ENODEV);
+    MOD_RET_ASSERT(mod, -ENODEV);
 
 /* Convenience macros for exposed API */
 #define GET_MOD(self)         _GET_MOD(self, false)
@@ -73,10 +75,11 @@
  */
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
-    MOD_ASSERT(m_module_is(self, state), "Wrong module state.", -EACCES);
+    MOD_RET_ASSERT(m_module_is(self, state), -EACCES);
 
 typedef struct _module mod_t;
 typedef struct _context ctx_t;
+typedef struct _src ev_src_t;
 
 /* Struct that holds self module informations, static to each module */
 struct _self {
@@ -109,8 +112,8 @@ typedef struct {
 /* Struct that holds paths to self_t mapping for poll plugin */
 typedef struct {
     fd_src_t f;
-    mod_pt_t pt;
-} pt_src_t;
+    mod_path_t pt;
+} path_src_t;
 
 /* Struct that holds pids to self_t mapping for poll plugin */
 typedef struct {
@@ -120,6 +123,16 @@ typedef struct {
     mod_pid_t pid;
 } pid_src_t;
 
+/* Struct that holds task to self_t mapping for poll plugin */
+typedef struct {
+#ifdef __linux__
+    fd_src_t f;
+#endif
+    mod_task_t tid;
+    pthread_t th;
+    int retval;
+} task_src_t;
+
 /* Struct that holds pubsub subscriptions source data */
 typedef struct {
     regex_t reg;
@@ -127,21 +140,22 @@ typedef struct {
 } ps_src_t;
 
 /* Struct that holds generic "event source" data */
-typedef struct {
+struct _src {
     union {
         ps_src_t    ps_src;
         fd_src_t    fd_src;
         tmr_src_t   tmr_src;
         sgn_src_t   sgn_src;
-        pt_src_t    pt_src;
+        path_src_t  pt_src;
         pid_src_t   pid_src;
+        task_src_t  task_src;
     };
     mod_src_types type;
     mod_src_flags flags;
     void *ev;                               // poll plugin defined data structure
     const self_t *self;                     // ptr needed to map an event source to a self_t in poll_plugin
     const void *userptr;
-} ev_src_t;
+};
 
 /* Struct that holds pubsub messaging, private. It keeps reference count */
 typedef struct {
@@ -191,6 +205,7 @@ struct _context {
     m_map_t *modules;                       // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     mod_flags flags;                        // Context's flags
+    pthread_t th_id;                        // Main context's thread
     void *fs;                               // FS context handler. Null if unsupported
 };
 

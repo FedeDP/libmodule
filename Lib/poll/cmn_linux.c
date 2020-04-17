@@ -2,6 +2,7 @@
 #include <sys/signalfd.h>
 #include <sys/timerfd.h>
 #include <sys/inotify.h>
+#include <sys/eventfd.h>
 #include <sys/types.h>
 #include <linux/version.h>
 #include <limits.h>
@@ -16,6 +17,7 @@ static void create_timerfd(ev_src_t *tmp);
 static void create_signalfd(ev_src_t *tmp);
 static void create_inotifyfd(ev_src_t *tmp);
 static void create_pidfd(ev_src_t *tmp);
+static void create_eventfd(ev_src_t *tmp);
 
 static void create_timerfd(ev_src_t *tmp) {
     tmp->tmr_src.f.fd = timerfd_create(tmp->tmr_src.its.clock_id, TFD_NONBLOCK | TFD_CLOEXEC);
@@ -46,8 +48,20 @@ static void create_inotifyfd(ev_src_t *tmp) {
 
 static void create_pidfd(ev_src_t *tmp) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
-    tmp->pt_src.f.fd = syscall(__NR_pidfd_open, tmp->pid_src.pid.pid, 0);
+    tmp->pid_src.f.fd = syscall(__NR_pidfd_open, tmp->pid_src.pid.pid, 0);
 #endif
+}
+
+static void create_eventfd(ev_src_t *tmp) {
+    tmp->task_src.f.fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+}
+
+int poll_notify_task(ev_src_t *src) {
+    uint64_t u = 1;
+    if (write(src->task_src.f.fd, &u, sizeof(uint64_t)) == sizeof(uint64_t)) {
+        return 0;
+    }
+    return -errno;
 }
 
 void create_priv_fd(ev_src_t *tmp) {
@@ -58,11 +72,14 @@ void create_priv_fd(ev_src_t *tmp) {
         case TYPE_SGN:
             create_signalfd(tmp);
             break;
-        case TYPE_PT:
+        case TYPE_PATH:
             create_inotifyfd(tmp);
             break;
         case TYPE_PID:
             create_pidfd(tmp);
+            break;
+        case TYPE_TASK:
+            create_eventfd(tmp);
             break;
         default:
             break;
@@ -86,7 +103,7 @@ int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t 
     return -errno;
 }
 
-int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *pt_msg) {
+int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, path_msg_t *pt_msg) {
     char buffer[BUF_LEN];
     const size_t length = read(src->pt_src.f.fd, buffer, BUF_LEN);
     if (length > 0) {
@@ -102,4 +119,13 @@ int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, pt_msg_t *p
 int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg) {
     pid_msg->events = 0;
     return 0; // nothing to do
+}
+
+int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, task_msg_t *task_msg) {
+    uint64_t u;
+    if (read(src->task_src.f.fd, &u, sizeof(uint64_t)) == sizeof(uint64_t)) {
+        task_msg->retval = src->task_src.retval;
+        return 0;
+    }
+    return -errno;
 }

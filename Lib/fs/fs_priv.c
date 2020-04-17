@@ -457,7 +457,7 @@ static void fs_store_msg(fs_priv_t *fp, const msg_t *msg) {
             size = sizeof(pid_msg_t);
             data = (void *)msg->pid_msg;
             break;
-        case TYPE_PT:
+        case TYPE_PATH:
             strncpy(pt_msg.path, msg->pt_msg->path, sizeof(pt_msg.path));
             pt_msg.events = msg->pt_msg->events;
             size = sizeof(fs_pt_msg_t);

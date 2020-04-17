@@ -40,11 +40,14 @@ _public_ int m_module_deregister_tmr(const self_t *self, const mod_tmr_t *its);
 _public_ int m_module_register_sgn(const self_t *self, const mod_sgn_t *its, const mod_src_flags flags, const void *userptr);
 _public_ int m_module_deregister_sgn(const self_t *self, const mod_sgn_t *its);
 
-_public_ int m_module_register_pt(const self_t *self, const mod_pt_t *its, const mod_src_flags flags, const void *userptr);
-_public_ int m_module_deregister_pt(const self_t *self, const mod_pt_t *its);
+_public_ int m_module_register_path(const self_t *self, const mod_path_t *its, const mod_src_flags flags, const void *userptr);
+_public_ int m_module_deregister_path(const self_t *self, const mod_path_t *its);
 
 _public_ int m_module_register_pid(const self_t *self, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr);
 _public_ int m_module_deregister_pid(const self_t *self, const mod_pid_t *pid);
+
+_public_ int m_module_register_task(const self_t *self, const mod_task_t *tid, const mod_src_flags flags, const void *userptr);
+_public_ int m_module_deregister_task(const self_t *self, const mod_task_t *tid);
 
 /* Module PubSub interface */
 _public_ int m_module_become(const self_t *self, const recv_cb new_recv);
@@ -67,8 +70,9 @@ _public_ int m_module_poisonpill(const self_t *self, const self_t *recipient);
     char *: m_module_register_sub, \
     mod_tmr_t *: m_module_register_tmr, \
     mod_sgn_t *: m_module_register_sgn, \
-    mod_pt_t *: m_module_register_pt, \
-    mod_pid_t *: m_module_register_pid \
+    mod_path_t *: m_module_register_path, \
+    mod_pid_t *: m_module_register_pid, \
+    mod_task_t *: m_module_register_task \
     )(self, X, flags, userptr);
 
 #define m_module_deregister_src(self, X) _Generic((X) + 0, \
@@ -76,6 +80,7 @@ _public_ int m_module_poisonpill(const self_t *self, const self_t *recipient);
     char *: m_module_deregister_sub, \
     mod_tmr_t *: m_module_deregister_tmr, \
     mod_sgn_t *: m_module_deregister_sgn, \
-    mod_pt_t *: m_module_deregister_pt, \
-    mod_pid_t *: m_module_deregister_pid \
+    mod_path_t *: m_module_deregister_path, \
+    mod_pid_t *: m_module_deregister_pid, \
+    mod_task_t *: m_module_deregister_task \
     )(self, X);
