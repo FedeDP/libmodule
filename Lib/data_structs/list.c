@@ -133,7 +133,7 @@ int list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr) {
     return 0;
 }
 
-int list_insert(m_list_t *l, void *data, const m_list_comp comp) {
+int list_insert(m_list_t *l, void *data, const m_list_cmp comp) {
     MOD_PARAM_ASSERT(l);
     MOD_PARAM_ASSERT(data);
     
@@ -148,7 +148,7 @@ int list_insert(m_list_t *l, void *data, const m_list_comp comp) {
     return insert_node(l, tmp, data);
 }
 
-int list_remove(m_list_t *l, void *data, const m_list_comp comp) {
+int list_remove(m_list_t *l, void *data, const m_list_cmp comp) {
     MOD_PARAM_ASSERT(l);
     MOD_PARAM_ASSERT(data);
     
@@ -163,7 +163,7 @@ int list_remove(m_list_t *l, void *data, const m_list_comp comp) {
     return remove_node(l, tmp);
 }
 
-void *list_find(m_list_t *l, void *data, const m_list_comp comp) {
+void *list_find(m_list_t *l, void *data, const m_list_cmp comp) {
     MOD_RET_ASSERT(l, NULL);
     MOD_RET_ASSERT(data, NULL);
     

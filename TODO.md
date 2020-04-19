@@ -77,6 +77,10 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] Rename TYPE_PT to TYPE_PATH and all its occurrencies
 
+- [ ] Use an array of trees instead of single list? ie: one for each SRC_TYPE. Pro: quicker find, quicker remove; Cons: slower insert.
+It would allows to check if same node already exists on insert, without losing too much time
+- [x] Rename module.c::is_sgs_same/etc etc to sgscmp() etc etc
+
 ### Libfuse support
 
 - [x] Optional build dep
@@ -229,11 +233,14 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Fix fetch_ms()! Do not accout for recv'd SYSTEM pubsub messages (ie: internal messages)
 - [x] Fix: actually check that modules_prestart did not modify memhook before overriding it in libmodule_init()
 
-- [ ] Only allow to call libmodule API from same thread in which modules/contexts were registered [...]
+- [x] Only allow to call libmodule API from same thread in which modules/contexts were registered [...]
 
 - [x] MAP API: drop bool dupkeys and add m_map_flags flags!
 
 - [ ] Drop "size" from ps_msg_t?
+
+- [ ] Create new pubsub message for each recipient instead of using only one. 
+- [ ] Drop Queue from pubsub messages
 
 - [x] Create new "main.c" file with libmodule_init(), libmodule_end(), weak main() and m_pre_start()
 

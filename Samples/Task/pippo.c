@@ -1,5 +1,6 @@
 #include <module/module_easy.h>
 #include <module/context_easy.h>
+#include <assert.h>
 
 M_MOD("Pippo");
 
@@ -55,6 +56,11 @@ static void receive(const msg_t *msg, const void *userdata) {
 }
 
 static int inc(void *udata) {
+    /* 
+     * YOU CANNOT CALL libmodule API
+     * from a different thread where it was registered.
+     */
+    assert(m_mod_get_name() == NULL);
     int *d = (int *)udata;
     while (*d < 3) {
         (*d)++;

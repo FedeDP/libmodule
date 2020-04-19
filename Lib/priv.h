@@ -60,8 +60,9 @@
  */
 #define _GET_MOD(self, pure) \
     MOD_RET_ASSERT(self, -EINVAL); \
-    MOD_RET_ASSERT(!m_module_is(self, ZOMBIE), -EACCES); \
+    MOD_TH_ASSERT((self)->ctx); \
     MOD_RET_ASSERT(!(self)->is_ref || pure, -EPERM); \
+    MOD_RET_ASSERT(!m_module_is(self, ZOMBIE), -EACCES); \
     GET_MOD_PRIV((self)); \
     MOD_RET_ASSERT(mod, -ENODEV);
 

@@ -11,7 +11,7 @@ typedef int (*m_list_cb)(void *, void *);
 typedef void (*m_list_dtor)(void *);
 
 /* Callback for list compare; first parameter is userdata, second is list data */
-typedef int (*m_list_comp)(void *, void *);
+typedef int (*m_list_cmp)(void *, void *);
 
 /* Incomplete struct declaration for list */
 typedef struct _list m_list_t;
@@ -27,9 +27,9 @@ _public_ int list_itr_set_data(m_list_itr_t *itr, void *value);
 _public_ int list_itr_insert(m_list_itr_t *itr, void *value);
 _public_ int list_itr_remove(m_list_itr_t *itr);
 _public_ int list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr);
-_public_ int list_insert(m_list_t *l, void *data, const m_list_comp comp);
-_public_ int list_remove(m_list_t *l, void *data, const m_list_comp comp);
-_public_ void *list_find(m_list_t *l, void *data, const m_list_comp comp);
+_public_ int list_insert(m_list_t *l, void *data, const m_list_cmp comp);
+_public_ int list_remove(m_list_t *l, void *data, const m_list_cmp comp);
+_public_ void *list_find(m_list_t *l, void *data, const m_list_cmp comp);
 _public_ int list_clear(m_list_t *l);
 _public_ int list_free(m_list_t **l);
 _public_ ssize_t list_length(const m_list_t *l);
