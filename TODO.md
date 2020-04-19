@@ -239,8 +239,8 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [ ] Drop "size" from ps_msg_t?
 
-- [ ] Create new pubsub message for each recipient instead of using only one. 
-- [ ] Drop Queue from pubsub messages
+- [x] Create new pubsub message for each recipient instead of using only one. 
+- [x] Drop Queue from pubsub messages
 
 - [x] Create new "main.c" file with libmodule_init(), libmodule_end(), weak main() and m_pre_start()
 
@@ -254,7 +254,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [ ] Add a new module type that only acts as "router" between contexts? eg: ROUTER(name, ctxA, ctxB) 
 -> any message received from ctxA will be published in ctxB, else any message received on ctxB will be published in ctxA. eg module_add_route(self, ctxStart, ctxEnd) ?
-- [ ] Add a module_stash/unstash (all) API? Each module has a queue and messages are pushed on queue
+- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued
 
 ### Submodules
 - [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);

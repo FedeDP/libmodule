@@ -150,7 +150,7 @@ static int recv_events(ctx_t *c, int timeout) {
                     MODULE_DEBUG("Failed to read message: %s\n", strerror(errno));
                 } else {
                     msg.ps_msg = &ps_msg->msg;
-                    p = queue_peek(ps_msg->subs);            // Use real event source, ie: topic subscription if any
+                    p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
                 }
                 break;
             case TYPE_SGN:

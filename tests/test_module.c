@@ -403,7 +403,7 @@ void test_module_tell_wrong_size(void **state) {
 void test_module_tell(void **state) {
     (void) state; /* unused */
     
-    int ret = m_module_tell(self, testSelf, (unsigned char *)"hi1!", strlen("hi!"), PS_DUP_DATA);
+    int ret = m_module_tell(self, testSelf, (unsigned char *)"hi1!", strlen("hi1!"), PS_DUP_DATA);
     assert_true(ret == 0);
 }
 
@@ -438,7 +438,7 @@ void test_module_publish_wrong_size(void **state) {
 void test_module_publish(void **state) {
     (void) state; /* unused */
     
-    int ret = m_module_publish(self, "topic", (unsigned char *)"hi2!", strlen("hi!"), 0);
+    int ret = m_module_publish(self, "topic", (unsigned char *)"hi2!", strlen("hi2!"), 0);
     assert_true(ret == 0);
 }
 
@@ -466,7 +466,7 @@ void test_module_broadcast_wrong_size(void **state) {
 void test_module_broadcast(void **state) {
     (void) state; /* unused */
     
-    int ret = m_module_broadcast(self, (unsigned char *)"hi3!", strlen("hi!"), 0);
+    int ret = m_module_broadcast(self, (unsigned char *)"hi3!", strlen("hi3!"), 0);
     assert_true(ret == 0);
 }
 

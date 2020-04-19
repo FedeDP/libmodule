@@ -5,10 +5,9 @@
 /** Actor-like PubSub interface **/
 
 static void subscribtions_dtor(void *data);
-static bool is_subscribed(mod_t *mod, ps_priv_t *msg);
+static ev_src_t *fetch_sub(mod_t *mod, const char *topic);
 static int tell_if(void *data, const char *key, void *value);
-static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
-                                    ps_msg_type type, const size_t size, const mod_ps_flags flags);
+static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub);
 static int tell_global(void *data, const char *key, void *value);
 static void ps_msg_dtor(void *data);
 static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c);
@@ -29,10 +28,10 @@ static void subscribtions_dtor(void *data) {
     }
 }
 
-static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {    
+static ev_src_t *fetch_sub(mod_t *mod, const char *topic) {    
     /* Check if module is directly subscribed to topic */
-    ev_src_t *sub = map_get(mod->subscriptions, msg->msg.topic);
-    if (sub) {
+    ev_src_t *sub = map_get(mod->subscriptions, topic);
+    if (sub) {        
         goto found;
     }
     
@@ -42,71 +41,59 @@ static bool is_subscribed(mod_t *mod, ps_priv_t *msg) {
         sub = map_itr_get_data(itr);
 
         /* Execute regular expression */
-        int ret = regexec(&sub->ps_src.reg, msg->msg.topic, 0, NULL, 0);
+        int ret = regexec(&sub->ps_src.reg, topic, 0, NULL, 0);
         if (!ret) {
             memhook._free(itr);
             goto found;
         }
     }
-    return false;
+    return NULL;
     
 found:
-m_mem_ref(sub);
-    queue_enqueue(msg->subs, sub);
-    /* 
-     * Replace user provided pointer with source one, 
-     * to allow stack-allocated topic to be used
-     */
-    msg->msg.topic = sub->ps_src.topic;
-    return true;
+    return sub;
 }
 
 static int tell_if(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
+    ev_src_t *sub = NULL;
 
-    if (m_module_is(mod->self, RUNNING | PAUSED) &&                       // mod is running or paused
+    if (m_module_is(mod->self, RUNNING | PAUSED) &&                     // mod is running or paused
         ((msg->msg.type != USER && msg->msg.sender != &mod->ref) ||     // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
-        (!msg->msg.topic || is_subscribed(mod, msg))))) {
+        (!msg->msg.topic || (sub = fetch_sub(mod, msg->msg.topic)))))) {
         
         MODULE_DEBUG("Telling a message to '%s'\n", mod->name);
-        
-        if (write(mod->pubsub_fd[1], &msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-            MODULE_DEBUG("Failed to write message: %s\n", strerror(errno));
-        } else {
-            m_mem_ref(msg);
+        ps_priv_t *m = alloc_ps_msg(msg, sub);
+        if (m) {
+            if (write(mod->pubsub_fd[1], &m, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
+                MODULE_DEBUG("Failed to write message: %s\n", strerror(errno));
+                m_mem_unref(msg);
+            }
         }
     }
     return 0;
 }
 
-static ps_priv_t *create_pubsub_msg(const void *message, const self_t *sender, const char *topic, 
-                                    ps_msg_type type, const size_t size, const mod_ps_flags flags) {
+static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub) {
     ps_priv_t *m = m_mem_new(sizeof(ps_priv_t), ps_msg_dtor);
     if (m) {
-        m->msg.sender = sender;
-        if (sender) {
-            m_mem_ref(sender->mod); // keep module alive until message is dispatched
+        memcpy(m, msg, sizeof(ps_priv_t));
+        if (m->msg.sender) {
+            m_mem_ref(m->msg.sender->mod); // keep module alive until message is dispatched
         }
-        m->subs = queue_new(m_mem_unref);
-        m->msg.topic = topic;
-        m->msg.type = type;
-        m->msg.size = size;
-        m->flags = flags;
+        m->sub = m_mem_ref(sub);
         /* Duplicate data if requested */
         if (m->flags & PS_DUP_DATA) {
             m->flags |= PS_AUTOFREE; // force autofree flag if we duplicated data
-            void *new_data = memhook._malloc(size);
+            void *new_data = memhook._malloc(m->msg.size);
             if (new_data) {
-                memcpy(new_data, message, size);
+                memcpy(new_data, msg->msg.data, msg->msg.size);
                 m->msg.data = new_data;
             } else {
                 memhook._free(m);
                 m = NULL;
             }
-        } else {
-            m->msg.data = message;
         }
     }
     return m;
@@ -123,8 +110,7 @@ static int tell_global(void *data, const char *key, void *value) {
 static void ps_msg_dtor(void *data) {
     ps_priv_t *pubsub_msg = (ps_priv_t *)data;
     
-    /* Clear (unref'ng) and destroy subs queue */
-    queue_free(&pubsub_msg->subs);
+    m_mem_unref(pubsub_msg->sub);
     if (pubsub_msg->flags & PS_AUTOFREE) {
         memhook._free((void *)pubsub_msg->msg.data);
     }
@@ -134,9 +120,7 @@ static void ps_msg_dtor(void *data) {
 }
 
 
-static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
-    MOD_ALLOC_ASSERT(m);
-    
+static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {    
     if (mod) {
         tell_if(m, NULL, mod);
     } else if (!(m->flags & PS_GLOBAL)) {
@@ -144,12 +128,6 @@ static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
     } else {
         map_iterate(ctx, tell_global, m);
     }
-    
-    /* 
-     * If nobody received our message; destroy it right away;
-     * else: num of refs for this message == number of modules that received it.
-     */
-    m_mem_unref(m);
     return 0;
 }
 
@@ -162,8 +140,8 @@ static int send_msg(mod_t *mod, mod_t *recipient,
     
     mod->stats.sent_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    ps_priv_t *m = create_pubsub_msg(message, &mod->ref, topic, USER, size, flags);
-    return tell_pubsub_msg(m, recipient, c);
+    ps_priv_t m = { { USER, &mod->ref, topic, message, size }, flags, NULL };
+    return tell_pubsub_msg(&m, recipient, c);
 }
 
 /** Private API **/
@@ -172,8 +150,8 @@ int tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, const s
     if (sender) {
         fetch_ms(&sender->mod->stats.last_seen, &sender->mod->stats.action_ctr);
     }
-    ps_priv_t *m = create_pubsub_msg(NULL, sender, topic, type, 0, 0);
-    return tell_pubsub_msg(m, recipient, c);
+    ps_priv_t m = { { type, sender, topic, NULL, 0 }, 0, NULL };
+    return tell_pubsub_msg(&m, recipient, c);
 }
 
 int flush_pubsub_msgs(void *data, const char *key, void *value) {
@@ -192,10 +170,9 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
         if (!data && m_module_is(mod->self, RUNNING)) {
             MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             msg_t msg = { .type = TYPE_PS, .ps_msg = &mm->msg };
-            run_pubsub_cb(mod, &msg, queue_peek(mm->subs));
+            run_pubsub_cb(mod, &msg, mm->sub);
         } else {
             MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
-            queue_remove(mm->subs);
             m_mem_unref(mm);
         }
     }
@@ -220,7 +197,6 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
 
     if (msg->type == TYPE_PS) {
         ps_priv_t *mm = (ps_priv_t *)msg->ps_msg;
-        queue_remove(mm->subs);
         m_mem_unref(mm);
     }
     
@@ -261,7 +237,7 @@ int m_module_register_sub(const self_t *self, const char *topic, mod_src_flags f
             ev_src_t *old_sub = map_get(mod->subscriptions, topic);
             if (old_sub) {
                 if (old_sub->flags == flags) {
-                    /* Update just userptr. */
+                    /* Only update userptr */
                     old_sub->userptr = userptr;
                     return 0;
                 }

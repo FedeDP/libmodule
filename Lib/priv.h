@@ -7,7 +7,6 @@
 #include "map.h"
 #include "stack.h"
 #include "list.h"
-#include "queue.h"
 
 #ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
@@ -162,7 +161,7 @@ struct _src {
 typedef struct {
     ps_msg_t msg;
     mod_ps_flags flags;
-    m_queue_t *subs;
+    ev_src_t *sub;
 } ps_priv_t;
 
 typedef struct {
