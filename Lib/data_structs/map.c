@@ -429,7 +429,7 @@ int map_remove(m_map_t *m, const char *key) {
     
     map_elem *entry = hashmap_entry_find(m, key, false);
     if (!entry) {
-        return -ENODEV;
+        return -ENOENT;
     }
     clear_elem(m, entry);
     return 0;

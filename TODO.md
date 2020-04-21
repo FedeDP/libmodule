@@ -77,8 +77,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] Rename TYPE_PT to TYPE_PATH and all its occurrencies
 
-- [ ] Use an array of trees instead of single list? ie: one for each SRC_TYPE. Pro: quicker find, quicker remove; Cons: slower insert.
-It would allows to check if same node already exists on insert, without losing too much time
 - [x] Rename module.c::is_sgs_same/etc etc to sgscmp() etc etc
 
 ### Libfuse support
@@ -128,6 +126,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
 - [ ] Move away from module_cmn.h not common data structures (and put them in context.h or module.h)
 - [ ] Rename module_cmn.h to common.h
+- [ ] Rename complex API to m_mod/ctx_ -> "Easy" API is just same name as complex API but with one param less.
 - [x] Rename evaluate() to eval()
 
 - [ ] Add m_context_(de)register() API
@@ -141,6 +140,15 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Add linked list doc
 - [x] List_insert to insert to head (O(1))
 - [x] Fix bug in list_itr_next() when a node was previously removed (ie: avoid skipping an element, as current element is already "next" after a node deletion)
+- [ ] Take list cmp func in ctor
+
+### New btree API
+
+- [ ] Use an array of trees instead of single list? ie: one for each SRC_TYPE. Pro: quicker find, quicker remove; Cons: slower insert.
+It would allows to check if same node already exists on insert, without losing too much time
+- [x] Implement m_btree_traverse()
+- [ ] Implement m_btree_itr_t
+- [ ] Implement tests
 
 ### Generic
 

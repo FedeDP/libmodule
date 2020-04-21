@@ -4,6 +4,7 @@
 #include "test_stack.h"
 #include "test_queue.h"
 #include "test_list.h"
+#include "test_btree.h"
 #include "test_perf.h"
 
 int main(void) {
@@ -173,6 +174,9 @@ int main(void) {
         cmocka_unit_test(test_list_remove),
         cmocka_unit_test(test_list_clear),
         cmocka_unit_test(test_list_free),
+        
+        /* Test Btree API */
+        cmocka_unit_test(test_btree),
         
         /* Test poll plugin performance */
         cmocka_unit_test(test_poll_perf)

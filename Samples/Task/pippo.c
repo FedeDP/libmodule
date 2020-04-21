@@ -60,7 +60,7 @@ static int inc(void *udata) {
      * YOU CANNOT CALL libmodule API
      * from a different thread where it was registered.
      */
-    assert(m_mod_get_name() == NULL);
+    assert(m_mod_name() == NULL);
     int *d = (int *)udata;
     while (*d < 3) {
         (*d)++;

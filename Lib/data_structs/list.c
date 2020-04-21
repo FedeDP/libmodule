@@ -41,7 +41,7 @@ static int remove_node(m_list_t *l, list_node **elem) {
         l->len--;
         return 0;
     }
-    return -ENODEV;
+    return -ENOENT;
 }
 
 /** Public API **/
@@ -149,7 +149,7 @@ int list_insert(m_list_t *l, void *data, const m_list_cmp comp) {
 }
 
 int list_remove(m_list_t *l, void *data, const m_list_cmp comp) {
-    MOD_PARAM_ASSERT(l);
+    MOD_PARAM_ASSERT(list_length(l) > 0);
     MOD_PARAM_ASSERT(data);
     
     list_node **tmp = &l->data;
