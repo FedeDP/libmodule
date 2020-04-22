@@ -25,7 +25,7 @@ MODULE("Pippo");
 
 static void init(void) {
     /* Register STDIN fd, without autoclosing it at the end */
-    m_register_src(STDIN_FILENO, 0, NULL);
+    m_m_register_src(STDIN_FILENO, 0, NULL);
     return true;
 }
 
@@ -61,7 +61,7 @@ static void receive(const msg_t *msg, const void *userdata) {
     } else if (msg->type == TYPE_PS && msg->pubsub_msg->type == USER && 
         !strcmp((char *)msg->pubsub_msg->message, "ByeBye")) {
             
-        modules_quit(0);
+        m_c_quit(0);
     }
 }
 ```

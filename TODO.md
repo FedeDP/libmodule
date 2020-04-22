@@ -155,6 +155,10 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Use it inside various datastructures tests
 - [x] Use it where needed
 
+### DOC
+
+- [ ] Fully rewrite documentation per-namespace
+
 ### Generic
 
 - [x] Finally avoid injecting _self into file-global variables
