@@ -75,12 +75,14 @@ void test_btree(void **state) {
     for (int i = 0; i < 10; i++) {
         m_btree_insert(bt, &arr[i]);
     }
+    len = m_btree_length(bt);
+    assert_int_equal(len, 10);
     
-    printf("PREORDER:\n");
+    printf("PREORDER (only first 5):\n");
     ret = m_btree_traverse(bt, M_BTREE_PRE, traverse_pre_cb, NULL);
     assert_int_equal(ret, 0);
     
-    printf("POSTORDER:\n");
+    printf("POSTORDER (only first):\n");
     ret = m_btree_traverse(bt, M_BTREE_POST, traverse_post_cb, NULL);
     assert_int_equal(ret, -1);
     
@@ -88,7 +90,7 @@ void test_btree(void **state) {
     ret = m_btree_traverse(bt, M_BTREE_IN, traverse_in_cb, NULL);
     assert_int_equal(ret, 0);
     
-    printf("ITERATOR (same as preorder):\n");
+    printf("ITERATOR (inorder):\n");
     for (m_btree_itr_t *itr = m_btree_itr_new(bt); itr; itr = m_btree_itr_next(itr)) {
         int *val = m_btree_itr_get_data(itr);
         printf("%d\n", *val);
