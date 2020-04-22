@@ -113,7 +113,7 @@ typedef struct {
 
 /* Struct that holds paths to self_t mapping for poll plugin */
 typedef struct {
-    fd_src_t f;
+    fd_src_t f; // in kqueue EVFILT_VNODE: open(path) is needed. Thus a fd is needed too.
     mod_path_t pt;
 } path_src_t;
 

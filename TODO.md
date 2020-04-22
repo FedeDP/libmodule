@@ -74,6 +74,9 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] Add a new TYPE_TASK source that will run a task asynchronously and at end notify user through receive() callback
 - [x] m_module_deregister_task() should pthread_cancel() the thread
+- [ ] Add a th_pool implementation, public API (https://github.com/mbrossard/threadpool/blob/master/src/threadpool.c https://nachtimwald.com/2019/04/12/thread-pool-in-c/)
+- [ ] Allow to pass m_thpool_t in mod_task_t structure; if !NULL, simply schedule the job on the pool
+- [ ] fix m_module_deregister_task ?
 
 - [x] Rename TYPE_PT to TYPE_PATH and all its occurrencies
 
@@ -124,7 +127,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Rename other exposed APIs (types/enums/enum values) to m_*
 - [x] Rename MODULE() to M_MOD()
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
-- [ ] Move away from module_cmn.h not common data structures (and put them in context.h or module.h)
 - [ ] Rename module_cmn.h to common.h
 - [x] Rename complex API to m_mod/ctx_ -> "Easy" API instead "m_m_" and "m_c_"
 - [x] Rename evaluate() to eval()
