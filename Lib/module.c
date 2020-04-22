@@ -674,15 +674,15 @@ int m_module_dump(const self_t *self) {
     ctx_logger(c, self, "\t\"Name\": \"'%s\",\n", self->mod->name);
     ctx_logger(c, self, "\t\"State\": %#x,\n", mod->state);
     if (mod->userdata) {
-        ctx_logger(c, self, "\t\"Userdata\": %p,\n", mod->userdata);
+        ctx_logger(c, self, "\t\"UP\": %p,\n", mod->userdata);
     }
     ctx_logger(c, self, "\t\"Stats\": {\n");
-    ctx_logger(c, self, "\t\t\"Registration time\": %lu,\n", mod->stats.registration_time);
-    ctx_logger(c, self, "\t\t\"Sent messages\": %lu,\n", mod->stats.sent_msgs);
-    ctx_logger(c, self, "\t\t\"Received messages\": %lu,\n", mod->stats.recv_msgs);
-    ctx_logger(c, self, "\t\t\"Last activity\": %lu,\n", mod->stats.last_seen);
-    ctx_logger(c, self, "\t\t\"Num actions\": %lu,\n", mod->stats.action_ctr);
-    ctx_logger(c, self, "\t\t\"Action frequency\": %lf\n", (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time));
+    ctx_logger(c, self, "\t\t\"Reg_time\": %lu,\n", mod->stats.registration_time);
+    ctx_logger(c, self, "\t\t\"Sent_msgs\": %lu,\n", mod->stats.sent_msgs);
+    ctx_logger(c, self, "\t\t\"Recv_msgs\": %lu,\n", mod->stats.recv_msgs);
+    ctx_logger(c, self, "\t\t\"Last_seen\": %lu,\n", mod->stats.last_seen);
+    ctx_logger(c, self, "\t\t\"Num_actions\": %lu,\n", mod->stats.action_ctr);
+    ctx_logger(c, self, "\t\t\"Action_freq\": %lf\n", (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time));
     
     bool closed_stats = false;
     int i = 0;

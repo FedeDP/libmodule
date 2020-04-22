@@ -344,7 +344,7 @@ int m_context_dump(const char *ctx_name) {
     ctx_logger(c, NULL, "\t\"State\": {\n");
     ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
     ctx_logger(c, NULL, "\t\t\"Looping\": %d,\n", c->looping);
-    ctx_logger(c, NULL, "\t\t\"Max Events\": %d\n", c->ppriv.max_events);
+    ctx_logger(c, NULL, "\t\t\"Max_events\": %d\n", c->ppriv.max_events);
     ctx_logger(c, NULL, "\t},\n");
     
     ctx_logger(c, NULL, "\t\"Modules\": [\n");
