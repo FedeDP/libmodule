@@ -1,5 +1,4 @@
 #include "module.h"
-#include "mem.h"
 #include "poll_priv.h"
 
 /** Actor-like PubSub interface **/
@@ -36,17 +35,15 @@ static ev_src_t *fetch_sub(mod_t *mod, const char *topic) {
     }
     
     /* Check if any stored subscriptions is a regex that matches topic */
-    m_map_itr_t *itr = map_itr_new(mod->subscriptions);
-    for (; itr; itr = map_itr_next(itr)) {
-        sub = map_itr_get_data(itr);
-
+    m_itr_foreach(mod->subscriptions, {
+        sub = m_itr_data(itr);
         /* Execute regular expression */
         int ret = regexec(&sub->ps_src.reg, topic, 0, NULL, 0);
         if (!ret) {
             memhook._free(itr);
             goto found;
         }
-    }
+    });
     return NULL;
     
 found:

@@ -1,5 +1,4 @@
 #include "module.h"
-#include "mem.h"
 #include "poll_priv.h"
 
 /** Generic module interface **/
@@ -269,8 +268,8 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
     int ret = 0;
     
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    for (m_list_itr_t *itr = list_itr_new(mod->srcs); itr && !ret; itr = list_itr_next(itr)) {
-        ev_src_t *t = list_itr_get_data(itr);
+    m_itr_foreach(mod->srcs, {
+        ev_src_t *t = m_itr_data(itr);
         if (flag == RM && stop) {
             if (t->type == TYPE_PS) {
                 /*
@@ -285,7 +284,7 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
         } else {
             ret = poll_set_new_evt(&c->ppriv, t, flag);
         }
-    }
+    });
     return ret;
 }
 
@@ -691,9 +690,9 @@ int m_module_dump(const self_t *self) {
         closed_stats = true;
         ctx_logger(c, self, "\t},\n");
         ctx_logger(c, self, "\t\"Subs\": [\n");
-        for (m_map_itr_t *itr = map_itr_new(mod->subscriptions); itr; itr = map_itr_next(itr), i++) {
-            ev_src_t *sub = map_itr_get_data(itr);
-            if (i > 0) {
+        m_itr_foreach(mod->subscriptions, {
+            ev_src_t *sub = m_itr_data(itr);
+            if (i++ > 0) {
                 ctx_logger(c, self, "\t},\n");
             }
             ctx_logger(c, self, "\t{\n");
@@ -702,7 +701,7 @@ int m_module_dump(const self_t *self) {
                 ctx_logger(c, self, "\t\t\"UP\": %p,\n", sub->userptr);
             }
             ctx_logger(c, self, "\t\t\"Flags\": %#x\n", sub->flags);
-        }
+        });
         ctx_logger(c, self, "\t}\n");
         ctx_logger(c, self, "\t],\n");
     }
@@ -715,14 +714,14 @@ int m_module_dump(const self_t *self) {
         }
         ctx_logger(c, self, "\t\"Srcs\": [\n");
         i = 0;
-        for (m_list_itr_t *itr = list_itr_new(mod->srcs); itr; itr = list_itr_next(itr), i++) {
+        m_itr_foreach(mod->srcs, {
             ev_src_t *t = list_itr_get_data(itr);
             if (t->type == TYPE_PS) {
                 /* Do not log information about internal pubsub pipe */
                 continue;
             }
             
-            if (i > 0) {
+            if (i++ > 0) {
                 ctx_logger(c, self, "\t},\n");
             }
             
@@ -753,7 +752,7 @@ int m_module_dump(const self_t *self) {
                 ctx_logger(c, self, "\t\t\"UP\": %p,\n", t->userptr);
             }
             ctx_logger(c, self, "\t\t\"Flags\": %#x\n", t->flags);
-        }
+        });
         ctx_logger(c, self, "\t}\n");
         ctx_logger(c, self, "\t]\n");
     }

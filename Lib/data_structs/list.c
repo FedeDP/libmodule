@@ -155,7 +155,6 @@ int list_remove(m_list_t *l, void *data, const m_list_cmp comp) {
     list_node **tmp = &l->data;
     for (int i = 0; i < l->len; i++) {
         if ((comp && comp(data, (*tmp)->userptr) == 0) || (*tmp)->userptr == data) {
-            
             break;
         }
         tmp = &(*tmp)->next;

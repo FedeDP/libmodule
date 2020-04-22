@@ -4,6 +4,8 @@
 #include <regex.h>
 #include <string.h>
 #include <pthread.h>
+#include "mem.h"
+#include "itr.h"
 #include "map.h"
 #include "stack.h"
 #include "list.h"

@@ -1,5 +1,6 @@
 #include "test_queue.h"
 #include <module/queue.h>
+#include <module/itr.h>
 
 static m_queue_t *my_q;
 static int val1 = 1;
@@ -57,14 +58,14 @@ void test_queue_iterator(void **state) {
     m_queue_itr_t *itr = queue_itr_new(NULL);
     assert_null(itr);
     
-    itr = queue_itr_new(my_q);
+    itr = m_itr_new(my_q);
     assert_non_null(itr);
     
     int count = queue_length(my_q);
     while (itr) {
         count--;
         printf("%p\n", queue_itr_get_data(itr));
-        itr = queue_itr_next(itr);
+        itr = m_itr_next(itr);
     }
     
     assert_int_equal(count, 0);

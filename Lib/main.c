@@ -1,5 +1,4 @@
 #include "context.h"
-#include "mem.h"
 #include "priv.h"
 
 static void *thread_loop(void *param);

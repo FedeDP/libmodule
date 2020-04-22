@@ -1,5 +1,6 @@
 #include "test_list.h"
 #include <module/list.h>
+#include <module/itr.h>
 
 static m_list_t *my_l;
 static int val1 = 1;
@@ -63,7 +64,7 @@ void test_list_iterator(void **state) {
         ret = list_itr_remove(itr);
         assert_true(ret == 0);
         
-        itr = list_itr_next(itr);
+        itr = m_itr_next(itr);
     }
     
     assert_int_equal(count, 0);

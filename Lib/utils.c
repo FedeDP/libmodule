@@ -1,5 +1,4 @@
 #include "priv.h"
-#include "mem.h"
 
 typedef struct {
     size_t refs;

@@ -147,8 +147,14 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Use an array of trees instead of single list? ie: one for each SRC_TYPE. Pro: quicker find, quicker remove; Cons: slower insert.
 It would allows to check if same node already exists on insert, without losing too much time
 - [x] Implement m_btree_traverse()
-- [ ] Implement m_btree_itr_t
-- [ ] Implement tests
+- [x] Implement m_btree_itr_t
+- [x] Implement tests
+
+### New iterator APIs
+
+- [x] Add a common m_itr_* API that allows to easily loop on any iterator
+- [x] Use it inside various datastructures tests
+- [x] Use it where needed
 
 ### Generic
 

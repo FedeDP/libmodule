@@ -1,5 +1,6 @@
 #include "test_map.h"
 #include <module/map.h>
+#include <module/itr.h>
 
 static m_map_t *my_map;
 static int val = 5;
@@ -74,14 +75,14 @@ void test_map_iterator(void **state) {
     m_map_itr_t *itr = map_itr_new(NULL);
     assert_null(itr);
     
-    itr = map_itr_new(my_map);
+    itr = m_itr_new(my_map);
     assert_non_null(itr);
     
     count = map_length(my_map);
     while (itr) {
         count--;
         printf("%s -> %p\n", map_itr_get_key(itr), map_itr_get_data(itr));
-        itr = map_itr_next(itr);
+        itr = m_itr_next(itr);
     }
     assert_int_equal(count, 0);
     assert_null(itr);

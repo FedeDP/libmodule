@@ -1,7 +1,6 @@
 #include "module.h"
 #include "context.h"
 #include "fs_priv.h"
-#include "mem.h"
 #include <dlfcn.h> // dlopen
 
 static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags);
@@ -350,11 +349,11 @@ int m_context_dump(const char *ctx_name) {
     
     ctx_logger(c, NULL, "\t\"Modules\": [\n");
     int i = 0;
-    for (m_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
+    m_itr_foreach(c->modules, {
         const char *mod_name = map_itr_get_key(itr);
-        const mod_t *mod = map_itr_get_data(itr);
+        const mod_t *mod = m_itr_data(itr);
         ctx_logger(c, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < map_length(c->modules) ? ',' : ' ');
-    }
+    });
     ctx_logger(c, NULL, "\t]\n");
     ctx_logger(c, NULL, "}\n");
     return 0;
@@ -393,13 +392,14 @@ int m_context_unload(const char *ctx_name, const char *module_path) {
     
     /* Check if desired module is actually loaded in context */
     bool found = false;
-    for (m_map_itr_t *itr = map_itr_new(c->modules); !found && itr; itr = map_itr_next(itr)) {
-        mod_t *mod = map_itr_get_data(itr);
+    m_itr_foreach(c->modules, {
+        mod_t *mod = m_itr_data(itr);
         if (mod->local_path && !strcmp(mod->local_path, module_path)) {
             found = true;
             memhook._free(itr);
+            break;
         }
-    }
+    });
     
     if (found) {
         void *handle = dlopen(module_path, RTLD_NOLOAD);
@@ -421,8 +421,8 @@ size_t m_context_trim(const char *ctx_name, const stats_t *thres) {
     uint64_t curr_ms = 0;
     fetch_ms(&curr_ms, NULL);
     const size_t initial_size = map_length(c->modules);
-    for (m_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
-        mod_t *mod = map_itr_get_data(itr);
+    m_itr_foreach(c->modules, {
+        mod_t *mod = m_itr_data(itr);
 
         if (curr_ms - mod->stats.last_seen >= thres->inactive_ms) {
             m_module_deregister(&mod->self);
@@ -432,7 +432,7 @@ size_t m_context_trim(const char *ctx_name, const stats_t *thres) {
                 m_module_deregister(&mod->self);
             }
         }
-    }
+    });
     
     /* Number of deregistered modules */
     return initial_size - map_length(c->modules);

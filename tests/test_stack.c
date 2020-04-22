@@ -1,5 +1,6 @@
 #include "test_stack.h"
 #include <module/stack.h>
+#include <module/itr.h>
 
 static m_stack_t *my_st;
 static int val1 = 1;
@@ -57,14 +58,14 @@ void test_stack_iterator(void **state) {
     m_stack_itr_t *itr = stack_itr_new(NULL);
     assert_null(itr);
     
-    itr = stack_itr_new(my_st);
+    itr = m_itr_new(my_st);
     assert_non_null(itr);
     
     int count = stack_length(my_st);
     while (itr) {
         count--;
-        printf("%p\n", stack_itr_get_data(itr));
-        itr = stack_itr_next(itr);
+        printf("%p\n", m_itr_data(itr));
+        itr = m_itr_next(itr);
     }
     
     assert_int_equal(count, 0);

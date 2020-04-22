@@ -1,6 +1,5 @@
 #include "test_btree.h"
 #include <module/btree.h>
-static int removing;
 
 static int int_cmp(void *userdata, void *node_data) {
     int a = *((int *)userdata);
