@@ -26,7 +26,7 @@ static bool init(void) {
     timerValue.it_value.tv_sec = 1;
     timerValue.it_interval.tv_sec = 1;
     timerfd_settime(fd, 0, &timerValue, NULL);
-    m_mod_register_src(fd, SRC_FD_AUTOCLOSE, NULL);
+    m_m_register_src(fd, SRC_FD_AUTOCLOSE, NULL);
 #endif
     return true;
 }
@@ -49,15 +49,15 @@ static void receive(const msg_t *msg, const void *userdata) {
         read(msg->fd_msg->fd, &t, sizeof(uint64_t));
     
         static int counter = 0;
-        m_mod_log("recv!\n");
+        m_m_log("recv!\n");
         counter++;
     
         if (counter % 3 == 0) {
-            m_mod_become(ready);
-            m_mod_set_userdata(&counter);
+            m_m_become(ready);
+            m_m_set_userdata(&counter);
         }
     } else if (msg->ps_msg->type == USER && !strcmp((const char *)msg->ps_msg->data, "Leave")) {
-        m_mod_log("Other context left. Leaving...\n");
+        m_m_log("Other context left. Leaving...\n");
         m_ctx_quit(myCtx, 0);
     }
 }
@@ -68,17 +68,17 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
         read(msg->fd_msg->fd, &t, sizeof(uint64_t));
     
         int *counter = (int *)userdata;
-        m_mod_log("recv2!\n");
+        m_m_log("recv2!\n");
         (*counter)++;
     
         if (*counter % 3 == 0) {
-            m_mod_unbecome();
+            m_m_unbecome();
         }
         if (*counter == 10) {
             m_ctx_quit(myCtx, 0);
         }
     } else if (msg->ps_msg->type == USER && !strcmp((const char *)msg->ps_msg->data, "Leave")) {
-        m_mod_log("Other context left. Leaving...\n");
+        m_m_log("Other context left. Leaving...\n");
         m_ctx_quit(myCtx, 0);
     }
 }

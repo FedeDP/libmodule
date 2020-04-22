@@ -126,7 +126,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
 - [ ] Move away from module_cmn.h not common data structures (and put them in context.h or module.h)
 - [ ] Rename module_cmn.h to common.h
-- [ ] Rename complex API to m_mod/ctx_ -> "Easy" API is just same name as complex API but with one param less.
+- [x] Rename complex API to m_mod/ctx_ -> "Easy" API instead "m_m_" and "m_c_"
 - [x] Rename evaluate() to eval()
 
 - [ ] Add m_context_(de)register() API
@@ -140,7 +140,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Add linked list doc
 - [x] List_insert to insert to head (O(1))
 - [x] Fix bug in list_itr_next() when a node was previously removed (ie: avoid skipping an element, as current element is already "next" after a node deletion)
-- [ ] Take list cmp func in ctor
 
 ### New btree API
 

@@ -242,7 +242,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
             c->logger = fs_logger;
             mod->userdata = (void *)fi->fh;
     
-            m_module_dump(mod->self);
+            m_mod_dump(mod->self);
             if (cl->write_len > cl->read_len) {
                 cl->write_len = cl->read_len;
             }
@@ -275,7 +275,7 @@ static int fs_unlink(const char *path) {
     if (strlen(path) > 1) {
         mod_t *mod = map_get(c->modules, path + 1);
         if (mod) {
-            if (m_module_deregister(&mod->self) == 0) {
+            if (m_mod_deregister(&mod->self) == 0) {
                 return 0;
             }
             return -EPERM;
@@ -294,7 +294,7 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     
     if (strlen(path) > 1) {
         self_t *self = NULL;
-        if (m_module_register(path + 1, c->name, &self, &fuse_hook, MOD_NAME_DUP) == 0) {
+        if (m_mod_register(path + 1, c->name, &self, &fuse_hook, MOD_NAME_DUP) == 0) {
             return 0;
         }
         return -EPERM;
@@ -339,30 +339,30 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
             *(mod_states *)data = mod->state;
             return 0;
         case MOD_START:
-            return m_module_start(mod->self);
+            return m_mod_start(mod->self);
         case MOD_STOP:
-            return m_module_stop(mod->self);
+            return m_mod_stop(mod->self);
         case MOD_RESUME:
-            return m_module_resume(mod->self);
+            return m_mod_resume(mod->self);
         case MOD_PAUSE:
-            return m_module_pause(mod->self);
+            return m_mod_pause(mod->self);
         case MOD_STATS:
-            return m_module_stats(&mod->ref, data);
+            return m_mod_stats(&mod->ref, data);
         case MOD_SUBSCRIBE:
             return m_module_register_sub(mod->self, data, SRC_DUP, NULL);
         case MOD_TELL: {
             fs_ps_t *p = (fs_ps_t *)data;
             const self_t *other = NULL;
             m_module_ref(mod->self, p->recipient, &other);
-            return m_module_tell(mod->self, other, p->msg, p->size, PS_DUP_DATA);
+            return m_mod_tell(mod->self, other, p->msg, p->size, PS_DUP_DATA);
         }
         case MOD_PUBLISH: {
             fs_ps_t *p = (fs_ps_t *)data;
-            return m_module_publish(mod->self, p->topic, p->msg, p->size, PS_DUP_DATA);
+            return m_mod_publish(mod->self, p->topic, p->msg, p->size, PS_DUP_DATA);
         }
         case MOD_BROADCAST: {
             fs_ps_t *p = (fs_ps_t *)data;
-            return m_module_broadcast(mod->self, p->msg, p->size, PS_DUP_DATA);
+            return m_mod_broadcast(mod->self, p->msg, p->size, PS_DUP_DATA);
         }
         case MOD_GET_MSGDATA_SIZE: {
             if (cl->in_evt) {

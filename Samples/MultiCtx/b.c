@@ -20,7 +20,7 @@ static bool init(void) {
     sigaddset(&mask, SIGTERM);
     
     int fd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
-    m_mod_register_src(fd, SRC_FD_AUTOCLOSE, NULL);
+    m_m_register_src(fd, SRC_FD_AUTOCLOSE, NULL);
 #endif
     return true;
 }
@@ -43,10 +43,10 @@ static void receive(const msg_t *msg, const void *userdata) {
         struct signalfd_siginfo fdsi;
         ssize_t s = read(msg->fd_msg->fd, &fdsi, sizeof(struct signalfd_siginfo));
         if (s != sizeof(struct signalfd_siginfo)) {
-            m_mod_log("an error occurred while getting signalfd data.\n");
+            m_m_log("an error occurred while getting signalfd data.\n");
         }
-        m_mod_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
-        m_mod_broadcast_str("Leave", true);
+        m_m_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
+        m_m_broadcast_str("Leave", true);
         m_ctx_quit(myCtx, 0);
     }
 #endif

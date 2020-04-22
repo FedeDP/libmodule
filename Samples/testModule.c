@@ -17,8 +17,8 @@ static void module_pre_start(void) {
  * returns a valid fd to be polled.
  */
 static bool init(void) {
-    m_mod_register_src("leaving", 0, NULL);
-    m_mod_log("Linked.\n");
+    m_m_register_src("leaving", 0, NULL);
+    m_m_log("Linked.\n");
     return true;
 }
 
@@ -58,7 +58,7 @@ static void destroy(void) {
 static void receive(const msg_t *msg, const void *userdata) {
     if (msg->type == TYPE_PS && msg->ps_msg->type == USER) {
         if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
-            m_mod_log("Received quit.\n");
+            m_m_log("Received quit.\n");
         }
     }
 }

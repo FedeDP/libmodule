@@ -63,7 +63,7 @@
     MOD_RET_ASSERT(self, -EINVAL); \
     MOD_TH_ASSERT((self)->ctx); \
     MOD_RET_ASSERT(!(self)->is_ref || pure, -EPERM); \
-    MOD_RET_ASSERT(!m_module_is(self, ZOMBIE), -EACCES); \
+    MOD_RET_ASSERT(!m_mod_is(self, ZOMBIE), -EACCES); \
     GET_MOD_PRIV((self)); \
     MOD_RET_ASSERT(mod, -ENODEV);
 
@@ -77,7 +77,7 @@
  */
 #define GET_MOD_IN_STATE(self, state) \
     GET_MOD(self); \
-    MOD_RET_ASSERT(m_module_is(self, state), -EACCES);
+    MOD_RET_ASSERT(m_mod_is(self, state), -EACCES);
 
 typedef struct _module mod_t;
 typedef struct _context ctx_t;

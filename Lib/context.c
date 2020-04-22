@@ -425,11 +425,11 @@ size_t m_ctx_trim(const char *ctx_name, const stats_t *thres) {
         mod_t *mod = m_itr_data(itr);
 
         if (curr_ms - mod->stats.last_seen >= thres->inactive_ms) {
-            m_module_deregister(&mod->self);
+            m_mod_deregister(&mod->self);
         } else {
             const double freq = (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
             if (freq < thres->activity_freq) {
-                m_module_deregister(&mod->self);
+                m_mod_deregister(&mod->self);
             }
         }
     });

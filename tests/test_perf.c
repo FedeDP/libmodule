@@ -18,16 +18,16 @@ void test_poll_perf(void **state) {
     (void) state; /* unused */
         
     userhook_t hook = (userhook_t) { init, NULL, my_recv, NULL };
-    int ret = m_module_register("testName", M_CTX_DEFAULT, &self, &hook, 0);
+    int ret = m_mod_register("testName", M_CTX_DEFAULT, &self, &hook, 0);
     assert_true(ret == 0);
     assert_non_null(self);
-    assert_true(m_module_is(self, IDLE));
+    assert_true(m_mod_is(self, IDLE));
     
-    m_module_start(self);
+    m_mod_start(self);
     
     clock_t begin_tell = clock();
     for (int i = 0; i < MAX_LEN; i++) {
-        m_module_tell(self, self, "Hello World", strlen("Hello World"), false);
+        m_mod_tell(self, self, "Hello World", strlen("Hello World"), false);
     }
     clock_t end_tell = clock();
     double time_spent = (double)(end_tell - begin_tell);
@@ -39,7 +39,7 @@ void test_poll_perf(void **state) {
     time_spent = (double)(end_recv - end_tell);
     printf("Messages fetching took %.2lf us\n", time_spent);
     
-    m_module_deregister(&self);
+    m_mod_deregister(&self);
 }
 
 static bool init(void) {
