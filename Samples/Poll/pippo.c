@@ -61,7 +61,7 @@ static void receive(const msg_t *msg, const void *userdata) {
             case 'q':
                 m_mod_log("I have to go now!\n");
                 m_mod_publish_str("leaving", "ByeBye", 0);
-                m_ctx_quit(0);
+                m_c_quit(0);
                 break;
             default:
                 /* Avoid newline */
@@ -114,7 +114,7 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
             case 'q':
                 m_mod_log("I have to go now!\n");
                 m_mod_publish_str("leaving", "ByeBye", 0);
-                m_ctx_quit(0);
+                m_c_quit(0);
                 break;
             default:
                 /* Avoid newline */

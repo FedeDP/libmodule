@@ -210,3 +210,6 @@ typedef struct {
     uint64_t inactive_ms;
     double activity_freq;
 } stats_t;
+
+/* Common to any context; set this in modules_pre_start() */
+_public_ int m_set_memhook(const memhook_t *hook);

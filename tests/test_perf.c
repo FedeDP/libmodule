@@ -33,7 +33,7 @@ void test_poll_perf(void **state) {
     double time_spent = (double)(end_tell - begin_tell);
     printf("Messages feeding took %.2lf us\n", time_spent);
     
-    m_ctx_loop();
+    m_c_loop();
     
     clock_t end_recv = clock();
     time_spent = (double)(end_recv - end_tell);
@@ -51,6 +51,6 @@ static void my_recv(const msg_t *msg, const void *userdata) {
         msg->ps_msg->type == USER && 
         ++ctr == MAX_LEN) {
            
-        m_ctx_quit(ctr);
+        m_c_quit(ctr);
     }
 }

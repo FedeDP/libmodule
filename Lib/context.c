@@ -282,7 +282,7 @@ int m_set_memhook(const memhook_t *hook) {
     return 0;
 }
 
-int m_context_set_logger(const char *ctx_name, const log_cb logger) {
+int m_ctx_set_logger(const char *ctx_name, const log_cb logger) {
     MOD_PARAM_ASSERT(logger);
     FIND_CTX(ctx_name);
     
@@ -290,7 +290,7 @@ int m_context_set_logger(const char *ctx_name, const log_cb logger) {
     return 0;
 }
 
-int m_context_loop_events(const char *ctx_name, const int max_events) {
+int m_ctx_loop(const char *ctx_name, const int max_events) {
     MOD_PARAM_ASSERT(max_events > 0);
     FIND_CTX(ctx_name);
     MOD_ASSERT(!c->looping, "Context already looping.", -EINVAL);
@@ -305,20 +305,20 @@ int m_context_loop_events(const char *ctx_name, const int max_events) {
     return ret;
 }
 
-int m_context_quit(const char *ctx_name, const uint8_t quit_code) {
+int m_ctx_quit(const char *ctx_name, const uint8_t quit_code) {
     FIND_CTX(ctx_name);
     MOD_ASSERT(c->looping, "Context not looping.", -EINVAL);
        
     return loop_quit(c, quit_code);
 }
 
-int m_context_fd(const char *ctx_name) {
+int m_ctx_fd(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
     return dup(poll_get_fd(&c->ppriv));
 }
 
-int m_context_dispatch(const char *ctx_name) {
+int m_ctx_dispatch(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
     if (!c->looping) {
@@ -335,7 +335,7 @@ int m_context_dispatch(const char *ctx_name) {
     return recv_events(c, 0);
 }
 
-int m_context_dump(const char *ctx_name) {
+int m_ctx_dump(const char *ctx_name) {
     FIND_CTX(ctx_name);
     
     ctx_logger(c, NULL, "{\n");
@@ -360,7 +360,7 @@ int m_context_dump(const char *ctx_name) {
 }
 
 
-int m_context_load(const char *ctx_name, const char *module_path) {
+int m_ctx_load(const char *ctx_name, const char *module_path) {
     MOD_PARAM_ASSERT(module_path);
     FIND_CTX(ctx_name);
     
@@ -386,7 +386,7 @@ int m_context_load(const char *ctx_name, const char *module_path) {
     return 0;
 }
 
-int m_context_unload(const char *ctx_name, const char *module_path) {
+int m_ctx_unload(const char *ctx_name, const char *module_path) {
     MOD_PARAM_ASSERT(module_path);    
     FIND_CTX(ctx_name);
     
@@ -414,7 +414,7 @@ int m_context_unload(const char *ctx_name, const char *module_path) {
     return -ENODEV;
 }
 
-size_t m_context_trim(const char *ctx_name, const stats_t *thres) {
+size_t m_ctx_trim(const char *ctx_name, const stats_t *thres) {
     FIND_CTX(ctx_name);
     MOD_PARAM_ASSERT(thres);
 

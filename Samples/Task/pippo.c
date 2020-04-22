@@ -39,7 +39,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         int *data = (int *)userdata;
         if (*data == 5) {
             m_mod_log("Timed out.\n");
-            m_ctx_quit(0);
+            m_c_quit(0);
             m_mod_log("Final data val: %d\n", thData);
         } else {
             (*data)++;

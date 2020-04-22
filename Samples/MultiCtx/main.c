@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     char *ctx2 = "SecondCtx";
     
     /* Set a different logger for ctx1 context */
-    m_context_set_logger(ctx1, logger);
+    m_ctx_set_logger(ctx1, logger);
     
     /* Create 2 threads that will loop on each context events */
     pthread_t th1, th2;
@@ -54,6 +54,6 @@ static void *loop(void *param) {
     char *myCtx = (char *)param;
 
     /* Loop on our modules' events */
-    m_context_loop(myCtx);
+    m_ctx_loop(myCtx, M_CTX_MAX_EVENTS);
     return NULL;
 }

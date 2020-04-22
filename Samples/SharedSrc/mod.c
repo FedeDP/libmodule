@@ -77,7 +77,7 @@ static void A_recv(const msg_t *msg, const void *userdata) {
             case 'q':
                 m_module_log(selfA, "I have to go now!\n");
                 m_module_publish(selfA, "leaving", (unsigned char *)"ByeBye", strlen("ByeBye"), false);
-                m_context_quit("test", 0);
+                m_ctx_quit("test", 0);
                 break;
             default:
                 /* Avoid newline */
@@ -119,7 +119,7 @@ static void A_recv_ready(const msg_t *msg, const void *userdata) {
             case 'q':
                 m_module_log(selfA, "I have to go now!\n");
                 m_module_publish(selfA, "leaving", (unsigned char *)"ByeBye", strlen("ByeBye"), false);
-                m_context_quit("test", 0);
+                m_ctx_quit("test", 0);
                 break;
             default:
                 /* Avoid newline */

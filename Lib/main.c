@@ -17,7 +17,7 @@ _public_ void _ctor0_ _weak_ m_pre_start(void) {
 static void *thread_loop(void *param) {
     const char *key = (const char *)param;
     
-    m_context_loop_events(key, M_CTX_MAX_EVENTS);
+    m_ctx_loop(key, M_CTX_MAX_EVENTS);
     return NULL;
 }
 
@@ -58,7 +58,7 @@ _public_ int _weak_ main(int argc, char *argv[]) {
      */
     if (map_iterate(ctx, main_loop, &th) == -1) {
         MODULE_DEBUG("Running in single ctx mode: '%s'\n", (const char *)th);
-        return m_context_loop_events((const char *)th, M_CTX_MAX_EVENTS);
+        return m_ctx_loop((const char *)th, M_CTX_MAX_EVENTS);
     }
     
     /* If more than 1 ctx is registered, we should join all threads */

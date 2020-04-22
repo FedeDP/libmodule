@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     /*
      * Loop on this context to get our modules' events
      */
-    m_context_loop("test");
+    m_ctx_loop("test", M_CTX_MAX_EVENTS);
     
     /*
      * Finally, destroy our modules

@@ -47,7 +47,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         }
         m_mod_log("received signal %d. Leaving.\n", fdsi.ssi_signo);
         m_mod_broadcast_str("Leave", true);
-        m_context_quit(myCtx, 0);
+        m_ctx_quit(myCtx, 0);
     }
 #endif
 }
