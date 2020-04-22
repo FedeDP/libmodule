@@ -349,11 +349,11 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
         case MOD_STATS:
             return m_mod_stats(&mod->ref, data);
         case MOD_SUBSCRIBE:
-            return m_module_register_sub(mod->self, data, SRC_DUP, NULL);
+            return m_mod_register_sub(mod->self, data, SRC_DUP, NULL);
         case MOD_TELL: {
             fs_ps_t *p = (fs_ps_t *)data;
             const self_t *other = NULL;
-            m_module_ref(mod->self, p->recipient, &other);
+            m_mod_ref(mod->self, p->recipient, &other);
             return m_mod_tell(mod->self, other, p->msg, p->size, PS_DUP_DATA);
         }
         case MOD_PUBLISH: {
