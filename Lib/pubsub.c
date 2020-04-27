@@ -29,7 +29,7 @@ static void subscribtions_dtor(void *data) {
 
 static ev_src_t *fetch_sub(mod_t *mod, const char *topic) {    
     /* Check if module is directly subscribed to topic */
-    ev_src_t *sub = map_get(mod->subscriptions, topic);
+    ev_src_t *sub = m_map_get(mod->subscriptions, topic);
     if (sub) {        
         goto found;
     }
@@ -100,7 +100,7 @@ static int tell_global(void *data, const char *key, void *value) {
     ctx_t *c = (ctx_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
     
-    map_iterate(c->modules, tell_if, msg);
+    m_map_iterate(c->modules, tell_if, msg);
     return 0;
 }
 
@@ -121,9 +121,9 @@ static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
     if (mod) {
         tell_if(m, NULL, mod);
     } else if (!(m->flags & PS_GLOBAL)) {
-        map_iterate(c->modules, tell_if, m);
+        m_map_iterate(c->modules, tell_if, m);
     } else {
-        map_iterate(ctx, tell_global, m);
+        m_map_iterate(ctx, tell_global, m);
     }
     return 0;
 }
@@ -178,7 +178,7 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
 
 void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
     /* If module is using some different receive function, honor it. */
-    recv_cb cb = stack_peek(mod->recvs);
+    recv_cb cb = m_stack_peek(mod->recvs);
     if (!cb) {
         /* Fallback to module default receive */
         cb = mod->hook.recv;
@@ -228,10 +228,10 @@ int m_mod_register_sub(const self_t *self, const char *topic, mod_src_flags flag
         
         /* Lazy subscriptions map init */
         if (!mod->subscriptions)  {
-            mod->subscriptions = map_new(M_MAP_VAL_ALLOW_UPDATE, m_mem_unref);
+            mod->subscriptions = m_map_new(M_MAP_VAL_ALLOW_UPDATE, m_mem_unref);
             MOD_ALLOC_ASSERT(mod->subscriptions);
         } else {
-            ev_src_t *old_sub = map_get(mod->subscriptions, topic);
+            ev_src_t *old_sub = m_map_get(mod->subscriptions, topic);
             if (old_sub) {
                 if (old_sub->flags == flags) {
                     /* Only update userptr */
@@ -252,7 +252,7 @@ int m_mod_register_sub(const self_t *self, const char *topic, mod_src_flags flag
         sub->self = self;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
         ps_src->topic = sub->flags & SRC_DUP ? mem_strdup(topic) : topic;
-        ret = map_put(mod->subscriptions, ps_src->topic, sub); // M_MAP_VAL_ALLOW_UPDATE -> this will dtor old elem before updating
+        ret = m_map_put(mod->subscriptions, ps_src->topic, sub); // M_MAP_VAL_ALLOW_UPDATE -> this will dtor old elem before updating
         if (ret == 0) {
             fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         }
@@ -264,11 +264,11 @@ int m_mod_deregister_sub(const self_t *self, const char *topic) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     
-    int ret = map_remove(mod->subscriptions, topic);
+    int ret = m_map_remove(mod->subscriptions, topic);
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-        if (map_length(mod->subscriptions) == 0) {
-            map_free(&mod->subscriptions);
+        if (m_map_length(mod->subscriptions) == 0) {
+            m_map_free(&mod->subscriptions);
         }
     }
     return ret;

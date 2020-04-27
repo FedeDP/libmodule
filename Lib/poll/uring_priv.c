@@ -32,7 +32,7 @@ int poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(uring_priv_t));
     MOD_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
-    up->req_list = list_new(NULL);
+    up->req_list = m_list_new(NULL);
     MOD_ALLOC_ASSERT(up->req_list);
     return 0;
 }
@@ -103,8 +103,8 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
 
 static void flush_reqs(poll_priv_t *priv) {
     GET_PRIV_DATA();
-    for (m_list_itr_t *itr = list_itr_new(up->req_list); itr; itr = list_itr_next(itr)) {
-        ev_src_t *tmp = list_itr_get_data(itr);
+    for (m_list_itr_t *itr = m_list_itr_new(up->req_list); itr; itr = m_list_itr_next(itr)) {
+        ev_src_t *tmp = m_list_itr_get_data(itr);
         poll_set_new_evt(priv, tmp, ADD);
     }
     list_clear(up->req_list);

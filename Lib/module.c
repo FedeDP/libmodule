@@ -51,8 +51,8 @@ static void module_dtor(void *data) {
     if (mod) {
         m_mem_unref(mod->self->ctx);
         
-        map_free(&mod->subscriptions);
-        stack_free(&mod->recvs);
+        m_map_free(&mod->subscriptions);
+        m_stack_free(&mod->recvs);
         for (int i = 0; i < TYPE_END; i++) {
             m_bst_free(&mod->srcs[i]);
         }
@@ -302,8 +302,8 @@ static void reset_module(mod_t *mod) {
         mod->pubsub_fd[0] = -1;
         mod->pubsub_fd[1] = -1;
     }
-    map_clear(mod->subscriptions);
-    stack_clear(mod->recvs);
+    m_map_clear(mod->subscriptions);
+    m_stack_clear(mod->recvs);
 }
 
 /** Private API **/
@@ -395,7 +395,7 @@ int m_mod_register(const char *name, const char *ctx_name, self_t **self, const 
     MOD_TH_ASSERT(context);
     
     int ret;
-    const mod_t *old_mod = map_get(context->modules, name);
+    const mod_t *old_mod = m_map_get(context->modules, name);
     if (old_mod) {
         if (!(old_mod->flags & MOD_ALLOW_REPLACE)) { 
             MODULE_DEBUG("Module with same name already registered in context.");
@@ -432,7 +432,7 @@ int m_mod_register(const char *name, const char *ctx_name, self_t **self, const 
             }
         }
         
-        mod->recvs = stack_new(NULL);
+        mod->recvs = m_stack_new(NULL);
         if (!mod->recvs) {
             break;
         }
@@ -449,7 +449,7 @@ int m_mod_register(const char *name, const char *ctx_name, self_t **self, const 
         /* Internal reference used as sender for pubsub messages */
         memcpy(&mod->ref, &((self_t){ mod, context, true }), sizeof(self_t));
         
-        if (map_put(context->modules, mod->name, mod) == 0) {
+        if (m_map_put(context->modules, mod->name, mod) == 0) {
             memcpy(&mod->hook, hook, sizeof(userhook_t));
             mod->state = IDLE;
             
@@ -485,7 +485,7 @@ int m_mod_deregister(self_t **self) {
         mod->state = ZOMBIE;
         
         /* Remove the module from the context */
-        map_remove(c->modules, mod->name);
+        m_map_remove(c->modules, mod->name);
         
         /* Free FS internal data */
         fs_cleanup(mod);
@@ -503,9 +503,9 @@ int m_mod_deregister(self_t **self) {
     });
     
     /* Destroy context if needed */
-    if (map_length(c->modules) == 0) {
+    if (m_map_length(c->modules) == 0) {
         pthread_mutex_lock(&mx);
-        map_remove(ctx, c->name);
+        m_map_remove(ctx, c->name);
         pthread_mutex_unlock(&mx);
     }
     return 0;
@@ -515,7 +515,7 @@ int m_mod_become(const self_t *self, const recv_cb new_recv) {
     MOD_PARAM_ASSERT(new_recv);
     GET_MOD_IN_STATE(self, RUNNING);
     
-    int ret = stack_push(mod->recvs, new_recv);
+    int ret = m_stack_push(mod->recvs, new_recv);
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     }
@@ -525,7 +525,7 @@ int m_mod_become(const self_t *self, const recv_cb new_recv) {
 int m_mod_unbecome(const self_t *self) {
     GET_MOD_IN_STATE(self, RUNNING);
     
-    if (stack_pop(mod->recvs) != NULL) {
+    if (m_stack_pop(mod->recvs) != NULL) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         return 0;
     }
@@ -696,7 +696,7 @@ int m_mod_dump(const self_t *self) {
     
     bool closed_stats = false;
     int i = 0;
-    if (map_length(mod->subscriptions) > 0) {
+    if (m_map_length(mod->subscriptions) > 0) {
         closed_stats = true;
         ctx_logger(c, self, "\t},\n");
         ctx_logger(c, self, "\t\"Subs\": [\n");

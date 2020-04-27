@@ -20,7 +20,7 @@ static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags)
     (*context)->flags = flags & ~(uint8_t)-1; // do not store useless module's flags (first byte)
     (*context)->th_id = pthread_self();
     (*context)->logger = default_logger;
-    (*context)->modules = map_new(0, m_mem_unref);
+    (*context)->modules = m_map_new(0, m_mem_unref);
     
     if ((*context)->flags & CTX_NAME_DUP) {
         (*context)->flags |= CTX_NAME_AUTOFREE;
@@ -31,7 +31,7 @@ static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags)
     
     int ret = -ENOMEM;
     if ((*context)->modules && (*context)->name) {
-        ret = map_put(ctx, (*context)->name, *context);
+        ret = m_map_put(ctx, (*context)->name, *context);
         if (ret == 0) {
             ret = poll_create(&(*context)->ppriv);
             if (ret == 0) {
@@ -41,7 +41,7 @@ static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags)
     }
     
     /* Map_remove automatically unref ctx for us */
-    if (map_remove(ctx, (*context)->name) != 0) {
+    if (m_map_remove(ctx, (*context)->name) != 0) {
         m_mem_unref(*context);
     }
     *context = NULL;
@@ -51,7 +51,7 @@ static int ctx_new(const char *ctx_name, ctx_t **context, const mod_flags flags)
 static void ctx_dtor(void *data) {
     ctx_t *context = (ctx_t *)data;
     MODULE_DEBUG("Destroying context '%s'.\n", context->name);
-    map_free(&context->modules);
+    m_map_free(&context->modules);
     poll_destroy(&context->ppriv);
     if (context->flags & CTX_NAME_AUTOFREE) {
         memhook._free((void *)context->name);
@@ -77,7 +77,7 @@ static int loop_start(ctx_t *c, const int max_events) {
         c->quit_code = 0;
         
         /* Eventually start any IDLE module */
-        map_iterate(c->modules, evaluate_module, NULL);
+        m_map_iterate(c->modules, evaluate_module, NULL);
 
         /* Tell every RUNNING module that loop is started */
         tell_system_pubsub_msg(NULL, c, LOOP_STARTED, NULL, NULL);
@@ -90,7 +90,7 @@ static uint8_t loop_stop(ctx_t *c) {
     tell_system_pubsub_msg(NULL, c, LOOP_STOPPED, NULL, NULL);
 
     /* Flush pubsub msg to avoid memleaks */
-    map_iterate(c->modules, flush_pubsub_msgs, NULL);
+    m_map_iterate(c->modules, flush_pubsub_msgs, NULL);
     
     /* Destroy FS */
     fs_end(c);
@@ -206,7 +206,7 @@ static int recv_events(ctx_t *c, int timeout) {
                     if (p->type != TYPE_PS) {
                         m_bst_remove(mod->srcs[p->type], p);
                     } else {
-                        map_remove(mod->subscriptions, p->ps_src.topic);
+                        m_map_remove(mod->subscriptions, p->ps_src.topic);
                     }
                 }
             } else {
@@ -219,7 +219,7 @@ static int recv_events(ctx_t *c, int timeout) {
     }
     
     if (recved > 0 && errno == 0) {
-        map_iterate(c->modules, evaluate_module, NULL);
+        m_map_iterate(c->modules, evaluate_module, NULL);
     } else if (errno) {
         /* Quit and return < 0 only for real errors */
         if (errno != EINTR && errno != EAGAIN) {
@@ -241,7 +241,7 @@ ctx_t *check_ctx(const char *ctx_name, const mod_flags flags) {
      */
     pthread_mutex_lock(&mx);
     
-    ctx_t *context = map_get(ctx, ctx_name);
+    ctx_t *context = m_map_get(ctx, ctx_name);
     if (!context) {
         ctx_new(ctx_name, &context, flags);
     }
@@ -297,7 +297,7 @@ int m_ctx_loop(const char *ctx_name, const int max_events) {
 
     int ret = loop_start(c, max_events);
     if (ret == 0) {
-        while (!c->quit && map_length(c->modules) > 0) {
+        while (!c->quit && m_map_length(c->modules) > 0) {
             recv_events(c, -1);
         }
         return loop_stop(c);
@@ -326,7 +326,7 @@ int m_ctx_dispatch(const char *ctx_name) {
         return loop_start(c, M_CTX_MAX_EVENTS);
     }
     
-    if (c->quit || map_length(c->modules) == 0) {
+    if (c->quit || m_map_length(c->modules) == 0) {
         /* We are stopping! */
         return loop_stop(c);
     }
@@ -350,9 +350,9 @@ int m_ctx_dump(const char *ctx_name) {
     ctx_logger(c, NULL, "\t\"Modules\": [\n");
     int i = 0;
     m_itr_foreach(c->modules, {
-        const char *mod_name = map_itr_get_key(itr);
+        const char *mod_name = m_map_itr_get_key(itr);
         const mod_t *mod = m_itr_get(itr);
-        ctx_logger(c, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < map_length(c->modules) ? ',' : ' ');
+        ctx_logger(c, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < m_map_length(c->modules) ? ',' : ' ');
     });
     ctx_logger(c, NULL, "\t]\n");
     ctx_logger(c, NULL, "}\n");
@@ -364,7 +364,7 @@ int m_ctx_load(const char *ctx_name, const char *module_path) {
     MOD_PARAM_ASSERT(module_path);
     FIND_CTX(ctx_name);
     
-    const int module_size = map_length(c->modules);
+    const int module_size = m_map_length(c->modules);
     
     void *handle = dlopen(module_path, RTLD_NOW);
     if (!handle) {
@@ -376,7 +376,7 @@ int m_ctx_load(const char *ctx_name, const char *module_path) {
      * Check that requested module has been created in requested ctx, 
      * by looking at requested ctx number of modules
      */
-    if (module_size == map_length(c->modules)) { 
+    if (module_size == m_map_length(c->modules)) { 
         dlclose(handle);
         return -EPERM;
     }
@@ -420,7 +420,7 @@ size_t m_ctx_trim(const char *ctx_name, const stats_t *thres) {
 
     uint64_t curr_ms = 0;
     fetch_ms(&curr_ms, NULL);
-    const size_t initial_size = map_length(c->modules);
+    const size_t initial_size = m_map_length(c->modules);
     m_itr_foreach(c->modules, {
         mod_t *mod = m_itr_get(itr);
 
@@ -435,5 +435,5 @@ size_t m_ctx_trim(const char *ctx_name, const stats_t *thres) {
     });
     
     /* Number of deregistered modules */
-    return initial_size - map_length(c->modules);
+    return initial_size - m_map_length(c->modules);
 }

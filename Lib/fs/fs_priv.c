@@ -140,10 +140,10 @@ static int fs_getattr(const char *path, struct stat *stbuf,
     stbuf->st_mtime = f->start;
     if (strcmp(path, "/") == 0) { // root dir of fuse fs
         stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = map_length(c->modules);
+        stbuf->st_nlink = m_map_length(c->modules);
         return 0;
     } 
-    if (strlen(path) > 1 && map_has_key(c->modules, path + 1)) {
+    if (strlen(path) > 1 && m_map_has_key(c->modules, path + 1)) {
         stbuf->st_mode = S_IFREG | 0444;
         stbuf->st_nlink = 1;
         stbuf->st_size = 1024; // non-zero size
@@ -156,7 +156,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
     FS_CTX();
     
     if (strlen(path) > 1) {
-        mod_t *mod = map_get(c->modules, path + 1);
+        mod_t *mod = m_map_get(c->modules, path + 1);
         if (mod) {
             fs_client_t *cl = memhook._calloc(1, sizeof(fs_client_t));
             if (!cl) {
@@ -171,7 +171,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
             }
             fs_priv_t *fp = (fs_priv_t *)mod->fs;
             if (!fp->clients) { 
-                fp->clients = list_new(client_dtor);
+                fp->clients = m_list_new(client_dtor);
                 if (!fp->clients) {
                     memhook._free(cl);
                     memhook._free(fp);
@@ -180,7 +180,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
                 }
             }
             cl->mod = m_mem_ref(mod); // keep module alive while any client uses it
-            list_insert(fp->clients, cl, NULL);
+            m_list_insert(fp->clients, cl, NULL);
             fi->fh = (uint64_t) cl;
             fi->direct_io = 1;
             fi->nonseekable = 1;
@@ -196,9 +196,9 @@ static int fs_release(const char *path, struct fuse_file_info *fi) {
     fi->fh = 0;
     fs_priv_t *fp = (fs_priv_t *)mod->fs;
     if (fp) {
-        list_remove(fp->clients, cl, NULL);
-        if (list_length(fp->clients) == 0) {
-            list_free(&fp->clients);
+        m_list_remove(fp->clients, cl, NULL);
+        if (m_list_length(fp->clients) == 0) {
+            m_list_free(&fp->clients);
             memhook._free(fp);
         }
         return 0;
@@ -217,8 +217,8 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     filler(buf, "..", NULL, 0, 0);
     
     FS_CTX();
-    for (m_map_itr_t *itr = map_itr_new(c->modules); itr; itr = map_itr_next(itr)) {
-        mod_t *mod = map_itr_get_data(itr);
+    for (m_map_itr_t *itr = m_map_itr_new(c->modules); itr; itr = m_map_itr_next(itr)) {
+        mod_t *mod = m_map_itr_get_data(itr);
         filler(buf, mod->name, NULL, 0, 0);
     }
     return 0;
@@ -273,7 +273,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
 static int fs_unlink(const char *path) {
     FS_CTX();
     if (strlen(path) > 1) {
-        mod_t *mod = map_get(c->modules, path + 1);
+        mod_t *mod = m_map_get(c->modules, path + 1);
         if (mod) {
             if (m_mod_deregister(&mod->self) == 0) {
                 return 0;
@@ -478,8 +478,8 @@ static void fs_store_msg(fs_priv_t *fp, const msg_t *msg) {
 }
 
 static void fs_wakeup_clients(fs_priv_t *fp) {
-    for (m_list_itr_t *itr = list_itr_new(fp->clients); itr; itr = list_itr_next(itr)) {
-        fs_client_t *cl = list_itr_get_data(itr);
+    for (m_list_itr_t *itr = m_list_itr_new(fp->clients); itr; itr = m_list_itr_next(itr)) {
+        fs_client_t *cl = m_list_itr_get_data(itr);
         if (cl->ph) {
             cl->in_evt = true;
             fuse_notify_poll(cl->ph);
@@ -538,7 +538,7 @@ int fs_notify(const msg_t *msg) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         if (msg->type == TYPE_PS && msg->ps_msg->type == LOOP_STOPPED) {
             /* When loop gets stopped, destroy clients list */
-            list_free(&fp->clients);
+            m_list_free(&fp->clients);
             memhook._free(fp->msg);
             fp->msg = NULL;
             memhook._free(fp);

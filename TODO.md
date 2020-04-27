@@ -130,9 +130,9 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename module_cmn.h to commons.h
 - [x] Rename complex API to m_mod/ctx_ -> "Easy" API instead "m_m_" and "m_c_"
 - [x] Rename evaluate() to eval()
-- [ ] Rename map/stack/... APIs to m_x_y
+- [x] Rename map/stack/... APIs to m_x_y
 
-- [ ] Add m_context_(de)register() API
+- [ ] Add m_ctx_(de)register() API
 - [ ] Split mod_flags into m_mod_flags and m_ctx_flags
 
 ### New Linked list api
@@ -258,7 +258,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Fix modules_ctx_dispatch() to just reutrn number of dispatched messages (or -errno)
 - [x] Fix modules_ctx_fd() to just reutrn context's fd (or -errno)
-- [ ] Fix fetch_ms()! Do not accout for recv'd SYSTEM pubsub messages (ie: internal messages)
+- [ ] Fix fetch_ms()! Only count actions as actions triggered by API call (ie: user called an API function on the module)
 - [x] Fix: actually check that modules_prestart did not modify memhook before overriding it in libmodule_init()
 
 - [x] Only allow to call libmodule API from same thread in which modules/contexts were registered [...]

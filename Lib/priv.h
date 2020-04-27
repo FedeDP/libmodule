@@ -26,7 +26,7 @@
 /* Finds a ctx inside our global map, given its name */
 #define FIND_CTX(name) \
     MOD_RET_ASSERT(name, -EINVAL); \
-    ctx_t *c = map_get(ctx, (char *)name); \
+    ctx_t *c = m_map_get(ctx, (char *)name); \
     MOD_RET_ASSERT(c, -ENODEV); \
     MOD_TH_ASSERT(c);
 
@@ -47,7 +47,7 @@
 
 /* Convenience macro to retrieve a module from a context, given its name */
 #define CTX_GET_MOD(name, ctx) \
-    mod_t *mod = map_get(ctx->modules, (char *)name); \
+    mod_t *mod = m_map_get(ctx->modules, (char *)name); \
     MOD_RET_ASSERT(mod, -ENODEV);
 
 #define GET_MOD_PRIV(self) mod_t *mod = self->mod
