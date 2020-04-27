@@ -78,15 +78,15 @@ void test_btree(void **state) {
     assert_int_equal(len, 10);
     
     printf("PREORDER (only first 5):\n");
-    ret = m_bst_traverse(bt, M_BTREE_PRE, traverse_pre_cb, NULL);
+    ret = m_bst_traverse(bt, M_BST_PRE, traverse_pre_cb, NULL);
     assert_int_equal(ret, 0);
     
     printf("POSTORDER (only first):\n");
-    ret = m_bst_traverse(bt, M_BTREE_POST, traverse_post_cb, NULL);
+    ret = m_bst_traverse(bt, M_BST_POST, traverse_post_cb, NULL);
     assert_int_equal(ret, -1);
     
     printf("INORDER:\n");
-    ret = m_bst_traverse(bt, M_BTREE_IN, traverse_in_cb, NULL);
+    ret = m_bst_traverse(bt, M_BST_IN, traverse_in_cb, NULL);
     assert_int_equal(ret, 0);
     
     printf("ITERATOR (inorder):\n");

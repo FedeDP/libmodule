@@ -20,9 +20,9 @@ typedef struct _bst m_bst_t;
 typedef struct _bst_itr m_bst_itr_t;
 
 typedef enum {
-    M_BTREE_PRE,
-    M_BTREE_POST,
-    M_BTREE_IN
+    M_BST_PRE,
+    M_BST_POST,
+    M_BST_IN
 } m_bst_order;
 
 _public_ m_bst_t *m_bst_new(const m_bst_cmp comp, const m_bst_dtor fn);

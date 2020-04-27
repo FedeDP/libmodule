@@ -225,13 +225,13 @@ void *m_bst_find(m_bst_t *l, void *data) {
 int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr) {
     int ret;
     switch (type) {
-    case M_BTREE_PRE:
+    case M_BST_PRE:
         ret = traverse_preorder(l->root, cb, userptr);
         break;
-    case M_BTREE_POST:
+    case M_BST_POST:
         ret = traverse_postorder(l->root, cb, userptr);
         break;
-    case M_BTREE_IN:
+    case M_BST_IN:
         ret = traverse_inorder(l->root, cb, userptr);
         break;
     default:
