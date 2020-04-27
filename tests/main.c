@@ -175,8 +175,15 @@ int main(void) {
         cmocka_unit_test(test_list_clear),
         cmocka_unit_test(test_list_free),
         
-        /* Test Btree API */
-        cmocka_unit_test(test_btree),
+        /* Test BST API */
+        cmocka_unit_test(test_bst_insert),
+        cmocka_unit_test(test_bst_length),
+        cmocka_unit_test(test_bst_find),
+        cmocka_unit_test(test_bst_remove),
+        cmocka_unit_test(test_bst_iterator),
+        cmocka_unit_test(test_bst_traverse),
+        cmocka_unit_test(test_bst_clear),
+        cmocka_unit_test(test_bst_free),
         
         /* Test poll plugin performance */
         cmocka_unit_test(test_poll_perf)

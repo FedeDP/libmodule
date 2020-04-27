@@ -223,6 +223,9 @@ void *m_bst_find(m_bst_t *l, void *data) {
 }
 
 int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr) {
+    MOD_PARAM_ASSERT(l);
+    MOD_PARAM_ASSERT(cb);
+    
     int ret;
     switch (type) {
     case M_BST_PRE:
@@ -274,7 +277,7 @@ int m_bst_itr_next(m_bst_itr_t **itr) {
         i->curr = &i->l->root;
     }
     i->removed = false;
-    if (!*(i->curr)) {
+    if (!*i->curr) {
         memhook._free(*itr);
         *itr = NULL;
     }
@@ -294,10 +297,9 @@ int m_bst_itr_remove(m_bst_itr_t *itr) {
      * 
      * Normalize to expected remove_node() pointer.
      */
-    bst_node **node = NULL;
-    if ((*itr->curr)->parent) {
-        node = &(*itr->curr)->parent;
-        if (itr->curr == &(*node)->right) {
+    bst_node **node = &(*itr->curr)->parent;
+    if (*node) {
+        if (*itr->curr == (*node)->right) {
             node = &(*node)->right;
         } else {
             node = &(*node)->left;
@@ -306,9 +308,7 @@ int m_bst_itr_remove(m_bst_itr_t *itr) {
         node = &(itr->l->root);
     }
     int ret = remove_node(itr->l, node);
-    if (ret == 0) {
-        itr->removed = true;
-    }
+    itr->removed = ret == 0;
     return ret;
 }
 

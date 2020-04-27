@@ -155,6 +155,9 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Implement btree_clear through iterator
 - [x] Add test_module.c testing that same source cannot be registered twice (-EEXIST)
 - [x] Rename btree to bst
+- [x] Improve tests
+- [x] Fix bst_itr_remove(9)
+- [ ] Rename tests to test_bst.c
 
 ### New iterator APIs
 
