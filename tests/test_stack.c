@@ -63,9 +63,13 @@ void test_stack_iterator(void **state) {
     
     int count = stack_length(my_st);
     while (itr) {
-        count--;
         printf("%p\n", m_itr_get(itr));
+        if (count % 2 == 0) {
+            m_itr_rm(itr);
+        }
         m_itr_next(&itr);
+        count--;
+        
     }
     
     assert_int_equal(count, 0);
@@ -81,10 +85,6 @@ void test_stack_pop(void **state) {
     ptr = stack_pop(my_st);
     assert_non_null(ptr);
     assert_string_equal(ptr, "Hello World");
-    
-    ptr = stack_pop(my_st);
-    assert_non_null(ptr);
-    assert_int_equal(*(int *)ptr, 2);
     
     int len = stack_length(my_st);
     assert_int_equal(len, 1); // one element left

@@ -42,5 +42,13 @@
     m_queue_itr_t *: queue_itr_set_data \
     )(X, data)
     
+#define m_itr_rm(X) _Generic((X), \
+    m_map_itr_t *: map_itr_remove, \
+    m_list_itr_t *: list_itr_remove, \
+    m_stack_itr_t *: stack_itr_remove, \
+    m_queue_itr_t *: queue_itr_remove, \
+    m_bst_itr_t *: m_bst_itr_remove \
+    )(X)
+    
 #define m_itr_foreach(X, fn) \
     for (__auto_type itr = m_itr_new(X); itr; m_itr_next(&itr)) fn;

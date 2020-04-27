@@ -161,8 +161,8 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Add a common m_itr_* API that allows to easily loop on any iterator
 - [x] Use it inside various datastructures tests
 - [x] Use it where needed
-- [ ] Implement itr_remove for stack and queue
-- [ ] Expose itr_remove in itr API
+- [x] Implement itr_remove for stack and queue
+- [x] Expose itr_remove in itr API
 - [x] Expose itr_set in itr API (mbtree excluded)
 - [x] change itr_next() to return int and take double ptr
 

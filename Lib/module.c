@@ -287,7 +287,7 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
                     */
                     flush_pubsub_msgs(mod, NULL, mod);
                 }
-                ret = m_bst_itr_remove(itr);
+                ret = m_itr_rm(itr);
             } else {
                 ret = poll_set_new_evt(&c->ppriv, t, flag);
             }

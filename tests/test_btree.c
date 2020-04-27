@@ -95,7 +95,7 @@ void test_btree(void **state) {
         int *val = m_itr_get(itr);
         printf("%d\n", *val);
         if (rand() % 2 == 1) {
-            m_bst_itr_remove(itr);
+            m_itr_rm(itr);
         }
     });
     printf("END OF ITR\n");

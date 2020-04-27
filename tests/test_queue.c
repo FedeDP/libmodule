@@ -63,9 +63,12 @@ void test_queue_iterator(void **state) {
     
     int count = queue_length(my_q);
     while (itr) {
-        count--;
-        printf("%p\n", queue_itr_get_data(itr));
+        printf("%p\n", m_itr_get(itr));
+        if (count % 2 == 0) {
+            m_itr_rm(itr);
+        }
         m_itr_next(&itr);
+        count--;
     }
     
     assert_int_equal(count, 0);
@@ -81,10 +84,6 @@ void test_queue_dequeue(void **state) {
     ptr = queue_dequeue(my_q);
     assert_non_null(ptr);
     assert_int_equal(*(int *)ptr, 1);
-    
-    ptr = queue_dequeue(my_q);
-    assert_non_null(ptr);
-    assert_int_equal(*(int *)ptr, 2);
     
     int len = queue_length(my_q);
     assert_int_equal(len, 1); // one element left

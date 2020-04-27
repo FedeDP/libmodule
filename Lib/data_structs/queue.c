@@ -14,7 +14,9 @@ struct _queue {
 };
 
 struct _queue_itr {
-    queue_elem *elem;
+    m_queue_t *q;
+    queue_elem **elem;
+    bool removed;
 };
 
 /** Public API **/
@@ -30,9 +32,10 @@ m_queue_t *queue_new(const m_queue_dtor fn) {
 m_queue_itr_t *queue_itr_new(const m_queue_t *q) {
     MOD_RET_ASSERT(queue_length(q) > 0, NULL);
     
-    m_queue_itr_t *itr = memhook._malloc(sizeof(m_queue_itr_t));
+    m_queue_itr_t *itr = memhook._calloc(1, sizeof(m_queue_itr_t));
     if (itr) {
-        itr->elem = q->head;
+        itr->elem = (queue_elem **)&q->head;
+        itr->q = (m_queue_t *)q;
     }
     return itr;
 }
@@ -41,25 +44,47 @@ int queue_itr_next(m_queue_itr_t **itr) {
     MOD_PARAM_ASSERT(itr && *itr);
     
     m_queue_itr_t *i = *itr;
-    i->elem = i->elem->prev;
-    if (!i->elem) {
+    if (!i->removed) {
+        i->elem = &(*i->elem)->prev;
+    } else {
+        i->removed = false;
+    }
+    if (!*i->elem) {
         memhook._free(*itr);
         *itr = NULL;
     }
     return 0;
 }
 
-void *queue_itr_get_data(const m_queue_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+int queue_itr_remove(m_queue_itr_t *itr) {
+    MOD_PARAM_ASSERT(itr && !itr->removed);
     
-    return itr->elem->userptr;
+    queue_elem *tmp = *itr->elem;
+    if (tmp) {
+        *itr->elem = (*itr->elem)->prev;
+        if (itr->q->dtor) {
+            itr->q->dtor(tmp->userptr);
+        }
+        memhook._free(tmp);
+        itr->q->len--;
+        itr->removed = true;
+        return 0;
+    }
+    return -ENOENT;
+}
+
+
+void *queue_itr_get_data(const m_queue_itr_t *itr) {
+    MOD_RET_ASSERT(itr && !itr->removed, NULL);
+    
+    return (*itr->elem)->userptr;
 }
 
 int queue_itr_set_data(const m_queue_itr_t *itr, void *value) {
-    MOD_PARAM_ASSERT(itr);
+    MOD_PARAM_ASSERT(itr && !itr->removed);
     MOD_PARAM_ASSERT(value);
     
-    itr->elem->userptr = value;
+    (*itr->elem)->userptr = value;
     return 0;
 }
 

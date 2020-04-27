@@ -282,9 +282,8 @@ int m_bst_itr_next(m_bst_itr_t **itr) {
 }
 
 int m_bst_itr_remove(m_bst_itr_t *itr) {
-    MOD_PARAM_ASSERT(itr);
+    MOD_PARAM_ASSERT(itr && !itr->removed);
     MOD_PARAM_ASSERT(*(itr->curr));
-    MOD_PARAM_ASSERT(!itr->removed);
     
     /*
      * remove_node() does expect address of pointer to
@@ -314,7 +313,7 @@ int m_bst_itr_remove(m_bst_itr_t *itr) {
 }
 
 void *m_bst_itr_get_data(const m_bst_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+    MOD_RET_ASSERT(itr && !itr->removed, NULL);
     MOD_RET_ASSERT(*(itr->curr), NULL);
 
     return (*itr->curr)->userptr;

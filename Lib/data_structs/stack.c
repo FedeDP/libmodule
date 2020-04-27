@@ -12,7 +12,9 @@ struct _stack {
 };
 
 struct _stack_itr {
-    stack_elem *elem;
+    m_stack_t *s;
+    stack_elem **elem;
+    bool removed;
 };
 
 /** Public API **/
@@ -28,9 +30,10 @@ m_stack_t *stack_new(const m_stack_dtor fn) {
 m_stack_itr_t *stack_itr_new(const m_stack_t *s) {
     MOD_RET_ASSERT(stack_length(s) > 0, NULL);
     
-    m_stack_itr_t *itr = memhook._malloc(sizeof(m_stack_itr_t));
+    m_stack_itr_t *itr = memhook._calloc(1, sizeof(m_stack_itr_t));
     if (itr) {
-        itr->elem = s->data;
+        itr->s = (m_stack_t *)s;
+        itr->elem = (stack_elem **)&s->data;
     }
     return itr;
 }
@@ -39,25 +42,46 @@ int stack_itr_next(m_stack_itr_t **itr) {
     MOD_PARAM_ASSERT(itr && *itr);
     
     m_stack_itr_t *i = *itr;
-    i->elem = i->elem->prev;
-    if (!i->elem) {
+    if (!i->removed) {
+        i->elem = &(*i->elem)->prev;
+    } else {
+        i->removed = false;
+    }
+    if (!*i->elem) {
         memhook._free(*itr);
         *itr = NULL;
     }
     return 0;
 }
 
-void *stack_itr_get_data(const m_stack_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+int stack_itr_remove(m_stack_itr_t *itr) {
+    MOD_PARAM_ASSERT(itr && !itr->removed);
     
-    return itr->elem->userptr;
+    stack_elem *tmp = *itr->elem;
+    if (tmp) {
+        *itr->elem = (*itr->elem)->prev;
+        if (itr->s->dtor) {
+            itr->s->dtor(tmp->userptr);
+        }
+        memhook._free(tmp);
+        itr->s->len--;
+        itr->removed = true;
+        return 0;
+    }
+    return -ENOENT;
+}
+
+void *stack_itr_get_data(const m_stack_itr_t *itr) {
+    MOD_RET_ASSERT(itr && !itr->removed, NULL);
+    
+    return (*itr->elem)->userptr;
 }
 
 int stack_itr_set_data(const m_stack_itr_t *itr, void *value) {
-    MOD_PARAM_ASSERT(itr);
+    MOD_PARAM_ASSERT(itr && !itr->removed);
     MOD_PARAM_ASSERT(value);
     
-    itr->elem->userptr = value;
+    (*itr->elem)->userptr = value;
     return 0;
 }
 

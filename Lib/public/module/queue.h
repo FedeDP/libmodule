@@ -19,6 +19,7 @@ typedef struct _queue_itr m_queue_itr_t;
 _public_ m_queue_t *queue_new(const m_queue_dtor fn);
 _public_ m_queue_itr_t *queue_itr_new(const m_queue_t *q);
 _public_ int queue_itr_next(m_queue_itr_t **itr);
+_public_ int queue_itr_remove(m_queue_itr_t *itr);
 _public_ void *queue_itr_get_data(const m_queue_itr_t *itr);
 _public_ int queue_itr_set_data(const m_queue_itr_t *itr, void *value);
 _public_ int queue_iterate(const m_queue_t *q, const m_queue_cb fn, void *userptr);

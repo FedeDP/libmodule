@@ -313,43 +313,31 @@ int map_itr_next(m_map_itr_t **itr) {
 }
 
 int map_itr_remove(m_map_itr_t *itr) {
-    MOD_PARAM_ASSERT(itr);
+    MOD_PARAM_ASSERT(itr && !itr->removed);
     
-    if (!itr->removed) {
-        clear_elem(itr->m, itr->curr);
-        itr->removed = true;
-        return 0;
-    }
-    return -EACCES;
+    clear_elem(itr->m, itr->curr);
+    itr->removed = true;
+    return 0;
 }
 
 const char *map_itr_get_key(const m_map_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+    MOD_RET_ASSERT(itr && !itr->removed, NULL);
     
-    if (!itr->removed) {
-        return itr->curr->key;
-    }
-    return NULL;
+    return itr->curr->key;
 }
 
 void *map_itr_get_data(const m_map_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+    MOD_RET_ASSERT(itr && !itr->removed, NULL);
     
-    if (!itr->removed) {
-        return itr->curr->data;
-    }
-    return NULL;
+    return itr->curr->data;
 }
 
 int map_itr_set_data(const m_map_itr_t *itr, void *value) {
-    MOD_PARAM_ASSERT(itr);
+    MOD_PARAM_ASSERT(itr && !itr->removed);
     MOD_PARAM_ASSERT(value);
     
-    if (!itr->removed) {
-        itr->curr->data = value;
-        return 0;
-    }
-    return -EACCES;
+    itr->curr->data = value;
+    return 0;
 }
 
 /*

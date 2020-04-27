@@ -61,7 +61,7 @@ void test_list_iterator(void **state) {
         assert_true(ret == 0);
         
         /* Remove previously inserted node */
-        ret = list_itr_remove(itr);
+        ret = m_itr_rm(itr);
         assert_true(ret == 0);
         
         m_itr_next(&itr);
