@@ -204,7 +204,7 @@ static int recv_events(ctx_t *c, int timeout) {
                 /* Remove it if it was a oneshot event */
                 if (p && p->flags & SRC_ONESHOT) {
                     if (p->type != TYPE_PS) {
-                        m_btree_remove(mod->srcs[p->type], p);
+                        m_bst_remove(mod->srcs[p->type], p);
                     } else {
                         map_remove(mod->subscriptions, p->ps_src.topic);
                     }

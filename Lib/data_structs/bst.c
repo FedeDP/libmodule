@@ -1,39 +1,39 @@
 #include "poll_priv.h"
-#include "btree.h"
+#include "bst.h"
 
 typedef struct _elem {
     void *userptr;
     struct _elem *parent;
     struct _elem *right;
     struct _elem *left;
-} btree_node;
+} bst_node;
 
-struct _btree {
+struct _bst {
     size_t len;
-    btree_node *root;
-    m_btree_cmp comp;
-    m_btree_dtor dtor;
+    bst_node *root;
+    m_bst_cmp comp;
+    m_bst_dtor dtor;
 };
 
-struct _btree_itr {
+struct _bst_itr {
     bool removed;
-    btree_node **curr;
-    btree_node *prev;
-    m_btree_t *l;
+    bst_node **curr;
+    bst_node *prev;
+    m_bst_t *l;
 };
 
-static inline int insert_node(m_btree_t *l, btree_node **elem, btree_node *parent, void *data);
-static inline btree_node **find_min_subtree(btree_node **node);
-static inline int remove_node(m_btree_t *l, btree_node **elem);
+static inline int insert_node(m_bst_t *l, bst_node **elem, bst_node *parent, void *data);
+static inline bst_node **find_min_subtree(bst_node **node);
+static inline int remove_node(m_bst_t *l, bst_node **elem);
 static int ptrcmp(void *userdata, void *node_data);
-static inline int traverse_preorder(btree_node *node, m_btree_cb cb, void *userptr);
-static inline int traverse_postorder(btree_node *node, m_btree_cb cb, void *userptr);
-static inline int traverse_inorder(btree_node *node, m_btree_cb cb, void *userptr);
-static inline btree_node **btree_find(m_btree_t *l, void *data, btree_node **parent);
-static inline btree_node **btree_next(btree_node **node);
+static inline int traverse_preorder(bst_node *node, m_bst_cb cb, void *userptr);
+static inline int traverse_postorder(bst_node *node, m_bst_cb cb, void *userptr);
+static inline int traverse_inorder(bst_node *node, m_bst_cb cb, void *userptr);
+static inline bst_node **bst_find(m_bst_t *l, void *data, bst_node **parent);
+static inline bst_node **bst_next(bst_node **node);
 
-static inline int insert_node(m_btree_t *l, btree_node **elem, btree_node *parent, void *data) {
-    btree_node *node = memhook._calloc(1, sizeof(btree_node));
+static inline int insert_node(m_bst_t *l, bst_node **elem, bst_node *parent, void *data) {
+    bst_node *node = memhook._calloc(1, sizeof(bst_node));
     MOD_ALLOC_ASSERT(node);
     node->userptr = data;
     node->parent = parent;
@@ -42,15 +42,15 @@ static inline int insert_node(m_btree_t *l, btree_node **elem, btree_node *paren
     return 0;
 }
 
-static inline btree_node **find_min_subtree(btree_node **node) {
+static inline bst_node **find_min_subtree(bst_node **node) {
     while ((*node)->left) {
         node = &(*node)->left;
     }
     return node;
 }
 
-static inline int remove_node(m_btree_t *l, btree_node **elem) {
-    btree_node *node = *elem;
+static inline int remove_node(m_bst_t *l, bst_node **elem) {
+    bst_node *node = *elem;
     if (node) {
         /* Nodes with at most one child */
         if (!node->left || !node->right) {
@@ -74,7 +74,7 @@ static inline int remove_node(m_btree_t *l, btree_node **elem) {
          * Nodes with two children: get inorder successor
          * (smallest in the right subtree)
          */
-        btree_node **tmp = find_min_subtree(&node->right);
+        bst_node **tmp = find_min_subtree(&node->right);
         node->userptr = (*tmp)->userptr; // switch userdata
         return remove_node(l, tmp); // remove useless left-most node in the right subtree
     }
@@ -85,7 +85,7 @@ static int ptrcmp(void *userdata, void *node_data) {
     return (userdata - node_data);
 }
 
-static inline int traverse_preorder(btree_node *node, m_btree_cb cb, void *userptr) {
+static inline int traverse_preorder(bst_node *node, m_bst_cb cb, void *userptr) {
     if (node) {
         int ret = cb(userptr, node->userptr);
         if (ret == 0) {
@@ -99,7 +99,7 @@ static inline int traverse_preorder(btree_node *node, m_btree_cb cb, void *userp
     return 0;
 }
 
-static inline int traverse_postorder(btree_node *node, m_btree_cb cb, void *userptr) {
+static inline int traverse_postorder(bst_node *node, m_bst_cb cb, void *userptr) {
     if (node) {
         int ret = traverse_postorder(node->left, cb, userptr);
         if (ret == 0) {
@@ -113,7 +113,7 @@ static inline int traverse_postorder(btree_node *node, m_btree_cb cb, void *user
     return 0;
 }
 
-static inline int traverse_inorder(btree_node *node, m_btree_cb cb, void *userptr) {
+static inline int traverse_inorder(bst_node *node, m_bst_cb cb, void *userptr) {
     if (node) {
         int ret = traverse_inorder(node->left, cb, userptr);
         if (ret == 0) {
@@ -127,8 +127,8 @@ static inline int traverse_inorder(btree_node *node, m_btree_cb cb, void *userpt
     return 0;
 }
 
-static inline btree_node **btree_find(m_btree_t *l, void *data, btree_node **parent) {
-    btree_node **tmp = &l->root;
+static inline bst_node **bst_find(m_bst_t *l, void *data, bst_node **parent) {
+    bst_node **tmp = &l->root;
     while (*tmp) {
         const int ret = l->comp(data, (*tmp)->userptr);
         if (ret) {
@@ -148,7 +148,7 @@ static inline btree_node **btree_find(m_btree_t *l, void *data, btree_node **par
 }
 
 /* Thanks to: https://www.cs.odu.edu/~zeil/cs361/latest/Public/treetraversal/index.html#working-with-parents */
-static inline btree_node **btree_next(btree_node **node) {
+static inline bst_node **bst_next(bst_node **node) {
     if (*node) {
         if ((*node)->right) {
             node = find_min_subtree(&(*node)->right);
@@ -162,7 +162,7 @@ static inline btree_node **btree_next(btree_node **node) {
              * If parent is NULL, the original node was the last node inorder, 
              * and its successor is the end of the list
              */
-            btree_node **parent = &(*node)->parent;
+            bst_node **parent = &(*node)->parent;
             while (*parent && *node == (*parent)->right) {
                 node = parent;
                 parent = &(*node)->parent;
@@ -179,8 +179,8 @@ static inline btree_node **btree_next(btree_node **node) {
 
 /** Public API **/
 
-m_btree_t *m_btree_new(const m_btree_cmp comp, const m_btree_dtor fn) {
-    m_btree_t *l = memhook._calloc(1, sizeof(m_btree_t));
+m_bst_t *m_bst_new(const m_bst_cmp comp, const m_bst_dtor fn) {
+    m_bst_t *l = memhook._calloc(1, sizeof(m_bst_t));
     if (l) {
         l->dtor = fn;
         l->comp = comp ? comp : ptrcmp;
@@ -188,41 +188,41 @@ m_btree_t *m_btree_new(const m_btree_cmp comp, const m_btree_dtor fn) {
     return l;
 }
 
-int m_btree_insert(m_btree_t *l, void *data) {
+int m_bst_insert(m_bst_t *l, void *data) {
     MOD_PARAM_ASSERT(l);
     MOD_PARAM_ASSERT(data);
     
-    btree_node *parent = NULL;
-    btree_node **node = btree_find(l, data, &parent);
+    bst_node *parent = NULL;
+    bst_node **node = bst_find(l, data, &parent);
     if (*node) {
         return -EEXIST;
     }
     return insert_node(l, node, parent, data);
 }
 
-int m_btree_remove(m_btree_t *l, void *data) {
-    MOD_PARAM_ASSERT(m_btree_length(l) > 0);
+int m_bst_remove(m_bst_t *l, void *data) {
+    MOD_PARAM_ASSERT(m_bst_length(l) > 0);
     MOD_PARAM_ASSERT(data);
     
-    btree_node **node = btree_find(l, data, NULL);
+    bst_node **node = bst_find(l, data, NULL);
     if (node) {
         return remove_node(l, node);
     }
     return -ENOENT;
 }
 
-void *m_btree_find(m_btree_t *l, void *data) {
+void *m_bst_find(m_bst_t *l, void *data) {
     MOD_RET_ASSERT(l, NULL);
     MOD_RET_ASSERT(data, NULL);
     
-    btree_node **node = btree_find(l, data, NULL);
+    bst_node **node = bst_find(l, data, NULL);
     if (*node) {
         return (*node)->userptr;
     }
     return NULL;
 }
 
-int m_btree_traverse(m_btree_t *l, m_btree_order type, m_btree_cb cb, void *userptr) {
+int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr) {
     int ret;
     switch (type) {
     case M_BTREE_PRE:
@@ -241,33 +241,33 @@ int m_btree_traverse(m_btree_t *l, m_btree_order type, m_btree_cb cb, void *user
     return ret >= 0 ? 0 : ret;
 }
 
-m_btree_itr_t *m_btree_itr_new(const m_btree_t *l) {
-    MOD_RET_ASSERT(m_btree_length(l) > 0, NULL);
+m_bst_itr_t *m_bst_itr_new(const m_bst_t *l) {
+    MOD_RET_ASSERT(m_bst_length(l) > 0, NULL);
 
-    m_btree_itr_t *itr = memhook._calloc(1, sizeof(m_btree_itr_t));
+    m_bst_itr_t *itr = memhook._calloc(1, sizeof(m_bst_itr_t));
     if (itr) {
-        itr->curr = find_min_subtree((btree_node **)&l->root);
-        itr->l = (m_btree_t *)l;
+        itr->curr = find_min_subtree((bst_node **)&l->root);
+        itr->l = (m_bst_t *)l;
     }
     return itr;
 }
 
-m_btree_itr_t *m_btree_itr_next(m_btree_itr_t *itr) {
+m_bst_itr_t *m_bst_itr_next(m_bst_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
 
     if (!itr->removed) {
         itr->prev = *itr->curr;
-        itr->curr = btree_next(itr->curr);
+        itr->curr = bst_next(itr->curr);
     } else if (itr->prev) {
         /* If we have a previous element, find new next of that element */
-        itr->curr = btree_next(&itr->prev);
+        itr->curr = bst_next(&itr->prev);
     } else if (itr->l->root) {
         /* 
          * If we haven't got a previous elem, it means we have freed
          * first iterator (or we are freeing all iterators)
          * Next will be new root's min_subtree 
          */
-        itr->curr = find_min_subtree((btree_node **)&itr->l->root);
+        itr->curr = find_min_subtree((bst_node **)&itr->l->root);
     } else {
         /* Everything was removed. End iteration. */
         itr->curr = &itr->l->root;
@@ -280,7 +280,7 @@ m_btree_itr_t *m_btree_itr_next(m_btree_itr_t *itr) {
     return itr;
 }
 
-int m_btree_itr_remove(m_btree_itr_t *itr) {
+int m_bst_itr_remove(m_bst_itr_t *itr) {
     MOD_PARAM_ASSERT(itr);
     MOD_PARAM_ASSERT(*(itr->curr));
     MOD_PARAM_ASSERT(!itr->removed);
@@ -294,7 +294,7 @@ int m_btree_itr_remove(m_btree_itr_t *itr) {
      * 
      * Normalize to expected remove_node() pointer.
      */
-    btree_node **node = NULL;
+    bst_node **node = NULL;
     if ((*itr->curr)->parent) {
         node = &(*itr->curr)->parent;
         if (itr->curr == &(*node)->right) {
@@ -312,33 +312,33 @@ int m_btree_itr_remove(m_btree_itr_t *itr) {
     return ret;
 }
 
-void *m_btree_itr_get_data(const m_btree_itr_t *itr) {
+void *m_bst_itr_get_data(const m_bst_itr_t *itr) {
     MOD_RET_ASSERT(itr, NULL);
     MOD_RET_ASSERT(*(itr->curr), NULL);
 
     return (*itr->curr)->userptr;
 }
 
-int m_btree_clear(m_btree_t *l) {
-    MOD_PARAM_ASSERT(m_btree_length(l) > 0);
+int m_bst_clear(m_bst_t *l) {
+    MOD_PARAM_ASSERT(m_bst_length(l) > 0);
     
-    for (m_btree_itr_t *itr = m_btree_itr_new(l); itr; itr = m_btree_itr_next(itr)) {
-        m_btree_itr_remove(itr);
+    for (m_bst_itr_t *itr = m_bst_itr_new(l); itr; itr = m_bst_itr_next(itr)) {
+        m_bst_itr_remove(itr);
     }
     l->root = NULL;
     return 0;
 }
 
-int m_btree_free(m_btree_t **l) {
+int m_bst_free(m_bst_t **l) {
     MOD_PARAM_ASSERT(l);
     
-    m_btree_clear(*l);
+    m_bst_clear(*l);
     memhook._free(*l);
     *l = NULL;
     return 0;
 }
 
-ssize_t m_btree_length(const m_btree_t *l) {
+ssize_t m_bst_length(const m_bst_t *l) {
     MOD_PARAM_ASSERT(l);
     
     return l->len;

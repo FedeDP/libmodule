@@ -25,7 +25,7 @@ static void reset_module(mod_t *mod);
 
 extern int fs_cleanup(mod_t *mod);
 
-static m_btree_cmp src_cmp_map[] = {
+static m_bst_cmp src_cmp_map[] = {
     fdcmp,      // TYPE_PS we use internal pipe fd used for pubsub as module PS source
     fdcmp,      // TYPE_FD
     tmrcmp,     // TYPE_TMR
@@ -54,7 +54,7 @@ static void module_dtor(void *data) {
         map_free(&mod->subscriptions);
         stack_free(&mod->recvs);
         for (int i = 0; i < TYPE_END; i++) {
-            m_btree_free(&mod->srcs[i]);
+            m_bst_free(&mod->srcs[i]);
         }
         
         memhook._free((void *)mod->local_path);
@@ -196,7 +196,7 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
         return -EINVAL;
     }
     
-    int ret = m_btree_insert(mod->srcs[type], src);
+    int ret = m_bst_insert(mod->srcs[type], src);
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         /* If a src is registered at runtime, start receiving its events */
@@ -216,7 +216,7 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
 }
 
 static int _deregister_src(mod_t *mod, const mod_src_types type, void *src_data) {    
-    int ret = m_btree_remove(mod->srcs[type], src_data);
+    int ret = m_bst_remove(mod->srcs[type], src_data);
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     }
@@ -287,7 +287,7 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
                     */
                     flush_pubsub_msgs(mod, NULL, mod);
                 }
-                ret = m_btree_itr_remove(itr);
+                ret = m_bst_itr_remove(itr);
             } else {
                 ret = poll_set_new_evt(&c->ppriv, t, flag);
             }
@@ -426,7 +426,7 @@ int m_mod_register(const char *name, const char *ctx_name, self_t **self, const 
         mod->name = flags & MOD_NAME_DUP ? mem_strdup(name) : name;
         
         for (int i = 0; i < TYPE_END; i++) {
-            mod->srcs[i] = m_btree_new(src_cmp_map[i], src_priv_dtor);
+            mod->srcs[i] = m_bst_new(src_cmp_map[i], src_priv_dtor);
             if (!mod->srcs[i]) {
                 break;
             }
@@ -718,7 +718,7 @@ int m_mod_dump(const self_t *self) {
     
     /* Skip internal TYPE_PS */
     for (int k = TYPE_FD; k < TYPE_END; k++) {
-        if (m_btree_length(mod->srcs[k]) > 0) {
+        if (m_bst_length(mod->srcs[k]) > 0) {
             if (!closed_stats) {
                 ctx_logger(c, self, "\t},\n");
                 closed_stats = true;
