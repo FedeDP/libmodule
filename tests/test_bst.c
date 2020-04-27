@@ -1,4 +1,4 @@
-#include "test_btree.h"
+#include "test_bst.h"
 #include <module/bst.h>
 #include <module/itr.h>
 

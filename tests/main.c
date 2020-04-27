@@ -4,7 +4,7 @@
 #include "test_stack.h"
 #include "test_queue.h"
 #include "test_list.h"
-#include "test_btree.h"
+#include "test_bst.h"
 #include "test_perf.h"
 
 int main(void) {
