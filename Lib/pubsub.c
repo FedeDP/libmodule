@@ -36,7 +36,7 @@ static ev_src_t *fetch_sub(mod_t *mod, const char *topic) {
     
     /* Check if any stored subscriptions is a regex that matches topic */
     m_itr_foreach(mod->subscriptions, {
-        sub = m_itr_data(itr);
+        sub = m_itr_get(itr);
         /* Execute regular expression */
         int ret = regexec(&sub->ps_src.reg, topic, 0, NULL, 0);
         if (!ret) {

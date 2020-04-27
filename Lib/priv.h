@@ -6,9 +6,6 @@
 #include <pthread.h>
 #include "mem.h"
 #include "itr.h"
-#include "map.h"
-#include "stack.h"
-#include "list.h"
 
 #ifndef NDEBUG
     #define MODULE_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
@@ -188,7 +185,7 @@ struct _module {
     void *fs;                               // FS module priv data. NULL if unsupported
     const char *name;                       // module's name
     const char *local_path;                 // For runtime loaded modules: path of module
-    m_list_t *srcs;                         // module's event sources (list of ev_src_t*)
+    m_btree_t *srcs[TYPE_END];              // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     mod_stats_t stats;                      // Modules' stats

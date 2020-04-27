@@ -284,6 +284,10 @@ void test_module_add_fd(void **state) {
     
     int ret = m_mod_register_fd(self, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == 0);
+    
+    /* Try to register again */
+    ret = m_mod_register_fd(self, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
+    assert_true(ret == -EEXIST);
 }
 
 void test_module_rm_wrong_fd(void **state) {
@@ -317,7 +321,7 @@ void test_module_rm_fd(void **state) {
     int ret = m_mod_deregister_fd(self, STDIN_FILENO);
     assert_true(ret == 0);
     
-    /* Fd is now closed (module_deregister_fd with 1 flag) thus is no more valid */
+    /* Fd is now closed (module_deregister_fd with SRC_FD_AUTOCLOSE thus is no more valid */
     assert_false(fd_is_valid(STDIN_FILENO));
 }
 

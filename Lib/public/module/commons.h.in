@@ -65,7 +65,8 @@ typedef enum {
     TYPE_SGN,   // Signal Source
     TYPE_PATH,  // Path Source
     TYPE_PID,   // PID Source
-    TYPE_TASK   // Task source -> SRC_ONESHOT flag is forced
+    TYPE_TASK,  // Task source -> SRC_ONESHOT flag is forced
+    TYPE_END    // End of supported sources
 } mod_src_types;
 
 /* 

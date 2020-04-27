@@ -39,7 +39,7 @@
 #define m_m_log(...)                              m_mod_log(self(), ##__VA_ARGS__)
 
 #define m_m_name()                                m_mod_name(self())
-#define m_m_ctx()                                 m_mod_ctx(self())
+#define m_m_ctxname()                             m_mod_ctxname(self())
 #define m_m_ref(name, modref)                     m_mod_ref(self(), name, modref)
 
 #define m_m_become(x)                             m_mod_become(self(), receive_##x)

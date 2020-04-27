@@ -26,13 +26,21 @@
     m_btree_itr_t *: m_btree_itr_next \
     )(X)
     
-#define m_itr_data(X) _Generic((X), \
+#define m_itr_get(X) _Generic((X), \
     m_map_itr_t *: map_itr_get_data, \
     m_list_itr_t *: list_itr_get_data, \
     m_stack_itr_t *: stack_itr_get_data, \
     m_queue_itr_t *: queue_itr_get_data, \
     m_btree_itr_t *: m_btree_itr_get_data \
     )(X)
+    
+/* Unavailable for btree API */
+#define m_itr_set(X, data) _Generic((X), \
+    m_map_itr_t *: map_itr_set_data, \
+    m_list_itr_t *: list_itr_set_data, \
+    m_stack_itr_t *: stack_itr_set_data, \
+    m_queue_itr_t *: queue_itr_set_data \
+    )(X, data)
     
 #define m_itr_foreach(X, fn) \
     for (__auto_type itr = m_itr_new(X); itr; itr = m_itr_next(itr)) fn;

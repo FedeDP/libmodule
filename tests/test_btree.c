@@ -93,7 +93,11 @@ void test_btree(void **state) {
     for (m_btree_itr_t *itr = m_btree_itr_new(bt); itr; itr = m_btree_itr_next(itr)) {
         int *val = m_btree_itr_get_data(itr);
         printf("%d\n", *val);
+        if (rand() % 2 == 1) {
+            m_btree_itr_remove(itr);
+        }
     }
+    printf("END OF ITR\n");
     
     ret = m_btree_free(&bt);
     assert_int_equal(ret, 0);

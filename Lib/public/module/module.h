@@ -26,7 +26,7 @@ _public_ int m_mod_set_userdata(const self_t *self, const void *userdata);
 _public_ const void *m_mod_get_userdata(const self_t *self);
 
 _public_ _pure_ const char *m_mod_name(const self_t *mod_self);
-_public_ _pure_ const char *m_mod_ctx(const self_t *mod_self);
+_public_ _pure_ const char *m_mod_ctxname(const self_t *mod_self);
 
 _public_ int m_mod_ref(const self_t *self, const char *name, const self_t **modref);
 

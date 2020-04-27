@@ -11,7 +11,7 @@ memhook_t memhook = { malloc, realloc, calloc, free };
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
 _public_ void _ctor0_ _weak_ m_pre_start(void) {
-    MODULE_DEBUG("Pre-starting libmodule.");
+    MODULE_DEBUG("Pre-starting libmodule.\n");
 }
 
 static void *thread_loop(void *param) {

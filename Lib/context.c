@@ -204,7 +204,7 @@ static int recv_events(ctx_t *c, int timeout) {
                 /* Remove it if it was a oneshot event */
                 if (p && p->flags & SRC_ONESHOT) {
                     if (p->type != TYPE_PS) {
-                        list_remove(mod->srcs, p, NULL);
+                        m_btree_remove(mod->srcs[p->type], p);
                     } else {
                         map_remove(mod->subscriptions, p->ps_src.topic);
                     }
@@ -351,7 +351,7 @@ int m_ctx_dump(const char *ctx_name) {
     int i = 0;
     m_itr_foreach(c->modules, {
         const char *mod_name = map_itr_get_key(itr);
-        const mod_t *mod = m_itr_data(itr);
+        const mod_t *mod = m_itr_get(itr);
         ctx_logger(c, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < map_length(c->modules) ? ',' : ' ');
     });
     ctx_logger(c, NULL, "\t]\n");
@@ -393,7 +393,7 @@ int m_ctx_unload(const char *ctx_name, const char *module_path) {
     /* Check if desired module is actually loaded in context */
     bool found = false;
     m_itr_foreach(c->modules, {
-        mod_t *mod = m_itr_data(itr);
+        mod_t *mod = m_itr_get(itr);
         if (mod->local_path && !strcmp(mod->local_path, module_path)) {
             found = true;
             memhook._free(itr);
@@ -422,7 +422,7 @@ size_t m_ctx_trim(const char *ctx_name, const stats_t *thres) {
     fetch_ms(&curr_ms, NULL);
     const size_t initial_size = map_length(c->modules);
     m_itr_foreach(c->modules, {
-        mod_t *mod = m_itr_data(itr);
+        mod_t *mod = m_itr_get(itr);
 
         if (curr_ms - mod->stats.last_seen >= thres->inactive_ms) {
             m_mod_deregister(&mod->self);

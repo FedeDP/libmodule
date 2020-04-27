@@ -32,6 +32,7 @@ _public_ void *m_btree_find(m_btree_t *l, void *data);
 _public_ int m_btree_traverse(m_btree_t *l, m_btree_order type, m_btree_cb cb, void *userptr);
 _public_ m_btree_itr_t *m_btree_itr_new(const m_btree_t *l);
 _public_ m_btree_itr_t *m_btree_itr_next(m_btree_itr_t *itr);
+_public_ int m_btree_itr_remove(m_btree_itr_t *itr);
 _public_ void *m_btree_itr_get_data(const m_btree_itr_t *itr);
 _public_ int m_btree_clear(m_btree_t *l);
 _public_ int m_btree_free(m_btree_t **l);

@@ -64,7 +64,7 @@ void test_stack_iterator(void **state) {
     int count = stack_length(my_st);
     while (itr) {
         count--;
-        printf("%p\n", m_itr_data(itr));
+        printf("%p\n", m_itr_get(itr));
         itr = m_itr_next(itr);
     }
     

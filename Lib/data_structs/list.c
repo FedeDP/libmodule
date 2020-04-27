@@ -17,10 +17,10 @@ struct _list_itr {
     ssize_t diff;
 };
 
-static int insert_node(m_list_t *l, list_node **elem, void *data);
-static int remove_node(m_list_t *l, list_node **elem);
+static inline int insert_node(m_list_t *l, list_node **elem, void *data);
+static inline int remove_node(m_list_t *l, list_node **elem);
 
-static int insert_node(m_list_t *l, list_node **elem, void *data) {
+static inline int insert_node(m_list_t *l, list_node **elem, void *data) {
     list_node *node = memhook._malloc(sizeof(list_node));
     MOD_ALLOC_ASSERT(node);
     node->next = *elem;
@@ -30,7 +30,7 @@ static int insert_node(m_list_t *l, list_node **elem, void *data) {
     return 0;
 }
 
-static int remove_node(m_list_t *l, list_node **elem) {
+static inline int remove_node(m_list_t *l, list_node **elem) {
     list_node *tmp = *elem;
     if (tmp) {
         *elem = (*elem)->next;

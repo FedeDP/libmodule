@@ -127,9 +127,10 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Rename other exposed APIs (types/enums/enum values) to m_*
 - [x] Rename MODULE() to M_MOD()
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
-- [ ] Rename module_cmn.h to common.h
+- [x] Rename module_cmn.h to commons.h
 - [x] Rename complex API to m_mod/ctx_ -> "Easy" API instead "m_m_" and "m_c_"
 - [x] Rename evaluate() to eval()
+- [ ] Rename map/stack/... APIs to m_x_y
 
 - [ ] Add m_context_(de)register() API
 - [ ] Split mod_flags into m_mod_flags and m_ctx_flags
@@ -145,17 +146,25 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 ### New btree API
 
-- [ ] Use an array of trees instead of single list? ie: one for each SRC_TYPE. Pro: quicker find, quicker remove; Cons: slower insert.
+- [x] Use an array of trees instead of single list? ie: one for each SRC_TYPE. Pro: quicker find, quicker remove; Cons: slower insert.
 It would allows to check if same node already exists on insert, without losing too much time
 - [x] Implement m_btree_traverse()
 - [x] Implement m_btree_itr_t
 - [x] Implement tests
+- [x] Implement m_btree_itr_remove()
+- [x] Implement btree_clear through iterator
+- [x] Add test_module.c testing that same source cannot be registered twice (-EEXIST)
+- [ ] Rename btree to bst
 
 ### New iterator APIs
 
 - [x] Add a common m_itr_* API that allows to easily loop on any iterator
 - [x] Use it inside various datastructures tests
 - [x] Use it where needed
+- [ ] Implement itr_remove for stack and queue
+- [ ] Expose itr_remove in itr API
+- [x] Expose itr_set in itr API (mbtree excluded)
+- [ ] change itr_next() to return int and take double ptr
 
 ### DOC
 

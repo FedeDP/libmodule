@@ -8,7 +8,7 @@ static void logger(const self_t *self, const char *fmt, va_list args) {
     const char *context = NULL;
     if (self) {
         name = m_mod_name(self);
-        context = m_mod_ctx(self);
+        context = m_mod_ctxname(self);
     }
     printf("%s@%s:\t* ", name ? name : "null", context ? context : "null");
     vprintf(fmt, args);
