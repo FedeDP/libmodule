@@ -1,5 +1,6 @@
 #include "test_btree.h"
 #include <module/bst.h>
+#include <module/itr.h>
 
 static int int_cmp(void *userdata, void *node_data) {
     int a = *((int *)userdata);
@@ -90,13 +91,13 @@ void test_btree(void **state) {
     assert_int_equal(ret, 0);
     
     printf("ITERATOR (inorder):\n");
-    for (m_bst_itr_t *itr = m_bst_itr_new(bt); itr; itr = m_bst_itr_next(itr)) {
-        int *val = m_bst_itr_get_data(itr);
+    m_itr_foreach(bt, {
+        int *val = m_itr_get(itr);
         printf("%d\n", *val);
         if (rand() % 2 == 1) {
             m_bst_itr_remove(itr);
         }
-    }
+    });
     printf("END OF ITR\n");
     
     ret = m_bst_free(&bt);

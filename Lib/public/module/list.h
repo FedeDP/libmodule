@@ -21,7 +21,7 @@ typedef struct _list_itr m_list_itr_t;
 
 _public_ m_list_t *list_new(const m_list_dtor fn);
 _public_ m_list_itr_t *list_itr_new(const m_list_t *l);
-_public_ m_list_itr_t *list_itr_next(m_list_itr_t *itr);
+_public_ int list_itr_next(m_list_itr_t **itr);
 _public_ void *list_itr_get_data(const m_list_itr_t *itr);
 _public_ int list_itr_set_data(m_list_itr_t *itr, void *value);
 _public_ int list_itr_insert(m_list_itr_t *itr, void *value);

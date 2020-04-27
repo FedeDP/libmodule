@@ -65,20 +65,21 @@ m_list_itr_t *list_itr_new(const m_list_t *l) {
     return itr;
 }
 
-m_list_itr_t *list_itr_next(m_list_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+int list_itr_next(m_list_itr_t **itr) {
+    MOD_PARAM_ASSERT(itr && *itr);
     
-    if (*itr->elem) {
-        if (itr->diff >= 0) {
-            itr->elem = &((*itr->elem)->next);
+    m_list_itr_t *i = *itr;
+    if (*i->elem) {
+        if (i->diff >= 0) {
+            i->elem = &((*i->elem)->next);
         } 
-        itr->diff = 0;
+        i->diff = 0;
     }
-    if (!*(itr->elem)) {
-        memhook._free(itr);
-        itr = NULL;
+    if (!*(i->elem)) {
+        memhook._free(*itr);
+        *itr = NULL;
     }
-    return itr;
+    return 0;
 }
 
 void *list_itr_get_data(const m_list_itr_t *itr) {
@@ -179,7 +180,7 @@ void *list_find(m_list_t *l, void *data, const m_list_cmp comp) {
 int list_clear(m_list_t *l) {
     MOD_PARAM_ASSERT(l);
     
-    for (m_list_itr_t *itr = list_itr_new(l); itr; itr = list_itr_next(itr)) {
+    for (m_list_itr_t *itr = list_itr_new(l); itr; list_itr_next(&itr)) {
         list_itr_remove(itr);
     }
     return 0;

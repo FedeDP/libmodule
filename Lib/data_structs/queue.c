@@ -37,15 +37,16 @@ m_queue_itr_t *queue_itr_new(const m_queue_t *q) {
     return itr;
 }
 
-m_queue_itr_t *queue_itr_next(m_queue_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+int queue_itr_next(m_queue_itr_t **itr) {
+    MOD_PARAM_ASSERT(itr && *itr);
     
-    itr->elem = itr->elem->prev;
-    if (!itr->elem) {
-        memhook._free(itr);
-        itr = NULL;
+    m_queue_itr_t *i = *itr;
+    i->elem = i->elem->prev;
+    if (!i->elem) {
+        memhook._free(*itr);
+        *itr = NULL;
     }
-    return itr;
+    return 0;
 }
 
 void *queue_itr_get_data(const m_queue_itr_t *itr) {

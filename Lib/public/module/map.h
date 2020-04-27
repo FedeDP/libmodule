@@ -24,7 +24,7 @@ typedef enum {
 
 _public_ m_map_t *map_new(const m_map_flags flags, const m_map_dtor fn);
 _public_ m_map_itr_t *map_itr_new(const m_map_t *m);
-_public_ m_map_itr_t *map_itr_next(m_map_itr_t *itr);
+_public_ int map_itr_next(m_map_itr_t **itr);
 _public_ int map_itr_remove(m_map_itr_t *itr);
 _public_ const char *map_itr_get_key(const m_map_itr_t *itr);
 _public_ void *map_itr_get_data(const m_map_itr_t *itr);

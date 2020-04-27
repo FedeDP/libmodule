@@ -54,7 +54,7 @@ void test_list_iterator(void **state) {
 
     while (count) {
         count--;
-        printf("%p\n", list_itr_get_data(itr));
+        printf("%p\n", m_itr_get(itr));
         
         /* Insert a node */
         int ret = list_itr_insert(itr, &val1);
@@ -64,7 +64,7 @@ void test_list_iterator(void **state) {
         ret = list_itr_remove(itr);
         assert_true(ret == 0);
         
-        itr = m_itr_next(itr);
+        m_itr_next(&itr);
     }
     
     assert_int_equal(count, 0);

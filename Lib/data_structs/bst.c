@@ -252,32 +252,33 @@ m_bst_itr_t *m_bst_itr_new(const m_bst_t *l) {
     return itr;
 }
 
-m_bst_itr_t *m_bst_itr_next(m_bst_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+int m_bst_itr_next(m_bst_itr_t **itr) {
+    MOD_PARAM_ASSERT(itr && *itr);
 
-    if (!itr->removed) {
-        itr->prev = *itr->curr;
-        itr->curr = bst_next(itr->curr);
-    } else if (itr->prev) {
+    m_bst_itr_t *i = *itr;
+    if (!i->removed) {
+        i->prev = *i->curr;
+        i->curr = bst_next(i->curr);
+    } else if (i->prev) {
         /* If we have a previous element, find new next of that element */
-        itr->curr = bst_next(&itr->prev);
-    } else if (itr->l->root) {
+        i->curr = bst_next(&i->prev);
+    } else if (i->l->root) {
         /* 
          * If we haven't got a previous elem, it means we have freed
          * first iterator (or we are freeing all iterators)
          * Next will be new root's min_subtree 
          */
-        itr->curr = find_min_subtree((bst_node **)&itr->l->root);
+        i->curr = find_min_subtree((bst_node **)&i->l->root);
     } else {
         /* Everything was removed. End iteration. */
-        itr->curr = &itr->l->root;
+        i->curr = &i->l->root;
     }
-    itr->removed = false;
-    if (!*(itr->curr)) {
-        memhook._free(itr);
-        itr = NULL;
+    i->removed = false;
+    if (!*(i->curr)) {
+        memhook._free(*itr);
+        *itr = NULL;
     }
-    return itr;
+    return 0;
 }
 
 int m_bst_itr_remove(m_bst_itr_t *itr) {
@@ -322,7 +323,7 @@ void *m_bst_itr_get_data(const m_bst_itr_t *itr) {
 int m_bst_clear(m_bst_t *l) {
     MOD_PARAM_ASSERT(m_bst_length(l) > 0);
     
-    for (m_bst_itr_t *itr = m_bst_itr_new(l); itr; itr = m_bst_itr_next(itr)) {
+    for (m_bst_itr_t *itr = m_bst_itr_new(l); itr; m_bst_itr_next(&itr)) {
         m_bst_itr_remove(itr);
     }
     l->root = NULL;

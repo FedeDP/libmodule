@@ -19,11 +19,11 @@
     )(X)
 
 #define m_itr_next(X) _Generic((X), \
-    m_map_itr_t *: map_itr_next, \
-    m_list_itr_t *: list_itr_next, \
-    m_stack_itr_t *: stack_itr_next, \
-    m_queue_itr_t *: queue_itr_next, \
-    m_bst_itr_t *: m_bst_itr_next \
+    m_map_itr_t **: map_itr_next, \
+    m_list_itr_t **: list_itr_next, \
+    m_stack_itr_t **: stack_itr_next, \
+    m_queue_itr_t **: queue_itr_next, \
+    m_bst_itr_t **: m_bst_itr_next \
     )(X)
     
 #define m_itr_get(X) _Generic((X), \
@@ -43,4 +43,4 @@
     )(X, data)
     
 #define m_itr_foreach(X, fn) \
-    for (__auto_type itr = m_itr_new(X); itr; itr = m_itr_next(itr)) fn;
+    for (__auto_type itr = m_itr_new(X); itr; m_itr_next(&itr)) fn;

@@ -65,7 +65,7 @@ void test_stack_iterator(void **state) {
     while (itr) {
         count--;
         printf("%p\n", m_itr_get(itr));
-        itr = m_itr_next(itr);
+        m_itr_next(&itr);
     }
     
     assert_int_equal(count, 0);

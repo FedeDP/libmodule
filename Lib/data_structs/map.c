@@ -278,26 +278,27 @@ m_map_itr_t *map_itr_new(const m_map_t *m) {
     m_map_itr_t *itr = memhook._calloc(1, sizeof(m_map_itr_t));
     if (itr) {
         itr->m = (m_map_t *)m;
-        itr = map_itr_next(itr);
+        map_itr_next(&itr);
     }
     return itr;
 }
 
-m_map_itr_t *map_itr_next(m_map_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+int map_itr_next(m_map_itr_t **itr) {
+    MOD_PARAM_ASSERT(itr && *itr);
     
-    if (!itr->curr) {
+    m_map_itr_t *i = *itr;
+    if (!i->curr) {
         /* First time: start from first elem */
-        itr->curr = &itr->m->table[0];
+        i->curr = &i->m->table[0];
     } else {
         /* Normally: start from subsequent element */
-        itr->curr = itr->curr + 1 - itr->removed;
+        i->curr = i->curr + 1 - i->removed;
     }
     
-    itr->removed = false;
+    i->removed = false;
     bool found = false;
-    for (; itr->curr < &itr->m->table[itr->m->table_size]; itr->curr++) {
-        if (itr->curr->key) {
+    for (; i->curr < &i->m->table[i->m->table_size]; i->curr++) {
+        if (i->curr->key) {
             found = true;
             break;
         }
@@ -305,10 +306,10 @@ m_map_itr_t *map_itr_next(m_map_itr_t *itr) {
     
     /* Automatically free it */
     if (!found) {
-        memhook._free(itr);
-        itr = NULL;
+        memhook._free(*itr);
+        *itr = NULL;
     }
-    return itr;
+    return 0;
 }
 
 int map_itr_remove(m_map_itr_t *itr) {
@@ -439,7 +440,7 @@ int map_remove(m_map_t *m, const char *key) {
 int map_clear(m_map_t *m) {
     MOD_PARAM_ASSERT(m);
     
-    for (m_map_itr_t *itr = map_itr_new(m); itr; itr = map_itr_next(itr)) {
+    for (m_map_itr_t *itr = map_itr_new(m); itr; map_itr_next(&itr)) {
         map_itr_remove(itr);
     }
     return 0;

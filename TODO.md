@@ -164,7 +164,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Implement itr_remove for stack and queue
 - [ ] Expose itr_remove in itr API
 - [x] Expose itr_set in itr API (mbtree excluded)
-- [ ] change itr_next() to return int and take double ptr
+- [x] change itr_next() to return int and take double ptr
 
 ### DOC
 

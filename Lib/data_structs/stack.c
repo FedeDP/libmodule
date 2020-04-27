@@ -35,15 +35,16 @@ m_stack_itr_t *stack_itr_new(const m_stack_t *s) {
     return itr;
 }
 
-m_stack_itr_t *stack_itr_next(m_stack_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
+int stack_itr_next(m_stack_itr_t **itr) {
+    MOD_PARAM_ASSERT(itr && *itr);
     
-    itr->elem = itr->elem->prev;
-    if (!itr->elem) {
-        memhook._free(itr);
-        itr = NULL;
+    m_stack_itr_t *i = *itr;
+    i->elem = i->elem->prev;
+    if (!i->elem) {
+        memhook._free(*itr);
+        *itr = NULL;
     }
-    return itr;
+    return 0;
 }
 
 void *stack_itr_get_data(const m_stack_itr_t *itr) {

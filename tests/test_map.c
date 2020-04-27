@@ -82,7 +82,7 @@ void test_map_iterator(void **state) {
     while (itr) {
         count--;
         printf("%s -> %p\n", map_itr_get_key(itr), map_itr_get_data(itr));
-        itr = m_itr_next(itr);
+        m_itr_next(&itr);
     }
     assert_int_equal(count, 0);
     assert_null(itr);

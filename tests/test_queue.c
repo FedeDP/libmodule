@@ -65,7 +65,7 @@ void test_queue_iterator(void **state) {
     while (itr) {
         count--;
         printf("%p\n", queue_itr_get_data(itr));
-        itr = m_itr_next(itr);
+        m_itr_next(&itr);
     }
     
     assert_int_equal(count, 0);
