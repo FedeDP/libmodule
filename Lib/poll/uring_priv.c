@@ -93,9 +93,9 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
          * we will register any request as soon as ring gets inited.
          */
         if (flag == ADD) {
-            list_insert(up->req_list, tmp, NULL);
+            m_list_insert(up->req_list, tmp, NULL);
         } else {
-            list_remove(up->req_list, tmp, NULL);
+            m_list_remove(up->req_list, tmp, NULL);
         }
     }
     return ret;
@@ -103,11 +103,11 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
 
 static void flush_reqs(poll_priv_t *priv) {
     GET_PRIV_DATA();
-    for (m_list_itr_t *itr = m_list_itr_new(up->req_list); itr; itr = m_list_itr_next(itr)) {
-        ev_src_t *tmp = m_list_itr_get_data(itr);
+    m_itr_foreach(up->req_list, {
+        ev_src_t *tmp = m_itr_get(itr);
         poll_set_new_evt(priv, tmp, ADD);
-    }
-    list_clear(up->req_list);
+    });
+    m_list_clear(up->req_list);
 }
 
 int poll_init(poll_priv_t *priv) {
@@ -175,7 +175,7 @@ int poll_destroy(poll_priv_t *priv) {
     if (up->inited) { 
         poll_clear(priv);
     }
-    list_free(&up->req_list);
+    m_list_free(&up->req_list);
     memhook._free(up);
     return 0;
 }
