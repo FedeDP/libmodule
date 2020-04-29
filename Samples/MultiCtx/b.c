@@ -31,7 +31,7 @@ static void destroy(void) {
 static void receive(const msg_t *msg, const void *userdata) {
     if (msg->type != TYPE_PS) {
         m_mod_log(self, "received signal %d. Leaving.\n", msg->sgn_msg->signo);
-        m_mod_broadcast(self, "Leave", strlen("Leave"), PS_GLOBAL);
+        m_mod_broadcast(self, "Leave", PS_GLOBAL);
         m_ctx_quit(m_mod_ctx(self), 0);
     }
 }

@@ -37,12 +37,9 @@ _public_ int m_mod_ref(const self_t *self, const char *name, const self_t **modr
 _public_ int m_mod_become(const self_t *self, const recv_cb new_recv);
 _public_ int m_mod_unbecome(const self_t *self);
 
-_public_ int m_mod_tell(const self_t *self, const self_t *recipient, const void *message,
-                        const ssize_t size,  const mod_ps_flags flags);
-_public_ int m_mod_publish(const self_t *self, const char *topic, const void *message,
-                           const ssize_t size,  const mod_ps_flags flags);
-_public_ int m_mod_broadcast(const self_t *self, const void *message,
-                             const ssize_t size,  const mod_ps_flags flags);
+_public_ int m_mod_tell(const self_t *self, const self_t *recipient, const void *message, const mod_ps_flags flags);
+_public_ int m_mod_publish(const self_t *self, const char *topic, const void *message, const mod_ps_flags flags);
+_public_ int m_mod_broadcast(const self_t *self, const void *message, const mod_ps_flags flags);
 _public_ int m_mod_poisonpill(const self_t *self, const self_t *recipient);
 
 /* Event Sources management */

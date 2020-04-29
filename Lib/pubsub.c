@@ -10,9 +10,8 @@ static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub);
 static int tell_global(void *data, const char *key, void *value);
 static void ps_msg_dtor(void *data);
 static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c);
-static int send_msg(mod_t *mod, mod_t *recipient, 
-                        const char *topic, const void *message, 
-                        const ssize_t size, const mod_ps_flags flags);
+static int send_msg(mod_t *mod, mod_t *recipient, const char *topic, 
+                    const void *message, const mod_ps_flags flags);
 
 extern int fs_notify(const msg_t *msg);
 
@@ -80,18 +79,6 @@ static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub) {
             m_mem_ref(m->msg.sender->mod); // keep module alive until message is dispatched
         }
         m->sub = m_mem_ref(sub);
-        /* Duplicate data if requested */
-        if (m->flags & PS_DUP_DATA) {
-            m->flags |= PS_AUTOFREE; // force autofree flag if we duplicated data
-            void *new_data = memhook._malloc(m->msg.size);
-            if (new_data) {
-                memcpy(new_data, msg->msg.data, msg->msg.size);
-                m->msg.data = new_data;
-            } else {
-                memhook._free(m);
-                m = NULL;
-            }
-        }
     }
     return m;
 }
@@ -128,16 +115,14 @@ static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
     return 0;
 }
 
-static int send_msg(mod_t *mod, mod_t *recipient, 
-                        const char *topic, const void *message, 
-                        const ssize_t size, const mod_ps_flags flags) {
+static int send_msg(mod_t *mod, mod_t *recipient, const char *topic, 
+                    const void *message, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(message);
-    MOD_PARAM_ASSERT(size > 0);
     GET_CTX(mod->self);
     
     mod->stats.sent_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    ps_priv_t m = { { USER, &mod->ref, topic, message, size }, flags, NULL };
+    ps_priv_t m = { { USER, &mod->ref, topic, message }, flags, NULL };
     return tell_pubsub_msg(&m, recipient, c);
 }
 
@@ -147,7 +132,7 @@ int tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, const s
     if (sender) {
         fetch_ms(&sender->mod->stats.last_seen, &sender->mod->stats.action_ctr);
     }
-    ps_priv_t m = { { type, sender, topic, NULL, 0 }, 0, NULL };
+    ps_priv_t m = { { type, sender, topic, NULL }, 0, NULL };
     return tell_pubsub_msg(&m, recipient, c);
 }
 
@@ -274,31 +259,28 @@ int m_mod_deregister_sub(const self_t *self, const char *topic) {
     return ret;
 }
 
-int m_mod_tell(const self_t *self, const self_t *recipient, const void *message, 
-                    const ssize_t size, const mod_ps_flags flags) {
+int m_mod_tell(const self_t *self, const self_t *recipient, const void *message, const mod_ps_flags flags) {
     GET_MOD(self);
     MOD_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
     MOD_PARAM_ASSERT(self->ctx == recipient->ctx);
 
     /* Eventually cleanup PS_GLOBAL flag */    
-    return send_msg(mod, recipient->mod, NULL, message, size, flags & ~PS_GLOBAL);
+    return send_msg(mod, recipient->mod, NULL, message, flags & ~PS_GLOBAL);
 }
 
-int m_mod_publish(const self_t *self, const char *topic, const void *message, 
-                       const ssize_t size, const mod_ps_flags flags) {
+int m_mod_publish(const self_t *self, const char *topic, const void *message, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(topic);
     GET_MOD(self);
     
     /* Eventually cleanup PS_GLOBAL flag */    
-    return send_msg(mod, NULL, topic, message, size, flags & ~PS_GLOBAL);
+    return send_msg(mod, NULL, topic, message, flags & ~PS_GLOBAL);
 }
 
-int m_mod_broadcast(const self_t *self, const void *message, 
-                         const ssize_t size, const mod_ps_flags flags) {
+int m_mod_broadcast(const self_t *self, const void *message, const mod_ps_flags flags) {
     GET_MOD(self);
     
-    return send_msg(mod, NULL, NULL, message, size, flags);
+    return send_msg(mod, NULL, NULL, message, flags);
 }
 
 int m_mod_poisonpill(const self_t *self, const self_t *recipient) {

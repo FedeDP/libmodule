@@ -101,7 +101,6 @@ typedef enum {
 typedef enum {
     PS_AUTOFREE = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_msg ref counter goes to 0)
     PS_GLOBAL   = 0x02,     // Only useful for module_broadcast. Broadcast a message to every context.
-    PS_DUP_DATA = 0x04      // Automatically duplicate sent data  (malloc message size + memcpy). Useful when sending data allocated on stack.
 } mod_ps_flags;
 
 /* module_register_src() request special types. */
@@ -137,7 +136,6 @@ typedef struct {
     const self_t *sender;   // Sender reference
     const char *topic;
     const void *data;
-    ssize_t size;
 } ps_msg_t;
 
 /* FD event message */

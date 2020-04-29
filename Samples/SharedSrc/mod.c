@@ -69,11 +69,11 @@ static void A_recv(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'c':
                 m_mod_log(selfA, "Doggo, come here!\n");
-                m_mod_tell(selfA, selfB, (unsigned char *)"ComeHere", strlen("ComeHere"), false);
+                m_mod_tell(selfA, selfB, (unsigned char *)"ComeHere", 0);
                 break;
             case 'q':
                 m_mod_log(selfA, "I have to go now!\n");
-                m_mod_publish(selfA, "leaving", (unsigned char *)"ByeBye", strlen("ByeBye"), false);
+                m_mod_publish(selfA, "leaving", (unsigned char *)"ByeBye", 0);
                 m_ctx_quit(m_mod_ctx(selfA), 0);
                 break;
             default:
@@ -99,23 +99,23 @@ static void A_recv_ready(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'p':
                 m_mod_log(selfA, "Doggo, let's play a bit!\n");
-                m_mod_tell(selfA, selfB, (unsigned char *)"LetsPlay", strlen("LetsPlay"), false);
+                m_mod_tell(selfA, selfB, (unsigned char *)"LetsPlay", 0);
                 break;
             case 's':
                 m_mod_log(selfA, "Doggo, you should sleep a bit!\n");
-                m_mod_tell(selfA, selfB, (unsigned char *)"LetsSleep", strlen("LetsSleep"), false);
+                m_mod_tell(selfA, selfB, (unsigned char *)"LetsSleep", 0);
                 break;
             case 'f':
                 m_mod_log(selfA, "Doggo, you want some of these?\n");
-                m_mod_tell(selfA, selfB, (unsigned char *)"LetsEat", strlen("LetsEat"), false);
+                m_mod_tell(selfA, selfB, (unsigned char *)"LetsEat", 0);
                 break;
             case 'w':
                 m_mod_log(selfA, "Doggo, wake up!\n");
-                m_mod_tell(selfA, selfB, (unsigned char *)"WakeUp", strlen("WakeUp"), false);
+                m_mod_tell(selfA, selfB, (unsigned char *)"WakeUp", 0);
                 break;
             case 'q':
                 m_mod_log(selfA, "I have to go now!\n");
-                m_mod_publish(selfA, "leaving", (unsigned char *)"ByeBye", strlen("ByeBye"), false);
+                m_mod_publish(selfA, "leaving", (unsigned char *)"ByeBye", 0);
                 m_ctx_quit(m_mod_ctx(selfA), 0);
                 break;
             default:
@@ -137,7 +137,7 @@ static void B_recv(const msg_t *msg, const void *userdata) {
             case USER:
                 if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
                     m_mod_log(selfB, "Running...\n");
-                    m_mod_tell(selfB, msg->ps_msg->sender, (unsigned char *)"BauBau", strlen("BauBau"), false);
+                    m_mod_tell(selfB, msg->ps_msg->sender, (unsigned char *)"BauBau", 0);
                 } else if (!strcmp((char *)msg->ps_msg->data, "LetsPlay")) {
                     m_mod_log(selfB, "BauBau BauuBauuu!\n");
                 } else if (!strcmp((char *)msg->ps_msg->data, "LetsEat")) {

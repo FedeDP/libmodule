@@ -33,7 +33,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         case USER:
             if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
                 m_m_log("Running...\n");
-                m_m_tell_str(msg->ps_msg->sender, "BauBau", 0);
+                m_m_tell(msg->ps_msg->sender, "BauBau", 0);
             } else if (!strcmp((char *)msg->ps_msg->data, "LetsPlay")) {
                 m_m_log("BauBau BauuBauuu!\n");
             } else if (!strcmp((char *)msg->ps_msg->data, "LetsEat")) {

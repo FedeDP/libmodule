@@ -288,7 +288,9 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] MAP API: drop bool dupkeys and add m_map_flags flags!
 
-- [ ] Drop "size" from ps_msg_t?
+- [x] Drop "size" from ps_msg_t?
+- [x] Drop PS_DUP_DATA flag
+- [x] Drop m_m_{tell, publish, broadcast}_str APIs
 
 - [x] Create new pubsub message for each recipient instead of using only one. 
 - [x] Drop Queue from pubsub messages

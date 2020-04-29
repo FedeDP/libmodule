@@ -11,12 +11,8 @@ int main(void) {
     const struct CMUnitTest tests[] = {
         /* Test module_register failures */
         cmocka_unit_test(test_module_register_NULL_name),
-        cmocka_unit_test(test_module_register_NULL_ctx),
         cmocka_unit_test(test_module_register_NULL_self),
         cmocka_unit_test(test_module_register_NULL_hook),
-        
-        /* Try to register a module on not-exhistent context */
-        cmocka_unit_test(test_module_register_no_ctx),
         
         /* Test ctx register */
         cmocka_unit_test(test_ctx_register_NULL_name),
@@ -106,20 +102,17 @@ int main(void) {
         cmocka_unit_test(test_module_tell_NULL_recipient),
         cmocka_unit_test(test_module_tell_NULL_self),
         cmocka_unit_test(test_module_tell_NULL_msg),
-        cmocka_unit_test(test_module_tell_wrong_size),
         cmocka_unit_test(test_module_tell),
         
         /* Test module publish */
         cmocka_unit_test(test_module_publish_NULL_self),
         cmocka_unit_test(test_module_publish_NULL_msg),
         cmocka_unit_test(test_module_publish_NULL_topic),
-        cmocka_unit_test(test_module_publish_wrong_size),
         cmocka_unit_test(test_module_publish),
         
         /* Test module broadcast */
         cmocka_unit_test(test_module_broadcast_NULL_self),
         cmocka_unit_test(test_module_broadcast_NULL_msg),
-        cmocka_unit_test(test_module_broadcast_wrong_size),
         cmocka_unit_test(test_module_broadcast),
         
         /* We have now 3 messages waiting for us (tell, publish, broadcast). Check. */

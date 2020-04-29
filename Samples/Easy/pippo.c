@@ -73,11 +73,11 @@ static void receive(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'c':
                 m_m_log("Doggo, come here!\n");
-                m_m_tell_str(doggo, "ComeHere", 0);
+                m_m_tell(doggo, "ComeHere", 0);
                 break;
             case 'q':
                 m_m_log("I have to go now!\n");
-                m_m_publish_str("leaving", "ByeBye", 0);
+                m_m_publish("leaving", "ByeBye", 0);
                 m_ctx_quit(m_m_ctx(), 0);
                 break;
             default:
@@ -120,24 +120,24 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'p':
                 m_m_log("Doggo, let's play a bit!\n");
-                m_m_tell_str(doggo, "LetsPlay", 0);
+                m_m_tell(doggo, "LetsPlay", 0);
                 break;
             case 's':
                 m_m_log("Doggo, you should sleep a bit!\n");
-                m_m_tell_str(doggo, "LetsSleep", 0);
+                m_m_tell(doggo, "LetsSleep", 0);
                 break;
             case 'f':
                 m_m_log("Doggo, you want some of these?\n");
-                m_m_tell_str(doggo, "LetsEat", 0);
+                m_m_tell(doggo, "LetsEat", 0);
                 break;
             case 'w':
                 m_m_log("Doggo, wake up!\n");
-                m_m_tell_str(doggo, "WakeUp", 0);
+                m_m_tell(doggo, "WakeUp", 0);
                 break;
             case 'q':
                 m_m_dump();
                 m_m_log("I have to go now!\n");
-                m_m_publish_str("leaving", "ByeBye", 0);
+                m_m_publish("leaving", "ByeBye", 0);
                 m_ctx_quit(m_m_ctx(), 0);
                 break;
             default:

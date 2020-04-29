@@ -49,10 +49,7 @@
 #define m_m_register_src(X, flags, userptr)       m_mod_register_src(self(), X, flags, userptr)
 #define m_m_deregister_src(X)                     m_mod_deregister_src(self(), X)
 
-#define m_m_tell(recipient, msg, size, flags)     m_mod_tell(self(), recipient, msg, size, flags)
-#define m_m_publish(topic, msg, size, flags)      m_mod_publish(self(), topic, msg, size, flags)
-#define m_m_broadcast(msg, size, flags)           m_mod_broadcast(self(), msg, size, flags)
+#define m_m_tell(recipient, msg, flags)           m_mod_tell(self(), recipient, msg, flags)
+#define m_m_publish(topic, msg, flags)            m_mod_publish(self(), topic, msg, flags)
+#define m_m_broadcast(msg, flags)                 m_mod_broadcast(self(), msg, flags)
 #define m_m_poisonpill(recipient)                 m_mod_poisonpill(self(), recipient)
-#define m_m_tell_str(recipient, msg, flags)       m_mod_tell(self(), recipient, (const void *)msg, strlen(msg), flags)
-#define m_m_publish_str(topic, msg, flags)        m_mod_publish(self(), topic, (const void *)msg, strlen(msg), flags)
-#define m_m_broadcast_str(msg, flags)             m_mod_broadcast(self(), (const void *)msg, strlen(msg), flags)
