@@ -79,6 +79,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] fix m_module_deregister_task ?
 
 - [x] Rename TYPE_PT to TYPE_PATH and all its occurrencies
+- [x] Support SRC_DUP flags for path string
 
 - [x] Rename module.c::is_sgs_same/etc etc to sgscmp() etc etc
 

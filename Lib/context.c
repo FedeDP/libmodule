@@ -169,7 +169,7 @@ static int recv_events(ctx_t *c, int timeout) {
                 break;
             case TYPE_PATH:
                 if (poll_consume_pt(&c->ppriv, i, p, &pt_msg) == 0) {
-                    pt_msg.path = p->pt_src.pt.path;
+                    pt_msg.path = p->path_src.pt.path;
                     msg.pt_msg = &pt_msg;
                 }
                 break;

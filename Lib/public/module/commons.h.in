@@ -90,7 +90,7 @@ typedef enum {
 typedef enum { 
     SRC_AUTOFREE        =       0x01, // Automatically free userdata upon deregistation.
     SRC_ONESHOT         =       0x02, // Run just once then automatically deregister source.
-    SRC_DUP             =       0x04, // Duplicate PubSub topic or source fd.
+    SRC_DUP             =       0x04, // Duplicate PubSub topic, source fd or source path.
     SRC_FD_AUTOCLOSE    =       FLAG_SHIFT(TYPE_FD, 0x01), // Automatically close fd upon deregistation.
     SRC_TMR_ABSOLUTE    =       FLAG_SHIFT(TYPE_TMR, 0x01) // Absolute timer
 } mod_src_flags;

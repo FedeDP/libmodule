@@ -60,9 +60,9 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         EV_SET(_ev, tmp->sgn_src.sgs.signo, EVFILT_SIGNAL, f, 0, 0, tmp);
         break;
     case TYPE_PATH: 
-        tmp->pt_src.f.fd = open(tmp->pt_src.pt.path, O_RDONLY);
-        if (tmp->pt_src.f.fd != -1) {
-            EV_SET(_ev, tmp->pt_src.f.fd, EVFILT_VNODE, f, tmp->pt_src.pt.events, 0, tmp);
+        tmp->path_src.f.fd = open(tmp->path_src.pt.path, O_RDONLY);
+        if (tmp->path_src.f.fd != -1) {
+            EV_SET(_ev, tmp->path_src.f.fd, EVFILT_VNODE, f, tmp->path_src.pt.events, 0, tmp);
         } else {
             return -EBADF;
         }
@@ -89,8 +89,8 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         tmp->ev = NULL;
         
         if (tmp->type == TYPE_PATH) {
-            close(tmp->pt_src.f.fd); // automatically close internally used FDs
-            tmp->pt_src.f.fd = -1;
+            close(tmp->path_src.f.fd); // automatically close internally used FDs
+            tmp->path_src.f.fd = -1;
         }
     }
     

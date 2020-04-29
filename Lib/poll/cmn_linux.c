@@ -42,8 +42,8 @@ static void create_signalfd(ev_src_t *tmp) {
 }
 
 static void create_inotifyfd(ev_src_t *tmp) {
-    tmp->pt_src.f.fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
-    inotify_add_watch(tmp->pt_src.f.fd, tmp->pt_src.pt.path, tmp->pt_src.pt.events);
+    tmp->path_src.f.fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+    inotify_add_watch(tmp->path_src.f.fd, tmp->path_src.pt.path, tmp->path_src.pt.events);
 }
 
 static void create_pidfd(ev_src_t *tmp) {
@@ -105,7 +105,7 @@ int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t 
 
 int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, path_msg_t *pt_msg) {
     char buffer[BUF_LEN];
-    const size_t length = read(src->pt_src.f.fd, buffer, BUF_LEN);
+    const size_t length = read(src->path_src.f.fd, buffer, BUF_LEN);
     if (length > 0) {
         struct inotify_event *event = (struct inotify_event *) buffer;
         if (event->len) {

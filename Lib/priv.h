@@ -6,7 +6,6 @@
 #include <pthread.h>
 #include <errno.h>
 #include "mem.h"
-#include "commons.h"
 #include "itr.h"
 
 #ifndef NDEBUG
@@ -142,7 +141,7 @@ struct _src {
         fd_src_t    fd_src;
         tmr_src_t   tmr_src;
         sgn_src_t   sgn_src;
-        path_src_t  pt_src;
+        path_src_t  path_src;
         pid_src_t   pid_src;
         task_src_t  task_src;
     };

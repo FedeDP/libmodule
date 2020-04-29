@@ -123,6 +123,16 @@ static void src_priv_dtor(void *data) {
         }
     }
     
+    if (t->flags & SRC_DUP) {
+        switch (t->type) {
+        case TYPE_PATH:
+            memhook._free((void *)t->path_src.pt.path);
+            break;
+        default:
+            break;
+        }
+    }
+    
     if (t->flags & SRC_AUTOFREE) {
         memhook._free((void *)t->userptr);
     }
@@ -161,6 +171,7 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
         int fd = *((int *)src_data);
         if (flags & SRC_DUP) {
             fd_src->fd = dup(fd);
+            src->flags |= SRC_FD_AUTOCLOSE;
         } else {
             fd_src->fd = fd;
         }
@@ -177,8 +188,11 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
         break;
     }
     case TYPE_PATH: {
-        path_src_t *pt_src = &src->pt_src;
+        path_src_t *pt_src = &src->path_src;
         memcpy(&pt_src->pt, src_data, sizeof(mod_path_t));
+        if (flags & SRC_DUP) {
+            pt_src->pt.path = mem_strdup(pt_src->pt.path);
+        }
         break;
     }
     case TYPE_PID: {
@@ -249,7 +263,7 @@ static int pathcmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
     const mod_path_t *pt = (const mod_path_t *)my_data;
     
-    return strcmp(pt->path, src->pt_src.pt.path);
+    return strcmp(pt->path, src->path_src.pt.path);
 }
 
 static int pidcmp(void *my_data, void *node_data) {
@@ -746,8 +760,8 @@ int m_mod_dump(const self_t *self) {
                     ctx_logger(c, self, "\t\t\"TMR_CID\": %d,\n", t->tmr_src.its.clock_id);
                     break;
                 case TYPE_PATH:
-                    ctx_logger(c, self, "\t\t\"PATH\": \"%s\",\n", t->pt_src.pt.path);
-                    ctx_logger(c, self, "\t\t\"EV\": %#x,\n", t->pt_src.pt.events);
+                    ctx_logger(c, self, "\t\t\"PATH\": \"%s\",\n", t->path_src.pt.path);
+                    ctx_logger(c, self, "\t\t\"EV\": %#x,\n", t->path_src.pt.events);
                     break;
                 case TYPE_PID:
                     ctx_logger(c, self, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);
