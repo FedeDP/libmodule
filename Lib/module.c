@@ -50,7 +50,7 @@ _Static_assert(sizeof(src_names) / sizeof(*src_names) == TYPE_END, "Undefined so
 static void module_dtor(void *data) {
     mod_t *mod = (mod_t *)data;
     if (mod) {
-        m_mem_unref(mod->self->ctx);
+        m_mem_unref(mod->ctx);
         
         m_map_free(&mod->subscriptions);
         m_stack_free(&mod->recvs);
@@ -432,7 +432,7 @@ int m_mod_register(const char *name, ctx_t *c, self_t **self, const userhook_t *
     mod_t *mod = m_mem_new(sizeof(mod_t), module_dtor);
     MOD_ALLOC_ASSERT(mod);
     
-    m_mem_ref(c);
+    mod->ctx = m_mem_ref(c);
     
     mod->flags = flags;
     if (flags & MOD_NAME_DUP) {

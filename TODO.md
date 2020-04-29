@@ -146,10 +146,15 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Expose a ctx handler (similar to self_t) to avoid expensive map lookup (with global mutex lock)?
 - [x] Drop m_mod_ctxname and add m_mod_ctx (that returns ctx handler for mod context)
 - [x] Add m_ctx_name() to return name of ctx
+- [x] Mod should have a ctx pointer
 - [ ] Drop self_t and just use mod_t pointer to incomplete type?
-- [ ] -> fine... but what about module references? -> Add new type m_mod_ref that can be used as recipient for mod_tell() and some new APIs eg: m_mod_ref_name(), m_mod_ref_...?
-- [x] Add a MOD_CTX_ASSERT(c) that calls MOD_TH_ASSERT too!
+- [ ] Add new type m_mod_ref_t that is used as recipient for mod_tell() and returned by m_mod_ref()
+- [ ] add new source file: mod_ref.c that exposed mod_ref API (eg: m_mod_ref_name())
+- [ ] Internally, struct _mod_ref will alias struct _mod
+
 - [ ] Cleanup priv.h macros?
+- [ ] Rename ASSERT macros as M_CTX_ASSERT, M_MOD_ASSERT, M_ASSERT, M_RET_ASSERT etc etc,,,
+- [x] Add a MOD_CTX_ASSERT(c) that calls MOD_TH_ASSERT too!
 
 - [ ] Update tests
 - [ ] Update samples

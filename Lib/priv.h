@@ -188,6 +188,7 @@ struct _mod {
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     self_t ref;                             // Module self reference
     self_t *self;                           // Module self handler
+    ctx_t *ctx;                             // Module's ctx
 };
 
 /* Struct that holds data for each context */
