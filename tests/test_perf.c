@@ -16,9 +16,13 @@ static int ctr = 0;
 
 void test_poll_perf(void **state) {
     (void) state; /* unused */
+    
+    int ret = m_ctx_register(M_CTX_DEFAULT, &test_ctx, 0);
+    assert_true(ret == 0);
+    assert_non_null(test_ctx);
         
     userhook_t hook = (userhook_t) { init, NULL, my_recv, NULL };
-    int ret = m_mod_register("testName", M_CTX_DEFAULT, &self, &hook, 0);
+    ret = m_mod_register("testName", test_ctx, &self, &hook, 0);
     assert_true(ret == 0);
     assert_non_null(self);
     assert_true(m_mod_is(self, IDLE));
@@ -33,7 +37,7 @@ void test_poll_perf(void **state) {
     double time_spent = (double)(end_tell - begin_tell);
     printf("Messages feeding took %.2lf us\n", time_spent);
     
-    m_c_loop();
+    m_ctx_loop(test_ctx, M_CTX_MAX_EVENTS);
     
     clock_t end_recv = clock();
     time_spent = (double)(end_recv - end_tell);
@@ -51,6 +55,6 @@ static void my_recv(const msg_t *msg, const void *userdata) {
         msg->ps_msg->type == USER && 
         ++ctr == MAX_LEN) {
            
-        m_c_quit(ctr);
+        m_ctx_quit(test_ctx, 0);
     }
 }

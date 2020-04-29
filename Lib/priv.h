@@ -4,7 +4,9 @@
 #include <regex.h>
 #include <string.h>
 #include <pthread.h>
+#include <errno.h>
 #include "mem.h"
+#include "commons.h"
 #include "itr.h"
 
 #ifndef NDEBUG
@@ -17,17 +19,13 @@
 
 #define MOD_RET_ASSERT(cond, ret)   MOD_ASSERT(cond, "("#cond ") condition failed.", ret) 
 
-#define MOD_SRCS_ASSERT()           MOD_ASSERT(list_length(mod->srcs) > 0, "No srcs registered in this module.", -EINVAL);
-
 #define MOD_ALLOC_ASSERT(cond)      MOD_RET_ASSERT(cond, -ENOMEM);
 #define MOD_PARAM_ASSERT(cond)      MOD_RET_ASSERT(cond, -EINVAL);
 #define MOD_TH_ASSERT(ctx)          MOD_RET_ASSERT(ctx->th_id == pthread_self(), -EPERM);
 
 /* Finds a ctx inside our global map, given its name */
-#define FIND_CTX(name) \
-    MOD_RET_ASSERT(name, -EINVAL); \
-    ctx_t *c = m_map_get(ctx, (char *)name); \
-    MOD_RET_ASSERT(c, -ENODEV); \
+#define MOD_CTX_ASSERT(c) \
+    MOD_PARAM_ASSERT(c); \
     MOD_TH_ASSERT(c);
 
 #define GET_CTX_PRIV(self)  ctx_t *c = self->ctx
@@ -39,7 +37,7 @@
     MOD_RET_ASSERT((self), -EINVAL); \
     MOD_RET_ASSERT(!(self)->is_ref || pure, -EPERM); \
     GET_CTX_PRIV((self)); \
-    MOD_RET_ASSERT(c, -ENODEV);
+    MOD_RET_ASSERT(c, -ENOENT);
 
 /* Convenience macros for exposed API */
 #define GET_CTX(self)       _GET_CTX(self, false)
@@ -48,7 +46,7 @@
 /* Convenience macro to retrieve a module from a context, given its name */
 #define CTX_GET_MOD(name, ctx) \
     mod_t *mod = m_map_get(ctx->modules, (char *)name); \
-    MOD_RET_ASSERT(mod, -ENODEV);
+    MOD_RET_ASSERT(mod, -ENOENT);
 
 #define GET_MOD_PRIV(self) mod_t *mod = self->mod
 
@@ -62,7 +60,7 @@
     MOD_RET_ASSERT(!(self)->is_ref || pure, -EPERM); \
     MOD_RET_ASSERT(!m_mod_is(self, ZOMBIE), -EACCES); \
     GET_MOD_PRIV((self)); \
-    MOD_RET_ASSERT(mod, -ENODEV);
+    MOD_RET_ASSERT(mod, -ENOENT);
 
 /* Convenience macros for exposed API */
 #define GET_MOD(self)         _GET_MOD(self, false)
@@ -76,8 +74,7 @@
     GET_MOD(self); \
     MOD_RET_ASSERT(m_mod_is(self, state), -EACCES);
 
-typedef struct _module mod_t;
-typedef struct _context ctx_t;
+typedef struct _mod mod_t;
 typedef struct _src ev_src_t;
 
 /* Struct that holds self module informations, static to each module */
@@ -177,25 +174,25 @@ typedef struct {
 } mod_stats_t;
 
 /* Struct that holds data for each module */
-struct _module {
+struct _mod {
+    mod_states state;                       // module's state
+    m_mod_flags flags;                      // Module's flags
+    int pubsub_fd[2];                       // In and Out pipe for pubsub msg
+    mod_stats_t stats;                      // Modules' stats
     userhook_t hook;                        // module's user defined callbacks
     m_stack_t *recvs;                       // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
-    mod_states state;                       // module's state
     void *fs;                               // FS module priv data. NULL if unsupported
     const char *name;                       // module's name
     const char *local_path;                 // For runtime loaded modules: path of module
     m_bst_t *srcs[TYPE_END];                // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
-    int pubsub_fd[2];                       // In and Out pipe for pubsub msg
-    mod_stats_t stats;                      // Modules' stats
-    mod_flags flags;                        // Module's flags
     self_t ref;                             // Module self reference
     self_t *self;                           // Module self handler
 };
 
 /* Struct that holds data for each context */
-struct _context {
+struct _ctx {
     const char *name;                       // Context's name'
     bool looping;                           // Whether context is looping
     bool quit;                              // Context's quit flag
@@ -203,7 +200,7 @@ struct _context {
     log_cb logger;                          // Context's log callback
     m_map_t *modules;                       // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
-    mod_flags flags;                        // Context's flags
+    m_ctx_flags flags;                      // Context's flags
     pthread_t th_id;                        // Main context's thread
     void *fs;                               // FS context handler. Null if unsupported
 };
@@ -214,7 +211,7 @@ int start(mod_t *mod, const bool starting);
 int stop(mod_t *mod, const bool stopping);
 
 /* Defined in context.c */
-ctx_t *check_ctx(const char *ctx_name, const mod_flags flags);
+ctx_t *check_ctx(const char *ctx_name);
 void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...);
 
 /* Defined in pubsub.c */

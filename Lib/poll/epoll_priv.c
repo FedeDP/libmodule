@@ -98,7 +98,7 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     return (ev_src_t *)ep->pevents[idx].data.ptr;
 }
 
-int poll_get_fd(poll_priv_t *priv) {
+int poll_get_fd(const poll_priv_t *priv) {
     GET_PRIV_DATA();
     return ep->fd;
 }

@@ -18,48 +18,13 @@
 /** TODO: these will go in a separate public header, eg: module/fs.h **/
 #define MODULE_MAGIC        'm' // libmodule API global prefix
 
-#define MOD_DATA_SIZE_LIMIT 512 
-
-typedef struct {
-    union {
-        const char recipient[NAME_MAX];
-        const char topic[NAME_MAX];
-    };
-    const uint8_t msg[MOD_DATA_SIZE_LIMIT];
-    const size_t size;
-} fs_ps_t;
-
-typedef struct {
-    mod_src_types type;
-    size_t size;
-    uint8_t data[]; // Use flexible array member
-} fs_msg_t;
-
-typedef struct {
-    ps_msg_type type;
-    char sender[NAME_MAX];
-    char topic[NAME_MAX];
-    uint8_t data[MOD_DATA_SIZE_LIMIT];
-    size_t size;
-} fs_ps_msg_t;
-
-typedef struct {
-    char path[PATH_MAX];
-    unsigned int events;
-} fs_pt_msg_t;
-
 enum {
-    MOD_GET_STATE           = _IOR(MODULE_MAGIC, 0, mod_states),
+    MOD_STATE           = _IOR(MODULE_MAGIC, 0, mod_states),
     MOD_START               = _IO(MODULE_MAGIC, 1),
     MOD_STOP                = _IO(MODULE_MAGIC, 2),
     MOD_RESUME              = _IO(MODULE_MAGIC, 3),
     MOD_PAUSE               = _IO(MODULE_MAGIC, 4),
     MOD_STATS               = _IOR(MODULE_MAGIC, 5, stats_t),
-    MOD_SUBSCRIBE           = _IOW(MODULE_MAGIC, 6, char *),
-    MOD_TELL                = _IOW(MODULE_MAGIC, 7, fs_ps_t),
-    MOD_PUBLISH             = _IOW(MODULE_MAGIC, 8, fs_ps_t),
-    MOD_BROADCAST           = _IOW(MODULE_MAGIC, 9, fs_ps_t),
-    MOD_GET_MSGDATA_SIZE    = _IOR(MODULE_MAGIC, 10, size_t)
 };
 /**                                                 **/
 
@@ -74,7 +39,7 @@ typedef struct {
 typedef struct {
     mod_t *mod;
     struct fuse_pollhandle *ph;
-    bool in_evt;
+    int in_evt;
     char *read_buf;
     size_t read_len;
     size_t write_len;
@@ -83,7 +48,6 @@ typedef struct {
 
 typedef struct {
     m_list_t *clients;
-    fs_msg_t *msg;
 } fs_priv_t;
 
 /* FS-related functions */
@@ -107,11 +71,9 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
 /* Internal functions */
 static void client_dtor(void *data);
 static void fs_logger(const self_t *self, const char *fmt, va_list args);
-static void msg_dump(fs_client_t *cl, const fs_priv_t *fp);
 static bool init(void);
 static void receive(const msg_t *msg, const void *userdata);
-static void fs_store_msg(fs_priv_t *fp, const msg_t *msg);
-static void fs_wakeup_clients(fs_priv_t *fp);
+static void fs_wakeup_clients(fs_priv_t *fp, bool leaving);
 
 static const struct fuse_operations operations = {
     .getattr    = fs_getattr,
@@ -217,10 +179,10 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     filler(buf, "..", NULL, 0, 0);
     
     FS_CTX();
-    for (m_map_itr_t *itr = m_map_itr_new(c->modules); itr; itr = m_map_itr_next(itr)) {
-        mod_t *mod = m_map_itr_get_data(itr);
+    m_itr_foreach(c->modules, {
+        mod_t *mod = m_itr_get(itr);
         filler(buf, mod->name, NULL, 0, 0);
-    }
+    });
     return 0;
 }
 
@@ -234,35 +196,24 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
     cl->write_len = 0;
     errno = 0;
     
-    if (!cl->in_evt) {
-        if (!cl->read_all) {
-            /* Store old context logger and replace it with a fuse one */
-            log_cb old_log = c->logger;
-            const void *old_userdata = mod->userdata;
-            c->logger = fs_logger;
-            mod->userdata = (void *)fi->fh;
+    if (!cl->read_all) {
+        /* Store old context logger and replace it with a fuse one */
+        log_cb old_log = c->logger;
+        const void *old_userdata = mod->userdata;
+        c->logger = fs_logger;
+        mod->userdata = (void *)fi->fh;
     
-            m_mod_dump(mod->self);
-            if (cl->write_len > cl->read_len) {
-                cl->write_len = cl->read_len;
-            }
+        m_mod_dump(mod->self);
+        if (cl->write_len > cl->read_len) {
+            cl->write_len = cl->read_len;
+        }
             
-            /* Restore real context logger */
-            c->logger = old_log;
-            mod->userdata = old_userdata;
-            cl->read_all = true;
-        } else {
-            cl->read_all = false;
-        }
+        /* Restore real context logger */
+        c->logger = old_log;
+        mod->userdata = old_userdata;
+        cl->read_all = true;
     } else {
-        fs_priv_t *fp = (fs_priv_t *)mod->fs;
-        if (size < sizeof(fs_msg_t) + fp->msg->size) {
-            errno = EIO;
-            cl->write_len = -1;
-        } else {
-            msg_dump(cl, fp);
-            cl->in_evt = false;
-        }
+        cl->read_all = false;
     }
 
     cl->read_buf = NULL;
@@ -294,7 +245,7 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     
     if (strlen(path) > 1) {
         self_t *self = NULL;
-        if (m_mod_register(path + 1, c->name, &self, &fuse_hook, MOD_NAME_DUP) == 0) {
+        if (m_mod_register(path + 1, c, &self, &fuse_hook, MOD_NAME_DUP) == 0) {
             return 0;
         }
         return -EPERM;
@@ -309,12 +260,13 @@ static int fs_poll(const char *path, struct fuse_file_info *fi,
     if (ph) {
         if (cl->in_evt) {
             fs_priv_t *fp = (fs_priv_t *)mod->fs;
-            if (fp->msg) {
+            if (cl->in_evt == 1) {
                 *reventsp |= POLLIN;
             } else {
                 *reventsp |= POLLERR;
             }
             fuse_pollhandle_destroy(ph);
+            cl->in_evt = 0;
         } else {
             cl->ph = ph; // store pollhandle for future notifications
         }
@@ -335,7 +287,7 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
     }
     
     switch (cmd) {
-        case MOD_GET_STATE:
+        case MOD_STATE:
             *(mod_states *)data = mod->state;
             return 0;
         case MOD_START:
@@ -348,33 +300,6 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
             return m_mod_pause(mod->self);
         case MOD_STATS:
             return m_mod_stats(&mod->ref, data);
-        case MOD_SUBSCRIBE:
-            return m_mod_register_sub(mod->self, data, SRC_DUP, NULL);
-        case MOD_TELL: {
-            fs_ps_t *p = (fs_ps_t *)data;
-            const self_t *other = NULL;
-            m_mod_ref(mod->self, p->recipient, &other);
-            return m_mod_tell(mod->self, other, p->msg, p->size, PS_DUP_DATA);
-        }
-        case MOD_PUBLISH: {
-            fs_ps_t *p = (fs_ps_t *)data;
-            return m_mod_publish(mod->self, p->topic, p->msg, p->size, PS_DUP_DATA);
-        }
-        case MOD_BROADCAST: {
-            fs_ps_t *p = (fs_ps_t *)data;
-            return m_mod_broadcast(mod->self, p->msg, p->size, PS_DUP_DATA);
-        }
-        case MOD_GET_MSGDATA_SIZE: {
-            if (cl->in_evt) {
-                fs_priv_t *fp = (fs_priv_t *)mod->fs;
-                if (fp->msg) {
-                    *(size_t *)data = fp->msg->size;
-                } else {
-                    *(size_t *)data = -1;
-                }
-                return 0;
-            }
-        }
         default:
             break;
     }
@@ -406,12 +331,6 @@ static void fs_logger(const self_t *self, const char *fmt, va_list args) {
     }
 }
 
-static void msg_dump(fs_client_t *cl, const fs_priv_t *fp) {
-    const size_t msg_size = sizeof(fs_msg_t) + fp->msg->size;
-    memcpy(cl->read_buf, fp->msg, msg_size);
-    cl->write_len += msg_size;
-}
-
 static bool init(void) {
     return true;
 }
@@ -420,73 +339,16 @@ static void receive(const msg_t *msg, const void *userdata) {
     
 }
 
-static void fs_store_msg(fs_priv_t *fp, const msg_t *msg) {
-    fs_ps_msg_t ps_msg = {0};
-    fs_pt_msg_t pt_msg = {0};
-    const void *data = NULL;
-    size_t size = -1;
-    switch (msg->type) {
-        case TYPE_FD:
-            size = sizeof(fd_msg_t);
-            data = (void *)msg->fd_msg;
-            break;
-        case TYPE_PS:
-            ps_msg.type = msg->ps_msg->type;
-            if (msg->ps_msg->topic) {
-                strncpy(ps_msg.topic, msg->ps_msg->topic, sizeof(ps_msg.topic));
-            }
-            if (msg->ps_msg->sender) {
-                strncpy(ps_msg.sender, msg->ps_msg->sender->mod->name, sizeof(ps_msg.sender));
-            }
-            ps_msg.size = msg->ps_msg->size;
-            if (msg->ps_msg->data) {
-                memcpy(ps_msg.data, msg->ps_msg->data, sizeof(ps_msg.data));
-            }
-            data = (void *)&ps_msg;
-            size = sizeof(fs_ps_msg_t);
-            break;
-        case TYPE_TMR:
-            size = sizeof(tmr_msg_t);
-            data = (void *)msg->tmr_msg;
-            break;
-        case TYPE_SGN:
-            size = sizeof(sgn_msg_t);
-            data = (void *)msg->sgn_msg;
-            break;
-        case TYPE_PID:
-            size = sizeof(pid_msg_t);
-            data = (void *)msg->pid_msg;
-            break;
-        case TYPE_PATH:
-            strncpy(pt_msg.path, msg->pt_msg->path, sizeof(pt_msg.path));
-            pt_msg.events = msg->pt_msg->events;
-            size = sizeof(fs_pt_msg_t);
-            data = (void *)&pt_msg;
-            break;
-        default:
-            break;
-    }
-    if (data && size != -1) {
-        void *tmp = memhook._realloc(fp->msg, sizeof(fs_msg_t) + size);
-        if (tmp) {
-            fp->msg = tmp;
-            fp->msg->type = msg->type;
-            fp->msg->size = size;
-            memcpy(fp->msg->data, data, size);
-        }
-    }
-}
-
-static void fs_wakeup_clients(fs_priv_t *fp) {
-    for (m_list_itr_t *itr = m_list_itr_new(fp->clients); itr; itr = m_list_itr_next(itr)) {
-        fs_client_t *cl = m_list_itr_get_data(itr);
+static void fs_wakeup_clients(fs_priv_t *fp, bool leaving) {
+    m_itr_foreach(fp->clients, {
+        fs_client_t *cl = m_itr_get(itr);
         if (cl->ph) {
-            cl->in_evt = true;
+            cl->in_evt = leaving ? -1 : 1;
             fuse_notify_poll(cl->ph);
             fuse_pollhandle_destroy(cl->ph);
             cl->ph = NULL;
         }
-    }
+    });
 }
 
 /** Private API **/
@@ -539,13 +401,10 @@ int fs_notify(const msg_t *msg) {
         if (msg->type == TYPE_PS && msg->ps_msg->type == LOOP_STOPPED) {
             /* When loop gets stopped, destroy clients list */
             m_list_free(&fp->clients);
-            memhook._free(fp->msg);
-            fp->msg = NULL;
             memhook._free(fp);
             mod->fs = NULL;
         } else {
-            fs_wakeup_clients(fp);
-            fs_store_msg(fp, msg);
+            fs_wakeup_clients(fp, false);
         }
     }
     return 0;
@@ -554,11 +413,7 @@ int fs_notify(const msg_t *msg) {
 int fs_cleanup(mod_t *mod) {
     if (mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
-        /* Destroy stored message, if any */
-        memhook._free(fp->msg);
-        fp->msg = NULL;
-        
-        fs_wakeup_clients(fp);
+        fs_wakeup_clients(fp, true);
     }
     return 0;
 }

@@ -10,7 +10,7 @@ static const self_t *new_mod;
 
 M_MOD("Doggo");
 
-static void module_pre_start(void) {
+static void m_mod_pre_start(void) {
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 
@@ -51,7 +51,7 @@ static void receive(const msg_t *msg, const void *userdata) {
                 m_m_log("ZzzZzz...\n");
                 
                 /* Test runtime module loading */
-                m_c_load("./libtestmod.so");
+                m_ctx_load(m_m_ctx(), "./libtestmod.so");
             } else if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
                 m_m_log("Sob...\n");
             } else if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {

@@ -145,7 +145,7 @@ int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, task_msg_
     return 0;
 }
 
-int poll_get_fd(poll_priv_t *priv) {
+int poll_get_fd(const poll_priv_t *priv) {
     GET_PRIV_DATA();
     return kp->fd;
 }

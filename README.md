@@ -13,7 +13,7 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 
 Unsurprisingly, module is the core concept of libmodule architecture.  
 A module is an Actor that can listen on socket events too.  
-Frankly speaking, it is denoted by a MODULE() macro plus a bunch of mandatory callbacks, eg:
+Frankly speaking, it is denoted by a M_MOD() macro plus a bunch of mandatory callbacks, eg:
 ```C
 #include <module/module_easy.h>
 #include <module/modules_easy.h>
@@ -21,7 +21,7 @@ Frankly speaking, it is denoted by a MODULE() macro plus a bunch of mandatory ca
 #include <string.h>
 #include <ctype.h>
 
-MODULE("Pippo");
+M_MOD("Pippo");
 
 static void init(void) {
     /* Register STDIN fd, without autoclosing it at the end */

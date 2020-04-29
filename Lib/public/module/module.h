@@ -5,8 +5,14 @@
 /* Module interface functions */
 
 /* Module registration */
-_public_ int m_mod_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook, const mod_flags flags);
+_public_ int m_mod_register(const char *name, ctx_t *c, self_t **self, const userhook_t *hook, const m_mod_flags flags);
 _public_ int m_mod_deregister(self_t **self);
+
+/* Retrieve module context */
+_public_ _pure_ ctx_t *m_mod_ctx(const self_t *self);
+
+/* Retrieve module name */
+_public_ _pure_ const char *m_mod_name(const self_t *mod_self);
 
 /* Module state getters */
 _public_ _pure_ bool m_mod_is(const self_t *mod_self, const mod_states st);
@@ -24,9 +30,6 @@ _public_ _pure_ int m_mod_stats(const self_t *self, stats_t *stats);
 
 _public_ int m_mod_set_userdata(const self_t *self, const void *userdata);
 _public_ const void *m_mod_get_userdata(const self_t *self);
-
-_public_ _pure_ const char *m_mod_name(const self_t *mod_self);
-_public_ _pure_ const char *m_mod_ctxname(const self_t *mod_self);
 
 _public_ int m_mod_ref(const self_t *self, const char *name, const self_t **modref);
 

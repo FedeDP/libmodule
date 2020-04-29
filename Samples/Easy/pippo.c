@@ -1,5 +1,5 @@
 #include <module/module_easy.h>
-#include <module/context_easy.h>
+#include <module/context.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
@@ -18,8 +18,8 @@ static int myData = 5;
 
 static void receive_ready(const msg_t *msg, const void *userdata);
 
-static void module_pre_start(void) {
-
+static void m_mod_pre_start() {
+    
 }
 
 static bool init(void) {
@@ -78,7 +78,7 @@ static void receive(const msg_t *msg, const void *userdata) {
             case 'q':
                 m_m_log("I have to go now!\n");
                 m_m_publish_str("leaving", "ByeBye", 0);
-                m_c_quit(0);
+                m_ctx_quit(m_m_ctx(), 0);
                 break;
             default:
                 /* Avoid newline */
@@ -90,7 +90,7 @@ static void receive(const msg_t *msg, const void *userdata) {
     } else if (msg->ps_msg->type == USER && 
         !strcmp((char *)msg->ps_msg->data, "BauBau")) {
         
-        m_c_dump();
+        m_ctx_dump(m_m_ctx());
         
         m_m_become(ready);
         m_m_log("Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
@@ -103,7 +103,7 @@ static void receive(const msg_t *msg, const void *userdata) {
  */
 static void receive_ready(const msg_t *msg, const void *userdata) {
     if (msg->type != TYPE_PS) {
-        char c;
+        char c = 10;
         
         /* Forcefully quit if we received a signal */
         if (msg->type == TYPE_SGN) {
@@ -113,10 +113,8 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
             read(msg->fd_msg->fd, &c, sizeof(char));
         } else if (msg->type == TYPE_TMR) {
             m_m_log("Timer expired.\n");
-            c = 10;
         } else if (msg->type == TYPE_PATH) {
             m_m_log("A file was created in %s.\n", msg->pt_msg->path);
-            c = 10;
         }
         
         switch (tolower(c)) {
@@ -140,7 +138,7 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
                 m_m_dump();
                 m_m_log("I have to go now!\n");
                 m_m_publish_str("leaving", "ByeBye", 0);
-                m_c_quit(0);
+                m_ctx_quit(m_m_ctx(), 0);
                 break;
             default:
                 /* Avoid newline */

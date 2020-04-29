@@ -4,5 +4,6 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <cmocka.h>
+#include <module/commons.h>
 
-#define CTX "testCtx"
+extern ctx_t *test_ctx;

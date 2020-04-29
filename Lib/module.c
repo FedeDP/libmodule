@@ -1,4 +1,5 @@
 #include "module.h"
+#include "context.h"
 #include "poll_priv.h"
 
 /** Generic module interface **/
@@ -380,22 +381,26 @@ int stop(mod_t *mod, const bool stopping) {
 
 /** Public API **/
 
-int m_mod_register(const char *name, const char *ctx_name, self_t **self, const userhook_t *hook, const mod_flags flags) {
+int m_mod_register(const char *name, ctx_t *c, self_t **self, const userhook_t *hook, const m_mod_flags flags) {
     MOD_PARAM_ASSERT(name);
-    MOD_PARAM_ASSERT(ctx_name);
     MOD_PARAM_ASSERT(self);
     MOD_PARAM_ASSERT(!*self);
     MOD_PARAM_ASSERT(hook);
     /* Mandatory callbacks */
     MOD_PARAM_ASSERT(hook->init);
     MOD_PARAM_ASSERT(hook->recv);
-    
-    ctx_t *context = check_ctx(ctx_name, flags);
-    MOD_ALLOC_ASSERT(context);
-    MOD_TH_ASSERT(context);
+
+    /* Use default context, if NULL is passed, eventually creating it. */
+    if (!c) {
+        c = check_ctx(M_CTX_DEFAULT);
+        if (!c) {
+            m_ctx_register(M_CTX_DEFAULT, &c, 0);
+        }
+    }
+    MOD_PARAM_ASSERT(c);
     
     int ret;
-    const mod_t *old_mod = m_map_get(context->modules, name);
+    const mod_t *old_mod = m_map_get(c->modules, name);
     if (old_mod) {
         if (!(old_mod->flags & MOD_ALLOW_REPLACE)) { 
             MODULE_DEBUG("Module with same name already registered in context.");
@@ -413,9 +418,9 @@ int m_mod_register(const char *name, const char *ctx_name, self_t **self, const 
     mod_t *mod = m_mem_new(sizeof(mod_t), module_dtor);
     MOD_ALLOC_ASSERT(mod);
     
-    m_mem_ref(context);
+    m_mem_ref(c);
     
-    mod->flags = flags & (uint8_t)-1; // do not store context's flags (only store first byte)
+    mod->flags = flags;
     if (flags & MOD_NAME_DUP) {
         mod->flags |= MOD_NAME_AUTOFREE;
     }
@@ -444,12 +449,12 @@ int m_mod_register(const char *name, const char *ctx_name, self_t **self, const 
         }
         
         /* External owner reference */
-        memcpy(mod->self, &((self_t){ mod, context, false }), sizeof(self_t));
+        memcpy(mod->self, &((self_t){ mod, c, false }), sizeof(self_t));
         
         /* Internal reference used as sender for pubsub messages */
-        memcpy(&mod->ref, &((self_t){ mod, context, true }), sizeof(self_t));
+        memcpy(&mod->ref, &((self_t){ mod, c, true }), sizeof(self_t));
         
-        if (m_map_put(context->modules, mod->name, mod) == 0) {
+        if (m_map_put(c->modules, mod->name, mod) == 0) {
             memcpy(&mod->hook, hook, sizeof(userhook_t));
             mod->state = IDLE;
             
@@ -503,13 +508,18 @@ int m_mod_deregister(self_t **self) {
     });
     
     /* Destroy context if needed */
-    if (m_map_length(c->modules) == 0) {
-        pthread_mutex_lock(&mx);
-        m_map_remove(ctx, c->name);
-        pthread_mutex_unlock(&mx);
+    if (m_map_length(c->modules) == 0 && !(c->flags & CTX_PERSIST)) {
+        return m_ctx_deregister(&c);
     }
     return 0;
 }
+
+ctx_t *m_mod_ctx(const self_t *self) {
+    MOD_RET_ASSERT(self, NULL);
+    
+    return self->ctx;
+}
+
 
 int m_mod_become(const self_t *self, const recv_cb new_recv) {
     MOD_PARAM_ASSERT(new_recv);
@@ -653,15 +663,6 @@ const char *m_mod_name(const self_t *mod_self) {
     MOD_RET_ASSERT(mod, NULL);
     
     return mod->name;
-}
-
-const char *m_mod_ctxname(const self_t *mod_self) {
-    MOD_RET_ASSERT(mod_self, NULL);
-    GET_CTX_PRIV(mod_self);
-    MOD_RET_ASSERT(c, NULL);
-    MOD_RET_ASSERT(c->th_id == pthread_self(), NULL);
-    
-    return c->name;
 }
 
 /** Module state getters **/

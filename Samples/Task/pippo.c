@@ -2,6 +2,8 @@
 #include <module/context_easy.h>
 #include <assert.h>
 
+M_CTX();
+
 M_MOD("Pippo");
 
 static int thData;

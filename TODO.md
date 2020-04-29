@@ -94,12 +94,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Notify with poll callback when fuse-module has new receive() events enqueued
 - [x] Test poll
 - [x] Let non-fuse modules notify poll too? (ie: every module should call fs_recv... may be renamed to fs_notify())
-- [x] Add an ioctl interface? https://libfuse.github.io/doxygen/ioctl_8c_source.html eg: MOD_PEEK_MSG, MOD_PUB_MSG, MOD_TELL_MSG, MOD_REG_SRC, MOD_DEREG_SRC, MOD_STATS... 
-- [x] Use read() to read messages after poll wake-up: if (mod->has_msg) { write_msg } else { module_dump }
-- [x] Fix crashes...
-- [x] Fix memleaks (only when using fuse)
+- [x] Add an ioctl interface
 - [x] Fix tests
-- [ ] Use write() to send messages?? if (mod->sending_data) { read } else return -EPERM
 - [x] Allow looping context without running modules (drop c->running_mods)
 - [x] Allow to deregister non-fuse modules too on unlink
 - [x] Fix FIXME inside fuse_priv.c!
@@ -131,9 +127,32 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename complex API to m_mod/ctx_ -> "Easy" API instead "m_m_" and "m_c_"
 - [x] Rename evaluate() to eval()
 - [x] Rename map/stack/... APIs to m_x_y
+- [ ] Rename module.* to mod.* and context.* to ctx.*
+- [ ] Rename test_module to test_mod; rename all module tests to mod
+- [ ] Rename test_context to test_ctx; rename all context tests to ctx
 
-- [ ] Add m_ctx_(de)register() API
-- [ ] Split mod_flags into m_mod_flags and m_ctx_flags
+### New ctx_register API
+
+- [x] Add m_ctx_(de)register() API
+- [x] Split mod_flags into m_mod_flags and m_ctx_flags
+- [x] Easy APIs will only work for single (M_CTX_DEFAULT) context
+- [x] Cleanup weak main
+- [x] Cleanup M_MOD_FULL (drop ctxname)
+- [x] Cleanup M_CTX_FULL (drop ctxname)
+- [x] Fix tests
+- [x] Fix samples
+
+- [x] Expose a ctx handler (similar to self_t) to avoid expensive map lookup (with global mutex lock)?
+- [x] Drop m_mod_ctxname and add m_mod_ctx (that returns ctx handler for mod context)
+- [x] Add m_ctx_name() to return name of ctx
+- [ ] Drop self_t and just use mod_t pointer to incomplete type?
+- [ ] -> fine... but what about module references? -> Add new type m_mod_ref that can be used as recipient for mod_tell() and some new APIs eg: m_mod_ref_name(), m_mod_ref_...?
+- [x] Add a MOD_CTX_ASSERT(c) that calls MOD_TH_ASSERT too!
+- [ ] Cleanup priv.h macros?
+
+- [ ] Update tests
+- [ ] Update samples
+- [ ] Updated README example
 
 ### New Linked list api
 

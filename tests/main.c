@@ -15,8 +15,17 @@ int main(void) {
         cmocka_unit_test(test_module_register_NULL_self),
         cmocka_unit_test(test_module_register_NULL_hook),
         
-        /* Actually register a module */
+        /* Try to register a module on not-exhistent context */
+        cmocka_unit_test(test_module_register_no_ctx),
+        
+        /* Test ctx register */
+        cmocka_unit_test(test_ctx_register_NULL_name),
+        cmocka_unit_test(test_ctx_register),
+        
+        /* Finally regiter module */
         cmocka_unit_test(test_module_register),
+        
+        /* We have a module and its ctx now! */
         
         /*
          * Check that a module cannot be registered more that one time 
@@ -28,8 +37,6 @@ int main(void) {
          * if module has same name and same context 
          */
         cmocka_unit_test(test_module_register_same_name),
-        
-        /* We have a module and its ctx now! */
         
         /* Test modules_ API */
         cmocka_unit_test(test_modules_ctx_set_logger_NULL_ctx),
@@ -130,6 +137,10 @@ int main(void) {
         
         /* Test that if init returns false, module is stopped */
         cmocka_unit_test(test_module_false_init),
+        
+        /* Test ctx deregister */
+        cmocka_unit_test(test_ctx_deregister_NULL_name),
+        cmocka_unit_test(test_ctx_deregister),
         
         /* We have no more our module and its ctx */
         cmocka_unit_test(test_modules_ctx_loop_no_maxevents),

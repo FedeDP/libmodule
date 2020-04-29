@@ -2,16 +2,20 @@
 #include <module/module.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <string.h>
 #ifdef __linux__
     #include <signal.h>
     #include <bits/sigaction.h>
 #endif
 
+extern void create_module_A(ctx_t *c);
+extern void create_module_B(ctx_t *c);
+
 static void *loop(void *param);
 
 static void logger(const self_t *self, const char *fmt, va_list args) {
     const char *mname = m_mod_name(self);
-    const char *cname = m_mod_ctxname(self);
+    const char *cname = m_ctx_name(m_mod_ctx(self));
     if (mname && cname) {
         printf("%s@%s:\t*", mname, cname);
         vprintf(fmt, args);
@@ -31,13 +35,10 @@ void setup_signals(void) {
 int main(int argc, char *argv[]) {
     /* Properly block signals (that are received by mod "B" on ctx2) */
     setup_signals();
-    
+        
     /* Our 2 contexts names */
     char *ctx1 = "FirstCtx";
     char *ctx2 = "SecondCtx";
-    
-    /* Set a different logger for ctx1 context */
-    m_ctx_set_logger(ctx1, logger);
     
     /* Create 2 threads that will loop on each context events */
     pthread_t th1, th2;
@@ -52,8 +53,18 @@ int main(int argc, char *argv[]) {
 
 static void *loop(void *param) {
     char *myCtx = (char *)param;
+    
+    ctx_t *c = NULL;
+    m_ctx_register(myCtx, &c, CTX_NAME_DUP);
+    if (!strcmp(myCtx, "FirstCtx")) {
+        /* Set a different logger for ctx1 context */
+        m_ctx_set_logger(c, logger);
+        create_module_A(c);
+    } else {
+        create_module_B(c);
+    }
 
     /* Loop on our modules' events */
-    m_ctx_loop(myCtx, M_CTX_MAX_EVENTS);
+    m_ctx_loop(c, M_CTX_MAX_EVENTS);
     return NULL;
 }

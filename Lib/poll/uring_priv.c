@@ -156,7 +156,7 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     return udata;
 }
 
-int poll_get_fd(poll_priv_t *priv) {
+int poll_get_fd(const poll_priv_t *priv) {
     GET_PRIV_DATA();
     return up->ring.ring_fd;
 }
