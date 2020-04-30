@@ -60,7 +60,7 @@ static void module_dtor(void *data) {
         
         memhook._free((void *)mod->local_path);
         
-        if (mod->flags & MOD_NAME_AUTOFREE) {
+        if (mod->flags & M_MOD_NAME_AUTOFREE) {
             memhook._free((void *)mod->name);
         }
     }
@@ -416,7 +416,7 @@ int m_mod_register(const char *name, ctx_t *c, mod_t **self, const userhook_t *h
     int ret;
     mod_t *old_mod = m_map_get(c->modules, name);
     if (old_mod) {
-        if (!(old_mod->flags & MOD_ALLOW_REPLACE)) { 
+        if (!(old_mod->flags & M_MOD_ALLOW_REPLACE)) { 
             M_DEBUG("Module with same name already registered in context.");
             return -EEXIST;
         }
@@ -434,14 +434,14 @@ int m_mod_register(const char *name, ctx_t *c, mod_t **self, const userhook_t *h
     mod->ctx = m_mem_ref(c);
     
     mod->flags = flags;
-    if (flags & MOD_NAME_DUP) {
-        mod->flags |= MOD_NAME_AUTOFREE;
+    if (flags & M_MOD_NAME_DUP) {
+        mod->flags |= M_MOD_NAME_AUTOFREE;
     }
     
     ret = -ENOMEM;
     /* Let us gladly jump out with break on error */
     do {
-        mod->name = flags & MOD_NAME_DUP ? mem_strdup(name) : name;
+        mod->name = flags & M_MOD_NAME_DUP ? mem_strdup(name) : name;
         
         for (int i = 0; i < TYPE_END; i++) {
             mod->srcs[i] = m_bst_new(src_cmp_map[i], src_priv_dtor);
@@ -479,7 +479,7 @@ int m_mod_deregister(mod_t **mod) {
     M_MOD_CTX((*mod));
     
     mod_t *m = *mod;
-    if ((m->flags & MOD_PERSIST) && c->looping) {
+    if ((m->flags & M_MOD_PERSIST) && c->looping) {
         return -EPERM;
     }
     
@@ -510,7 +510,7 @@ int m_mod_deregister(mod_t **mod) {
     });
     
     /* Destroy context if needed */
-    if (m_map_length(c->modules) == 0 && !(c->flags & CTX_PERSIST)) {
+    if (m_map_length(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
         return m_ctx_deregister(&c);
     }
     return 0;

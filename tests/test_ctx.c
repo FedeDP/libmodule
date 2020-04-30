@@ -28,7 +28,7 @@ void test_ctx_register_NULL_name(void **state) {
 void test_ctx_register(void **state) {
     (void) state; /* unused */
     
-    int ret = m_ctx_register(CTX, &test_ctx, CTX_PERSIST);
+    int ret = m_ctx_register(CTX, &test_ctx, M_CTX_PERSIST);
     assert_true(ret == 0);
 }
 

@@ -55,7 +55,7 @@ static void *loop(void *param) {
     char *myCtx = (char *)param;
     
     ctx_t *c = NULL;
-    m_ctx_register(myCtx, &c, CTX_NAME_DUP);
+    m_ctx_register(myCtx, &c, M_CTX_NAME_DUP);
     if (!strcmp(myCtx, "FirstCtx")) {
         /* Set a different logger for ctx1 context */
         m_ctx_set_logger(c, logger);

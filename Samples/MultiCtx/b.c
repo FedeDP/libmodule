@@ -1,10 +1,6 @@
 #include <module/mod_easy.h>
 #include <module/ctx.h>
-#ifdef __linux__
-    #include <sys/signalfd.h>
-    #include <signal.h>
-    #include <bits/sigaction.h>
-#endif
+#include <signal.h>
 #include <unistd.h>
 #include <string.h>
 

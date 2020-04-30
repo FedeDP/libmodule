@@ -24,8 +24,8 @@ static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
     (*c)->logger = default_logger;
     (*c)->modules = m_map_new(0, m_mem_unref);
     
-    if ((*c)->flags & CTX_NAME_DUP) {
-        (*c)->flags |= CTX_NAME_AUTOFREE;
+    if ((*c)->flags & M_CTX_NAME_DUP) {
+        (*c)->flags |= M_CTX_NAME_AUTOFREE;
         (*c)->name = mem_strdup(ctx_name);
     } else {
         (*c)->name = ctx_name;
@@ -56,7 +56,7 @@ static void ctx_dtor(void *data) {
     M_DEBUG("Destroying context '%s'.\n", context->name);
     m_map_free(&context->modules);
     poll_destroy(&context->ppriv);
-    if (context->flags & CTX_NAME_AUTOFREE) {
+    if (context->flags & M_CTX_NAME_AUTOFREE) {
         memhook._free((void *)context->name);
     }
 }

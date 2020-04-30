@@ -1,7 +1,7 @@
 #pragma once
 
 #if !defined(M_MOD_H) && !defined(M_CTX_H) && !defined(M_MEM_H)
-#error "Never include <module/commons.h> directly; use <mod.h> or <ctx.h> instead."
+    #error "Never include <module/commons.h> directly; use <module/mod.h>, <module/ctx.h> or <module/mem.h> instead."
 #endif
 
 #include <stdio.h>
@@ -54,17 +54,17 @@ typedef struct _ctx ctx_t;
 
 /* Modules flags */
 typedef enum {
-    MOD_NAME_DUP        = 0x01,         // Should module's name be strdupped?
-    MOD_NAME_AUTOFREE   = 0x02,         // Should module's name be autofreed?
-    MOD_ALLOW_REPLACE   = 0x04,         // Can module be replaced by another module with same name?
-    MOD_PERSIST         = 0x08,         // Module cannot be deregistered by directly call to module_deregister (or by FS delete) while its context is looping
+    M_MOD_NAME_DUP      = 0x01,         // Should module's name be strdupped?
+    M_MOD_NAME_AUTOFREE = 0x02,         // Should module's name be autofreed?
+    M_MOD_ALLOW_REPLACE = 0x04,         // Can module be replaced by another module with same name?
+    M_MOD_PERSIST       = 0x08,         // Module cannot be deregistered by directly call to m_mod_deregister (or by FS delete) while its context is looping
 } m_mod_flags;
 
 /* Context flags */
 typedef enum {
-    CTX_NAME_DUP        = 0x01,         // Should ctx's name be strdupped? (only if a ctx is created during a register)
-    CTX_NAME_AUTOFREE   = 0x02,         // Should ctx's name be autofreed? (only if a ctx is created during a register)
-    CTX_PERSIST         = 0x03          // Normally, ctx is automatically destroyed when there are no modules in it anymore. With this option, context is kept alive untile m_ctx_deregister() is called.
+    M_CTX_NAME_DUP      = 0x01,         // Should ctx's name be strdupped? (only if a ctx is created during a register)
+    M_CTX_NAME_AUTOFREE = 0x02,         // Should ctx's name be autofreed? (only if a ctx is created during a register)
+    M_CTX_PERSIST       = 0x03          // Normally, ctx is automatically destroyed when there are no modules in it anymore. With this option, context is kept alive untile m_ctx_deregister() is called.
 } m_ctx_flags;
 
 /* Modules states */

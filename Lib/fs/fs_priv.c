@@ -245,7 +245,7 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     
     if (strlen(path) > 1) {
         mod_t *mod = NULL;
-        if (m_mod_register(path + 1, c, &mod, &fuse_hook, MOD_NAME_DUP) == 0) {
+        if (m_mod_register(path + 1, c, &mod, &fuse_hook, M_MOD_NAME_DUP) == 0) {
             return 0;
         }
         return -EPERM;
