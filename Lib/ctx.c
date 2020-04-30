@@ -1,5 +1,5 @@
-#include "module.h"
-#include "context.h"
+#include "mod.h"
+#include "ctx.h"
 #include "fs_priv.h"
 #include <dlfcn.h> // dlopen
 

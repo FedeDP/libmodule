@@ -1,5 +1,5 @@
-#include <module/module_easy.h>
-#include <module/context_easy.h>
+#include <module/mod_easy.h>
+#include <module/ctx_easy.h>
 #include <assert.h>
 
 M_CTX();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "module.h"
+#include "mod.h"
 
 /* Interface Macros */
 #define mod() *(get_mod())

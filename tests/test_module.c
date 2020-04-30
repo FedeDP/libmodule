@@ -1,6 +1,6 @@
 #include "test_module.h"
-#include <module/module.h>
-#include <module/context.h>
+#include <module/mod.h>
+#include <module/ctx.h>
 #include <unistd.h>
 #include <sys/stat.h> 
 #include <fcntl.h>

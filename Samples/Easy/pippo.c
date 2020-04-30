@@ -1,5 +1,5 @@
-#include <module/module_easy.h>
-#include <module/context.h>
+#include <module/mod_easy.h>
+#include <module/ctx.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>

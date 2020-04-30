@@ -1,5 +1,5 @@
-#include "module.h"
-#include "context.h"
+#include "mod.h"
+#include "ctx.h"
 #include "poll_priv.h"
 
 /** Generic module interface **/

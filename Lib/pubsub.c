@@ -1,4 +1,4 @@
-#include "module.h"
+#include "mod.h"
 #include "poll_priv.h"
 
 /** Actor-like PubSub interface **/

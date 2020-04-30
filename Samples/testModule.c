@@ -1,4 +1,4 @@
-#include <module/module_easy.h>
+#include <module/mod_easy.h>
 #include <string.h>
 
 /** This is a test module needed for Easy example, to runtime link another module **/

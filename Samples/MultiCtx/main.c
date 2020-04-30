@@ -1,5 +1,5 @@
-#include <module/context_easy.h>
-#include <module/module.h>
+#include <module/ctx.h>
+#include <module/mod.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>

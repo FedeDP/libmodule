@@ -1,6 +1,6 @@
 #include "test_context.h"
-#include <module/context_easy.h>
-#include <module/module.h>
+#include <module/ctx.h>
+#include <module/mod.h>
 #include <stdlib.h>
 
 #define CTX "testCtx"

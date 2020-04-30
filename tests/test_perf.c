@@ -1,6 +1,6 @@
 #include "test_perf.h"
-#include <module/module_easy.h>
-#include <module/context_easy.h>
+#include <module/mod.h>
+#include <module/ctx.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>

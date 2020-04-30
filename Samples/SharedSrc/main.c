@@ -1,4 +1,4 @@
-#include <module/context_easy.h>
+#include <module/ctx_easy.h>
 
 extern void create_modules(ctx_t *c);
 extern void destroy_modules(void);
