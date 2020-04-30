@@ -122,15 +122,16 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename module_easy API to m_mod_*
 - [x] Rename mem API to m_mem*
 - [ ] Rename other exposed APIs (types/enums/enum values) to m_*
+- [ ] Rename map/stack/etc etc APIs to m_*
 - [x] Rename MODULE() to M_MOD()
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
 - [x] Rename module_cmn.h to commons.h
 - [x] Rename complex API to m_mod/ctx_ -> "Easy" API instead "m_m_" and "m_c_"
 - [x] Rename evaluate() to eval()
 - [x] Rename map/stack/... APIs to m_x_y
-- [ ] Rename module.* to mod.* and context.* to ctx.*
-- [ ] Rename test_module to test_mod; rename all module tests to mod
-- [ ] Rename test_context to test_ctx; rename all context tests to ctx
+- [x] Rename module.* to mod.* and context.* to ctx.*
+- [x] Rename test_module to test_mod; rename all module tests to mod
+- [x] Rename test_context to test_ctx; rename all context tests to ctx
 
 ### New ctx_register API
 

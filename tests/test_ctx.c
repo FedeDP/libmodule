@@ -1,4 +1,4 @@
-#include "test_context.h"
+#include "test_ctx.h"
 #include <module/ctx.h>
 #include <module/mod.h>
 #include <stdlib.h>
@@ -47,91 +47,91 @@ void test_ctx_deregister(void **state) {
     assert_null(test_ctx);
 }
 
-void test_modules_ctx_set_logger_NULL_ctx(void **state) {
+void test_ctx_set_logger_NULL_ctx(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_set_logger(NULL, logger);
     assert_false(ret == 0);
 }
 
-void test_modules_ctx_set_logger_NULL_logger(void **state) {
+void test_ctx_set_logger_NULL_logger(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_set_logger(test_ctx, NULL);
     assert_false(ret == 0);
 }
 
-void test_modules_ctx_set_logger(void **state) {
+void test_ctx_set_logger(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_set_logger(test_ctx, logger);
     assert_true(ret == 0);
 }
 
-void test_modules_ctx_set_logger_no_ctx(void **state) {
+void test_ctx_set_logger_no_ctx(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_set_logger(test_ctx, logger);
     assert_false(ret == 0);
 }
 
-void test_modules_ctx_dump_no_ctx(void **state) {
+void test_ctx_dump_no_ctx(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_dump(test_ctx);
     assert_false(ret == 0);
 }
 
-void test_modules_ctx_dump(void **state) {
+void test_ctx_dump(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_dump(test_ctx);
     assert_true(ret == 0);
 }
 
-void test_modules_ctx_quit_NULL_ctx(void **state) {
+void test_ctx_quit_NULL_ctx(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_quit(NULL, 0);
     assert_false(ret == 0);
 }
 
-void test_modules_ctx_quit_no_loop(void **state) {
+void test_ctx_quit_no_loop(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_quit(test_ctx, 0);
     assert_false(ret == 0);
 }
 
-void test_modules_ctx_loop_NULL_ctx(void **state) {
+void test_ctx_loop_NULL_ctx(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_loop(NULL, M_CTX_MAX_EVENTS);
     assert_false(ret == 0);
 }
 
-void test_modules_ctx_loop_no_maxevents(void **state) {
+void test_ctx_loop_no_maxevents(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_loop(test_ctx, 0);
     assert_false(ret == 0);
 }
 
-void test_modules_ctx_loop(void **state) {
+void test_ctx_loop(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_loop(test_ctx, M_CTX_MAX_EVENTS); // modules_quit() is called with "number of USER PS messages" recv'd.
     assert_true(ret == 3);
 }
 
-void test_modules_ctx_dispatch_NULL_ctx(void **state) {
+void test_ctx_dispatch_NULL_ctx(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_dispatch(NULL);
     assert_false(ret == 0);
 }
 
-void test_modules_ctx_dispatch(void **state) {
+void test_ctx_dispatch(void **state) {
     (void) state; /* unused */
     
     int ret = m_ctx_dispatch(test_ctx);
