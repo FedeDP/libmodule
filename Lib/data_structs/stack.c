@@ -39,7 +39,7 @@ m_stack_itr_t *m_stack_itr_new(const m_stack_t *s) {
 }
 
 int m_stack_itr_next(m_stack_itr_t **itr) {
-    MOD_PARAM_ASSERT(itr && *itr);
+    M_PARAM_ASSERT(itr && *itr);
     
     m_stack_itr_t *i = *itr;
     if (!i->removed) {
@@ -55,7 +55,7 @@ int m_stack_itr_next(m_stack_itr_t **itr) {
 }
 
 int m_stack_itr_remove(m_stack_itr_t *itr) {
-    MOD_PARAM_ASSERT(itr && !itr->removed);
+    M_PARAM_ASSERT(itr && !itr->removed);
     
     stack_elem *tmp = *itr->elem;
     if (tmp) {
@@ -78,16 +78,16 @@ void *m_stack_itr_get_data(const m_stack_itr_t *itr) {
 }
 
 int m_stack_itr_set_data(const m_stack_itr_t *itr, void *value) {
-    MOD_PARAM_ASSERT(itr && !itr->removed);
-    MOD_PARAM_ASSERT(value);
+    M_PARAM_ASSERT(itr && !itr->removed);
+    M_PARAM_ASSERT(value);
     
     (*itr->elem)->userptr = value;
     return 0;
 }
 
 int m_stack_iterate(const m_stack_t *s, const m_stack_cb fn, void *userptr) {
-    MOD_PARAM_ASSERT(fn);
-    MOD_PARAM_ASSERT(m_stack_length(s) > 0);
+    M_PARAM_ASSERT(fn);
+    M_PARAM_ASSERT(m_stack_length(s) > 0);
     
     stack_elem *elem = s->data;
     while (elem) {
@@ -106,11 +106,11 @@ int m_stack_iterate(const m_stack_t *s, const m_stack_cb fn, void *userptr) {
 }
 
 int m_stack_push(m_stack_t *s, void *data) {
-    MOD_PARAM_ASSERT(s);
-    MOD_PARAM_ASSERT(data);
+    M_PARAM_ASSERT(s);
+    M_PARAM_ASSERT(data);
     
     stack_elem *elem = memhook._malloc(sizeof(stack_elem));
-    MOD_ALLOC_ASSERT(elem);
+    M_ALLOC_ASSERT(elem);
     s->len++;
     elem->userptr = data;
     elem->prev = s->data;
@@ -136,7 +136,7 @@ void *m_stack_peek(const m_stack_t *s) {
 }
 
 int m_stack_clear(m_stack_t *s) {
-    MOD_PARAM_ASSERT(s);
+    M_PARAM_ASSERT(s);
     
     stack_elem *elem = NULL;
     while ((elem = s->data) && s->len > 0) {
@@ -160,7 +160,7 @@ int m_stack_remove(m_stack_t *s) {
 }
 
 int m_stack_free(m_stack_t **s) {
-    MOD_PARAM_ASSERT(s);
+    M_PARAM_ASSERT(s);
     
     int ret = m_stack_clear(*s);
     if (ret == 0) {
@@ -171,7 +171,7 @@ int m_stack_free(m_stack_t **s) {
 }
 
 ssize_t m_stack_length(const m_stack_t *s) {
-    MOD_PARAM_ASSERT(s);
+    M_PARAM_ASSERT(s);
     
     return s->len;
 }

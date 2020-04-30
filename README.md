@@ -50,7 +50,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'q':
                 m_log("Leaving...\n");
-                m_tell_str(self(), "ByeBye");
+                m_m_tell(self(), "ByeBye", 0);
                 break;
             default:
                 if (c != ' ' && c != '\n') {
@@ -60,8 +60,8 @@ static void receive(const msg_t *msg, const void *userdata) {
         }
     } else if (msg->type == TYPE_PS && msg->pubsub_msg->type == USER && 
         !strcmp((char *)msg->pubsub_msg->message, "ByeBye")) {
-            
-        m_c_quit(0);
+        
+        m_ctx_quit(m_m_ctx(), 0);
     }
 }
 ```

@@ -41,7 +41,7 @@ m_queue_itr_t *m_queue_itr_new(const m_queue_t *q) {
 }
 
 int m_queue_itr_next(m_queue_itr_t **itr) {
-    MOD_PARAM_ASSERT(itr && *itr);
+    M_PARAM_ASSERT(itr && *itr);
     
     m_queue_itr_t *i = *itr;
     if (!i->removed) {
@@ -57,7 +57,7 @@ int m_queue_itr_next(m_queue_itr_t **itr) {
 }
 
 int m_queue_itr_remove(m_queue_itr_t *itr) {
-    MOD_PARAM_ASSERT(itr && !itr->removed);
+    M_PARAM_ASSERT(itr && !itr->removed);
     
     queue_elem *tmp = *itr->elem;
     if (tmp) {
@@ -81,16 +81,16 @@ void *m_queue_itr_get_data(const m_queue_itr_t *itr) {
 }
 
 int m_queue_itr_set_data(const m_queue_itr_t *itr, void *value) {
-    MOD_PARAM_ASSERT(itr && !itr->removed);
-    MOD_PARAM_ASSERT(value);
+    M_PARAM_ASSERT(itr && !itr->removed);
+    M_PARAM_ASSERT(value);
     
     (*itr->elem)->userptr = value;
     return 0;
 }
 
 int m_queue_iterate(const m_queue_t *q, const m_queue_cb fn, void *userptr) {
-    MOD_PARAM_ASSERT(fn);
-    MOD_PARAM_ASSERT(m_queue_length(q) > 0);
+    M_PARAM_ASSERT(fn);
+    M_PARAM_ASSERT(m_queue_length(q) > 0);
     
     queue_elem *elem = q->head;
     while (elem) {
@@ -109,11 +109,11 @@ int m_queue_iterate(const m_queue_t *q, const m_queue_cb fn, void *userptr) {
 }
 
 int m_queue_enqueue(m_queue_t *q, void *data) {
-    MOD_PARAM_ASSERT(q);
-    MOD_PARAM_ASSERT(data);
+    M_PARAM_ASSERT(q);
+    M_PARAM_ASSERT(data);
     
     queue_elem *elem = memhook._calloc(1, sizeof(queue_elem));
-    MOD_ALLOC_ASSERT(elem);
+    M_ALLOC_ASSERT(elem);
     q->len++;
     elem->userptr = data;
     if (q->tail) {
@@ -159,7 +159,7 @@ int m_queue_remove(m_queue_t *q) {
 }
 
 int m_queue_clear(m_queue_t *q) {
-    MOD_PARAM_ASSERT(m_queue_length(q) > 0);
+    M_PARAM_ASSERT(m_queue_length(q) > 0);
     
     queue_elem *elem = NULL;
     while ((elem = q->head) && q->len > 0) {
@@ -169,7 +169,7 @@ int m_queue_clear(m_queue_t *q) {
 }
 
 int m_queue_free(m_queue_t **q) {
-    MOD_PARAM_ASSERT(q);
+    M_PARAM_ASSERT(q);
     
     m_queue_clear(*q);
     memhook._free(*q);
@@ -178,7 +178,7 @@ int m_queue_free(m_queue_t **q) {
 }
 
 ssize_t m_queue_length(const m_queue_t *q) {
-    MOD_PARAM_ASSERT(q);
+    M_PARAM_ASSERT(q);
     
     return q->len;
 }

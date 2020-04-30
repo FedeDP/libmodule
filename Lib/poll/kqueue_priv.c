@@ -13,7 +13,7 @@ typedef struct {
 
 int poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(kqueue_priv_t));
-    MOD_ALLOC_ASSERT(priv->data);
+    M_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
     kp->fd = kqueue();
     fcntl(kp->fd, F_SETFD, FD_CLOEXEC);
@@ -28,7 +28,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     if (!tmp->ev) {
         if (flag == ADD) {
             tmp->ev = memhook._calloc(1, sizeof(struct kevent));
-            MOD_ALLOC_ASSERT(tmp->ev);
+            M_ALLOC_ASSERT(tmp->ev);
         } else {
             /* We need to RM an unregistered ev. Fine. */
             return 0;
@@ -100,7 +100,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
 int poll_init(poll_priv_t *priv) {
     GET_PRIV_DATA();
     kp->pevents = memhook._calloc(priv->max_events, sizeof(struct kevent));
-    MOD_ALLOC_ASSERT(kp->pevents);
+    M_ALLOC_ASSERT(kp->pevents);
     return 0;
 }
 

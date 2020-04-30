@@ -18,26 +18,26 @@
 
 #define M_RET_ASSERT(cond, ret)     M_ASSERT(cond, "("#cond ") condition failed.", ret) 
 
-#define MOD_ALLOC_ASSERT(cond)      M_RET_ASSERT(cond, -ENOMEM);
-#define MOD_PARAM_ASSERT(cond)      M_RET_ASSERT(cond, -EINVAL);
-#define MOD_TH_ASSERT(ctx)          M_RET_ASSERT(ctx->th_id == pthread_self(), -EPERM);
+#define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM);
+#define M_PARAM_ASSERT(cond)        M_RET_ASSERT(cond, -EINVAL);
+#define M_TH_ASSERT(ctx)            M_RET_ASSERT(ctx->th_id == pthread_self(), -EPERM);
 
-#define MOD_CTX_ASSERT(c) \
-    MOD_PARAM_ASSERT(c); \
-    MOD_TH_ASSERT(c);
+#define M_CTX_ASSERT(c) \
+    M_PARAM_ASSERT(c); \
+    M_TH_ASSERT(c);
 
-#define MOD_MOD_ASSERT(mod) \
-    M_RET_ASSERT(mod, -EINVAL); \
-    MOD_TH_ASSERT(mod->ctx); \
+#define M_MOD_ASSERT(mod) \
+    M_PARAM_ASSERT(mod); \
+    M_TH_ASSERT(mod->ctx); \
     M_RET_ASSERT(!m_mod_is(mod, ZOMBIE), -EACCES);
     
-#define MOD_MOD_ASSERT_STATE(mod, state) \
-    MOD_MOD_ASSERT(mod); \
+#define M_MOD_ASSERT_STATE(mod, state) \
+    M_MOD_ASSERT(mod); \
     M_RET_ASSERT(m_mod_is(mod, state), -EACCES);
     
-#define MOD_MOD_CTX(mod)    ctx_t *c = mod->ctx;
+#define M_MOD_CTX(mod)    ctx_t *c = mod->ctx;
     
-#define MOD_CTX_MOD(ctx, name) \
+#define M_CTX_MOD(ctx, name) \
     mod_t *m = m_map_get(ctx->modules, (char *)name); \
     M_RET_ASSERT(m, -ENOENT);
 

@@ -355,7 +355,7 @@ static void fs_wakeup_clients(fs_priv_t *fp, bool leaving) {
 
 int fs_init(ctx_t *c) {
     c->fs = memhook._calloc(1, sizeof(fs_ctx_t));
-    MOD_ALLOC_ASSERT(c->fs);
+    M_ALLOC_ASSERT(c->fs);
     
     FS_PRIV();
 
@@ -363,7 +363,7 @@ int fs_init(ctx_t *c) {
     fuse_opt_add_arg(&f->args, "libmodule");
     
     f->handler = fuse_new(&f->args, &operations, sizeof(operations), c);
-    MOD_ALLOC_ASSERT(f->handler);
+    M_ALLOC_ASSERT(f->handler);
     
     f->start = time(NULL);
     
@@ -371,7 +371,7 @@ int fs_init(ctx_t *c) {
     int ret = fuse_mount(f->handler, c->name);
     if (ret == 0) {
         f->src = memhook._calloc(1, sizeof(ev_src_t));
-        MOD_ALLOC_ASSERT(f->src);
+        M_ALLOC_ASSERT(f->src);
         
         /* Actually register fuse fd in poll plugin */
         f->src->type = TYPE_FD;

@@ -17,7 +17,7 @@ static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
     M_DEBUG("Creating context '%s'.\n", ctx_name);
     
     *c = m_mem_new(sizeof(ctx_t), ctx_dtor);
-    MOD_ALLOC_ASSERT(*c);
+    M_ALLOC_ASSERT(*c);
     
     (*c)->flags = flags;
     (*c)->th_id = pthread_self();
@@ -276,9 +276,9 @@ int m_set_memhook(const memhook_t *hook) {
 }
 
 int m_ctx_register(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
-    MOD_PARAM_ASSERT(ctx_name);
-    MOD_PARAM_ASSERT(c);
-    MOD_PARAM_ASSERT(!*c);
+    M_PARAM_ASSERT(ctx_name);
+    M_PARAM_ASSERT(c);
+    M_PARAM_ASSERT(!*c);
     
     if (check_ctx(ctx_name)) {
         return -EEXIST;
@@ -287,8 +287,8 @@ int m_ctx_register(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
 }
 
 int m_ctx_deregister(ctx_t **c) {
-    MOD_PARAM_ASSERT(c);
-    MOD_CTX_ASSERT((*c));
+    M_PARAM_ASSERT(c);
+    M_CTX_ASSERT((*c));
     
     pthread_mutex_lock(&mx);
     int ret = m_map_remove(ctx, (*c)->name);
@@ -298,16 +298,16 @@ int m_ctx_deregister(ctx_t **c) {
 }
 
 int m_ctx_set_logger(ctx_t *c, const log_cb logger) {
-    MOD_CTX_ASSERT(c);
-    MOD_PARAM_ASSERT(logger);
+    M_CTX_ASSERT(c);
+    M_PARAM_ASSERT(logger);
     
     c->logger = logger;
     return 0;
 }
 
 int m_ctx_loop(ctx_t *c, const int max_events) {
-    MOD_CTX_ASSERT(c);
-    MOD_PARAM_ASSERT(max_events > 0);
+    M_CTX_ASSERT(c);
+    M_PARAM_ASSERT(max_events > 0);
     M_ASSERT(!c->looping, "Context already looping.", -EINVAL);
 
     int ret = loop_start(c, max_events);
@@ -321,14 +321,14 @@ int m_ctx_loop(ctx_t *c, const int max_events) {
 }
 
 int m_ctx_quit(ctx_t *c, const uint8_t quit_code) {
-    MOD_CTX_ASSERT(c);
+    M_CTX_ASSERT(c);
     M_ASSERT(c->looping, "Context not looping.", -EINVAL);
        
     return loop_quit(c, quit_code);
 }
 
 int m_ctx_fd(const ctx_t *c) {
-    MOD_CTX_ASSERT(c);
+    M_CTX_ASSERT(c);
     
     return dup(poll_get_fd(&c->ppriv));
 }
@@ -341,7 +341,7 @@ const char *m_ctx_name(const ctx_t *c) {
 }
 
 int m_ctx_dispatch(ctx_t *c) {
-    MOD_CTX_ASSERT(c);
+    M_CTX_ASSERT(c);
     
     if (!c->looping) {
         /* Ok, start now */
@@ -358,7 +358,7 @@ int m_ctx_dispatch(ctx_t *c) {
 }
 
 int m_ctx_dump(const ctx_t *c) {
-    MOD_CTX_ASSERT(c);
+    M_CTX_ASSERT(c);
     
     ctx_logger(c, NULL, "{\n");
     
@@ -383,8 +383,8 @@ int m_ctx_dump(const ctx_t *c) {
 
 
 int m_ctx_load(ctx_t *c, const char *module_path) {
-    MOD_CTX_ASSERT(c);
-    MOD_PARAM_ASSERT(module_path);
+    M_CTX_ASSERT(c);
+    M_PARAM_ASSERT(module_path);
     
     const int module_size = m_map_length(c->modules);
     
@@ -409,8 +409,8 @@ int m_ctx_load(ctx_t *c, const char *module_path) {
 }
 
 int m_ctx_unload(ctx_t *c, const char *module_path) {
-    MOD_CTX_ASSERT(c);
-    MOD_PARAM_ASSERT(module_path);    
+    M_CTX_ASSERT(c);
+    M_PARAM_ASSERT(module_path);    
     
     /* Check if desired module is actually loaded in context */
     bool found = false;
@@ -437,8 +437,8 @@ int m_ctx_unload(ctx_t *c, const char *module_path) {
 }
 
 size_t m_ctx_trim(ctx_t *c, const stats_t *thres) {
-    MOD_CTX_ASSERT(c);
-    MOD_PARAM_ASSERT(thres);
+    M_CTX_ASSERT(c);
+    M_PARAM_ASSERT(thres);
 
     uint64_t curr_ms = 0;
     fetch_ms(&curr_ms, NULL);

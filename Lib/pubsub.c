@@ -117,8 +117,8 @@ static int tell_pubsub_msg(ps_priv_t *m, const mod_t *recipient, ctx_t *c) {
 
 static int send_msg(mod_t *mod, const mod_t *recipient, const char *topic, 
                     const void *message, const mod_ps_flags flags) {
-    MOD_PARAM_ASSERT(message);
-    MOD_MOD_CTX(mod);
+    M_PARAM_ASSERT(message);
+    M_MOD_CTX(mod);
     
     mod->stats.sent_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
@@ -189,22 +189,22 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
 /** Public API **/
 
 int m_mod_ref(const mod_t *mod, const char *name, mod_t **modref) {
-    MOD_MOD_ASSERT(mod);
-    MOD_PARAM_ASSERT(name);
-    MOD_PARAM_ASSERT(modref);
-    MOD_PARAM_ASSERT(!*modref);
-    MOD_CTX_MOD(mod->ctx, name);
-    MOD_PARAM_ASSERT(mod->ctx == m->ctx);
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(name);
+    M_PARAM_ASSERT(modref);
+    M_PARAM_ASSERT(!*modref);
+    M_CTX_MOD(mod->ctx, name);
+    M_PARAM_ASSERT(mod->ctx == m->ctx);
     
     *modref = m_mem_ref(m);
     return 0;
 }
 
 int m_mod_unref(const mod_t *mod, mod_t **modref) {
-    MOD_MOD_ASSERT(mod);
-    MOD_PARAM_ASSERT(modref);
-    MOD_PARAM_ASSERT(*modref);
-    MOD_PARAM_ASSERT(mod->ctx == (*modref)->ctx);
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(modref);
+    M_PARAM_ASSERT(*modref);
+    M_PARAM_ASSERT(mod->ctx == (*modref)->ctx);
     
     m_mem_unref(*modref);
     *modref = NULL;
@@ -212,8 +212,8 @@ int m_mod_unref(const mod_t *mod, mod_t **modref) {
 }
 
 int m_mod_register_sub(mod_t *mod, const char *topic, mod_src_flags flags, const void *userptr) {
-    MOD_MOD_ASSERT(mod);
-    MOD_PARAM_ASSERT(topic);
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(topic);
     
     /* Check if it is a valid regex: compile it */
     regex_t regex;
@@ -224,7 +224,7 @@ int m_mod_register_sub(mod_t *mod, const char *topic, mod_src_flags flags, const
         /* Lazy subscriptions map init */
         if (!mod->subscriptions)  {
             mod->subscriptions = m_map_new(M_MAP_VAL_ALLOW_UPDATE, m_mem_unref);
-            MOD_ALLOC_ASSERT(mod->subscriptions);
+            M_ALLOC_ASSERT(mod->subscriptions);
         } else {
             ev_src_t *old_sub = m_map_get(mod->subscriptions, topic);
             if (old_sub) {
@@ -238,7 +238,7 @@ int m_mod_register_sub(mod_t *mod, const char *topic, mod_src_flags flags, const
         
         /* Store new sub as ref'd memory */
         ev_src_t *sub = m_mem_new(sizeof(ev_src_t), subscribtions_dtor);
-        MOD_ALLOC_ASSERT(sub);
+        M_ALLOC_ASSERT(sub);
         
         ps_src_t *ps_src = &sub->ps_src;
         sub->type = TYPE_PS;
@@ -256,8 +256,8 @@ int m_mod_register_sub(mod_t *mod, const char *topic, mod_src_flags flags, const
 }
 
 int m_mod_deregister_sub(mod_t *mod, const char *topic) {
-    MOD_MOD_ASSERT(mod);
-    MOD_PARAM_ASSERT(topic);
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(topic);
     
     int ret = m_map_remove(mod->subscriptions, topic);
     if (ret == 0) {
@@ -270,37 +270,37 @@ int m_mod_deregister_sub(mod_t *mod, const char *topic) {
 }
 
 int m_mod_tell(mod_t *mod, const mod_t *recipient, const void *message, const mod_ps_flags flags) {
-    MOD_MOD_ASSERT(mod);
-    MOD_PARAM_ASSERT(recipient);
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
-    MOD_PARAM_ASSERT(mod->ctx == recipient->ctx);
+    M_PARAM_ASSERT(mod->ctx == recipient->ctx);
 
     /* Eventually cleanup PS_GLOBAL flag */    
     return send_msg(mod, recipient, NULL, message, flags & ~PS_GLOBAL);
 }
 
 int m_mod_publish(mod_t *mod, const char *topic, const void *message, const mod_ps_flags flags) {
-    MOD_MOD_ASSERT(mod);
-    MOD_PARAM_ASSERT(topic);
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(topic);
     
     /* Eventually cleanup PS_GLOBAL flag */    
     return send_msg(mod, NULL, topic, message, flags & ~PS_GLOBAL);
 }
 
 int m_mod_broadcast(mod_t *mod, const void *message, const mod_ps_flags flags) {
-    MOD_MOD_ASSERT(mod);
-    MOD_PARAM_ASSERT(message);
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(message);
     
     return send_msg(mod, NULL, NULL, message, flags);
 }
 
 int m_mod_poisonpill(mod_t *mod, const mod_t *recipient) {
-    MOD_MOD_ASSERT(mod);
-    MOD_PARAM_ASSERT(recipient);
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
-    MOD_PARAM_ASSERT(mod->ctx == recipient->ctx);
-    MOD_PARAM_ASSERT(m_mod_is(recipient, RUNNING));
-    MOD_MOD_CTX(mod);
+    M_PARAM_ASSERT(mod->ctx == recipient->ctx);
+    M_PARAM_ASSERT(m_mod_is(recipient, RUNNING));
+    M_MOD_CTX(mod);
     
     return tell_system_pubsub_msg(recipient, c, MODULE_POISONPILL, mod, NULL);
 }

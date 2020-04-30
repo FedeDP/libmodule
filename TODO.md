@@ -157,12 +157,12 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Update examples adding m_mod_unref in module dtor
 
 - [x] Cleanup priv.h macros?
-- [ ] Rename ASSERT macros as M_CTX_ASSERT, M_MOD_ASSERT, M_ASSERT, M_RET_ASSERT etc etc,,,
+- [x] Rename ASSERT macros as M_CTX_ASSERT, M_MOD_ASSERT, M_ASSERT, M_RET_ASSERT etc etc,,,
 - [x] Add a MOD_CTX_ASSERT(c) that calls MOD_TH_ASSERT too!
 
-- [ ] Update tests
-- [ ] Update samples
-- [ ] Updated README example
+- [x] Update tests
+- [x] Update samples
+- [x] Updated README example
 
 ### New Linked list api
 

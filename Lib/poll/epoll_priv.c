@@ -12,7 +12,7 @@ typedef struct {
 
 int poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(epoll_priv_t));
-    MOD_ALLOC_ASSERT(priv->data);
+    M_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
     ep->fd = epoll_create1(EPOLL_CLOEXEC);
     return ep->fd != -1 ? 0 : -1;
@@ -25,7 +25,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     if (!tmp->ev) {
         if (flag == ADD) {
             tmp->ev = memhook._calloc(1, sizeof(struct epoll_event));
-            MOD_ALLOC_ASSERT(tmp->ev);
+            M_ALLOC_ASSERT(tmp->ev);
         } else {
             /* We need to RM an unregistered ev. Fine. */
             return 0;
@@ -81,7 +81,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
 int poll_init(poll_priv_t *priv) {
     GET_PRIV_DATA();
     ep->pevents = memhook._calloc(priv->max_events, sizeof(struct epoll_event));
-    MOD_ALLOC_ASSERT(ep->pevents);
+    M_ALLOC_ASSERT(ep->pevents);
     return 0;
 }
 

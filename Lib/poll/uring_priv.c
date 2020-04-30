@@ -30,10 +30,10 @@ typedef struct {
 
 int poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(uring_priv_t));
-    MOD_ALLOC_ASSERT(priv->data);
+    M_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
     up->req_list = m_list_new(NULL);
-    MOD_ALLOC_ASSERT(up->req_list);
+    M_ALLOC_ASSERT(up->req_list);
     return 0;
 }
 
@@ -46,7 +46,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         if (!tmp->ev) {
             if (flag == ADD) {
                 tmp->ev = io_uring_get_sqe(&up->ring);
-                MOD_ALLOC_ASSERT(tmp->ev);
+                M_ALLOC_ASSERT(tmp->ev);
             } else {
                 /* We need to RM an unregistered ev. Fine. */
                 return 0;
@@ -115,7 +115,7 @@ int poll_init(poll_priv_t *priv) {
     int ret = io_uring_queue_init(priv->max_events, &up->ring, IORING_SETUP_IOPOLL);
     if (ret == 0) {
         up->cqe = memhook._calloc(priv->max_events, sizeof(struct io_uring_cqe *));
-        MOD_ALLOC_ASSERT(up->cqe);
+        M_ALLOC_ASSERT(up->cqe);
         up->inited = true;
         flush_reqs(priv);
     }
