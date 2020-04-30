@@ -13,16 +13,16 @@ static bool evaluate(void);
 static void recv(const msg_t *msg, const void *userdata);
 static void destroy(void);
 
-self_t *self = NULL;
-const self_t *testSelf = NULL;
+mod_t *mod = NULL;
+mod_t *testRef = NULL;
 
 void test_module_register_NULL_name(void **state) {
     (void) state; /* unused */
 
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    int ret = m_mod_register(NULL, test_ctx, &self, &hook, 0);
+    int ret = m_mod_register(NULL, test_ctx, &mod, &hook, 0);
     assert_false(ret == 0);
-    assert_null(self);
+    assert_null(mod);
 }
 
 void test_module_register_NULL_self(void **state) {
@@ -31,41 +31,41 @@ void test_module_register_NULL_self(void **state) {
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
     int ret = m_mod_register("testName", test_ctx, NULL, &hook, 0);
     assert_false(ret == 0);
-    assert_null(self);
+    assert_null(mod);
 }
 
 void test_module_register_NULL_hook(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register("testName", test_ctx, &self, NULL, 0);    
+    int ret = m_mod_register("testName", test_ctx, &mod, NULL, 0);    
     assert_false(ret == 0);
-    assert_null(self);
+    assert_null(mod);
 }
 
 void test_module_register(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    int ret = m_mod_register("testName", test_ctx, &self, &hook, 0);
+    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0);
     assert_true(ret == 0);
-    assert_non_null(self);
-    assert_true(m_mod_is(self, IDLE));
+    assert_non_null(mod);
+    assert_true(m_mod_is(mod, IDLE));
 }
 
 void test_module_register_already_registered(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    int ret = m_mod_register("testName", test_ctx, &self, &hook, 0);
+    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0);
     assert_false(ret == 0);
-    assert_non_null(self);
-    assert_true(m_mod_is(self, IDLE));
+    assert_non_null(mod);
+    assert_true(m_mod_is(mod, IDLE));
 }
 
 void test_module_register_same_name(void **state) {
     (void) state; /* unused */
     
-    self_t *self2 = NULL;
+    mod_t *self2 = NULL;
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
     int ret = m_mod_register("testName", test_ctx, &self2, &hook, 0);
@@ -78,33 +78,33 @@ void test_module_deregister_NULL_self(void **state) {
     
     int ret = m_mod_deregister(NULL);
     assert_false(ret == 0);
-    assert_non_null(self);
+    assert_non_null(mod);
 }
 
 void test_module_deregister(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_deregister(&self);
+    int ret = m_mod_deregister(&mod);
     assert_true(ret == 0);
-    assert_null(self);
+    assert_null(mod);
 }
 
 void test_module_false_init(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init_false, evaluate, recv, destroy };
-    int ret = m_mod_register("testName", test_ctx, &self, &hook, 0);
+    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0);
     assert_true(ret == 0);
-    assert_non_null(self);
-    assert_true(m_mod_is(self, IDLE));
+    assert_non_null(mod);
+    assert_true(m_mod_is(mod, IDLE));
     
-    ret = m_mod_start(self);
+    ret = m_mod_start(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(self, STOPPED));
+    assert_true(m_mod_is(mod, STOPPED));
     
-    ret = m_mod_deregister(&self);
+    ret = m_mod_deregister(&mod);
     assert_true(ret == 0);
-    assert_null(self);
+    assert_null(mod);
 }
 
 void test_module_pause_NULL_self(void **state) {
@@ -112,18 +112,18 @@ void test_module_pause_NULL_self(void **state) {
     
     int ret = m_mod_pause(NULL);
     assert_false(ret == 0);
-    assert_true(m_mod_is(self, RUNNING));
+    assert_true(m_mod_is(mod, RUNNING));
 }
 
 void test_module_pause(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_pause(self);
+    int ret = m_mod_pause(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(self, PAUSED));
+    assert_true(m_mod_is(mod, PAUSED));
     
     /* Test module_tell for paused modules */
-    ret = m_mod_tell(self, self, (unsigned char *)"Paused!", 0);
+    ret = m_mod_tell(mod, mod, (unsigned char *)"Paused!", 0);
     assert_true(ret == 0);
 }
 
@@ -132,15 +132,15 @@ void test_module_resume_NULL_self(void **state) {
     
     int ret = m_mod_resume(NULL);
     assert_false(ret == 0);
-    assert_true(m_mod_is(self, PAUSED));
+    assert_true(m_mod_is(mod, PAUSED));
 }
 
 void test_module_resume(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_resume(self);
+    int ret = m_mod_resume(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(self, RUNNING));
+    assert_true(m_mod_is(mod, RUNNING));
 }
 
 void test_module_stop_NULL_self(void **state) {
@@ -148,15 +148,15 @@ void test_module_stop_NULL_self(void **state) {
     
     int ret = m_mod_stop(NULL);
     assert_false(ret == 0);
-    assert_false(m_mod_is(self, STOPPED));
+    assert_false(m_mod_is(mod, STOPPED));
 }
 
 void test_module_stop(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_stop(self);
+    int ret = m_mod_stop(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(self, STOPPED));
+    assert_true(m_mod_is(mod, STOPPED));
 }
 
 void test_module_start_NULL_self(void **state) {
@@ -164,15 +164,15 @@ void test_module_start_NULL_self(void **state) {
     
     int ret = m_mod_start(NULL);
     assert_false(ret == 0);
-    assert_false(m_mod_is(self, RUNNING));
+    assert_false(m_mod_is(mod, RUNNING));
 }
 
 void test_module_start(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_start(self);
+    int ret = m_mod_start(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(self, RUNNING));
+    assert_true(m_mod_is(mod, RUNNING));
 }
 
 void test_module_log_NULL_self(void **state) {
@@ -185,7 +185,7 @@ void test_module_log_NULL_self(void **state) {
 void test_module_log(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_log(self, "Hi\n");
+    int ret = m_mod_log(mod, "Hi\n");
     assert_true(ret == 0);
 }
 
@@ -199,7 +199,7 @@ void test_module_dump_NULL_self(void **state) {
 void test_module_dump(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_dump(self);
+    int ret = m_mod_dump(mod);
     assert_true(ret == 0);
 }
 
@@ -213,7 +213,7 @@ void test_module_set_userdata_NULL_self(void **state) {
 void test_module_set_userdata(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_set_userdata(self, NULL);
+    int ret = m_mod_set_userdata(mod, NULL);
     assert_true(ret == 0);
 }
 
@@ -227,14 +227,14 @@ void test_module_become_NULL_self(void **state) {
 void test_module_become_NULL_func(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_become(self, NULL);
+    int ret = m_mod_become(mod, NULL);
     assert_false(ret == 0);
 }
 
 void test_module_become(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_become(self, recv);
+    int ret = m_mod_become(mod, recv);
     assert_true(ret == 0);
 }
 
@@ -248,18 +248,18 @@ void test_module_unbecome_NULL_self(void **state) {
 void test_module_unbecome(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_unbecome(self);
+    int ret = m_mod_unbecome(mod);
     assert_true(ret == 0);
     
     /* We don't have any more recv in stack */
-    ret = m_mod_unbecome(self);
+    ret = m_mod_unbecome(mod);
     assert_false(ret == 0);
 }
 
 void test_module_add_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_fd(self, -1, SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_register_fd(mod, -1, SRC_FD_AUTOCLOSE, NULL);
     assert_false(ret == 0);
 }
 
@@ -273,25 +273,25 @@ void test_module_add_fd_NULL_self(void **state) {
 void test_module_add_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_fd(self, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_register_fd(mod, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == 0);
     
     /* Try to register again */
-    ret = m_mod_register_fd(self, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
+    ret = m_mod_register_fd(mod, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == -EEXIST);
 }
 
 void test_module_rm_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_deregister_fd(self, -1);
+    int ret = m_mod_deregister_fd(mod, -1);
     assert_false(ret == 0);
 }
 
 void test_module_rm_wrong_fd_2(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_deregister_fd(self, STDIN_FILENO + 1);
+    int ret = m_mod_deregister_fd(mod, STDIN_FILENO + 1);
     assert_false(ret == 0);
 }
 
@@ -309,7 +309,7 @@ static int fd_is_valid(int fd) {
 void test_module_rm_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_deregister_fd(self, STDIN_FILENO);
+    int ret = m_mod_deregister_fd(mod, STDIN_FILENO);
     assert_true(ret == 0);
     
     /* Fd is now closed (module_deregister_fd with SRC_FD_AUTOCLOSE thus is no more valid */
@@ -320,7 +320,7 @@ void test_module_subscribe_NULL_topic(void **state) {
     (void) state; /* unused */
     
     // module_register_source won't even let you use NULL as topic as it only expects "int" or "(const) char *"
-    int ret = m_mod_register_sub(self, NULL, 0, NULL);
+    int ret = m_mod_register_sub(mod, NULL, 0, NULL);
     assert_false(ret == 0);
 }
 
@@ -334,56 +334,72 @@ void test_module_subscribe_NULL_self(void **state) {
 void test_module_subscribe(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_src(self, "topic", 0, NULL);
+    int ret = m_mod_register_src(mod, "topic", 0, NULL);
     assert_true(ret == 0);
 }
 
 void test_module_ref_NULL_name(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ref(self, NULL, &testSelf);
+    int ret = m_mod_ref(mod, NULL, &testRef);
     assert_false(ret == 0);
 }
 
 void test_module_ref_unexhistent_name(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ref(self, "testName2", &testSelf);
+    int ret = m_mod_ref(mod, "testName2", &testRef);
     assert_false(ret == 0);
 }
 
 void test_module_ref_NULL_ref(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ref(self, "testName2", NULL);
+    int ret = m_mod_ref(mod, "testName2", NULL);
     assert_false(ret == 0);
 }
 
 void test_module_ref(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ref(self, "testName", &testSelf);
+    int ret = m_mod_ref(mod, "testName", &testRef);
     assert_true(ret == 0);
+    assert_non_null(testRef);
+}
+
+void test_module_unref_NULL_ref(void **state) {
+    (void) state; /* unused */
+    
+    int ret = m_mod_unref(mod, NULL);
+    assert_false(ret == 0);
+}
+
+void test_module_unref(void **state) {
+    (void) state; /* unused */
+    
+    int ret = m_mod_unref(mod, &testRef);
+    assert_true(ret == 0);
+    assert_null(testRef);
 }
 
 void test_module_tell_NULL_recipient(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_tell(self, NULL, (unsigned char *)"hi!", 0);
+    int ret = m_mod_tell(mod, NULL, (unsigned char *)"hi!", 0);
     assert_false(ret == 0);
 }
 
 void test_module_tell_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_tell(NULL, testSelf, (unsigned char *)"hi!", 0);
+    int ret = m_mod_tell(NULL, testRef, (unsigned char *)"hi!", 0);
     assert_false(ret == 0);
 }
 
 void test_module_tell_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_tell(self, testSelf, NULL, 0);
+    int ret = m_mod_tell(mod, testRef, NULL, 0);
     assert_false(ret == 0);
 }
 
@@ -391,7 +407,7 @@ void test_module_tell_NULL_msg(void **state) {
 void test_module_tell(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_tell(self, testSelf, strdup("hi1!"), PS_AUTOFREE);
+    int ret = m_mod_tell(mod, testRef, strdup("hi1!"), PS_AUTOFREE);
     assert_true(ret == 0);
 }
 
@@ -405,21 +421,21 @@ void test_module_publish_NULL_self(void **state) {
 void test_module_publish_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_publish(self, "topic", NULL, 0);
+    int ret = m_mod_publish(mod, "topic", NULL, 0);
     assert_false(ret == 0);
 }
 
 void test_module_publish_NULL_topic(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_publish(self, NULL, (unsigned char *)"hi!", 0);
+    int ret = m_mod_publish(mod, NULL, (unsigned char *)"hi!", 0);
     assert_false(ret == 0);
 }
 
 void test_module_publish(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_publish(self, "topic", (unsigned char *)"hi2!", 0);
+    int ret = m_mod_publish(mod, "topic", (unsigned char *)"hi2!", 0);
     assert_true(ret == 0);
 }
 
@@ -433,14 +449,14 @@ void test_module_broadcast_NULL_self(void **state) {
 void test_module_broadcast_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_broadcast(self, NULL, 0);
+    int ret = m_mod_broadcast(mod, NULL, 0);
     assert_false(ret == 0);
 }
 
 void test_module_broadcast(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_broadcast(self, (unsigned char *)"hi3!", 0);
+    int ret = m_mod_broadcast(mod, (unsigned char *)"hi3!", 0);
     assert_true(ret == 0);
 }
 

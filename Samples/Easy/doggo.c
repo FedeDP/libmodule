@@ -6,7 +6,7 @@
 
 static void receive_sleeping(const msg_t *msg, const void *userdata);
 
-static const self_t *new_mod;
+static const mod_t *new_mod;
 
 M_MOD("Doggo");
 

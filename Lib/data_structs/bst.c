@@ -212,8 +212,8 @@ int m_bst_remove(m_bst_t *l, void *data) {
 }
 
 void *m_bst_find(m_bst_t *l, void *data) {
-    MOD_RET_ASSERT(l, NULL);
-    MOD_RET_ASSERT(data, NULL);
+    M_RET_ASSERT(l, NULL);
+    M_RET_ASSERT(data, NULL);
     
     bst_node **node = bst_find(l, data, NULL);
     if (*node) {
@@ -245,7 +245,7 @@ int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr) {
 }
 
 m_bst_itr_t *m_bst_itr_new(const m_bst_t *l) {
-    MOD_RET_ASSERT(m_bst_length(l) > 0, NULL);
+    M_RET_ASSERT(m_bst_length(l) > 0, NULL);
 
     m_bst_itr_t *itr = memhook._calloc(1, sizeof(m_bst_itr_t));
     if (itr) {
@@ -313,8 +313,8 @@ int m_bst_itr_remove(m_bst_itr_t *itr) {
 }
 
 void *m_bst_itr_get_data(const m_bst_itr_t *itr) {
-    MOD_RET_ASSERT(itr && !itr->removed, NULL);
-    MOD_RET_ASSERT(*(itr->curr), NULL);
+    M_RET_ASSERT(itr && !itr->removed, NULL);
+    M_RET_ASSERT(*(itr->curr), NULL);
 
     return (*itr->curr)->userptr;
 }

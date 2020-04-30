@@ -5,7 +5,7 @@
 #include <ctype.h>
 #include <signal.h>
 
-static const self_t *doggo;
+static mod_t *doggo;
 
 M_MOD("Pippo");
 
@@ -21,7 +21,7 @@ static bool init(void) {
     m_m_register_src(&((mod_sgn_t) { SIGINT }), 0, &myData);
     m_m_register_src(STDIN_FILENO, 0, NULL);
     
-    /* Get Doggo module reference */
+    /* Get Doggo reference */
     m_m_ref("Doggo", &doggo);
     return true;
 }
@@ -35,7 +35,7 @@ static bool eval(void) {
 }
 
 static void destroy(void) {
-    
+    m_m_unref(&doggo);
 }
 
 static void receive(const msg_t *msg, const void *userdata) {

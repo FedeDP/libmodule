@@ -55,7 +55,7 @@ m_list_t *m_list_new(const m_list_dtor fn) {
 }
 
 m_list_itr_t *m_list_itr_new(const m_list_t *l) {
-    MOD_RET_ASSERT(m_list_length(l) > 0, NULL);
+    M_RET_ASSERT(m_list_length(l) > 0, NULL);
     
     m_list_itr_t *itr = memhook._calloc(1, sizeof(m_list_itr_t));
     if (itr) {
@@ -83,8 +83,8 @@ int m_list_itr_next(m_list_itr_t **itr) {
 }
 
 void *m_list_itr_get_data(const m_list_itr_t *itr) {
-    MOD_RET_ASSERT(itr, NULL);
-    MOD_RET_ASSERT(*itr->elem, NULL);
+    M_RET_ASSERT(itr, NULL);
+    M_RET_ASSERT(*itr->elem, NULL);
     
     return (*itr->elem)->userptr;
 }
@@ -92,7 +92,7 @@ void *m_list_itr_get_data(const m_list_itr_t *itr) {
 int m_list_itr_set_data(m_list_itr_t *itr, void *value) {
     MOD_PARAM_ASSERT(itr);
     MOD_PARAM_ASSERT(value);
-    MOD_RET_ASSERT(*itr->elem, -EINVAL);
+    M_RET_ASSERT(*itr->elem, -EINVAL);
     
     (*itr->elem)->userptr = value;
     return 0;
@@ -108,7 +108,7 @@ int m_list_itr_insert(m_list_itr_t *itr, void *value) {
 
 int m_list_itr_remove(m_list_itr_t *itr) {
     MOD_PARAM_ASSERT(itr);
-    MOD_RET_ASSERT(*itr->elem, -EINVAL);
+    M_RET_ASSERT(*itr->elem, -EINVAL);
     
     itr->diff--; // notify list to avoid skipping 1 element on next list_itr_next() call
     return remove_node(itr->l, itr->elem);
@@ -164,8 +164,8 @@ int m_list_remove(m_list_t *l, void *data, const m_list_cmp comp) {
 }
 
 void *m_list_find(m_list_t *l, void *data, const m_list_cmp comp) {
-    MOD_RET_ASSERT(l, NULL);
-    MOD_RET_ASSERT(data, NULL);
+    M_RET_ASSERT(l, NULL);
+    M_RET_ASSERT(data, NULL);
     
     list_node **tmp = &l->data;
     for (int i = 0; i < l->len; i++) {

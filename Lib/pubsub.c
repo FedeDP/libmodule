@@ -9,8 +9,8 @@ static int tell_if(void *data, const char *key, void *value);
 static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub);
 static int tell_global(void *data, const char *key, void *value);
 static void ps_msg_dtor(void *data);
-static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c);
-static int send_msg(mod_t *mod, mod_t *recipient, const char *topic, 
+static int tell_pubsub_msg(ps_priv_t *m, const mod_t *recipient, ctx_t *c);
+static int send_msg(mod_t *mod, const mod_t *recipient, const char *topic, 
                     const void *message, const mod_ps_flags flags);
 
 extern int fs_notify(const msg_t *msg);
@@ -54,16 +54,16 @@ static int tell_if(void *data, const char *key, void *value) {
     ps_priv_t *msg = (ps_priv_t *)data;
     ev_src_t *sub = NULL;
 
-    if (m_mod_is(mod->self, RUNNING | PAUSED) &&                     // mod is running or paused
-        ((msg->msg.type != USER && msg->msg.sender != &mod->ref) ||     // system messages with sender != this module (avoid sending ourselves system messages produced by us)
+    if (m_mod_is(mod, RUNNING | PAUSED) &&                              // mod is running or paused
+        ((msg->msg.type != USER && msg->msg.sender != mod) ||           // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || (sub = fetch_sub(mod, msg->msg.topic)))))) {
         
-        MODULE_DEBUG("Telling a message to '%s'\n", mod->name);
+        M_DEBUG("Telling a message to '%s'\n", mod->name);
         ps_priv_t *m = alloc_ps_msg(msg, sub);
         if (m) {
             if (write(mod->pubsub_fd[1], &m, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-                MODULE_DEBUG("Failed to write message: %s\n", strerror(errno));
+                M_DEBUG("Failed to write message: %s\n", strerror(errno));
                 m_mem_unref(msg);
             }
         }
@@ -76,7 +76,7 @@ static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub) {
     if (m) {
         memcpy(m, msg, sizeof(ps_priv_t));
         if (m->msg.sender) {
-            m_mem_ref(m->msg.sender->mod); // keep module alive until message is dispatched
+            m_mem_ref((void *)m->msg.sender); // keep module alive until message is dispatched
         }
         m->sub = m_mem_ref(sub);
     }
@@ -99,14 +99,14 @@ static void ps_msg_dtor(void *data) {
         memhook._free((void *)pubsub_msg->msg.data);
     }
     if (pubsub_msg->msg.sender) {
-        m_mem_unref(pubsub_msg->msg.sender->mod);
+        m_mem_unref((void *)pubsub_msg->msg.sender);
     }
 }
 
 
-static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {    
-    if (mod) {
-        tell_if(m, NULL, mod);
+static int tell_pubsub_msg(ps_priv_t *m, const mod_t *recipient, ctx_t *c) {    
+    if (recipient) {
+        tell_if(m, NULL, (mod_t *)recipient);
     } else if (!(m->flags & PS_GLOBAL)) {
         m_map_iterate(c->modules, tell_if, m);
     } else {
@@ -115,22 +115,22 @@ static int tell_pubsub_msg(ps_priv_t *m, mod_t *mod, ctx_t *c) {
     return 0;
 }
 
-static int send_msg(mod_t *mod, mod_t *recipient, const char *topic, 
+static int send_msg(mod_t *mod, const mod_t *recipient, const char *topic, 
                     const void *message, const mod_ps_flags flags) {
     MOD_PARAM_ASSERT(message);
-    GET_CTX(mod->self);
+    MOD_MOD_CTX(mod);
     
     mod->stats.sent_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    ps_priv_t m = { { USER, &mod->ref, topic, message }, flags, NULL };
+    ps_priv_t m = { { USER, mod, topic, message }, flags, NULL };
     return tell_pubsub_msg(&m, recipient, c);
 }
 
 /** Private API **/
 
-int tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, const self_t *sender, const char *topic) {
+int tell_system_pubsub_msg(const mod_t *recipient, ctx_t *c, ps_msg_type type, mod_t *sender, const char *topic) {
     if (sender) {
-        fetch_ms(&sender->mod->stats.last_seen, &sender->mod->stats.action_ctr);
+        fetch_ms(&sender->stats.last_seen, &sender->stats.action_ctr);
     }
     ps_priv_t m = { { type, sender, topic, NULL }, 0, NULL };
     return tell_pubsub_msg(&m, recipient, c);
@@ -149,12 +149,12 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
          * While stopping module, manage_fds() will call this with data != NULL
          * to let us know we should destroy all enqueued messages.
          */
-        if (!data && m_mod_is(mod->self, RUNNING)) {
-            MODULE_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
+        if (!data && m_mod_is(mod, RUNNING)) {
+            M_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             msg_t msg = { .type = TYPE_PS, .ps_msg = &mm->msg };
             run_pubsub_cb(mod, &msg, mm->sub);
         } else {
-            MODULE_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
+            M_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
             m_mem_unref(mm);
         }
     }
@@ -169,7 +169,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
         cb = mod->hook.recv;
     }
     
-    msg->self = mod->self;
+    msg->self = mod;
     
     /* Notify underlying fuse fs */
     fs_notify(msg);
@@ -188,28 +188,38 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
 
 /** Public API **/
 
-int m_mod_ref(const self_t *self, const char *name, const self_t **modref) {
+int m_mod_ref(const mod_t *mod, const char *name, mod_t **modref) {
+    MOD_MOD_ASSERT(mod);
     MOD_PARAM_ASSERT(name);
     MOD_PARAM_ASSERT(modref);
     MOD_PARAM_ASSERT(!*modref);
-
-    GET_CTX(self);
-    CTX_GET_MOD(name, c);
+    MOD_CTX_MOD(mod->ctx, name);
+    MOD_PARAM_ASSERT(mod->ctx == m->ctx);
     
-    *modref = &mod->ref;
+    *modref = m_mem_ref(m);
     return 0;
 }
 
-int m_mod_register_sub(const self_t *self, const char *topic, mod_src_flags flags, const void *userptr) {
+int m_mod_unref(const mod_t *mod, mod_t **modref) {
+    MOD_MOD_ASSERT(mod);
+    MOD_PARAM_ASSERT(modref);
+    MOD_PARAM_ASSERT(*modref);
+    MOD_PARAM_ASSERT(mod->ctx == (*modref)->ctx);
+    
+    m_mem_unref(*modref);
+    *modref = NULL;
+    return 0;
+}
+
+int m_mod_register_sub(mod_t *mod, const char *topic, mod_src_flags flags, const void *userptr) {
+    MOD_MOD_ASSERT(mod);
     MOD_PARAM_ASSERT(topic);
-    GET_MOD(self);
-    GET_CTX(self);
     
     /* Check if it is a valid regex: compile it */
     regex_t regex;
     int ret = regcomp(&regex, topic, REG_NOSUB);
     if (!ret) {
-        MODULE_DEBUG("'%s' is a valid regex.\n", topic);
+        M_DEBUG("'%s' is a valid regex.\n", topic);
         
         /* Lazy subscriptions map init */
         if (!mod->subscriptions)  {
@@ -234,7 +244,7 @@ int m_mod_register_sub(const self_t *self, const char *topic, mod_src_flags flag
         sub->type = TYPE_PS;
         sub->flags = flags;
         sub->userptr = userptr;
-        sub->self = self;
+        sub->mod = mod;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
         ps_src->topic = sub->flags & SRC_DUP ? mem_strdup(topic) : topic;
         ret = m_map_put(mod->subscriptions, ps_src->topic, sub); // M_MAP_VAL_ALLOW_UPDATE -> this will dtor old elem before updating
@@ -245,9 +255,9 @@ int m_mod_register_sub(const self_t *self, const char *topic, mod_src_flags flag
     return ret;
 }
 
-int m_mod_deregister_sub(const self_t *self, const char *topic) {
+int m_mod_deregister_sub(mod_t *mod, const char *topic) {
+    MOD_MOD_ASSERT(mod);
     MOD_PARAM_ASSERT(topic);
-    GET_MOD(self);
     
     int ret = m_map_remove(mod->subscriptions, topic);
     if (ret == 0) {
@@ -259,34 +269,38 @@ int m_mod_deregister_sub(const self_t *self, const char *topic) {
     return ret;
 }
 
-int m_mod_tell(const self_t *self, const self_t *recipient, const void *message, const mod_ps_flags flags) {
-    GET_MOD(self);
+int m_mod_tell(mod_t *mod, const mod_t *recipient, const void *message, const mod_ps_flags flags) {
+    MOD_MOD_ASSERT(mod);
     MOD_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
-    MOD_PARAM_ASSERT(self->ctx == recipient->ctx);
+    MOD_PARAM_ASSERT(mod->ctx == recipient->ctx);
 
     /* Eventually cleanup PS_GLOBAL flag */    
-    return send_msg(mod, recipient->mod, NULL, message, flags & ~PS_GLOBAL);
+    return send_msg(mod, recipient, NULL, message, flags & ~PS_GLOBAL);
 }
 
-int m_mod_publish(const self_t *self, const char *topic, const void *message, const mod_ps_flags flags) {
+int m_mod_publish(mod_t *mod, const char *topic, const void *message, const mod_ps_flags flags) {
+    MOD_MOD_ASSERT(mod);
     MOD_PARAM_ASSERT(topic);
-    GET_MOD(self);
     
     /* Eventually cleanup PS_GLOBAL flag */    
     return send_msg(mod, NULL, topic, message, flags & ~PS_GLOBAL);
 }
 
-int m_mod_broadcast(const self_t *self, const void *message, const mod_ps_flags flags) {
-    GET_MOD(self);
+int m_mod_broadcast(mod_t *mod, const void *message, const mod_ps_flags flags) {
+    MOD_MOD_ASSERT(mod);
+    MOD_PARAM_ASSERT(message);
     
     return send_msg(mod, NULL, NULL, message, flags);
 }
 
-int m_mod_poisonpill(const self_t *self, const self_t *recipient) {
-    GET_MOD(self);
-    GET_CTX(self);
+int m_mod_poisonpill(mod_t *mod, const mod_t *recipient) {
+    MOD_MOD_ASSERT(mod);
+    MOD_PARAM_ASSERT(recipient);
+    /* only same ctx modules can talk */
+    MOD_PARAM_ASSERT(mod->ctx == recipient->ctx);
     MOD_PARAM_ASSERT(m_mod_is(recipient, RUNNING));
+    MOD_MOD_CTX(mod);
     
-    return tell_system_pubsub_msg(recipient->mod, c, MODULE_POISONPILL, &mod->ref, NULL);
+    return tell_system_pubsub_msg(recipient, c, MODULE_POISONPILL, mod, NULL);
 }

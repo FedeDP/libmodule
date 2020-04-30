@@ -42,8 +42,8 @@
 
 /** Structs types **/
 
-/* Incomplete structure declaration to self handler */
-typedef struct _self self_t;
+/* Incomplete structure declaration to mod handler */
+typedef struct _mod mod_t;
 
 /* Incomplete structure declaration to ctx handler */
 typedef struct _ctx ctx_t;
@@ -133,7 +133,7 @@ typedef struct {
 /* PubSub message */
 typedef struct {
     ps_msg_type type;
-    const self_t *sender;   // Sender reference
+    const mod_t *sender;
     const char *topic;
     const void *data;
 } ps_msg_t;
@@ -173,7 +173,7 @@ typedef struct {
 
 /* Libmodule receive() main message type */
 typedef struct {
-    const self_t *self;
+    const mod_t *self;
     const mod_src_types type;
     union {
         const fd_msg_t      *fd_msg;
@@ -193,7 +193,7 @@ typedef void (*recv_cb)(const msg_t *const msg, const void *userdata);
 typedef void (*destroy_cb)(void);
 
 /* Logger callback */
-typedef void (*log_cb)(const self_t *self, const char *fmt, va_list args);
+typedef void (*log_cb)(const mod_t *ref, const char *fmt, va_list args);
 
 /* Memory management user-passed functions */
 typedef void *(*malloc_fn)(size_t size);

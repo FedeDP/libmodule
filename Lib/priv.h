@@ -9,79 +9,39 @@
 #include "itr.h"
 
 #ifndef NDEBUG
-    #define MODULE_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
+    #define M_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
 #else
-    #define MODULE_DEBUG (void)
+    #define M_DEBUG (void)
 #endif
 
-#define MOD_ASSERT(cond, msg, ret)  if (!(cond)) { MODULE_DEBUG("%s\n", msg); return ret; }
+#define M_ASSERT(cond, msg, ret)    if (!(cond)) { M_DEBUG("%s\n", msg); return ret; }
 
-#define MOD_RET_ASSERT(cond, ret)   MOD_ASSERT(cond, "("#cond ") condition failed.", ret) 
+#define M_RET_ASSERT(cond, ret)     M_ASSERT(cond, "("#cond ") condition failed.", ret) 
 
-#define MOD_ALLOC_ASSERT(cond)      MOD_RET_ASSERT(cond, -ENOMEM);
-#define MOD_PARAM_ASSERT(cond)      MOD_RET_ASSERT(cond, -EINVAL);
-#define MOD_TH_ASSERT(ctx)          MOD_RET_ASSERT(ctx->th_id == pthread_self(), -EPERM);
+#define MOD_ALLOC_ASSERT(cond)      M_RET_ASSERT(cond, -ENOMEM);
+#define MOD_PARAM_ASSERT(cond)      M_RET_ASSERT(cond, -EINVAL);
+#define MOD_TH_ASSERT(ctx)          M_RET_ASSERT(ctx->th_id == pthread_self(), -EPERM);
 
-/* Finds a ctx inside our global map, given its name */
 #define MOD_CTX_ASSERT(c) \
     MOD_PARAM_ASSERT(c); \
     MOD_TH_ASSERT(c);
 
-#define GET_CTX_PRIV(self)  ctx_t *c = self->ctx
-/* 
- * Convenience macro to retrieve self->ctx + doing some checks.
- * Skip reference check for pure functions.
- */
-#define _GET_CTX(self, pure) \
-    MOD_RET_ASSERT((self), -EINVAL); \
-    MOD_RET_ASSERT(!(self)->is_ref || pure, -EPERM); \
-    GET_CTX_PRIV((self)); \
-    MOD_RET_ASSERT(c, -ENOENT);
+#define MOD_MOD_ASSERT(mod) \
+    M_RET_ASSERT(mod, -EINVAL); \
+    MOD_TH_ASSERT(mod->ctx); \
+    M_RET_ASSERT(!m_mod_is(mod, ZOMBIE), -EACCES);
+    
+#define MOD_MOD_ASSERT_STATE(mod, state) \
+    MOD_MOD_ASSERT(mod); \
+    M_RET_ASSERT(m_mod_is(mod, state), -EACCES);
+    
+#define MOD_MOD_CTX(mod)    ctx_t *c = mod->ctx;
+    
+#define MOD_CTX_MOD(ctx, name) \
+    mod_t *m = m_map_get(ctx->modules, (char *)name); \
+    M_RET_ASSERT(m, -ENOENT);
 
-/* Convenience macros for exposed API */
-#define GET_CTX(self)       _GET_CTX(self, false)
-#define GET_CTX_PURE(self)  _GET_CTX(self, true)
-
-/* Convenience macro to retrieve a module from a context, given its name */
-#define CTX_GET_MOD(name, ctx) \
-    mod_t *mod = m_map_get(ctx->modules, (char *)name); \
-    MOD_RET_ASSERT(mod, -ENOENT);
-
-#define GET_MOD_PRIV(self) mod_t *mod = self->mod
-
-/* 
- * Convenience macro to retrieve self->mod + doing some checks.
- * Skip reference check for pure functions.
- */
-#define _GET_MOD(self, pure) \
-    MOD_RET_ASSERT(self, -EINVAL); \
-    MOD_TH_ASSERT((self)->ctx); \
-    MOD_RET_ASSERT(!(self)->is_ref || pure, -EPERM); \
-    MOD_RET_ASSERT(!m_mod_is(self, ZOMBIE), -EACCES); \
-    GET_MOD_PRIV((self)); \
-    MOD_RET_ASSERT(mod, -ENOENT);
-
-/* Convenience macros for exposed API */
-#define GET_MOD(self)         _GET_MOD(self, false)
-#define GET_MOD_PURE(self)    _GET_MOD(self, true)
-
-/*
- * Convenience macro to retrieve self->mod + doing some checks 
- * + checking if its state matches required state 
- */
-#define GET_MOD_IN_STATE(self, state) \
-    GET_MOD(self); \
-    MOD_RET_ASSERT(m_mod_is(self, state), -EACCES);
-
-typedef struct _mod mod_t;
 typedef struct _src ev_src_t;
-
-/* Struct that holds self module informations, static to each module */
-struct _self {
-    mod_t *mod;                             // self's mod
-    ctx_t *ctx;                             // self's ctx
-    bool is_ref;                            // is this a reference?
-};
 
 /* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
@@ -148,7 +108,7 @@ struct _src {
     mod_src_types type;
     mod_src_flags flags;
     void *ev;                               // poll plugin defined data structure
-    const self_t *self;                     // ptr needed to map an event source to a self_t in poll_plugin
+    mod_t *mod;                             // ptr needed to map an event source to a self_t in poll_plugin
     const void *userptr;
 };
 
@@ -186,8 +146,6 @@ struct _mod {
     const char *local_path;                 // For runtime loaded modules: path of module
     m_bst_t *srcs[TYPE_END];                // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
-    self_t ref;                             // Module self reference
-    self_t *self;                           // Module self handler
     ctx_t *ctx;                             // Module's ctx
 };
 
@@ -212,11 +170,11 @@ int stop(mod_t *mod, const bool stopping);
 
 /* Defined in context.c */
 ctx_t *check_ctx(const char *ctx_name);
-void ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...);
+void ctx_logger(const ctx_t *c, const mod_t *mod, const char *fmt, ...);
 
 /* Defined in pubsub.c */
-int tell_system_pubsub_msg(mod_t *recipient, ctx_t *c, ps_msg_type type, 
-                                const self_t *sender, const char *topic);
+int tell_system_pubsub_msg(const mod_t *recipient, ctx_t *c, ps_msg_type type, 
+                           mod_t *sender, const char *topic);
 int flush_pubsub_msgs(void *data, const char *key, void *value);
 void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src);
 

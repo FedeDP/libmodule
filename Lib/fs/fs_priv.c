@@ -70,7 +70,7 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
 
 /* Internal functions */
 static void client_dtor(void *data);
-static void fs_logger(const self_t *self, const char *fmt, va_list args);
+static void fs_logger(const mod_ref_t *ref, const char *fmt, va_list args);
 static bool init(void);
 static void receive(const msg_t *msg, const void *userdata);
 static void fs_wakeup_clients(fs_priv_t *fp, bool leaving);
@@ -203,7 +203,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
         c->logger = fs_logger;
         mod->userdata = (void *)fi->fh;
     
-        m_mod_dump(mod->self);
+        m_mod_dump(mod);
         if (cl->write_len > cl->read_len) {
             cl->write_len = cl->read_len;
         }
@@ -226,7 +226,7 @@ static int fs_unlink(const char *path) {
     if (strlen(path) > 1) {
         mod_t *mod = m_map_get(c->modules, path + 1);
         if (mod) {
-            if (m_mod_deregister(&mod->self) == 0) {
+            if (m_mod_deregister(&mod) == 0) {
                 return 0;
             }
             return -EPERM;
@@ -244,8 +244,8 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     FS_CTX();
     
     if (strlen(path) > 1) {
-        self_t *self = NULL;
-        if (m_mod_register(path + 1, c, &self, &fuse_hook, MOD_NAME_DUP) == 0) {
+        mod_t *mod = NULL;
+        if (m_mod_register(path + 1, c, &mod, &fuse_hook, MOD_NAME_DUP) == 0) {
             return 0;
         }
         return -EPERM;
@@ -291,15 +291,15 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
             *(mod_states *)data = mod->state;
             return 0;
         case MOD_START:
-            return m_mod_start(mod->self);
+            return m_mod_start(mod);
         case MOD_STOP:
-            return m_mod_stop(mod->self);
+            return m_mod_stop(mod);
         case MOD_RESUME:
-            return m_mod_resume(mod->self);
+            return m_mod_resume(mod);
         case MOD_PAUSE:
-            return m_mod_pause(mod->self);
+            return m_mod_pause(mod);
         case MOD_STATS:
-            return m_mod_stats(&mod->ref, data);
+            return m_mod_stats(mod, data);
         default:
             break;
     }
@@ -317,8 +317,8 @@ static void client_dtor(void *data) {
     memhook._free(cl);
 }
 
-static void fs_logger(const self_t *self, const char *fmt, va_list args) {
-    fs_client_t *cl = (fs_client_t *)self->mod->userdata;
+static void fs_logger(const mod_ref_t *ref, const char *fmt, va_list args) {
+    fs_client_t *cl = (fs_client_t *)ref->mod->userdata;
     if (cl->write_len < cl->read_len) {
         /* 
          * vsnprintf: If the output was truncated due to this limit then the return value 
@@ -390,7 +390,7 @@ int fs_process(ctx_t *c) {
         fuse_session_process_buf(sess, &f->buf);
         return 0;
     }
-    MODULE_DEBUG("Fuse: failed to retrieve buffer.\n");
+    M_DEBUG("Fuse: failed to retrieve buffer.\n");
     return ret;
 }
 

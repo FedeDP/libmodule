@@ -5,7 +5,7 @@
 
 static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags);
 static void ctx_dtor(void *data);
-static void default_logger(const self_t *self, const char *fmt, va_list args);
+static void default_logger(const mod_t *mod, const char *fmt, va_list args);
 static int loop_start(ctx_t *c, const int max_events);
 static uint8_t loop_stop(ctx_t *c);
 static inline int loop_quit(ctx_t *c, const uint8_t quit_code);
@@ -14,7 +14,7 @@ static int recv_events(ctx_t *c, int timeout);
 static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
     pthread_mutex_lock(&mx);
     
-    MODULE_DEBUG("Creating context '%s'.\n", ctx_name);
+    M_DEBUG("Creating context '%s'.\n", ctx_name);
     
     *c = m_mem_new(sizeof(ctx_t), ctx_dtor);
     MOD_ALLOC_ASSERT(*c);
@@ -53,7 +53,7 @@ static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
 
 static void ctx_dtor(void *data) {
     ctx_t *context = (ctx_t *)data;
-    MODULE_DEBUG("Destroying context '%s'.\n", context->name);
+    M_DEBUG("Destroying context '%s'.\n", context->name);
     m_map_free(&context->modules);
     poll_destroy(&context->ppriv);
     if (context->flags & CTX_NAME_AUTOFREE) {
@@ -61,9 +61,9 @@ static void ctx_dtor(void *data) {
     }
 }
 
-static void default_logger(const self_t *self, const char *fmt, va_list args) {
-    if (self) {
-        printf("[%s]|%s|: ", self->ctx->name, self->mod->name);
+static void default_logger(const mod_t *mod, const char *fmt, va_list args) {
+    if (mod) {
+        printf("[%s]|%s|: ", mod->ctx->name, mod->name);
     }
     vprintf(fmt, args);
 }
@@ -120,15 +120,15 @@ static int recv_events(ctx_t *c, int timeout) {
     const int nfds = poll_wait(&c->ppriv, timeout);    
     for (int i = 0; i < nfds; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
-        if (p && p->type == TYPE_FD && p->self == NULL) {
+        if (p && p->type == TYPE_FD && p->mod == NULL) {
             /* Received from fuse */
             fs_process(c);
             recved++;
             continue;
         }
         
-        if (p && p->self && p->self->mod) {
-            mod_t *mod = p->self->mod;
+        if (p && p->mod) {
+            mod_t *mod = p->mod;
 
             msg_t msg = { .type = p->type };
             fd_msg_t fd_msg;
@@ -139,7 +139,7 @@ static int recv_events(ctx_t *c, int timeout) {
             task_msg_t task_msg;
             ps_priv_t *ps_msg;
             
-            MODULE_DEBUG("'%s' received %u type msg.\n", mod->name, msg.type);
+            M_DEBUG("'%s' received %u type msg.\n", mod->name, msg.type);
             switch (msg.type) {
             case TYPE_FD:
                 /* Received from FD */
@@ -149,7 +149,7 @@ static int recv_events(ctx_t *c, int timeout) {
             case TYPE_PS:
                 /* Received on pubsub interface */
                 if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-                    MODULE_DEBUG("Failed to read message: %s\n", strerror(errno));
+                    M_DEBUG("Failed to read message: %s\n", strerror(errno));
                 } else {
                     msg.ps_msg = &ps_msg->msg;
                     p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
@@ -187,7 +187,7 @@ static int recv_events(ctx_t *c, int timeout) {
                 pthread_join(p->task_src.th, NULL);
                 break;
             default:
-                MODULE_DEBUG("Unmanaged src %d.\n", msg.type);
+                M_DEBUG("Unmanaged src %d.\n", msg.type);
                 break;
             }
 
@@ -200,7 +200,7 @@ static int recv_events(ctx_t *c, int timeout) {
                 if (msg.type != TYPE_PS || msg.ps_msg->type != MODULE_POISONPILL) {
                     run_pubsub_cb(mod, &msg, p);
                 } else {
-                    MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
+                    M_DEBUG("PoisonPilling '%s'.\n", mod->name);
                     stop(mod, true);
                 }
                 
@@ -243,10 +243,10 @@ ctx_t *check_ctx(const char *ctx_name) {
     return context;
 }
 
-void inline ctx_logger(const ctx_t *c, const self_t *self, const char *fmt, ...) {
+void inline ctx_logger(const ctx_t *c, const mod_t *mod, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    c->logger(self, fmt, args);
+    c->logger(mod, fmt, args);
     va_end(args);
 }
 
@@ -260,10 +260,10 @@ int m_set_memhook(const memhook_t *hook) {
      */
     pthread_mutex_lock(&mx);
     if (hook) {
-        MOD_ASSERT(hook->_malloc, "NULL malloc fn.", -1);
-        MOD_ASSERT(hook->_realloc, "NULL realloc fn.", -1);
-        MOD_ASSERT(hook->_calloc, "NULL calloc fn.", -1);
-        MOD_ASSERT(hook->_free, "NULL free fn.", -1);
+        M_ASSERT(hook->_malloc, "NULL malloc fn.", -1);
+        M_ASSERT(hook->_realloc, "NULL realloc fn.", -1);
+        M_ASSERT(hook->_calloc, "NULL calloc fn.", -1);
+        M_ASSERT(hook->_free, "NULL free fn.", -1);
         memcpy(&memhook, hook, sizeof(memhook_t));
     } else {
         memhook._malloc = malloc;
@@ -308,7 +308,7 @@ int m_ctx_set_logger(ctx_t *c, const log_cb logger) {
 int m_ctx_loop(ctx_t *c, const int max_events) {
     MOD_CTX_ASSERT(c);
     MOD_PARAM_ASSERT(max_events > 0);
-    MOD_ASSERT(!c->looping, "Context already looping.", -EINVAL);
+    M_ASSERT(!c->looping, "Context already looping.", -EINVAL);
 
     int ret = loop_start(c, max_events);
     if (ret == 0) {
@@ -322,7 +322,7 @@ int m_ctx_loop(ctx_t *c, const int max_events) {
 
 int m_ctx_quit(ctx_t *c, const uint8_t quit_code) {
     MOD_CTX_ASSERT(c);
-    MOD_ASSERT(c->looping, "Context not looping.", -EINVAL);
+    M_ASSERT(c->looping, "Context not looping.", -EINVAL);
        
     return loop_quit(c, quit_code);
 }
@@ -334,8 +334,8 @@ int m_ctx_fd(const ctx_t *c) {
 }
 
 const char *m_ctx_name(const ctx_t *c) {
-    MOD_RET_ASSERT(c, NULL);
-    MOD_RET_ASSERT(c->th_id == pthread_self(), NULL);
+    M_RET_ASSERT(c, NULL);
+    M_RET_ASSERT(c->th_id == pthread_self(), NULL);
     
     return c->name;
 }
@@ -390,7 +390,7 @@ int m_ctx_load(ctx_t *c, const char *module_path) {
     
     void *handle = dlopen(module_path, RTLD_NOW);
     if (!handle) {
-        MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
+        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
         return -errno;
     }
     
@@ -429,10 +429,10 @@ int m_ctx_unload(ctx_t *c, const char *module_path) {
             dlclose(handle);
             return 0;
         }
-        MODULE_DEBUG("Dlopen failed with error: %s\n", dlerror());
+        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
         return -errno;
     }
-    MODULE_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, c->name);
+    M_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, c->name);
     return -ENODEV;
 }
 
@@ -447,11 +447,11 @@ size_t m_ctx_trim(ctx_t *c, const stats_t *thres) {
         mod_t *mod = m_itr_get(itr);
 
         if (curr_ms - mod->stats.last_seen >= thres->inactive_ms) {
-            m_mod_deregister(&mod->self);
+            m_mod_deregister(&mod);
         } else {
             const double freq = (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
             if (freq < thres->activity_freq) {
-                m_mod_deregister(&mod->self);
+                m_mod_deregister(&mod);
             }
         }
     });

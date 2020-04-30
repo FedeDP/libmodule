@@ -7,7 +7,7 @@
 
 ctx_t *test_ctx = NULL;
 
-static void logger(const self_t *self, const char *fmt, va_list args) {
+static void logger(const mod_t *self, const char *fmt, va_list args) {
     const char *name = NULL;
     const char *context = NULL;
     if (self) {

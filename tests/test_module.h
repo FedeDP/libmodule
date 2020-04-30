@@ -42,6 +42,8 @@ void test_module_ref_NULL_name(void **state);
 void test_module_ref_unexhistent_name(void **state);
 void test_module_ref_NULL_ref(void **state);
 void test_module_ref(void **state);
+void test_module_unref_NULL_ref(void **state);
+void test_module_unref(void **state);
 void test_module_tell_NULL_recipient(void **state);
 void test_module_tell_NULL_self(void **state);
 void test_module_tell_NULL_msg(void **state);

@@ -122,6 +122,10 @@ int main(void) {
         cmocka_unit_test(test_modules_ctx_dispatch_NULL_ctx),
         cmocka_unit_test(test_modules_ctx_dispatch),
         
+        /* Test module unref */
+        cmocka_unit_test(test_module_unref_NULL_ref),
+        cmocka_unit_test(test_module_unref),
+        
         /* Test module_deregister failures */
         cmocka_unit_test(test_module_deregister_NULL_self),
         

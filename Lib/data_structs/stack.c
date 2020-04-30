@@ -28,7 +28,7 @@ m_stack_t *m_stack_new(const m_stack_dtor fn) {
 }
 
 m_stack_itr_t *m_stack_itr_new(const m_stack_t *s) {
-    MOD_RET_ASSERT(m_stack_length(s) > 0, NULL);
+    M_RET_ASSERT(m_stack_length(s) > 0, NULL);
     
     m_stack_itr_t *itr = memhook._calloc(1, sizeof(m_stack_itr_t));
     if (itr) {
@@ -72,7 +72,7 @@ int m_stack_itr_remove(m_stack_itr_t *itr) {
 }
 
 void *m_stack_itr_get_data(const m_stack_itr_t *itr) {
-    MOD_RET_ASSERT(itr && !itr->removed, NULL);
+    M_RET_ASSERT(itr && !itr->removed, NULL);
     
     return (*itr->elem)->userptr;
 }
@@ -119,7 +119,7 @@ int m_stack_push(m_stack_t *s, void *data) {
 }
 
 void *m_stack_pop(m_stack_t *s) {
-    MOD_RET_ASSERT(m_stack_length(s) > 0, NULL);
+    M_RET_ASSERT(m_stack_length(s) > 0, NULL);
 
     stack_elem *elem = s->data;
     s->data = s->data->prev;
@@ -130,7 +130,7 @@ void *m_stack_pop(m_stack_t *s) {
 }
 
 void *m_stack_peek(const m_stack_t *s) {
-    MOD_RET_ASSERT(m_stack_length(s) > 0, NULL);
+    M_RET_ASSERT(m_stack_length(s) > 0, NULL);
     
     return s->data->userptr; // return most recent element data
 }

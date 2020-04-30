@@ -17,7 +17,7 @@ static void A_recv_ready(const msg_t *msg, const void *userdata);
 static void B_recv(const msg_t *msg, const void *userdata);
 static void B_recv_sleeping(const msg_t *msg, const void *userdata);
 
-static self_t *selfA, *selfB;
+static mod_t *selfA, *selfB;
 
 /*
  * Create "A" and "B" modules in ctx_name context.

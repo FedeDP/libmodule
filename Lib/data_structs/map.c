@@ -245,7 +245,7 @@ static void clear_elem(m_map_t *m, map_elem *removed_entry) {
 /** Private API **/
 
 void *map_peek(const m_map_t *m) {
-    MOD_RET_ASSERT(m_map_length(m) > 0, NULL);
+    M_RET_ASSERT(m_map_length(m) > 0, NULL);
     return m->last_insert->data;
 }
 
@@ -273,7 +273,7 @@ m_map_t *m_map_new(const m_map_flags flags, const m_map_dtor fn) {
 }
 
 m_map_itr_t *m_map_itr_new(const m_map_t *m) {
-    MOD_RET_ASSERT(m_map_length(m) > 0, NULL);
+    M_RET_ASSERT(m_map_length(m) > 0, NULL);
     
     m_map_itr_t *itr = memhook._calloc(1, sizeof(m_map_itr_t));
     if (itr) {
@@ -321,13 +321,13 @@ int m_map_itr_remove(m_map_itr_t *itr) {
 }
 
 const char *m_map_itr_get_key(const m_map_itr_t *itr) {
-    MOD_RET_ASSERT(itr && !itr->removed, NULL);
+    M_RET_ASSERT(itr && !itr->removed, NULL);
     
     return itr->curr->key;
 }
 
 void *m_map_itr_get_data(const m_map_itr_t *itr) {
-    MOD_RET_ASSERT(itr && !itr->removed, NULL);
+    M_RET_ASSERT(itr && !itr->removed, NULL);
     
     return itr->curr->data;
 }
@@ -356,8 +356,8 @@ int m_map_put(m_map_t *m, const char *key, void *value) {
  * Get your pointer out of the hashmap with a key
  */
 void *m_map_get(const m_map_t *m, const char *key) {
-    MOD_RET_ASSERT(key, NULL);
-    MOD_RET_ASSERT(m_map_length(m) > 0, NULL);
+    M_RET_ASSERT(key, NULL);
+    M_RET_ASSERT(m_map_length(m) > 0, NULL);
     
     /* Find data location */
     map_elem *entry = hashmap_entry_find(m, key, false);

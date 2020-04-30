@@ -30,7 +30,7 @@ m_queue_t *m_queue_new(const m_queue_dtor fn) {
 }
 
 m_queue_itr_t *m_queue_itr_new(const m_queue_t *q) {
-    MOD_RET_ASSERT(m_queue_length(q) > 0, NULL);
+    M_RET_ASSERT(m_queue_length(q) > 0, NULL);
     
     m_queue_itr_t *itr = memhook._calloc(1, sizeof(m_queue_itr_t));
     if (itr) {
@@ -75,7 +75,7 @@ int m_queue_itr_remove(m_queue_itr_t *itr) {
 
 
 void *m_queue_itr_get_data(const m_queue_itr_t *itr) {
-    MOD_RET_ASSERT(itr && !itr->removed, NULL);
+    M_RET_ASSERT(itr && !itr->removed, NULL);
     
     return (*itr->elem)->userptr;
 }
@@ -127,7 +127,7 @@ int m_queue_enqueue(m_queue_t *q, void *data) {
 }
 
 void *m_queue_dequeue(m_queue_t *q) {
-    MOD_RET_ASSERT(m_queue_length(q) > 0, NULL);
+    M_RET_ASSERT(m_queue_length(q) > 0, NULL);
     
     queue_elem *elem = q->head;
     if (q->tail == q->head) {
@@ -142,7 +142,7 @@ void *m_queue_dequeue(m_queue_t *q) {
 }
 
 void *m_queue_peek(const m_queue_t *q) {
-    MOD_RET_ASSERT(m_queue_length(q) > 0, NULL);
+    M_RET_ASSERT(m_queue_length(q) > 0, NULL);
     
     return q->head->userptr;
 }

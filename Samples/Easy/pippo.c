@@ -10,7 +10,7 @@
     #include <sys/event.h>
 #endif
 
-static const self_t *doggo;
+static mod_t *doggo;
 
 M_MOD("Pippo");
 
@@ -46,7 +46,7 @@ static bool eval(void) {
 }
 
 static void destroy(void) {
-    
+    m_m_unref(&doggo);
 }
 
 static void receive(const msg_t *msg, const void *userdata) {

@@ -13,7 +13,7 @@ extern void create_module_B(ctx_t *c);
 
 static void *loop(void *param);
 
-static void logger(const self_t *self, const char *fmt, va_list args) {
+static void logger(const mod_t *self, const char *fmt, va_list args) {
     const char *mname = m_mod_name(self);
     const char *cname = m_ctx_name(m_mod_ctx(self));
     if (mname && cname) {

@@ -9,7 +9,7 @@ memhook_t memhook = { malloc, realloc, calloc, free };
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
 _public_ void _ctor0_ _weak_ m_pre_start(void) {
-    MODULE_DEBUG("Pre-starting libmodule.\n");
+    M_DEBUG("Pre-starting libmodule.\n");
 }
 
 /*
@@ -25,13 +25,13 @@ _public_ int _weak_ main(int argc, char *argv[]) {
 }
 
 static void libmodule_init(void) {
-    MODULE_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
+    M_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     pthread_mutex_init(&mx, NULL);
     ctx = m_map_new(0, m_mem_unref);
 }
 
 static void libmodule_deinit(void) {
-    MODULE_DEBUG("Destroying libmodule.\n");
+    M_DEBUG("Destroying libmodule.\n");
     m_map_free(&ctx);
     pthread_mutex_destroy(&mx);
 }

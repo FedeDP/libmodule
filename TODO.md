@@ -147,12 +147,16 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Drop m_mod_ctxname and add m_mod_ctx (that returns ctx handler for mod context)
 - [x] Add m_ctx_name() to return name of ctx
 - [x] Mod should have a ctx pointer
-- [ ] Drop self_t and just use mod_t pointer to incomplete type?
-- [ ] Add new type m_mod_ref_t that is used as recipient for mod_tell() and returned by m_mod_ref()
-- [ ] add new source file: mod_ref.c that exposed mod_ref API (eg: m_mod_ref_name())
-- [ ] Internally, struct _mod_ref will alias struct _mod
+- [x] Drop self_t and just use mod_t pointer to incomplete type?
+- [x] Add new type m_mod_ref_t that is used as recipient for mod_tell() and returned by m_mod_ref()
+- [x] Drop module reference concept entirely; it is up to the developer to not misuse libmodule
+- [x] Internally, struct _mod_ref will just wrap struct _mod
+- [x] Fix FIXME around code
+- [x] m_mod_ref() to actually m_mem_ref returned mod
+- [x] Add m_mod_unref()
+- [x] Update examples adding m_mod_unref in module dtor
 
-- [ ] Cleanup priv.h macros?
+- [x] Cleanup priv.h macros?
 - [ ] Rename ASSERT macros as M_CTX_ASSERT, M_MOD_ASSERT, M_ASSERT, M_RET_ASSERT etc etc,,,
 - [x] Add a MOD_CTX_ASSERT(c) that calls MOD_TH_ASSERT too!
 
