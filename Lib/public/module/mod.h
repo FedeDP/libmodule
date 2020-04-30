@@ -1,5 +1,7 @@
 #pragma once
 
+#define M_MOD_H
+
 #include "commons.h"
 
 /* Module interface functions */

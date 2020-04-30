@@ -1,5 +1,7 @@
 #pragma once
 
+#define M_CTX_H
+
 #include "commons.h"
 
 /* Modules interface functions */

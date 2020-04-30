@@ -1,5 +1,9 @@
 #pragma once
 
+#if !defined(M_MOD_H) && !defined(M_CTX_H) && !defined(M_MEM_H)
+#error "Never include <module/commons.h> directly; use <mod.h> or <ctx.h> instead."
+#endif
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>

@@ -1,5 +1,7 @@
 #pragma once
 
+#define M_MEM_H
+
 #include "commons.h"
 
 #define M_MEM_LOCK(ptr, fn) \
