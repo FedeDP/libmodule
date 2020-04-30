@@ -2,7 +2,7 @@
 
 #define FUSE_USE_VERSION 35
 
-#include "module.h"
+#include "mod.h"
 #include "mem.h"
 #include <fuse.h>
 #include <fuse_lowlevel.h>  // to get fuse fd to process events internally
@@ -70,7 +70,7 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
 
 /* Internal functions */
 static void client_dtor(void *data);
-static void fs_logger(const mod_ref_t *ref, const char *fmt, va_list args);
+static void fs_logger(const mod_t *mod, const char *fmt, va_list args);
 static bool init(void);
 static void receive(const msg_t *msg, const void *userdata);
 static void fs_wakeup_clients(fs_priv_t *fp, bool leaving);
@@ -317,8 +317,8 @@ static void client_dtor(void *data) {
     memhook._free(cl);
 }
 
-static void fs_logger(const mod_ref_t *ref, const char *fmt, va_list args) {
-    fs_client_t *cl = (fs_client_t *)ref->mod->userdata;
+static void fs_logger(const mod_t *mod, const char *fmt, va_list args) {
+    fs_client_t *cl = (fs_client_t *)mod->userdata;
     if (cl->write_len < cl->read_len) {
         /* 
          * vsnprintf: If the output was truncated due to this limit then the return value 
@@ -395,7 +395,7 @@ int fs_process(ctx_t *c) {
 }
 
 int fs_notify(const msg_t *msg) {
-    mod_t *mod = msg->self->mod;
+    mod_t *mod = (mod_t *)msg->self;
     if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         if (msg->type == TYPE_PS && msg->ps_msg->type == LOOP_STOPPED) {
