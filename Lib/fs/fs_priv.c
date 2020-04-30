@@ -374,7 +374,7 @@ int fs_init(ctx_t *c) {
         M_ALLOC_ASSERT(f->src);
         
         /* Actually register fuse fd in poll plugin */
-        f->src->type = TYPE_FD;
+        f->src->type = M_SRC_TYPE_FD;
         f->src->fd_src.fd = fuse_session_fd(fuse_get_session(f->handler));
         ret = poll_set_new_evt(&c->ppriv, f->src, ADD);
    }
@@ -398,7 +398,7 @@ int fs_notify(const msg_t *msg) {
     mod_t *mod = (mod_t *)msg->self;
     if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
-        if (msg->type == TYPE_PS && msg->ps_msg->type == LOOP_STOPPED) {
+        if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == LOOP_STOPPED) {
             /* When loop gets stopped, destroy clients list */
             m_list_free(&fp->clients);
             memhook._free(fp);

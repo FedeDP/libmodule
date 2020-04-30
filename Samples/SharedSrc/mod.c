@@ -62,7 +62,7 @@ static void destroy(void) {
  * Our A module's poll callback.
  */
 static void A_recv(const msg_t *msg, const void *userdata) {
-    if (msg->type != TYPE_PS) {
+    if (msg->type != M_SRC_TYPE_PS) {
         char c;
         read(msg->fd_msg->fd, &c, sizeof(char));
         
@@ -92,7 +92,7 @@ static void A_recv(const msg_t *msg, const void *userdata) {
 }
 
 static void A_recv_ready(const msg_t *msg, const void *userdata) {
-    if (msg->type != TYPE_PS) {
+    if (msg->type != M_SRC_TYPE_PS) {
         char c;
         read(msg->fd_msg->fd, &c, sizeof(char));
         
@@ -132,7 +132,7 @@ static void A_recv_ready(const msg_t *msg, const void *userdata) {
  * Our B module's poll callback.
  */
 static void B_recv(const msg_t *msg, const void *userdata) {
-    if (msg->type == TYPE_PS) {
+    if (msg->type == M_SRC_TYPE_PS) {
         switch (msg->ps_msg->type) {
             case USER:
                 if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
@@ -158,7 +158,7 @@ static void B_recv(const msg_t *msg, const void *userdata) {
 }
 
 static void B_recv_sleeping(const msg_t *msg, const void *userdata) {
-    if (msg->type == TYPE_PS && msg->ps_msg->type == USER) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == USER) {
         if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
             m_mod_become(selfB, B_recv);
             m_mod_log(selfB, "Yawn...\n");

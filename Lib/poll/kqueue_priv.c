@@ -36,30 +36,30 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     }
 
     int f = flag == ADD ? EV_ADD : EV_DELETE;
-    if (tmp->flags & SRC_ONESHOT) {
+    if (tmp->flags & M_SRC_ONESHOT) {
         f |= EV_ONESHOT;
     }
     struct kevent *_ev = (struct kevent *)tmp->ev;
     switch (tmp->type) {
-    case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
-    case TYPE_FD:
+    case M_SRC_TYPE_PS: // M_SRC_TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
+    case M_SRC_TYPE_FD:
         EV_SET(_ev, tmp->fd_src.fd, EVFILT_READ, f, 0, 0, tmp);
         break;
-    case TYPE_TMR: {
+    case M_SRC_TYPE_TMR: {
 #if defined NOTE_ABSOLUTE // Apple (https://www.unix.com/man-page/osx/2/kqueue/)
-        const int abs_fl = tmp->flags & SRC_TMR_ABSOLUTE ? NOTE_ABSOLUTE : 0;
+        const int abs_fl = tmp->flags & M_SRC_TMR_ABSOLUTE ? NOTE_ABSOLUTE : 0;
 #elif defined NOTE_ABSTIME // BSD (https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2)
-        const int abs_fl = tmp->flags & SRC_TMR_ABSOLUTE ? NOTE_ABSTIME : 0;
+        const int abs_fl = tmp->flags & M_SRC_TMR_ABSOLUTE ? NOTE_ABSTIME : 0;
 #else
         const int  abs_fl = 0; // unsupported...
 #endif
         EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, abs_fl, tmp->tmr_src.its.ms, tmp);
         break;
     }
-    case TYPE_SGN:
+    case M_SRC_TYPE_SGN:
         EV_SET(_ev, tmp->sgn_src.sgs.signo, EVFILT_SIGNAL, f, 0, 0, tmp);
         break;
-    case TYPE_PATH: 
+    case M_SRC_TYPE_PATH: 
         tmp->path_src.f.fd = open(tmp->path_src.pt.path, O_RDONLY);
         if (tmp->path_src.f.fd != -1) {
             EV_SET(_ev, tmp->path_src.f.fd, EVFILT_VNODE, f, tmp->path_src.pt.events, 0, tmp);
@@ -67,10 +67,10 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
             return -EBADF;
         }
         break;
-    case TYPE_PID:
+    case M_SRC_TYPE_PID:
         EV_SET(_ev, tmp->pid_src.pid.pid, EVFILT_PROC, f, tmp->pid_src.pid.events, 0, tmp);
         break;
-    case TYPE_TASK:
+    case M_SRC_TYPE_TASK:
         EV_SET(_ev, tmp->task_src.tid.tid, EVFILT_USER, f, NOTE_FFNOP, 0, tmp);
         break;
     default: 
@@ -79,7 +79,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
 
     int ret = kevent(kp->fd, _ev, 1, NULL, 0, NULL);
     /* Workaround for STDIN_FILENO: it is actually pollable */
-    if (tmp->type == TYPE_FD && tmp->fd_src.fd == STDIN_FILENO) {
+    if (tmp->type == M_SRC_TYPE_FD && tmp->fd_src.fd == STDIN_FILENO) {
         ret = 0;
     }
     
@@ -88,7 +88,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
         memhook._free(tmp->ev);
         tmp->ev = NULL;
         
-        if (tmp->type == TYPE_PATH) {
+        if (tmp->type == M_SRC_TYPE_PATH) {
             close(tmp->path_src.f.fd); // automatically close internally used FDs
             tmp->path_src.f.fd = -1;
         }

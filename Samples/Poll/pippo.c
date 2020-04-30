@@ -39,17 +39,17 @@ static void destroy(void) {
 }
 
 static void receive(const msg_t *msg, const void *userdata) {
-    if (msg->type != TYPE_PS) {
+    if (msg->type != M_SRC_TYPE_PS) {
         char c;
         
         /* Forcefully quit if we received a SIGINT */
-        if (msg->type == TYPE_SGN) {
+        if (msg->type == M_SRC_TYPE_SGN) {
             c = 'q';
             int *data = (int *)userdata;
             if (data) {
                 m_m_log("Received %d. Data is %d\n", msg->sgn_msg->signo, *data);
             }
-        } else if (msg->type == TYPE_FD) {
+        } else if (msg->type == M_SRC_TYPE_FD) {
             read(msg->fd_msg->fd, &c, sizeof(char));
         }
         
@@ -83,14 +83,14 @@ static void receive(const msg_t *msg, const void *userdata) {
  * Use m_become(ready) to start using this second poll callback.
  */
 static void receive_ready(const msg_t *msg, const void *userdata) {
-    if (msg->type != TYPE_PS) {
+    if (msg->type != M_SRC_TYPE_PS) {
         char c;
         
         /* Forcefully quit if we received a SIGINT */
-        if (msg->type == TYPE_SGN) {
+        if (msg->type == M_SRC_TYPE_SGN) {
             c = 'q';
             m_m_log("Received %d.\n", msg->sgn_msg->signo);
-        } else if (msg->type == TYPE_FD) {
+        } else if (msg->type == M_SRC_TYPE_FD) {
             read(msg->fd_msg->fd, &c, sizeof(char));
         }
         

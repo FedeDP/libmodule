@@ -75,37 +75,37 @@ typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED,
 
 /* Module event sources' types */
 typedef enum {
-    TYPE_PS,    // PubSub Source
-    TYPE_FD,    // FD Source
-    TYPE_TMR,   // Timer Source
-    TYPE_SGN,   // Signal Source
-    TYPE_PATH,  // Path Source
-    TYPE_PID,   // PID Source
-    TYPE_TASK,  // Task source -> SRC_ONESHOT flag is forced
-    TYPE_END    // End of supported sources
-} mod_src_types;
+    M_SRC_TYPE_PS,    // PubSub Source
+    M_SRC_TYPE_FD,    // FD Source
+    M_SRC_TYPE_TMR,   // Timer Source
+    M_SRC_TYPE_SGN,   // Signal Source
+    M_SRC_TYPE_PATH,  // Path Source
+    M_SRC_TYPE_PID,   // PID Source
+    M_SRC_TYPE_TASK,  // Task source -> SRC_ONESHOT flag is forced
+    M_SRC_TYPE_END    // End of supported sources
+} m_src_types;
 
 /* 
  * Module event sources' flags:
  * First 8 bits are reserved for generic source flags.
  * Then, each source type has 8 bits reserved for its flags.
  */
-#define FLAG_SHIFT(type, val)   val << (8 * (type + 1))
+#define M_FLAG_SHIFT(type, val)   val << (8 * (type + 1))
 typedef enum { 
-    SRC_AUTOFREE        =       0x01, // Automatically free userdata upon deregistation.
-    SRC_ONESHOT         =       0x02, // Run just once then automatically deregister source.
-    SRC_DUP             =       0x04, // Duplicate PubSub topic, source fd or source path.
-    SRC_FD_AUTOCLOSE    =       FLAG_SHIFT(TYPE_FD, 0x01), // Automatically close fd upon deregistation.
-    SRC_TMR_ABSOLUTE    =       FLAG_SHIFT(TYPE_TMR, 0x01) // Absolute timer
-} mod_src_flags;
+    M_SRC_AUTOFREE        =       0x01, // Automatically free userdata upon deregistation.
+    M_SRC_ONESHOT         =       0x02, // Run just once then automatically deregister source.
+    M_SRC_DUP             =       0x04, // Duplicate PubSub topic, source fd or source path.
+    M_SRC_FD_AUTOCLOSE    =       M_FLAG_SHIFT(M_SRC_TYPE_FD, 0x01), // Automatically close fd upon deregistation.
+    M_SRC_TMR_ABSOLUTE    =       M_FLAG_SHIFT(M_SRC_TYPE_TMR, 0x01) // Absolute timer
+} m_src_flags;
 
 /* 
  * Module's pubsub API flags (module_tell(), module_publish(), module_broadcast())
  */
 typedef enum {
-    PS_AUTOFREE = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_msg ref counter goes to 0)
-    PS_GLOBAL   = 0x02,     // Only useful for module_broadcast. Broadcast a message to every context.
-} mod_ps_flags;
+    M_PS_AUTOFREE = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_msg ref counter goes to 0)
+    M_PS_GLOBAL   = 0x02,     // Only useful for module_broadcast. Broadcast a message to every context.
+} m_ps_flags;
 
 /* module_register_src() request special types. */
 typedef struct {
@@ -178,7 +178,7 @@ typedef struct {
 /* Libmodule receive() main message type */
 typedef struct {
     const mod_t *self;
-    const mod_src_types type;
+    const m_src_types type;
     union {
         const fd_msg_t      *fd_msg;
         const ps_msg_t      *ps_msg;

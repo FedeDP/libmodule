@@ -10,9 +10,9 @@ static int init_pubsub_fd(mod_t *mod);
 static void src_priv_dtor(void *data);
 static void *task_thread(void *data);
 
-static int _register_src(mod_t *mod, const mod_src_types type, const void *src_data, 
-                             const mod_src_flags flags, const void *userptr);
-static int _deregister_src(mod_t *mod, const mod_src_types type, void *src_data);
+static int _register_src(mod_t *mod, const m_src_types type, const void *src_data, 
+                             const m_src_flags flags, const void *userptr);
+static int _deregister_src(mod_t *mod, const m_src_types type, void *src_data);
 
 static int fdcmp(void *my_data, void *node_data);
 static int tmrcmp(void *my_data, void *node_data);
@@ -27,25 +27,25 @@ static void reset_module(mod_t *mod);
 extern int fs_cleanup(mod_t *mod);
 
 static m_bst_cmp src_cmp_map[] = {
-    fdcmp,      // TYPE_PS we use internal pipe fd used for pubsub as module PS source
-    fdcmp,      // TYPE_FD
-    tmrcmp,     // TYPE_TMR
-    sgncmp,     // TYPE_SGN
-    pathcmp,    // TYPE_PATH
-    pidcmp,     // TYPE_PID
-    taskcmp     // TYPE_TASK
+    fdcmp,      // M_SRC_TYPE_PS we use internal pipe fd used for pubsub as module PS source
+    fdcmp,      // M_SRC_TYPE_FD
+    tmrcmp,     // M_SRC_TYPE_TMR
+    sgncmp,     // M_SRC_TYPE_SGN
+    pathcmp,    // M_SRC_TYPE_PATH
+    pidcmp,     // M_SRC_TYPE_PID
+    taskcmp     // M_SRC_TYPE_TASK
 };
-_Static_assert(sizeof(src_cmp_map) / sizeof(*src_cmp_map) == TYPE_END, "Undefined source compare function.");
+_Static_assert(sizeof(src_cmp_map) / sizeof(*src_cmp_map) == M_SRC_TYPE_END, "Undefined source compare function.");
 static const char *src_names[] = {
-    "Priv",     // TYPE_PS is not exposed externally
-    "Fds",      // TYPE_FD
-    "Tmrs",     // TYPE_TMR
-    "Sgns",     // TYPE_SGN
-    "Paths",    // TYPE_PATH
-    "Pids",     // TYPE_PID
-    "Tasks"     // TYPE_TASK
+    "Priv",     // M_SRC_TYPE_PS is not exposed externally
+    "Fds",      // M_SRC_TYPE_FD
+    "Tmrs",     // M_SRC_TYPE_TMR
+    "Sgns",     // M_SRC_TYPE_SGN
+    "Paths",    // M_SRC_TYPE_PATH
+    "Pids",     // M_SRC_TYPE_PID
+    "Tasks"     // M_SRC_TYPE_TASK
 };
-_Static_assert(sizeof(src_names) / sizeof(*src_names) == TYPE_END, "Undefined source name.");
+_Static_assert(sizeof(src_names) / sizeof(*src_names) == M_SRC_TYPE_END, "Undefined source name.");
 
 static void module_dtor(void *data) {
     mod_t *mod = (mod_t *)data;
@@ -54,7 +54,7 @@ static void module_dtor(void *data) {
         
         m_map_free(&mod->subscriptions);
         m_stack_free(&mod->recvs);
-        for (int i = 0; i < TYPE_END; i++) {
+        for (int i = 0; i < M_SRC_TYPE_END; i++) {
             m_bst_free(&mod->srcs[i]);
         }
         
@@ -85,7 +85,7 @@ static int init_pubsub_fd(mod_t *mod) {
     if (_pipe(mod) == 0) {
         fd_src_t fd_src = {0};
         fd_src.fd = mod->pubsub_fd[0];
-        if (_register_src(mod, TYPE_PS, &fd_src, SRC_FD_AUTOCLOSE, NULL) == 0) {
+        if (_register_src(mod, M_SRC_TYPE_PS, &fd_src, M_SRC_FD_AUTOCLOSE, NULL) == 0) {
             return 0;
         }
         close(mod->pubsub_fd[0]);
@@ -106,11 +106,11 @@ static void src_priv_dtor(void *data) {
     }
     
     /* Properly manage autoclose flag */
-    if (t->flags & SRC_FD_AUTOCLOSE) {
+    if (t->flags & M_SRC_FD_AUTOCLOSE) {
         int fd = -1;
         switch (t->type) {
-        case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
-        case TYPE_FD:
+        case M_SRC_TYPE_PS: // M_SRC_TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
+        case M_SRC_TYPE_FD:
             fd = t->fd_src.fd;
             break;
         default: 
@@ -121,9 +121,9 @@ static void src_priv_dtor(void *data) {
         }
     }
     
-    if (t->flags & SRC_DUP) {
+    if (t->flags & M_SRC_DUP) {
         switch (t->type) {
-        case TYPE_PATH:
+        case M_SRC_TYPE_PATH:
             memhook._free((void *)t->path_src.pt.path);
             break;
         default:
@@ -131,7 +131,7 @@ static void src_priv_dtor(void *data) {
         }
     }
     
-    if (t->flags & SRC_AUTOFREE) {
+    if (t->flags & M_SRC_AUTOFREE) {
         memhook._free((void *)t->userptr);
     }
     
@@ -145,8 +145,8 @@ static void *task_thread(void *data) {
     pthread_exit(NULL);
 }
 
-static int _register_src(mod_t *mod, const mod_src_types type, const void *src_data, 
-                             const mod_src_flags flags, const void *userptr) {
+static int _register_src(mod_t *mod, const m_src_types type, const void *src_data, 
+                             const m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT(mod);
     ev_src_t *src = memhook._calloc(1, sizeof(ev_src_t));
     M_ALLOC_ASSERT(src);
@@ -163,42 +163,42 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
     src->fd_src.fd = -1;
     
     switch (type) {
-    case TYPE_PS: // TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
-    case TYPE_FD: {
+    case M_SRC_TYPE_PS: // M_SRC_TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
+    case M_SRC_TYPE_FD: {
         fd_src_t *fd_src = &src->fd_src;
         int fd = *((int *)src_data);
-        if (flags & SRC_DUP) {
+        if (flags & M_SRC_DUP) {
             fd_src->fd = dup(fd);
-            src->flags |= SRC_FD_AUTOCLOSE;
+            src->flags |= M_SRC_FD_AUTOCLOSE;
         } else {
             fd_src->fd = fd;
         }
         break;
     }
-    case TYPE_TMR: {
+    case M_SRC_TYPE_TMR: {
         tmr_src_t *tm_src = &src->tmr_src;
         memcpy(&tm_src->its, src_data, sizeof(mod_tmr_t));
         break;
     }
-    case TYPE_SGN: {
+    case M_SRC_TYPE_SGN: {
         sgn_src_t *sgn_src = &src->sgn_src;
         memcpy(&sgn_src->sgs, src_data, sizeof(mod_sgn_t));
         break;
     }
-    case TYPE_PATH: {
+    case M_SRC_TYPE_PATH: {
         path_src_t *pt_src = &src->path_src;
         memcpy(&pt_src->pt, src_data, sizeof(mod_path_t));
-        if (flags & SRC_DUP) {
+        if (flags & M_SRC_DUP) {
             pt_src->pt.path = mem_strdup(pt_src->pt.path);
         }
         break;
     }
-    case TYPE_PID: {
+    case M_SRC_TYPE_PID: {
         pid_src_t *pid_src = &src->pid_src;
         memcpy(&pid_src->pid, src_data, sizeof(mod_pid_t));
         break;
     }
-    case TYPE_TASK: {
+    case M_SRC_TYPE_TASK: {
         task_src_t *task_src = &src->task_src;
         memcpy(&task_src->tid, src_data, sizeof(mod_task_t));
         break;
@@ -218,7 +218,7 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
             ret = poll_set_new_evt(&c->ppriv, src, ADD);
             
             /* For type task: create task thread */
-            if (ret == 0 && src->type == TYPE_TASK) {
+            if (ret == 0 && src->type == M_SRC_TYPE_TASK) {
                 ret = pthread_create(&src->task_src.th, NULL, task_thread, src);
             }
         }
@@ -228,7 +228,7 @@ static int _register_src(mod_t *mod, const mod_src_types type, const void *src_d
     return ret;
 }
 
-static int _deregister_src(mod_t *mod, const mod_src_types type, void *src_data) {   
+static int _deregister_src(mod_t *mod, const m_src_types type, void *src_data) {   
     M_MOD_ASSERT(mod);
     
     int ret = m_bst_remove(mod->srcs[type], src_data);
@@ -289,11 +289,11 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
     int ret = 0;
     
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    for (int i = 0; i < TYPE_END; i++) {
+    for (int i = 0; i < M_SRC_TYPE_END; i++) {
         m_itr_foreach(mod->srcs[i], {
             ev_src_t *t = m_itr_get(itr);
             if (flag == RM && stop) {
-                if (t->type == TYPE_PS) {
+                if (t->type == M_SRC_TYPE_PS) {
                     /*
                     * Free all unread pubsub msg for this module.
                     *
@@ -443,7 +443,7 @@ int m_mod_register(const char *name, ctx_t *c, mod_t **self, const userhook_t *h
     do {
         mod->name = flags & M_MOD_NAME_DUP ? mem_strdup(name) : name;
         
-        for (int i = 0; i < TYPE_END; i++) {
+        for (int i = 0; i < M_SRC_TYPE_END; i++) {
             mod->srcs[i] = m_bst_new(src_cmp_map[i], src_priv_dtor);
             if (!mod->srcs[i]) {
                 break;
@@ -572,79 +572,79 @@ const void *m_mod_get_userdata(const mod_t *mod) {
     return mod->userdata;
 }
 
-int m_mod_register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr) {
+int m_mod_register_fd(mod_t *mod, const int fd, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(fd >= 0);
 
-    return _register_src(mod, TYPE_FD, &fd, flags, userptr);
+    return _register_src(mod, M_SRC_TYPE_FD, &fd, flags, userptr);
 }
 
 int m_mod_deregister_fd(mod_t *mod, const int fd) {
     M_PARAM_ASSERT(fd >= 0);
     
-    return _deregister_src(mod, TYPE_FD, (void *)&fd);
+    return _deregister_src(mod, M_SRC_TYPE_FD, (void *)&fd);
 }
 
-int m_mod_register_tmr(mod_t *mod, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr) {
+int m_mod_register_tmr(mod_t *mod, const mod_tmr_t *its, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(its && its->ms > 0);
     
-    return _register_src(mod, TYPE_TMR, its, flags, userptr);
+    return _register_src(mod, M_SRC_TYPE_TMR, its, flags, userptr);
 }
 
 int m_mod_deregister_tmr(mod_t *mod, const mod_tmr_t *its) {
     M_PARAM_ASSERT(its && its->ms > 0);
     
-    return _deregister_src(mod, TYPE_TMR, (void *)its);
+    return _deregister_src(mod, M_SRC_TYPE_TMR, (void *)its);
 }
 
-int m_mod_register_sgn(mod_t *mod, const mod_sgn_t *sgs, const mod_src_flags flags, const void *userptr) {
+int m_mod_register_sgn(mod_t *mod, const mod_sgn_t *sgs, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(sgs && sgs->signo > 0);
     
-    return _register_src(mod, TYPE_SGN, sgs, flags, userptr);
+    return _register_src(mod, M_SRC_TYPE_SGN, sgs, flags, userptr);
 }
 
 int m_mod_deregister_sgn(mod_t *mod, const mod_sgn_t *sgs) {
     M_PARAM_ASSERT(sgs && sgs->signo > 0);
     
-    return _deregister_src(mod, TYPE_SGN, (void *)sgs);
+    return _deregister_src(mod, M_SRC_TYPE_SGN, (void *)sgs);
 }
 
-int m_mod_register_path(mod_t *mod, const mod_path_t *pt, const mod_src_flags flags, const void *userptr) {
+int m_mod_register_path(mod_t *mod, const mod_path_t *pt, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(pt);
     M_PARAM_ASSERT(pt->path && strlen(pt->path));
     M_PARAM_ASSERT(pt->events > 0);
     
-    return _register_src(mod, TYPE_PATH, pt, flags, userptr);
+    return _register_src(mod, M_SRC_TYPE_PATH, pt, flags, userptr);
 }
 
 int m_mod_deregister_path(mod_t *mod, const mod_path_t *pt) {
     M_PARAM_ASSERT(pt);
     M_PARAM_ASSERT(pt->path && strlen(pt->path));
     
-    return _deregister_src(mod, TYPE_PATH, (void *)pt);
+    return _deregister_src(mod, M_SRC_TYPE_PATH, (void *)pt);
 }
 
-int m_mod_register_pid(mod_t *mod, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr) {
+int m_mod_register_pid(mod_t *mod, const mod_pid_t *pid, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(pid && pid->pid > 0);
     
-    return _register_src(mod, TYPE_PID, pid, flags, userptr);
+    return _register_src(mod, M_SRC_TYPE_PID, pid, flags, userptr);
 }
 
 int m_mod_deregister_pid(mod_t *mod, const mod_pid_t *pid) {
     M_PARAM_ASSERT(pid && pid->pid > 0);
     
-    return _deregister_src(mod, TYPE_PID, (void *)pid);
+    return _deregister_src(mod, M_SRC_TYPE_PID, (void *)pid);
 }
 
-int m_mod_register_task(mod_t *mod, const mod_task_t *tid, const mod_src_flags flags, const void *userptr) {
+int m_mod_register_task(mod_t *mod, const mod_task_t *tid, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(tid && tid->fn);
     
-    return _register_src(mod, TYPE_TASK, tid, flags | SRC_ONESHOT, userptr); // force ONESHOT flag
+    return _register_src(mod, M_SRC_TYPE_TASK, tid, flags | M_SRC_ONESHOT, userptr); // force ONESHOT flag
 }
 
 int m_mod_deregister_task(mod_t *mod, const mod_task_t *tid) {
     M_PARAM_ASSERT(tid);
     
-    return _deregister_src(mod, TYPE_TASK, (void *)tid);
+    return _deregister_src(mod, M_SRC_TYPE_TASK, (void *)tid);
 }
 
 const char *m_mod_name(const mod_t *mod_self) {
@@ -708,8 +708,8 @@ int m_mod_dump(const mod_t *mod) {
         ctx_logger(c, mod, "\t],\n");
     }
     
-    /* Skip internal TYPE_PS */
-    for (int k = TYPE_FD; k < TYPE_END; k++) {
+    /* Skip internal M_SRC_TYPE_PS */
+    for (int k = M_SRC_TYPE_FD; k < M_SRC_TYPE_END; k++) {
         if (m_bst_length(mod->srcs[k]) > 0) {
             if (!closed_stats) {
                 ctx_logger(c, mod, "\t},\n");
@@ -726,21 +726,21 @@ int m_mod_dump(const mod_t *mod) {
                 
                 ctx_logger(c, mod, "\t{\n");
                 switch (t->type) {
-                case TYPE_FD:
+                case M_SRC_TYPE_FD:
                     ctx_logger(c, mod, "\t\t\"FD\": %d,\n", t->fd_src.fd);
                     break;
-                case TYPE_SGN:
+                case M_SRC_TYPE_SGN:
                     ctx_logger(c, mod, "\t\t\"SGN\": %d,\n", t->sgn_src.sgs.signo);
                     break;
-                case TYPE_TMR:
+                case M_SRC_TYPE_TMR:
                     ctx_logger(c, mod, "\t\t\"TMR_MS\": %lu,\n", t->tmr_src.its.ms);
                     ctx_logger(c, mod, "\t\t\"TMR_CID\": %d,\n", t->tmr_src.its.clock_id);
                     break;
-                case TYPE_PATH:
+                case M_SRC_TYPE_PATH:
                     ctx_logger(c, mod, "\t\t\"PATH\": \"%s\",\n", t->path_src.pt.path);
                     ctx_logger(c, mod, "\t\t\"EV\": %#x,\n", t->path_src.pt.events);
                     break;
-                case TYPE_PID:
+                case M_SRC_TYPE_PID:
                     ctx_logger(c, mod, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);
                     ctx_logger(c, mod, "\t\t\"EV\": %u,\n", t->pid_src.pid.events);
                     break;

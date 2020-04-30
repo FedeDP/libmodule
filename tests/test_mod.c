@@ -259,25 +259,25 @@ void test_mod_unbecome(void **state) {
 void test_mod_add_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_fd(mod, -1, SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_register_fd(mod, -1, M_SRC_FD_AUTOCLOSE, NULL);
     assert_false(ret == 0);
 }
 
 void test_mod_add_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_fd(NULL, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_register_fd(NULL, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
     assert_false(ret == 0);
 }
 
 void test_mod_add_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_fd(mod, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_register_fd(mod, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == 0);
     
     /* Try to register again */
-    ret = m_mod_register_fd(mod, STDIN_FILENO, SRC_FD_AUTOCLOSE, NULL);
+    ret = m_mod_register_fd(mod, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == -EEXIST);
 }
 
@@ -407,7 +407,7 @@ void test_mod_tell_NULL_msg(void **state) {
 void test_mod_tell(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_tell(mod, testRef, strdup("hi1!"), PS_AUTOFREE);
+    int ret = m_mod_tell(mod, testRef, strdup("hi1!"), M_PS_AUTOFREE);
     assert_true(ret == 0);
 }
 
@@ -474,7 +474,7 @@ static bool evaluate(void) {
 
 static void recv(const msg_t *msg, const void *userdata) {
     static int ctr = 0;
-    if (msg->type == TYPE_PS && msg->ps_msg->type == USER) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == USER) {
         ctr++;
         if (!strcmp((char *)msg->ps_msg->data, "hi3!")) {
             m_ctx_quit(test_ctx, ctr);

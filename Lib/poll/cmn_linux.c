@@ -24,12 +24,12 @@ static void create_timerfd(ev_src_t *tmp) {
     struct itimerspec timerValue = {{0}};
     timerValue.it_value.tv_sec = tmp->tmr_src.its.ms / 1000;
     timerValue.it_value.tv_nsec = (tmp->tmr_src.its.ms % 1000) * 1000 * 1000;
-    if (!(tmp->flags & SRC_ONESHOT)) {
+    if (!(tmp->flags & M_SRC_ONESHOT)) {
         /* Set interval */
         timerValue.it_interval.tv_sec = tmp->tmr_src.its.ms / 1000;
         timerValue.it_interval.tv_nsec = (tmp->tmr_src.its.ms % 1000) * 1000 * 1000;
     }
-    const int abs_fl = tmp->flags & SRC_TMR_ABSOLUTE ? TFD_TIMER_ABSTIME : 0;
+    const int abs_fl = tmp->flags & M_SRC_TMR_ABSOLUTE ? TFD_TIMER_ABSTIME : 0;
     timerfd_settime(tmp->tmr_src.f.fd, abs_fl, &timerValue, NULL);
 }
 
@@ -66,19 +66,19 @@ int poll_notify_task(ev_src_t *src) {
 
 void create_priv_fd(ev_src_t *tmp) {
     switch (tmp->type) {
-        case TYPE_TMR:
+        case M_SRC_TYPE_TMR:
             create_timerfd(tmp);
             break;
-        case TYPE_SGN:
+        case M_SRC_TYPE_SGN:
             create_signalfd(tmp);
             break;
-        case TYPE_PATH:
+        case M_SRC_TYPE_PATH:
             create_inotifyfd(tmp);
             break;
-        case TYPE_PID:
+        case M_SRC_TYPE_PID:
             create_pidfd(tmp);
             break;
-        case TYPE_TASK:
+        case M_SRC_TYPE_TASK:
             create_eventfd(tmp);
             break;
         default:

@@ -105,8 +105,8 @@ struct _src {
         pid_src_t   pid_src;
         task_src_t  task_src;
     };
-    mod_src_types type;
-    mod_src_flags flags;
+    m_src_types type;
+    m_src_flags flags;
     void *ev;                               // poll plugin defined data structure
     mod_t *mod;                             // ptr needed to map an event source to a self_t in poll_plugin
     const void *userptr;
@@ -115,7 +115,7 @@ struct _src {
 /* Struct that holds pubsub messaging, private. It keeps reference count */
 typedef struct {
     ps_msg_t msg;
-    mod_ps_flags flags;
+    m_ps_flags flags;
     ev_src_t *sub;
 } ps_priv_t;
 
@@ -144,7 +144,7 @@ struct _mod {
     void *fs;                               // FS module priv data. NULL if unsupported
     const char *name;                       // module's name
     const char *local_path;                 // For runtime loaded modules: path of module
-    m_bst_t *srcs[TYPE_END];                // module's event sources
+    m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     ctx_t *ctx;                             // Module's ctx
 };

@@ -36,7 +36,7 @@ static void destroy(void) {
  * Default poll callback
  */
 static void receive(const msg_t *msg, const void *userdata) {
-    if (msg->type == TYPE_PS) {
+    if (msg->type == M_SRC_TYPE_PS) {
         switch (msg->ps_msg->type) {
         case USER:
             if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
@@ -74,7 +74,7 @@ static void receive(const msg_t *msg, const void *userdata) {
 }
 
 static void receive_sleeping(const msg_t *msg, const void *userdata) {
-    if (msg->type == TYPE_PS) {
+    if (msg->type == M_SRC_TYPE_PS) {
         if (msg->ps_msg->type == USER) {
             if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
                 m_m_unbecome();

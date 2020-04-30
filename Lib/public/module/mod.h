@@ -40,31 +40,31 @@ _public_ int m_mod_unref(const mod_t *mod, mod_t **modref);
 _public_ int m_mod_become(mod_t *mod, const recv_cb new_recv);
 _public_ int m_mod_unbecome(mod_t *mod);
 
-_public_ int m_mod_tell(mod_t *mod, const mod_t *recipient, const void *message, const mod_ps_flags flags);
-_public_ int m_mod_publish(mod_t *mod, const char *topic, const void *message, const mod_ps_flags flags);
-_public_ int m_mod_broadcast(mod_t *mod, const void *message, const mod_ps_flags flags);
+_public_ int m_mod_tell(mod_t *mod, const mod_t *recipient, const void *message, const m_ps_flags flags);
+_public_ int m_mod_publish(mod_t *mod, const char *topic, const void *message, const m_ps_flags flags);
+_public_ int m_mod_broadcast(mod_t *mod, const void *message, const m_ps_flags flags);
 _public_ int m_mod_poisonpill(mod_t *mod, const mod_t *recipient);
 
 /* Event Sources management */
-_public_ int m_mod_register_fd(mod_t *mod, const int fd, const mod_src_flags flags, const void *userptr);
+_public_ int m_mod_register_fd(mod_t *mod, const int fd, const m_src_flags flags, const void *userptr);
 _public_ int m_mod_deregister_fd(mod_t *mod, const int fd);
 
-_public_ int m_mod_register_tmr(mod_t *mod, const mod_tmr_t *its, const mod_src_flags flags, const void *userptr);
+_public_ int m_mod_register_tmr(mod_t *mod, const mod_tmr_t *its, const m_src_flags flags, const void *userptr);
 _public_ int m_mod_deregister_tmr(mod_t *mod, const mod_tmr_t *its);
 
-_public_ int m_mod_register_sgn(mod_t *mod, const mod_sgn_t *its, const mod_src_flags flags, const void *userptr);
+_public_ int m_mod_register_sgn(mod_t *mod, const mod_sgn_t *its, const m_src_flags flags, const void *userptr);
 _public_ int m_mod_deregister_sgn(mod_t *mod, const mod_sgn_t *its);
 
-_public_ int m_mod_register_path(mod_t *mod, const mod_path_t *its, const mod_src_flags flags, const void *userptr);
+_public_ int m_mod_register_path(mod_t *mod, const mod_path_t *its, const m_src_flags flags, const void *userptr);
 _public_ int m_mod_deregister_path(mod_t *mod, const mod_path_t *its);
 
-_public_ int m_mod_register_pid(mod_t *mod, const mod_pid_t *pid, const mod_src_flags flags, const void *userptr);
+_public_ int m_mod_register_pid(mod_t *mod, const mod_pid_t *pid, const m_src_flags flags, const void *userptr);
 _public_ int m_mod_deregister_pid(mod_t *mod, const mod_pid_t *pid);
 
-_public_ int m_mod_register_task(mod_t *mod, const mod_task_t *tid, const mod_src_flags flags, const void *userptr);
+_public_ int m_mod_register_task(mod_t *mod, const mod_task_t *tid, const m_src_flags flags, const void *userptr);
 _public_ int m_mod_deregister_task(mod_t *mod, const mod_task_t *tid);
 
-_public_ int m_mod_register_sub(mod_t *mod, const char *topic, const mod_src_flags flags, const void *userptr);
+_public_ int m_mod_register_sub(mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr);
 _public_ int m_mod_deregister_sub(mod_t *mod, const char *topic);
 
 /* Generic event source registering functions */

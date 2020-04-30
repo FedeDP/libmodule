@@ -25,9 +25,9 @@ static void destroy(void) {
 }
 
 static void receive(const msg_t *msg, const void *userdata) {
-    if (msg->type != TYPE_PS) {
+    if (msg->type != M_SRC_TYPE_PS) {
         m_mod_log(mod, "received signal %d. Leaving.\n", msg->sgn_msg->signo);
-        m_mod_broadcast(mod, "Leave", PS_GLOBAL);
+        m_mod_broadcast(mod, "Leave", M_PS_GLOBAL);
         m_ctx_quit(m_mod_ctx(mod), 0);
     }
 }

@@ -120,7 +120,7 @@ static int recv_events(ctx_t *c, int timeout) {
     const int nfds = poll_wait(&c->ppriv, timeout);    
     for (int i = 0; i < nfds; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
-        if (p && p->type == TYPE_FD && p->mod == NULL) {
+        if (p && p->type == M_SRC_TYPE_FD && p->mod == NULL) {
             /* Received from fuse */
             fs_process(c);
             recved++;
@@ -141,12 +141,12 @@ static int recv_events(ctx_t *c, int timeout) {
             
             M_DEBUG("'%s' received %u type msg.\n", mod->name, msg.type);
             switch (msg.type) {
-            case TYPE_FD:
+            case M_SRC_TYPE_FD:
                 /* Received from FD */
                 fd_msg.fd = p->fd_src.fd;
                 msg.fd_msg = &fd_msg;
                 break;
-            case TYPE_PS:
+            case M_SRC_TYPE_PS:
                 /* Received on pubsub interface */
                 if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
                     M_DEBUG("Failed to read message: %s\n", strerror(errno));
@@ -155,31 +155,31 @@ static int recv_events(ctx_t *c, int timeout) {
                     p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
                 }
                 break;
-            case TYPE_SGN:
+            case M_SRC_TYPE_SGN:
                 if (poll_consume_sgn(&c->ppriv, i, p, &sgn_msg) == 0) {
                     sgn_msg.signo = p->sgn_src.sgs.signo;
                     msg.sgn_msg = &sgn_msg;
                 }
                 break;
-            case TYPE_TMR:
+            case M_SRC_TYPE_TMR:
                 if (poll_consume_tmr(&c->ppriv, i, p, &tm_msg) == 0) {
                     tm_msg.ms = p->tmr_src.its.ms;
                     msg.tmr_msg = &tm_msg;
                 }
                 break;
-            case TYPE_PATH:
+            case M_SRC_TYPE_PATH:
                 if (poll_consume_pt(&c->ppriv, i, p, &pt_msg) == 0) {
                     pt_msg.path = p->path_src.pt.path;
                     msg.pt_msg = &pt_msg;
                 }
                 break;
-            case TYPE_PID:
+            case M_SRC_TYPE_PID:
                 if (poll_consume_pid(&c->ppriv, i, p, &pid_msg) == 0) {
                     pid_msg.pid = p->pid_src.pid.pid;
                     msg.pid_msg = &pid_msg;
                 }
                 break;
-            case TYPE_TASK:
+            case M_SRC_TYPE_TASK:
                 if (poll_consume_task(&c->ppriv, i, p, &task_msg) == 0) {
                     task_msg.tid = p->task_src.tid.tid;
                     msg.task_msg = &task_msg;
@@ -197,7 +197,7 @@ static int recv_events(ctx_t *c, int timeout) {
              */
             if (msg.fd_msg) {
                 recved++;
-                if (msg.type != TYPE_PS || msg.ps_msg->type != MODULE_POISONPILL) {
+                if (msg.type != M_SRC_TYPE_PS || msg.ps_msg->type != MODULE_POISONPILL) {
                     run_pubsub_cb(mod, &msg, p);
                 } else {
                     M_DEBUG("PoisonPilling '%s'.\n", mod->name);
@@ -205,8 +205,8 @@ static int recv_events(ctx_t *c, int timeout) {
                 }
                 
                 /* Remove it if it was a oneshot event */
-                if (p && p->flags & SRC_ONESHOT) {
-                    if (p->type != TYPE_PS) {
+                if (p && p->flags & M_SRC_ONESHOT) {
+                    if (p->type != M_SRC_TYPE_PS) {
                         m_bst_remove(mod->srcs[p->type], p);
                     } else {
                         m_map_remove(mod->subscriptions, p->ps_src.topic);

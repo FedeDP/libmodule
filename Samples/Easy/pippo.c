@@ -24,7 +24,7 @@ static void m_mod_pre_start() {
 
 static bool init(void) {
     m_m_register_src(&((mod_sgn_t) { SIGINT }), 0, &myData);
-    m_m_register_src(&((mod_tmr_t) { CLOCK_MONOTONIC, 5000 }), SRC_ONESHOT, NULL);
+    m_m_register_src(&((mod_tmr_t) { CLOCK_MONOTONIC, 5000 }), M_SRC_ONESHOT, NULL);
     m_m_register_src(STDIN_FILENO, 0, NULL);
 #ifdef __linux__
     m_m_register_src(&((mod_path_t) { "/home/federico", IN_CREATE }), 0, &myData);
@@ -50,20 +50,20 @@ static void destroy(void) {
 }
 
 static void receive(const msg_t *msg, const void *userdata) {
-    if (msg->type != TYPE_PS) {
+    if (msg->type != M_SRC_TYPE_PS) {
         char c;
         
         /* Forcefully quit if we received a signal */
-        if (msg->type == TYPE_SGN) {
+        if (msg->type == M_SRC_TYPE_SGN) {
             c = 'q';
             int *data = (int *)userdata;
             if (data) {
                 m_m_log("Data is %d. Received %d.\n", *data, msg->sgn_msg->signo);
             }
-        } else if (msg->type == TYPE_TMR) {
+        } else if (msg->type == M_SRC_TYPE_TMR) {
             m_m_log("Timed out.\n");
             c = 'q';
-        } else if (msg->type == TYPE_PATH) {
+        } else if (msg->type == M_SRC_TYPE_PATH) {
             m_m_log("A file was created in %s.\n", msg->pt_msg->path);
             c = 10;
         } else {
@@ -102,18 +102,18 @@ static void receive(const msg_t *msg, const void *userdata) {
  * Use m_become(ready) to start using this second poll callback.
  */
 static void receive_ready(const msg_t *msg, const void *userdata) {
-    if (msg->type != TYPE_PS) {
+    if (msg->type != M_SRC_TYPE_PS) {
         char c = 10;
         
         /* Forcefully quit if we received a signal */
-        if (msg->type == TYPE_SGN) {
+        if (msg->type == M_SRC_TYPE_SGN) {
             c = 'q';
             m_m_log("Received %d. Quit.\n", msg->sgn_msg->signo);
-        } else if (msg->type == TYPE_FD) {
+        } else if (msg->type == M_SRC_TYPE_FD) {
             read(msg->fd_msg->fd, &c, sizeof(char));
-        } else if (msg->type == TYPE_TMR) {
+        } else if (msg->type == M_SRC_TYPE_TMR) {
             m_m_log("Timer expired.\n");
-        } else if (msg->type == TYPE_PATH) {
+        } else if (msg->type == M_SRC_TYPE_PATH) {
             m_m_log("A file was created in %s.\n", msg->pt_msg->path);
         }
         

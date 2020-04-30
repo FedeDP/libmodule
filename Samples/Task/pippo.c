@@ -37,7 +37,7 @@ static void destroy(void) {
 
 static void receive(const msg_t *msg, const void *userdata) {
     switch (msg->type) {
-    case TYPE_TMR: {
+    case M_SRC_TYPE_TMR: {
         int *data = (int *)userdata;
         if (*data == 5) {
             m_m_log("Timed out.\n");
@@ -49,7 +49,7 @@ static void receive(const msg_t *msg, const void *userdata) {
         }
         break;
     }
-    case TYPE_TASK:
+    case M_SRC_TYPE_TASK:
         m_m_log("Task id: %u ended with retval: %d\n", msg->task_msg->tid, msg->task_msg->retval);
         break;
     default:

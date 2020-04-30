@@ -36,7 +36,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     struct epoll_event *ev = (struct epoll_event *)tmp->ev;
     ev->data.ptr = tmp;
     ev->events = EPOLLIN;
-    if (tmp->flags & SRC_ONESHOT) {
+    if (tmp->flags & M_SRC_ONESHOT) {
         ev->events |= EPOLLONESHOT;
     }
     
@@ -65,7 +65,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
          * Automatically close internally used FDs 
          * for special internal fds 
          */
-        if (tmp->type > TYPE_FD) {
+        if (tmp->type > M_SRC_TYPE_FD) {
             close(fd);
             /* 
              * Reset to -1. Note that fd_src has same

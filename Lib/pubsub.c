@@ -11,17 +11,17 @@ static int tell_global(void *data, const char *key, void *value);
 static void ps_msg_dtor(void *data);
 static int tell_pubsub_msg(ps_priv_t *m, const mod_t *recipient, ctx_t *c);
 static int send_msg(mod_t *mod, const mod_t *recipient, const char *topic, 
-                    const void *message, const mod_ps_flags flags);
+                    const void *message, const m_ps_flags flags);
 
 extern int fs_notify(const msg_t *msg);
 
 static void subscribtions_dtor(void *data) {
     ev_src_t *sub = (ev_src_t *)data;
     regfree(&sub->ps_src.reg);
-    if (sub->flags & SRC_DUP) {
+    if (sub->flags & M_SRC_DUP) {
         memhook._free((void *)sub->ps_src.topic);
     }
-    if (sub->flags & SRC_AUTOFREE) {
+    if (sub->flags & M_SRC_AUTOFREE) {
         memhook._free((void *)sub->userptr);
     }
 }
@@ -95,7 +95,7 @@ static void ps_msg_dtor(void *data) {
     ps_priv_t *pubsub_msg = (ps_priv_t *)data;
     
     m_mem_unref(pubsub_msg->sub);
-    if (pubsub_msg->flags & PS_AUTOFREE) {
+    if (pubsub_msg->flags & M_PS_AUTOFREE) {
         memhook._free((void *)pubsub_msg->msg.data);
     }
     if (pubsub_msg->msg.sender) {
@@ -107,7 +107,7 @@ static void ps_msg_dtor(void *data) {
 static int tell_pubsub_msg(ps_priv_t *m, const mod_t *recipient, ctx_t *c) {    
     if (recipient) {
         tell_if(m, NULL, (mod_t *)recipient);
-    } else if (!(m->flags & PS_GLOBAL)) {
+    } else if (!(m->flags & M_PS_GLOBAL)) {
         m_map_iterate(c->modules, tell_if, m);
     } else {
         m_map_iterate(ctx, tell_global, m);
@@ -116,7 +116,7 @@ static int tell_pubsub_msg(ps_priv_t *m, const mod_t *recipient, ctx_t *c) {
 }
 
 static int send_msg(mod_t *mod, const mod_t *recipient, const char *topic, 
-                    const void *message, const mod_ps_flags flags) {
+                    const void *message, const m_ps_flags flags) {
     M_PARAM_ASSERT(message);
     M_MOD_CTX(mod);
     
@@ -151,7 +151,7 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
          */
         if (!data && m_mod_is(mod, RUNNING)) {
             M_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
-            msg_t msg = { .type = TYPE_PS, .ps_msg = &mm->msg };
+            msg_t msg = { .type = M_SRC_TYPE_PS, .ps_msg = &mm->msg };
             run_pubsub_cb(mod, &msg, mm->sub);
         } else {
             M_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
@@ -177,7 +177,7 @@ void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src) {
     /* Finally call user callback */
     cb(msg, src ? src->userptr : NULL);
 
-    if (msg->type == TYPE_PS) {
+    if (msg->type == M_SRC_TYPE_PS) {
         ps_priv_t *mm = (ps_priv_t *)msg->ps_msg;
         m_mem_unref(mm);
     }
@@ -211,7 +211,7 @@ int m_mod_unref(const mod_t *mod, mod_t **modref) {
     return 0;
 }
 
-int m_mod_register_sub(mod_t *mod, const char *topic, mod_src_flags flags, const void *userptr) {
+int m_mod_register_sub(mod_t *mod, const char *topic, m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(topic);
     
@@ -241,12 +241,12 @@ int m_mod_register_sub(mod_t *mod, const char *topic, mod_src_flags flags, const
         M_ALLOC_ASSERT(sub);
         
         ps_src_t *ps_src = &sub->ps_src;
-        sub->type = TYPE_PS;
+        sub->type = M_SRC_TYPE_PS;
         sub->flags = flags;
         sub->userptr = userptr;
         sub->mod = mod;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
-        ps_src->topic = sub->flags & SRC_DUP ? mem_strdup(topic) : topic;
+        ps_src->topic = sub->flags & M_SRC_DUP ? mem_strdup(topic) : topic;
         ret = m_map_put(mod->subscriptions, ps_src->topic, sub); // M_MAP_VAL_ALLOW_UPDATE -> this will dtor old elem before updating
         if (ret == 0) {
             fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
@@ -269,25 +269,25 @@ int m_mod_deregister_sub(mod_t *mod, const char *topic) {
     return ret;
 }
 
-int m_mod_tell(mod_t *mod, const mod_t *recipient, const void *message, const mod_ps_flags flags) {
+int m_mod_tell(mod_t *mod, const mod_t *recipient, const void *message, const m_ps_flags flags) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
     M_PARAM_ASSERT(mod->ctx == recipient->ctx);
 
     /* Eventually cleanup PS_GLOBAL flag */    
-    return send_msg(mod, recipient, NULL, message, flags & ~PS_GLOBAL);
+    return send_msg(mod, recipient, NULL, message, flags & ~M_PS_GLOBAL);
 }
 
-int m_mod_publish(mod_t *mod, const char *topic, const void *message, const mod_ps_flags flags) {
+int m_mod_publish(mod_t *mod, const char *topic, const void *message, const m_ps_flags flags) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(topic);
     
     /* Eventually cleanup PS_GLOBAL flag */    
-    return send_msg(mod, NULL, topic, message, flags & ~PS_GLOBAL);
+    return send_msg(mod, NULL, topic, message, flags & ~M_PS_GLOBAL);
 }
 
-int m_mod_broadcast(mod_t *mod, const void *message, const mod_ps_flags flags) {
+int m_mod_broadcast(mod_t *mod, const void *message, const m_ps_flags flags) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(message);
     

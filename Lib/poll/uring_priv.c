@@ -75,7 +75,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
                  * Automatically close internally used FDs 
                  * for special internal fds 
                  */
-                if (tmp->type > TYPE_FD) {
+                if (tmp->type > M_SRC_TYPE_FD) {
                     close(fd);
                     /* 
                      * Reset to -1. Note that fd_src has same
