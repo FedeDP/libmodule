@@ -13,7 +13,7 @@ include(GNUInstallDirs)
 find_package (Threads)
 
 # Find sources
-file(GLOB SOURCES Lib/*.c Lib/data_structs/*.c)
+file(GLOB SOURCES Lib/*.c Lib/structs/*.c)
 
 set(PKG_DEPS "-ldl ${CMAKE_THREAD_LIBS_INIT}")
 
