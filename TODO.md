@@ -134,6 +134,9 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename test_module to test_mod; rename all module tests to mod
 - [x] Rename test_context to test_ctx; rename all context tests to ctx
 - [x] Avoid direct inclusion of <module/commons.h>
+- [x] Split m_mem API from utils.c to its own source file
+- [x] Rename utils.c into priv.c
+- [x] Put thpool.c and mem.c into a new "utils" folder
 
 ### New ctx_register API
 
@@ -209,10 +212,6 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Add a th_pool implementation, public API
 - [x] Allow to pass m_thpool_t in mod_task_t structure; if !NULL, simply schedule the job on the pool
 - [ ] Add m_thpool_pause/resume functions
-
-- [x] Split m_mem API from utils.c to its own source file
-- [x] Rename utils.c into priv.c
-- [x] Put thpool.c and mem.c into a new "utils" folder
 - [x] add thpool example
 
 ### DOC
