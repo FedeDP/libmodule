@@ -223,7 +223,7 @@ int m_thpool_wait(m_thpool_t *pool, const bool wait_all) {
     
     pool->shutdown = wait_all ? SHUTDOWN_WAIT : SHUTDOWN_FORCE;
     
-    /* Wake up all worker threads */
+    /* Wake up all worker threads and unlock mutex */
     ret = pthread_cond_broadcast(&pool->notify) + pthread_mutex_unlock(&pool->lock);
     if (!ret) {
         /* Join all worker threads */
