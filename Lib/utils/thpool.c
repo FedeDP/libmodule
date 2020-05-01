@@ -6,7 +6,6 @@
  */
 
 #include "priv.h"
-#include <stdatomic.h>
 
 #define M_THREADS_ASSERT(pool, ret) \
     M_RET_ASSERT(!pool->shutdown, -EPERM); \
@@ -36,7 +35,7 @@ struct _thpool {
     unsigned int max_tasks;
     thpool_inited_t init_state;     /* Nobody writes this but us during thpool_new. No need to use an atomic */
     thpool_shutdown_t shutdown;
-    atomic_bool joinable;
+    bool joinable;
     pthread_mutex_t lock;
     pthread_cond_t notify;
     pthread_t *threads;
@@ -120,13 +119,13 @@ m_thpool_t *m_thpool_new(const uint8_t thread_count,
         if (pool->thread_count == thread_count) {
             pool->init_state |= INITED_STARTED;
             pool->max_tasks = max_tasks;
-            int joinable = true;
             if (attrs) {
                 int detached_state;
                 pthread_attr_getdetachstate(attrs, &detached_state);
-                joinable = detached_state == PTHREAD_CREATE_JOINABLE;
+                pool->joinable = detached_state == PTHREAD_CREATE_JOINABLE;
+            } else {
+                pool->joinable = true;
             }
-            pool->joinable = joinable;
         }
     } while (false);
     
@@ -215,6 +214,7 @@ ssize_t m_thpool_clear(m_thpool_t *pool) {
 int m_thpool_wait(m_thpool_t *pool, const bool wait_all) {
     M_PARAM_ASSERT(pool);
     M_THREADS_ASSERT(pool, -EPERM);
+    M_PARAM_ASSERT(pool->joinable);
     
     int ret = pthread_mutex_lock(&pool->lock);
     if (ret) {
