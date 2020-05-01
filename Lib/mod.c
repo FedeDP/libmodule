@@ -9,6 +9,7 @@ static int _pipe(mod_t *mod);
 static int init_pubsub_fd(mod_t *mod);
 static void src_priv_dtor(void *data);
 static void *task_thread(void *data);
+static int start_task(ev_src_t *src);
 
 static int _register_src(mod_t *mod, const m_src_types type, const void *src_data, 
                              const m_src_flags flags, const void *userptr);
@@ -145,6 +146,20 @@ static void *task_thread(void *data) {
     pthread_exit(NULL);
 }
 
+static int start_task(ev_src_t *src) {
+    if (src->task_src.tid.thpool) {
+        return m_thpool_add(src->task_src.tid.thpool, task_thread, src);
+    }
+    
+    /* Create detached */
+    pthread_attr_t tattr;
+    pthread_attr_init(&tattr);
+    pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+    int ret = pthread_create(&src->task_src.th, &tattr, task_thread, src);
+    pthread_attr_destroy(&tattr);
+    return ret;
+}
+
 static int _register_src(mod_t *mod, const m_src_types type, const void *src_data, 
                              const m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT(mod);
@@ -219,7 +234,7 @@ static int _register_src(mod_t *mod, const m_src_types type, const void *src_dat
             
             /* For type task: create task thread */
             if (ret == 0 && src->type == M_SRC_TYPE_TASK) {
-                ret = pthread_create(&src->task_src.th, NULL, task_thread, src);
+                ret = start_task(src);
             }
         }
         return !ret ? 0 : -errno;
@@ -277,12 +292,7 @@ static int taskcmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
     const mod_task_t *tid = (const mod_task_t *)my_data;
     
-    int diff = tid->tid - src->task_src.tid.tid;
-    if (diff == 0) {
-        pthread_cancel(src->task_src.th);
-        pthread_join(src->task_src.th, NULL);
-    }
-    return diff;
+    return tid->tid - src->task_src.tid.tid;;
 }
 
 static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {    
@@ -305,6 +315,11 @@ static int manage_fds(mod_t *mod, ctx_t *c, const int flag, const bool stop) {
                 ret = m_itr_rm(itr);
             } else {
                 ret = poll_set_new_evt(&c->ppriv, t, flag);
+                
+                /* For type task: create task thread now */
+                if (ret == 0 && t->type == M_SRC_TYPE_TASK && flag == ADD) {
+                    ret = start_task(t);
+                }
             }
         });
     }

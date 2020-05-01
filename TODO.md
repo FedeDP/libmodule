@@ -72,12 +72,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] Only use fd_src_t inside tmr_src_t/sgn_src_t etc etc on linux
 
-- [x] Add a new TYPE_TASK source that will run a task asynchronously and at end notify user through receive() callback
-- [x] m_module_deregister_task() should pthread_cancel() the thread
-- [ ] Add a th_pool implementation, public API (https://github.com/mbrossard/threadpool/blob/master/src/threadpool.c https://nachtimwald.com/2019/04/12/thread-pool-in-c/)
-- [ ] Allow to pass m_thpool_t in mod_task_t structure; if !NULL, simply schedule the job on the pool
-- [ ] fix m_module_deregister_task ?
-
 - [x] Rename TYPE_PT to TYPE_PATH and all its occurrencies
 - [x] Support SRC_DUP flags for path string
 
@@ -206,6 +200,20 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Expose itr_remove in itr API
 - [x] Expose itr_set in itr API (mbtree excluded)
 - [x] change itr_next() to return int and take double ptr
+
+### New thpool API
+- [x] Add a new TYPE_TASK source that will run a task asynchronously and at end notify user through receive() callback
+- [x] m_module_deregister_task() should pthread_cancel() the thread
+- [x] fix m_module_deregister_task -> ALWAYS CREATE THREADS DETACHED
+
+- [x] Add a th_pool implementation, public API
+- [x] Allow to pass m_thpool_t in mod_task_t structure; if !NULL, simply schedule the job on the pool
+- [ ] Add m_thpool_pause/resume functions
+
+- [x] Split m_mem API from utils.c to its own source file
+- [x] Rename utils.c into priv.c
+- [x] Put thpool.c and mem.c into a new "utils" folder
+- [x] add thpool example
 
 ### DOC
 

@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <regex.h>
 #include <string.h>
-#include <pthread.h>
 #include <errno.h>
 #include "mem.h"
+#include "thpool.h"
 #include "itr.h"
 
 #ifndef NDEBUG

@@ -1,5 +1,4 @@
-#include "poll_priv.h"
-#include "queue.h"
+#include "priv.h"
 
 typedef struct _elem {
     void *userptr;

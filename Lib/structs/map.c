@@ -3,7 +3,7 @@
  * https://github.com/DavidLeeds/hashmap
  */
 
-#include "poll_priv.h"
+#include "priv.h"
 
 #define MAP_SIZE_DEFAULT            (1 << 8)    /* 256 */
 #define MAP_SIZE_MOD(map, val)      ((val) & ((map)->table_size - 1))
