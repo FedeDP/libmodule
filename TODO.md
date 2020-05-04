@@ -211,12 +211,15 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Add a th_pool implementation, public API
 - [x] Allow to pass m_thpool_t in mod_task_t structure; if !NULL, simply schedule the job on the pool
-- [ ] Add m_thpool_pause/resume functions
 - [x] add thpool example
+- [x] Drop max_tasks param in m_thpool_new: users can use m_thpool_length() before calling m_thpool_add()
+- [x] Drop bool wait_all flag in m_thpool_wait; by default, any task is waited. If user wish to wait only current tasks, they should call m_thpool_clear() before
 
 ### DOC
 
 - [ ] Fully rewrite documentation per-namespace
+- [ ] Add build options doc
+- [ ] Auto-generate API doc, using eg: https://github.com/jnikula/hawkmoth or with doxygen (and drop rtd) https://goseeky.wordpress.com/2017/07/22/documentation-101-doxygen-with-github-pages/
 
 ### Generic
 
@@ -239,6 +242,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Add a stats_t type and use that as parameter to modules_trim?
 - [x] Add module_get_stats() API
 - [x] Split "recv_msg/sent_msg" from stats.msg_ctr
+- [ ] Expose recv_msg/sent_msg in stats_t and use them as threshold too in m_ctx_trim
 
 - [x] Actually check userhook: at least init() and receive() must be defined
 - [x] Let users avoid passing other callbacks
@@ -323,10 +327,8 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Create new "main.c" file with libmodule_init(), libmodule_end(), weak main() and m_pre_start()
 
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
-- [ ] Update examples
-- [ ] Update tests
-- [ ] Update DOC!
-- [ ] Add build options doc
+- [x] Update examples
+- [x] Update tests
 
 ## Ideas
 

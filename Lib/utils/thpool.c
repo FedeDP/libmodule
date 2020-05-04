@@ -9,13 +9,7 @@
 
 #define M_THREADS_ASSERT(pool, ret) \
     M_RET_ASSERT(!pool->shutdown, -EPERM); \
-    M_RET_ASSERT(pool->init_state & INITED_STARTED, -EPERM);
-
-typedef enum {
-    SHUTDOWN_NO,
-    SHUTDOWN_FORCE,
-    SHUTDOWN_WAIT
-} thpool_shutdown_t;    
+    M_RET_ASSERT(pool->init_state & INITED_STARTED, -EPERM);  
 
 typedef enum {
     INITED_THREADS  = 0x01,     // threads are allocated
@@ -32,9 +26,8 @@ typedef struct {
 
 struct _thpool {
     uint8_t thread_count;
-    unsigned int max_tasks;
     thpool_inited_t init_state;     /* Nobody writes this but us during thpool_new. No need to use an atomic */
-    thpool_shutdown_t shutdown;
+    bool shutdown;
     bool joinable;
     pthread_mutex_t lock;
     pthread_cond_t notify;
@@ -59,9 +52,7 @@ static void *thpool_thread(void *thpool) {
             pthread_cond_wait(&(pool->notify), &(pool->lock));
         }
         
-        if (pool->shutdown == SHUTDOWN_FORCE || 
-           (pool->shutdown == SHUTDOWN_WAIT && m_queue_length(pool->tasks) == 0)) {
-
+        if (pool->shutdown && m_queue_length(pool->tasks) == 0) {
             break;
         }
             
@@ -74,8 +65,7 @@ static void *thpool_thread(void *thpool) {
     pthread_exit(NULL);
 }
 
-m_thpool_t *m_thpool_new(const uint8_t thread_count, 
-                         const unsigned int max_tasks, const pthread_attr_t *attrs) {
+m_thpool_t *m_thpool_new(const uint8_t thread_count, const pthread_attr_t *attrs) {
     M_RET_ASSERT(thread_count > 0, NULL);
     
     m_thpool_t *pool = memhook._calloc(1, sizeof(m_thpool_t));
@@ -118,7 +108,6 @@ m_thpool_t *m_thpool_new(const uint8_t thread_count,
         
         if (pool->thread_count == thread_count) {
             pool->init_state |= INITED_STARTED;
-            pool->max_tasks = max_tasks;
             if (attrs) {
                 int detached_state;
                 pthread_attr_getdetachstate(attrs, &detached_state);
@@ -146,16 +135,12 @@ int m_thpool_add(m_thpool_t *pool, m_thpool_task task, void *arg) {
         return ret;
     }
         
-    if (pool->max_tasks == 0 || m_queue_length(pool->tasks) < pool->max_tasks) {
-        /* Add task to queue */
-        thpool_task_t *new_task = memhook._calloc(1, sizeof(thpool_task_t));
-        new_task->fn = task;
-        new_task->arg = arg;
-        m_queue_enqueue(pool->tasks, new_task);
-        ret = pthread_cond_signal(&pool->notify);
-    } else {
-        ret = -EBUSY;
-    }
+    /* Add task to queue */
+    thpool_task_t *new_task = memhook._calloc(1, sizeof(thpool_task_t));
+    new_task->fn = task;
+    new_task->arg = arg;
+    m_queue_enqueue(pool->tasks, new_task);
+    ret = pthread_cond_signal(&pool->notify);
 
     const int unlock_ret = pthread_mutex_unlock(&pool->lock);
     if (unlock_ret == 0) {
@@ -198,20 +183,16 @@ ssize_t m_thpool_clear(m_thpool_t *pool) {
         return ret;
     }
     
-    ssize_t len = m_queue_length(pool->tasks);
     ret = m_queue_clear(pool->tasks);
     
     const int unlock_ret = pthread_mutex_unlock(&pool->lock);
     if (unlock_ret == 0) {
-        if (ret == 0) {
-            return len;
-        }
         return ret;
     }
     return unlock_ret;
 }
 
-int m_thpool_wait(m_thpool_t *pool, const bool wait_all) {
+int m_thpool_wait(m_thpool_t *pool) {
     M_PARAM_ASSERT(pool);
     M_THREADS_ASSERT(pool, -EPERM);
     M_PARAM_ASSERT(pool->joinable);
@@ -221,7 +202,7 @@ int m_thpool_wait(m_thpool_t *pool, const bool wait_all) {
         return ret;
     }
     
-    pool->shutdown = wait_all ? SHUTDOWN_WAIT : SHUTDOWN_FORCE;
+    pool->shutdown = true;
     
     /* Wake up all worker threads and unlock mutex */
     ret = pthread_cond_broadcast(&pool->notify) + pthread_mutex_unlock(&pool->lock);
