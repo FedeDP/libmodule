@@ -333,6 +333,20 @@ int m_ctx_fd(const ctx_t *c) {
     return dup(poll_get_fd(&c->ppriv));
 }
 
+int m_ctx_set_userdata(ctx_t *c, const void *userdata) {
+    M_CTX_ASSERT(c);
+    
+    c->userdata = userdata;
+    return 0;
+}
+
+const void *m_ctx_get_userdata(const ctx_t *c) {
+    M_RET_ASSERT(c, NULL);
+    M_RET_ASSERT(c->th_id == pthread_self(), NULL);
+    
+    return c->userdata;
+}
+
 const char *m_ctx_name(const ctx_t *c) {
     M_RET_ASSERT(c, NULL);
     M_RET_ASSERT(c->th_id == pthread_self(), NULL);

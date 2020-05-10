@@ -166,6 +166,9 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename ASSERT macros as M_CTX_ASSERT, M_MOD_ASSERT, M_ASSERT, M_RET_ASSERT etc etc,,,
 - [x] Add a MOD_CTX_ASSERT(c) that calls MOD_TH_ASSERT too!
 
+- [x] Add m_ctx_set/get_userdata
+- [x] Pass context userdata as data for PS system messages
+
 - [x] Update tests
 - [x] Update samples
 - [x] Updated README example

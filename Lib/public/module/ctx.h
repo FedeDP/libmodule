@@ -14,6 +14,10 @@ _public_ int m_ctx_quit(ctx_t *c, const uint8_t quit_code);
 
 _public_ int m_ctx_fd(const ctx_t *c);
 _public_ _pure_ const char *m_ctx_name(const ctx_t *c);
+
+_public_ int m_ctx_set_userdata(ctx_t *c, const void *userdata);
+_public_ const void *m_ctx_get_userdata(const ctx_t *c);
+
 _public_ int m_ctx_dispatch(ctx_t *c);
 
 _public_ int m_ctx_dump(const ctx_t *c);

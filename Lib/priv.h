@@ -161,6 +161,7 @@ struct _ctx {
     m_ctx_flags flags;                      // Context's flags
     pthread_t th_id;                        // Main context's thread
     void *fs;                               // FS context handler. Null if unsupported
+    const void *userdata;                   // Context's user defined data
 };
 
 /* Defined in module.c */
