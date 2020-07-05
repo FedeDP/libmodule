@@ -3,12 +3,17 @@
 
 /** Actor-like PubSub interface **/
 
+#define M_SRC_PS_PRIO_SIZE      5
+#define M_SRC_PS_PRIO_MASK      (M_SRC_PS_PRIO_HIGHEST << 1) - 1
+
 static void subscribtions_dtor(void *data);
 static ev_src_t *fetch_sub(mod_t *mod, const char *topic);
 static int tell_if(void *data, const char *key, void *value);
 static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub);
 static int tell_global(void *data, const char *key, void *value);
 static void ps_msg_dtor(void *data);
+static int get_prio_flag(const m_src_flags flag);
+static int tell_subscribers(void *data, const char *key, void *value);
 static int tell_pubsub_msg(ps_priv_t *m, const mod_t *recipient, ctx_t *c);
 static int send_msg(mod_t *mod, const mod_t *recipient, const char *topic, 
                     const void *message, const m_ps_flags flags);
@@ -52,12 +57,12 @@ found:
 static int tell_if(void *data, const char *key, void *value) {
     mod_t *mod = (mod_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
-    ev_src_t *sub = NULL;
+    ev_src_t *sub = msg->msg.topic ? (ev_src_t *)key : NULL;            // key is indeed a subscription when we are publishing (check tell_subscribers()) !!
 
     if (m_mod_is(mod, RUNNING | PAUSED) &&                              // mod is running or paused
         ((msg->msg.type != USER && msg->msg.sender != mod) ||           // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
-        (!msg->msg.topic || (sub = fetch_sub(mod, msg->msg.topic)))))) {
+        (!msg->msg.topic || sub)))) {
         
         M_DEBUG("Telling a message to '%s'\n", mod->name);
         ps_priv_t *m = alloc_ps_msg(msg, sub);
@@ -73,12 +78,12 @@ static int tell_if(void *data, const char *key, void *value) {
 
 static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub) {
     ps_priv_t *m = m_mem_new(sizeof(ps_priv_t), ps_msg_dtor);
-    if (m) {
+    if (m) {        
         memcpy(m, msg, sizeof(ps_priv_t));
         if (m->msg.sender) {
             m_mem_ref((void *)m->msg.sender); // keep module alive until message is dispatched
         }
-        m->sub = m_mem_ref(sub);
+        m->sub = m_mem_ref(sub);        
     }
     return m;
 }
@@ -87,8 +92,7 @@ static int tell_global(void *data, const char *key, void *value) {
     ctx_t *c = (ctx_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
     
-    m_map_iterate(c->modules, tell_if, msg);
-    return 0;
+    return m_map_iterate(c->modules, tell_if, msg);
 }
 
 static void ps_msg_dtor(void *data) {
@@ -103,14 +107,56 @@ static void ps_msg_dtor(void *data) {
     }
 }
 
+static inline int get_prio_flag(const m_src_flags flag) {
+    /* Remove generic src flags (>> 8) and apply PRIO mask */
+    return (flag >> 8) & M_SRC_PS_PRIO_MASK;
+}
+
+static int tell_subscribers(void *data, const char *key, void *value) {
+    ctx_t *c = (ctx_t *)value;
+    ps_priv_t *msg = (ps_priv_t *)data;
+    
+    m_queue_t *prio_subs[M_SRC_PS_PRIO_SIZE];
+    for (int i = 0; i < M_SRC_PS_PRIO_SIZE; i++) {
+        prio_subs[i] = m_queue_new(NULL);
+    }
+    
+    m_itr_foreach(c->modules, {
+        mod_t *mod = m_itr_get(itr);
+        ev_src_t *sub = NULL;
+        
+        if (m_mod_is(mod, RUNNING | PAUSED) && (sub = fetch_sub(mod, msg->msg.topic))) {
+            const int idx = __builtin_ctz(get_prio_flag(sub->flags)); // count trailing zeroes
+            m_queue_enqueue(prio_subs[idx], sub);
+        }
+    });
+    
+    for (int i = M_SRC_PS_PRIO_SIZE - 1; i >= 0; i--) {
+        m_itr_foreach(prio_subs[i], {
+            ev_src_t *sub = m_itr_get(itr);
+            tell_if(msg, (char *)sub, sub->mod);
+        });
+        m_queue_free(&prio_subs[i]);
+    }
+}
 
 static int tell_pubsub_msg(ps_priv_t *m, const mod_t *recipient, ctx_t *c) {    
-    if (recipient) {
+    if (recipient) { // it is a direct tell
         tell_if(m, NULL, (mod_t *)recipient);
     } else if (!(m->flags & M_PS_GLOBAL)) {
-        m_map_iterate(c->modules, tell_if, m);
+        /* Local Broadcast or SYSTEM messages */
+        if (m->msg.type != USER || !m->msg.topic) {
+            m_map_iterate(c->modules, tell_if, m);
+        } else {
+            tell_subscribers(m, NULL, c);
+        }
     } else {
-        m_map_iterate(ctx, tell_global, m);
+        /* Global Broadcast or SYSTEM messages */
+        if (m->msg.type != USER || !m->msg.topic) {
+            m_map_iterate(ctx, tell_global, m);
+        } else {
+            m_map_iterate(ctx, tell_subscribers, m);
+        }
     }
     return 0;
 }
@@ -211,7 +257,7 @@ int m_mod_unref(const mod_t *mod, mod_t **modref) {
     return 0;
 }
 
-int m_mod_register_sub(mod_t *mod, const char *topic, m_src_flags flags, const void *userptr) {
+int m_mod_register_sub(mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(topic);
     
@@ -243,6 +289,10 @@ int m_mod_register_sub(mod_t *mod, const char *topic, m_src_flags flags, const v
         ps_src_t *ps_src = &sub->ps_src;
         sub->type = M_SRC_TYPE_PS;
         sub->flags = flags;
+        /* No priority set, default to NORM priority */
+        if (get_prio_flag(sub->flags) == 0) {
+            sub->flags |= M_SRC_PS_PRIO_NORM;
+        }
         sub->userptr = userptr;
         sub->mod = mod;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));

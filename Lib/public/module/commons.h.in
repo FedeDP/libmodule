@@ -57,17 +57,19 @@ typedef struct _thpool m_thpool_t;
 
 /* Modules flags */
 typedef enum {
-    M_MOD_NAME_DUP      = 0x01,         // Should module's name be strdupped?
-    M_MOD_NAME_AUTOFREE = 0x02,         // Should module's name be autofreed?
-    M_MOD_ALLOW_REPLACE = 0x04,         // Can module be replaced by another module with same name?
-    M_MOD_PERSIST       = 0x08,         // Module cannot be deregistered by directly call to m_mod_deregister (or by FS delete) while its context is looping
+    M_MOD_NAME_DUP          = 0x01,         // Should module's name be strdupped?
+    M_MOD_NAME_AUTOFREE     = 0x02,         // Should module's name be autofreed?
+    M_MOD_ALLOW_REPLACE     = 0x04,         // Can module be replaced by another module with same name?
+    M_MOD_PERSIST           = 0x08,         // Module cannot be deregistered by directly call to m_mod_deregister (or by FS delete) while its context is looping
+    M_MOD_USERDATA_AUTOFREE = 0x10          // Automatically free module userdata upon deregister
 } m_mod_flags;
 
 /* Context flags */
 typedef enum {
-    M_CTX_NAME_DUP      = 0x01,         // Should ctx's name be strdupped? (only if a ctx is created during a register)
-    M_CTX_NAME_AUTOFREE = 0x02,         // Should ctx's name be autofreed? (only if a ctx is created during a register)
-    M_CTX_PERSIST       = 0x03          // Normally, ctx is automatically destroyed when there are no modules in it anymore. With this option, context is kept alive untile m_ctx_deregister() is called.
+    M_CTX_NAME_DUP          = 0x01,         // Should ctx's name be strdupped? (only if a ctx is created during a register)
+    M_CTX_NAME_AUTOFREE     = 0x02,         // Should ctx's name be autofreed? (only if a ctx is created during a register)
+    M_CTX_PERSIST           = 0x04,         // Normally, ctx is automatically destroyed when there are no modules in it anymore. With this option, context is kept alive until m_ctx_deregister() is called.
+    M_CTX_USERDATA_AUTOFREE = 0x08          // Automatically free ctx userdata upon deregister
 } m_ctx_flags;
 
 /* Modules states */
@@ -94,10 +96,15 @@ typedef enum {
  * Then, each source type has 8 bits reserved for its flags.
  */
 #define M_FLAG_SHIFT(type, val)   val << (8 * (type + 1))
-typedef enum { 
+typedef enum {
     M_SRC_AUTOFREE        =       0x01, // Automatically free userdata upon deregistation.
     M_SRC_ONESHOT         =       0x02, // Run just once then automatically deregister source.
     M_SRC_DUP             =       0x04, // Duplicate PubSub topic, source fd or source path.
+    M_SRC_PS_PRIO_LOWEST  =       M_FLAG_SHIFT(M_SRC_TYPE_PS, 0x01), // PubSub subscription low priority
+    M_SRC_PS_PRIO_LOW     =       M_FLAG_SHIFT(M_SRC_TYPE_PS, 0x02), // PubSub subscription low priority
+    M_SRC_PS_PRIO_NORM    =       M_FLAG_SHIFT(M_SRC_TYPE_PS, 0x04), // PubSub subscription mid priority (default)
+    M_SRC_PS_PRIO_HIGH    =       M_FLAG_SHIFT(M_SRC_TYPE_PS, 0x08), // PubSub subscription high priority
+    M_SRC_PS_PRIO_HIGHEST =       M_FLAG_SHIFT(M_SRC_TYPE_PS, 0x10), // PubSub subscription high priority
     M_SRC_FD_AUTOCLOSE    =       M_FLAG_SHIFT(M_SRC_TYPE_FD, 0x01), // Automatically close fd upon deregistation.
     M_SRC_TMR_ABSOLUTE    =       M_FLAG_SHIFT(M_SRC_TYPE_TMR, 0x01) // Absolute timer
 } m_src_flags;
@@ -106,8 +113,8 @@ typedef enum {
  * Module's pubsub API flags (module_tell(), module_publish(), module_broadcast())
  */
 typedef enum {
-    M_PS_AUTOFREE = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_msg ref counter goes to 0)
-    M_PS_GLOBAL   = 0x02,     // Only useful for module_broadcast. Broadcast a message to every context.
+    M_PS_AUTOFREE   = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_msg ref counter goes to 0)
+    M_PS_GLOBAL     = 0x02      // Only useful for module_broadcast. Broadcast a message to any context.
 } m_ps_flags;
 
 /* module_register_src() request special types. */
@@ -198,7 +205,7 @@ typedef struct {
 typedef bool (*init_cb)(void);
 typedef bool (*eval_cb)(void);
 typedef void (*recv_cb)(const msg_t *const msg, const void *userdata);
-typedef void (*destroy_cb)(void);
+typedef void (*deinit_cb)(void);
 
 /* Logger callback */
 typedef void (*log_cb)(const mod_t *ref, const char *fmt, va_list args);
@@ -214,7 +221,7 @@ typedef struct {
     init_cb init;                           // module's init function
     eval_cb eval;                           // module's state changed function
     recv_cb recv;                           // module's recv function
-    destroy_cb destroy;                     // module's destroy function
+    deinit_cb deinit;                       // module's deinit function
 } userhook_t;
 
 /* Struct that holds user defined memory functions */

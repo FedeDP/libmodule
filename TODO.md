@@ -124,6 +124,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [ ] Rename memhook_t and its callbacks
 - - [ ] Rename stats_t to m_stats_t
 - - [x] Rename exposed flags
+- - [ ] Rename init/deinit/check etc etc to on_start(), on_stop(), should_register() etc etc...
+- [ ] Rename pubsub.c to ps.c
 - [x] Rename MODULE() to M_MOD()
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
 - [x] Rename module_cmn.h to commons.h
@@ -224,6 +226,27 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Add build options doc
 - [ ] Auto-generate API doc, using eg: https://github.com/jnikula/hawkmoth or with doxygen (and drop rtd) https://goseeky.wordpress.com/2017/07/22/documentation-101-doxygen-with-github-pages/
 
+### Remaining fixes/Improvements
+- [ ] Expose recv_msg/sent_msg in stats_t and use them as threshold too in m_ctx_trim
+- [ ] Fix fetch_ms()! Only count actions as actions triggered by API call (ie: user called an API function on the module)
+
+- [x] Improve init/destroy: if init() gets called at each module (re)start() we need a counterpart, eg: deinit(), called at each stop().
+- [x] Then drop destroy() API, useless
+
+- [x] Add M_MOD_USERDATA_AUTOFREE field to automatically free userdata at module deregister
+- [x] Add a M_CTX_USERDATA_AUTOFREE field to automatically free context userdata at context deregister
+- [ ] Allow to pass an userdata pointer in module_register and ctx_register()
+
+- [x] Add support for priority based subscribe? When publishing then create a list of recipients from highest priority to lower, then for each element in the list tell it the message
+
+### Module permissions management
+- [ ] module_register() and m_ctx_load() to take a permission bitmask (m_mod_perm_flags): eg
+• perm_pubsub 1
+• perm_load 2
+• perm_quit 4
+• any other?
+- [ ] fs: expose module permissions through node permissions (eg: 777, 555...) ??? 
+
 ### Generic
 
 - [x] Finally avoid injecting _self into file-global variables
@@ -245,7 +268,6 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Add a stats_t type and use that as parameter to modules_trim?
 - [x] Add module_get_stats() API
 - [x] Split "recv_msg/sent_msg" from stats.msg_ctr
-- [ ] Expose recv_msg/sent_msg in stats_t and use them as threshold too in m_ctx_trim
 
 - [x] Actually check userhook: at least init() and receive() must be defined
 - [x] Let users avoid passing other callbacks
@@ -313,7 +335,6 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Fix modules_ctx_dispatch() to just reutrn number of dispatched messages (or -errno)
 - [x] Fix modules_ctx_fd() to just reutrn context's fd (or -errno)
-- [ ] Fix fetch_ms()! Only count actions as actions triggered by API call (ie: user called an API function on the module)
 - [x] Fix: actually check that modules_prestart did not modify memhook before overriding it in libmodule_init()
 
 - [x] Only allow to call libmodule API from same thread in which modules/contexts were registered [...]

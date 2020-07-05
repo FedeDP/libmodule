@@ -59,6 +59,10 @@ static void ctx_dtor(void *data) {
     if (context->flags & M_CTX_NAME_AUTOFREE) {
         memhook._free((void *)context->name);
     }
+    
+    if (context->flags & M_CTX_USERDATA_AUTOFREE) {
+        memhook._free((void *)context->userdata);
+    }
 }
 
 static void default_logger(const mod_t *mod, const char *fmt, va_list args) {

@@ -10,11 +10,11 @@
     static bool check(void); \
     static bool eval(void); \
     static void receive(const msg_t *const msg, const void *userdata); \
-    static void destroy(void); \
+    static void deinit(void); \
     static inline mod_t **get_mod() { static mod_t *_mod = NULL; return &_mod; } \
     static void _ctor4_ m_mod_ctor(void) { \
         if (check()) { \
-            userhook_t hook = { init, eval, receive, destroy }; \
+            userhook_t hook = { init, eval, receive, deinit }; \
             m_mod_register(name, NULL, get_mod(), &hook, 0); \
         } \
     } \

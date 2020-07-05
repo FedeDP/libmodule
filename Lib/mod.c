@@ -64,6 +64,10 @@ static void module_dtor(void *data) {
         if (mod->flags & M_MOD_NAME_AUTOFREE) {
             memhook._free((void *)mod->name);
         }
+        
+        if (mod->flags & M_MOD_USERDATA_AUTOFREE) {
+            memhook._free((void *)mod->userdata);
+        }
     }
 }
 
@@ -397,9 +401,14 @@ int stop(mod_t *mod, const bool stopping) {
      * When module gets stopped, its write-end pubsub fd is closed too 
      * Read-end is already closed by manage_fds().
      * Moreover, its subscriptions are cleared.
+     * 
+     * Finally, deinit() callback is called.
      */
     if (stopping) {
         reset_module(mod);
+        if (mod->hook.deinit) {
+            mod->hook.deinit();
+        }
     }
     
     M_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
@@ -518,10 +527,6 @@ int m_mod_deregister(mod_t **mod) {
         * neither it can be ref'd through module_ref.
         */
         *mod = NULL;
-        
-        if (m->hook.destroy) {
-            m->hook.destroy();
-        }
     });
     
     /* Destroy context if needed */

@@ -45,7 +45,7 @@ static bool eval(void) {
     return true;
 }
 
-static void destroy(void) {
+static void deinit(void) {
     m_m_unref(&doggo);
 }
 

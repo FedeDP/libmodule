@@ -164,12 +164,12 @@ struct _ctx {
     const void *userdata;                   // Context's user defined data
 };
 
-/* Defined in module.c */
+/* Defined in mod.c */
 int evaluate_module(void *data, const char *key, void *value);
 int start(mod_t *mod, const bool starting);
 int stop(mod_t *mod, const bool stopping);
 
-/* Defined in context.c */
+/* Defined in ctx.c */
 ctx_t *check_ctx(const char *ctx_name);
 void ctx_logger(const ctx_t *c, const mod_t *mod, const char *fmt, ...);
 
@@ -186,7 +186,7 @@ void fetch_ms(uint64_t *val, uint64_t *ctr);
 /* Defined in map.c */
 void *map_peek(const m_map_t *m);
 
-/* Gglobal variables are defined in modules.c */
+/* Gglobal variables are defined in main.c */
 extern m_map_t *ctx;
 extern memhook_t memhook;
 extern pthread_mutex_t mx;

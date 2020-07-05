@@ -48,7 +48,7 @@ static bool eval(void) {
  * Destroyer function, called at module unload (at end of program).
  * Note that any module's fds are automatically closed for you.
  */
-static void destroy(void) {
+static void deinit(void) {
 
 }
 
