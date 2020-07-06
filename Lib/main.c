@@ -35,3 +35,20 @@ static void libmodule_deinit(void) {
     m_map_free(&ctx);
     pthread_mutex_destroy(&mx);
 }
+
+/** Public API **/
+
+int m_set_memhook(const memhook_t *hook) {
+    if (!ctx) {
+        if (hook) {
+            M_ASSERT(hook->_malloc, "NULL malloc fn.", -1);
+            M_ASSERT(hook->_realloc, "NULL realloc fn.", -1);
+            M_ASSERT(hook->_calloc, "NULL calloc fn.", -1);
+            M_ASSERT(hook->_free, "NULL free fn.", -1);
+            memcpy(&memhook, hook, sizeof(memhook_t));
+            return 0;
+        }
+        return -EINVAL;
+    }
+    return -EPERM;
+}

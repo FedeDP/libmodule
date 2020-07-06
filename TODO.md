@@ -222,6 +222,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 ### DOC
 
+- [ ] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
 - [ ] Fully rewrite documentation per-namespace
 - [ ] Add build options doc
 - [ ] Auto-generate API doc, using eg: https://github.com/jnikula/hawkmoth or with doxygen (and drop rtd) https://goseeky.wordpress.com/2017/07/22/documentation-101-doxygen-with-github-pages/
@@ -349,6 +350,8 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Drop Queue from pubsub messages
 
 - [x] Create new "main.c" file with libmodule_init(), libmodule_end(), weak main() and m_pre_start()
+- [x] Move m_set_memhook in main.c
+- [x] do not lock any mutex
 
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [x] Update examples

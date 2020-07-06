@@ -256,29 +256,6 @@ void inline ctx_logger(const ctx_t *c, const mod_t *mod, const char *fmt, ...) {
 
 /** Public API **/
 
-int m_set_memhook(const memhook_t *hook) {
-    /* 
-     * Protect global variables: 
-     * in this case, ensure memhook is correctly filled
-     * when called by multiple threads.
-     */
-    pthread_mutex_lock(&mx);
-    if (hook) {
-        M_ASSERT(hook->_malloc, "NULL malloc fn.", -1);
-        M_ASSERT(hook->_realloc, "NULL realloc fn.", -1);
-        M_ASSERT(hook->_calloc, "NULL calloc fn.", -1);
-        M_ASSERT(hook->_free, "NULL free fn.", -1);
-        memcpy(&memhook, hook, sizeof(memhook_t));
-    } else {
-        memhook._malloc = malloc;
-        memhook._realloc = realloc;
-        memhook._calloc = calloc;
-        memhook._free = free;
-    }
-    pthread_mutex_unlock(&mx);
-    return 0;
-}
-
 int m_ctx_register(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
     M_PARAM_ASSERT(ctx_name);
     M_PARAM_ASSERT(c);
