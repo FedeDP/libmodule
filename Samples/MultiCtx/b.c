@@ -34,5 +34,5 @@ static void receive(const msg_t *msg, const void *userdata) {
 
 void create_module_B(ctx_t *c) {
     userhook_t hook = { init, eval, receive, destroy };
-    m_mod_register("B", c, &mod, &hook, 0);
+    m_mod_register("B", c, &mod, &hook, 0, NULL);
 }

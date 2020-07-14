@@ -236,7 +236,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Add M_MOD_USERDATA_AUTOFREE field to automatically free userdata at module deregister
 - [x] Add a M_CTX_USERDATA_AUTOFREE field to automatically free context userdata at context deregister
-- [ ] Allow to pass an userdata pointer in module_register and ctx_register()
+- [x] Allow to pass an userdata pointer in module_register and ctx_register()
 
 - [x] Add support for priority based subscribe? When publishing then create a list of recipients from highest priority to lower, then for each element in the list tell it the message
 

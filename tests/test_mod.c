@@ -20,7 +20,7 @@ void test_mod_register_NULL_name(void **state) {
     (void) state; /* unused */
 
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    int ret = m_mod_register(NULL, test_ctx, &mod, &hook, 0);
+    int ret = m_mod_register(NULL, test_ctx, &mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(mod);
 }
@@ -29,7 +29,7 @@ void test_mod_register_NULL_self(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    int ret = m_mod_register("testName", test_ctx, NULL, &hook, 0);
+    int ret = m_mod_register("testName", test_ctx, NULL, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(mod);
 }
@@ -37,7 +37,7 @@ void test_mod_register_NULL_self(void **state) {
 void test_mod_register_NULL_hook(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register("testName", test_ctx, &mod, NULL, 0);    
+    int ret = m_mod_register("testName", test_ctx, &mod, NULL, 0, NULL);    
     assert_false(ret == 0);
     assert_null(mod);
 }
@@ -46,7 +46,7 @@ void test_mod_register(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0);
+    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
     assert_true(m_mod_is(mod, IDLE));
@@ -56,7 +56,7 @@ void test_mod_register_already_registered(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0);
+    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_non_null(mod);
     assert_true(m_mod_is(mod, IDLE));
@@ -68,7 +68,7 @@ void test_mod_register_same_name(void **state) {
     mod_t *self2 = NULL;
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
-    int ret = m_mod_register("testName", test_ctx, &self2, &hook, 0);
+    int ret = m_mod_register("testName", test_ctx, &self2, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(self2);
 }
@@ -93,7 +93,7 @@ void test_mod_false_init(void **state) {
     (void) state; /* unused */
     
     userhook_t hook = (userhook_t) { init_false, evaluate, recv, destroy };
-    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0);
+    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
     assert_true(m_mod_is(mod, IDLE));

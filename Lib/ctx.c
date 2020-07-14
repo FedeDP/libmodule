@@ -3,7 +3,7 @@
 #include "fs_priv.h"
 #include <dlfcn.h> // dlopen
 
-static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags);
+static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags, const void *userdata);
 static void ctx_dtor(void *data);
 static void default_logger(const mod_t *mod, const char *fmt, va_list args);
 static int loop_start(ctx_t *c, const int max_events);
@@ -11,7 +11,7 @@ static uint8_t loop_stop(ctx_t *c);
 static inline int loop_quit(ctx_t *c, const uint8_t quit_code);
 static int recv_events(ctx_t *c, int timeout);
 
-static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
+static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags, const void *userdata) {
     pthread_mutex_lock(&mx);
     
     M_DEBUG("Creating context '%s'.\n", ctx_name);
@@ -20,6 +20,7 @@ static int ctx_new(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
     M_ALLOC_ASSERT(*c);
     
     (*c)->flags = flags;
+    (*c)->userdata = userdata;
     (*c)->th_id = pthread_self();
     (*c)->logger = default_logger;
     (*c)->modules = m_map_new(0, m_mem_unref);
@@ -256,7 +257,7 @@ void inline ctx_logger(const ctx_t *c, const mod_t *mod, const char *fmt, ...) {
 
 /** Public API **/
 
-int m_ctx_register(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
+int m_ctx_register(const char *ctx_name, ctx_t **c, const m_ctx_flags flags, const void *userdata) {
     M_PARAM_ASSERT(ctx_name);
     M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(!*c);
@@ -264,7 +265,7 @@ int m_ctx_register(const char *ctx_name, ctx_t **c, const m_ctx_flags flags) {
     if (check_ctx(ctx_name)) {
         return -EEXIST;
     }
-    return ctx_new(ctx_name, c, flags);
+    return ctx_new(ctx_name, c, flags, userdata);
 }
 
 int m_ctx_deregister(ctx_t **c) {

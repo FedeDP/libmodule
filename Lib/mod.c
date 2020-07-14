@@ -419,7 +419,8 @@ int stop(mod_t *mod, const bool stopping) {
 
 /** Public API **/
 
-int m_mod_register(const char *name, ctx_t *c, mod_t **self, const userhook_t *hook, const m_mod_flags flags) {
+int m_mod_register(const char *name, ctx_t *c, mod_t **self, const userhook_t *hook, 
+                   const m_mod_flags flags, const void *userdata) {
     M_PARAM_ASSERT(name);
     M_PARAM_ASSERT(self);
     M_PARAM_ASSERT(!*self);
@@ -432,7 +433,7 @@ int m_mod_register(const char *name, ctx_t *c, mod_t **self, const userhook_t *h
     if (!c) {
         c = check_ctx(M_CTX_DEFAULT);
         if (!c) {
-            m_ctx_register(M_CTX_DEFAULT, &c, 0);
+            m_ctx_register(M_CTX_DEFAULT, &c, 0, NULL);
         }
     }
     M_PARAM_ASSERT(c);
@@ -461,6 +462,7 @@ int m_mod_register(const char *name, ctx_t *c, mod_t **self, const userhook_t *h
     if (flags & M_MOD_NAME_DUP) {
         mod->flags |= M_MOD_NAME_AUTOFREE;
     }
+    mod->userdata = userdata;
     
     ret = -ENOMEM;
     /* Let us gladly jump out with break on error */

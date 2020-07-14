@@ -15,7 +15,7 @@
     static void _ctor4_ m_mod_ctor(void) { \
         if (check()) { \
             userhook_t hook = { init, eval, receive, deinit }; \
-            m_mod_register(name, NULL, get_mod(), &hook, 0); \
+            m_mod_register(name, NULL, get_mod(), &hook, 0, NULL); \
         } \
     } \
     static void _dtor2_ m_mod_dtor(void) { m_mod_deregister(get_mod()); } \

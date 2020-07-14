@@ -7,7 +7,8 @@
 /* Module interface functions */
 
 /* Module registration */
-_public_ int m_mod_register(const char *name, ctx_t *c, mod_t **mod, const userhook_t *hook, const m_mod_flags flags);
+_public_ int m_mod_register(const char *name, ctx_t *c, mod_t **mod, const userhook_t *hook, 
+                            const m_mod_flags flags, const void *userdata);
 _public_ int m_mod_deregister(mod_t **mod);
 
 /* Retrieve module context */

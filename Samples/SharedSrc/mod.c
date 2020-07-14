@@ -27,8 +27,8 @@ void create_modules(ctx_t *c) {
     userhook_t hookA = (userhook_t) { A_init, evaluate, A_recv, destroy };
     userhook_t hookB = (userhook_t) { B_init, evaluate, B_recv, destroy };
     
-    m_mod_register("Pippo", c, &selfA, &hookA, 0);
-    m_mod_register("Doggo", c, &selfB, &hookB, 0);
+    m_mod_register("Pippo", c, &selfA, &hookA, 0, NULL);
+    m_mod_register("Doggo", c, &selfB, &hookB, 0, NULL);
 }
 
 /*

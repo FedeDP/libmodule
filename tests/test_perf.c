@@ -17,12 +17,12 @@ static int ctr = 0;
 void test_poll_perf(void **state) {
     (void) state; /* unused */
     
-    int ret = m_ctx_register(M_CTX_DEFAULT, &test_ctx, 0);
+    int ret = m_ctx_register(M_CTX_DEFAULT, &test_ctx, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(test_ctx);
         
     userhook_t hook = (userhook_t) { init, NULL, my_recv, NULL };
-    ret = m_mod_register("testName", test_ctx, &mod, &hook, 0);
+    ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
     assert_true(m_mod_is(mod, IDLE));

@@ -5,7 +5,7 @@
 #include "commons.h"
 
 /* Modules interface functions */
-_public_ int m_ctx_register(const char *ctx_name, ctx_t **c, const m_ctx_flags flags);
+_public_ int m_ctx_register(const char *ctx_name, ctx_t **c, const m_ctx_flags flags, const void *userdata);
 _public_ int m_ctx_deregister(ctx_t **c);
 
 _public_ int m_ctx_set_logger(ctx_t *c, const log_cb logger);

@@ -2,6 +2,8 @@
 #include <liburing.h>
 #include <sys/poll.h>
 
+#warning "Uring support is unstable."
+
 /*
  * Doc: https://kernel.dk/io_uring.pdf
  * 

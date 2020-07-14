@@ -5,7 +5,6 @@
 #include <string.h>
 
 static const char *myCtx = "FirstCtx";
-
 static mod_t *mod;
 
 static void m_mod_pre_start(void) {
@@ -33,13 +32,12 @@ static void destroy(void) {
 
 static void receive(const msg_t *msg, const void *userdata) {
     if (msg->type != M_SRC_TYPE_PS) {
-        static int counter = 0;
+        int *counter = (int *)m_mod_get_userdata(mod);
         m_mod_log(mod, "recv!\n");
-        counter++;
+        (*counter)++;
     
-        if (counter % 3 == 0) {
+        if (*counter % 3 == 0) {
             m_mod_become(mod, receive_ready);
-            m_mod_set_userdata(mod, &counter);
         }
     } else if (msg->ps_msg->type == USER && !strcmp((const char *)msg->ps_msg->data, "Leave")) {
         m_mod_log(mod, "Other context left. Leaving...\n");
@@ -66,6 +64,7 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
 }
 
 void create_module_A(ctx_t *c) {
+    static int counter;
     userhook_t hook = { init, eval, receive, destroy };
-    m_mod_register("A", c, &mod, &hook, 0);
+    m_mod_register("A", c, &mod, &hook, 0, &counter);
 }

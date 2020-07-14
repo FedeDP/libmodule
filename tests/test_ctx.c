@@ -21,14 +21,14 @@ static void logger(const mod_t *self, const char *fmt, va_list args) {
 void test_ctx_register_NULL_name(void **state) {
     (void) state; /* unused */
     
-    int ret = m_ctx_register(NULL, &test_ctx, 0);
+    int ret = m_ctx_register(NULL, &test_ctx, 0, NULL);
     assert_false(ret == 0);
 }
 
 void test_ctx_register(void **state) {
     (void) state; /* unused */
     
-    int ret = m_ctx_register(CTX, &test_ctx, M_CTX_PERSIST);
+    int ret = m_ctx_register(CTX, &test_ctx, M_CTX_PERSIST, NULL);
     assert_true(ret == 0);
 }
 

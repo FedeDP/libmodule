@@ -7,7 +7,7 @@
 #define M_CTX() \
     static inline ctx_t **get_ctx() { static ctx_t *_ctx = NULL; return &_ctx; } \
     static void _ctor2_ m_ctx_ctor(void) { \
-        m_ctx_register(M_CTX_DEFAULT, get_ctx(), 0); \
+        m_ctx_register(M_CTX_DEFAULT, get_ctx(), 0, NULL); \
     } \
     static void _dtor1_ m_ctx_dtor(void) { m_ctx_deregister(get_ctx()); }
 
