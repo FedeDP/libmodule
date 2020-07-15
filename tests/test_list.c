@@ -1,5 +1,4 @@
 #include "test_list.h"
-#include <module/list.h>
 #include <module/itr.h>
 
 static m_list_t *my_l;

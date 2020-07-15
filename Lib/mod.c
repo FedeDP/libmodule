@@ -697,6 +697,7 @@ int m_mod_dump(const mod_t *mod) {
     ctx_logger(c, mod, "{\n");
     ctx_logger(c, mod, "\t\"Name\": \"'%s\",\n", mod->name);
     ctx_logger(c, mod, "\t\"State\": %#x,\n", mod->state);
+    ctx_logger(c, mod, "\t\"Flags\": %x,\n", mod->flags);
     if (mod->userdata) {
         ctx_logger(c, mod, "\t\"UP\": %p,\n", mod->userdata);
     }

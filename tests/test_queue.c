@@ -1,5 +1,4 @@
 #include "test_queue.h"
-#include <module/queue.h>
 #include <module/itr.h>
 
 static m_queue_t *my_q;

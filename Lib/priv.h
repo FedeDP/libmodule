@@ -160,6 +160,7 @@ struct _ctx {
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     m_ctx_flags flags;                      // Context's flags
     pthread_t th_id;                        // Main context's thread
+    char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
     const void *userdata;                   // Context's user defined data
 };

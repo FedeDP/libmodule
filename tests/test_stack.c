@@ -1,5 +1,4 @@
 #include "test_stack.h"
-#include <module/stack.h>
 #include <module/itr.h>
 
 static m_stack_t *my_st;

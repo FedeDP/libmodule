@@ -1,7 +1,5 @@
 #pragma once
 
-#define M_CTX_H
-
 #include "commons.h"
 
 /* Modules interface functions */
@@ -24,6 +22,10 @@ _public_ int m_ctx_dump(const ctx_t *c);
 
 _public_ size_t m_ctx_trim(ctx_t *c, const stats_t *thres);
 
+#ifdef WITH_FS
+_public_ int m_ctx_set_fs_root(ctx_t *c, const char *path);
+#endif
+
 /* External shared object module runtime loading */
-_public_ int m_ctx_load(ctx_t *c, const char *module_path);
+_public_ int m_ctx_load(ctx_t *c, const char *module_path, const m_mod_flags flags);
 _public_ int m_ctx_unload(ctx_t *c, const char *module_path);

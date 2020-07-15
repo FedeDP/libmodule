@@ -1,5 +1,4 @@
 #include "test_bst.h"
-#include <module/bst.h>
 #include <module/itr.h>
 
 static m_bst_t *my_t;

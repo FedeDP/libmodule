@@ -28,7 +28,7 @@
 - [x] Fix valgrind-check tests? "WARNING: unhandled amd64-linux syscall: 425" not much we can do...
 - [x] Batch-recv cqes from io_uring_wait_cqe_timeout
 - [x] Fix: avoid opening a new internal fd (timerfd, signalfd etc etc) at each new poll_set_new_evt ADD call
-- [ ] Fix: liburing ... it does not work with timerfd, signalfd and inotifyfd... (well it works, but weirdly!) -> see https://github.com/axboe/liburing/issues/53
+- [x] Add a build-time warning when using liburing as its support is not yet stable nor complete
 
 ### New Sources support
 
@@ -84,8 +84,11 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Read on a file, will module_dump()
 - [x] Creating new file will register a new "fuse"-only module
 - [x] Deleting a previously created fuse module, will deregister it
-- [ ] Add an interface to customize fuse fs folder
-- [ ] by default, use "$HOME/.modules/$ctxname/"
+- [x] Add an interface to customize fuse fs folder (by default: no fuse fs is created)
+- [ ] Expose <module/fs.h> with FS ioctls
+- [ ] Put m_ctx_set_fs_root() declaration in module/fs.h 
+- [ ] Put m_ctx_set_fs_root() definition in fs_priv.c
+- [ ] Only install fs.h if built WITH_FS
 - [x] Notify with poll callback when fuse-module has new receive() events enqueued
 - [x] Test poll
 - [x] Let non-fuse modules notify poll too? (ie: every module should call fs_recv... may be renamed to fs_notify())
@@ -135,7 +138,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename module.* to mod.* and context.* to ctx.*
 - [x] Rename test_module to test_mod; rename all module tests to mod
 - [x] Rename test_context to test_ctx; rename all context tests to ctx
-- [x] Avoid direct inclusion of <module/commons.h>
 - [x] Split m_mem API from utils.c to its own source file
 - [x] Rename utils.c into priv.c
 - [x] Put thpool.c and mem.c into a new "utils" folder
@@ -240,13 +242,9 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Add support for priority based subscribe? When publishing then create a list of recipients from highest priority to lower, then for each element in the list tell it the message
 
-### Module permissions management
-- [ ] module_register() and m_ctx_load() to take a permission bitmask (m_mod_perm_flags): eg
-• perm_pubsub 1
-• perm_load 2
-• perm_quit 4
-• any other?
-- [ ] fs: expose module permissions through node permissions (eg: 777, 555...) ??? 
+- [x] m_ctx_load() should take a m_mod_flags parameter to enforce certain flags over runtime loaded module
+
+- [x] Expose mod/ctx -> flags and ctx->userdata in mod/ctx_dump()
 
 ### Generic
 
@@ -356,6 +354,15 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [x] Update examples
 - [x] Update tests
+
+## 6.1.0
+
+### Module permissions management
+- [ ] Add some permission management to modules, through m_mod_flags, eg:
+- - [ ] M_MOD_DENY_PUB
+- - [ ] M_MOD_DENY_SUB
+- - [ ] M_MOD_DENY_LOAD
+- - [ ] M_MOD_DENY_QUIT
 
 ## Ideas
 

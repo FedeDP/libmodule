@@ -1,5 +1,4 @@
 #include "test_map.h"
-#include <module/map.h>
 #include <module/itr.h>
 
 static m_map_t *my_map;

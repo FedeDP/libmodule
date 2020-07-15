@@ -34,7 +34,7 @@
     m_bst_itr_t *: m_bst_itr_get_data \
     )(X)
     
-/* Unavailable for btree API */
+/* Unavailable for bst API */
 #define m_itr_set(X, data) _Generic((X), \
     m_map_itr_t *: m_map_itr_set_data, \
     m_list_itr_t *: m_list_itr_set_data, \

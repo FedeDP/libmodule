@@ -57,6 +57,7 @@ static void ctx_dtor(void *data) {
     M_DEBUG("Destroying context '%s'.\n", context->name);
     m_map_free(&context->modules);
     poll_destroy(&context->ppriv);
+    memhook._free(context->fs_root);
     if (context->flags & M_CTX_NAME_AUTOFREE) {
         memhook._free((void *)context->name);
     }
@@ -359,6 +360,13 @@ int m_ctx_dump(const ctx_t *c) {
     ctx_logger(c, NULL, "{\n");
     
     ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
+    ctx_logger(c, NULL, "\t\"Flags\": %x,\n", c->flags);
+    if (c->userdata) {
+        ctx_logger(c, NULL, "\t\"UP\": %p,\n", c->userdata);
+    }
+#ifdef WITH_FS
+    ctx_logger(c, NULL, "\t\t\"Fs_root\": \"%s\",\n", c->fs_root);
+#endif
     ctx_logger(c, NULL, "\t\"State\": {\n");
     ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
     ctx_logger(c, NULL, "\t\t\"Looping\": %d,\n", c->looping);
@@ -378,7 +386,7 @@ int m_ctx_dump(const ctx_t *c) {
 }
 
 
-int m_ctx_load(ctx_t *c, const char *module_path) {
+int m_ctx_load(ctx_t *c, const char *module_path, const m_mod_flags flags) {
     M_CTX_ASSERT(c);
     M_PARAM_ASSERT(module_path);
     
@@ -401,6 +409,7 @@ int m_ctx_load(ctx_t *c, const char *module_path) {
     
     mod_t *mod = map_peek(c->modules);
     mod->local_path = mem_strdup(module_path);
+    mod->flags |= flags;
     return 0;
 }
 
@@ -455,3 +464,17 @@ size_t m_ctx_trim(ctx_t *c, const stats_t *thres) {
     /* Number of deregistered modules */
     return initial_size - m_map_length(c->modules);
 }
+
+#ifdef WITH_FS
+int m_ctx_set_fs_root(ctx_t *c, const char *path) {
+    M_CTX_ASSERT(c);
+    M_RET_ASSERT(!c->looping, -EPERM);
+    M_PARAM_ASSERT(path && strlen(path));
+    
+    if (c->fs_root) {
+        memhook._free(c->fs_root);
+    }
+    c->fs_root = mem_strdup(path);
+    return 0;
+}
+#endif

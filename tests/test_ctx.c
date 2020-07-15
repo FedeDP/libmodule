@@ -138,11 +138,8 @@ void test_ctx_dispatch(void **state) {
     assert_true(ret == 0);  // loop started
     
     ret = m_ctx_dispatch(test_ctx);
-#ifdef WITH_FS
-    assert_true(ret == 2); // number of messages dispatched: LOOP_STARTED msg + fuse init message
-#else
-    assert_true(ret == 1); // number of messages dispatched: LOOP_STARTED
-#endif
+    assert_true(ret == 1); // number of messages dispatched: LOOP_STARTED.
+    
     ret = m_ctx_quit(test_ctx, 0);
     assert_true(ret == 0);
     

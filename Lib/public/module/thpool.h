@@ -1,7 +1,5 @@
 #pragma once
 
-#define M_THPOOL_H
-
 #include "commons.h"
 #include <pthread.h>
 

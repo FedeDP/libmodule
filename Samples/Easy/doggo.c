@@ -51,7 +51,7 @@ static void receive(const msg_t *msg, const void *userdata) {
                 m_m_log("ZzzZzz...\n");
                 
                 /* Test runtime module loading */
-                m_ctx_load(m_m_ctx(), "./libtestmod.so");
+                m_ctx_load(m_m_ctx(), "./libtestmod.so", 0);
             } else if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
                 m_m_log("Sob...\n");
             } else if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
