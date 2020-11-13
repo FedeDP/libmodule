@@ -13,6 +13,7 @@
 - [x] Expose new public header <module/mem.h>?
 - [x] Add a MEM_LOCK macro to keep a referenced memory alive
 - [x] Fix: let user only use m_module_name()/m_module_ctx()/m_module_is() on module's reference on a deregistered module (kept alive by some PS messaging)
+- [ ] Use tagged pointers to avoid that a non-mem-ref'd pointers is passed to m_mem_ref() api?
 
 ### liburing
 
@@ -122,7 +123,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [ ] Rename mod_t and ctx_t
 - - [ ] Rename msg_t to m_evt_t
 - - [ ] Rename msg_t sub msgs
-- - [ ] Rename src register types (eg: mod_tmr_t -> m_tmr_r)
+- - [ ] Rename m_mod_register_src() to m_mod_src_register()
+- - [ ] Rename src register types (eg: mod_tmr_t -> m_tmr_t)
 - - [ ] Rename userhook_t, log_cb / init_cb and other callbacks
 - - [ ] Rename memhook_t and its callbacks
 - - [ ] Rename stats_t to m_stats_t
@@ -141,6 +143,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Split m_mem API from utils.c to its own source file
 - [x] Rename utils.c into priv.c
 - [x] Put thpool.c and mem.c into a new "utils" folder
+- [ ] Split src.c from mod.c with all m_mod_register_src() APIs
 
 ### New ctx_register API
 
@@ -177,7 +180,11 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Update samples
 - [x] Updated README example
 
-### New Linked list api
+### Map API
+
+- [ ] Allow devs to customize hash function and take a void* as key
+
+### New Linked list API
 
 - [x] Add linked list implementation
 - [x] Use it for fds
@@ -212,6 +219,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] change itr_next() to return int and take double ptr
 
 ### New thpool API
+
 - [x] Add a new TYPE_TASK source that will run a task asynchronously and at end notify user through receive() callback
 - [x] m_module_deregister_task() should pthread_cancel() the thread
 - [x] fix m_module_deregister_task -> ALWAYS CREATE THREADS DETACHED
@@ -230,6 +238,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Auto-generate API doc, using eg: https://github.com/jnikula/hawkmoth or with doxygen (and drop rtd) https://goseeky.wordpress.com/2017/07/22/documentation-101-doxygen-with-github-pages/
 
 ### Remaining fixes/Improvements
+
 - [ ] Expose recv_msg/sent_msg in stats_t and use them as threshold too in m_ctx_trim
 - [ ] Fix fetch_ms()! Only count actions as actions triggered by API call (ie: user called an API function on the module)
 
@@ -245,6 +254,11 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] m_ctx_load() should take a m_mod_flags parameter to enforce certain flags over runtime loaded module
 
 - [x] Expose mod/ctx -> flags and ctx->userdata in mod/ctx_dump()
+
+- [ ] Add a message compact time, eg: m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
+- [ ] during compaction time, duplicated messages are erased
+
+- [ ] Add a m_mod_set_batch_size(size) to batch requests and flush them together (receive callback will receive pointer to array and length of array)?
 
 ### Generic
 
@@ -354,6 +368,8 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Update libmodule.pc.in to add extra dependencies if needed (libkqueue/liburing/fuse)
 - [x] Update examples
 - [x] Update tests
+
+- [x] Use unlikely() macro for M_MOD_ASSERT
 
 ## 6.1.0
 

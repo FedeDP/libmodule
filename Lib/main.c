@@ -39,6 +39,10 @@ static void libmodule_deinit(void) {
 /** Public API **/
 
 int m_set_memhook(const memhook_t *hook) {
+    /* 
+     * Check that we are called from within m_pre_start, 
+     * when library is not yet initialized 
+     */
     if (!ctx) {
         if (hook) {
             M_ASSERT(hook->_malloc, "NULL malloc fn.", -1);

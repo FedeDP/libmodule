@@ -14,9 +14,12 @@ static inline mem_header_t *get_header(void *src) {
 /* Create new ref counted memory area */
 void *m_mem_new(size_t size, m_ref_dtor dtor) {
     mem_header_t *header = memhook._calloc(1, size + sizeof(mem_header_t));
-    header->refs = 1;
-    header->dtor = dtor;
-    return &header[1];
+    if (header) {
+        header->refs = 1;
+        header->dtor = dtor;
+        return &header[1];
+    }
+    return NULL;
 }
 
 /* Gain a new ref on a memory area */

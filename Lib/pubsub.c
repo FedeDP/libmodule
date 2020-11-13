@@ -3,8 +3,9 @@
 
 /** Actor-like PubSub interface **/
 
-#define M_SRC_PS_PRIO_SIZE      5
-#define M_SRC_PS_PRIO_MASK      (M_SRC_PS_PRIO_HIGHEST << 1) - 1
+// PRIO_SIZE -> { lowest, low, norm, high, highest }
+#define M_SRC_PS_PRIO_SIZE       __builtin_ctz((M_SRC_PS_PRIO_HIGHEST << 1) / M_SRC_PS_PRIO_LOWEST)
+#define M_SRC_PS_PRIO_MASK       ~(M_SRC_PS_PRIO_HIGHEST << 1)
 
 static void subscribtions_dtor(void *data);
 static ev_src_t *fetch_sub(mod_t *mod, const char *topic);

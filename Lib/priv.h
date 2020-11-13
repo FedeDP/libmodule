@@ -8,13 +8,15 @@
 #include "thpool.h"
 #include "itr.h"
 
+#define unlikely(x)     __builtin_expect((x),0)
+
 #ifndef NDEBUG
     #define M_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
 #else
     #define M_DEBUG (void)
 #endif
 
-#define M_ASSERT(cond, msg, ret)    if (!(cond)) { M_DEBUG("%s\n", msg); return ret; }
+#define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
 
 #define M_RET_ASSERT(cond, ret)     M_ASSERT(cond, "("#cond ") condition failed.", ret) 
 
