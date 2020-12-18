@@ -36,6 +36,9 @@ int poll_wait(const int fd, const int max_events, void *pevents, const int timeo
 
 fd_priv_t *poll_recv(const int idx, void *pevents) {
     struct epoll_event *pev = (struct epoll_event *) pevents;
+    if (pev[idx].events & EPOLLERR) {
+        return NULL;
+    }
     return (fd_priv_t *)pev[idx].data.ptr;
 }
 

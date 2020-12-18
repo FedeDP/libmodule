@@ -133,6 +133,7 @@ static inline module_ret_code loop_quit(ctx_t *c, const uint8_t quit_code) {
 }
 
 static int recv_events(ctx_t *c, int timeout) {
+    int real_recv = 0;
     int nfds = poll_wait(c->fd, c->max_events, c->pevents, timeout);
     for (int i = 0; i < nfds; i++) {
         fd_priv_t *p = poll_recv(i, c->pevents);
@@ -166,25 +167,20 @@ static int recv_events(ctx_t *c, int timeout) {
                 MODULE_DEBUG("PoisonPilling '%s'.\n", mod->name);
                 stop(mod, true);
             }
-        } else {
-            /* Forward error to below handling code */
-            errno = ENXIO;
-            nfds = -1;
+            real_recv++;
         }
     }
     
-    if (nfds > 0) {
+    if (real_recv > 0) {
         evaluate_new_state(c);
     } else if (nfds < 0) {
         /* Quit and return < 0 only for real errors */
         if (errno != EINTR && errno != EAGAIN) {
             fprintf(stderr, "Ctx '%s' loop error: %s.\n", c->name, strerror(errno));
             loop_quit(c, errno);
-        } else {
-            nfds = 0;
         }
     }
-    return nfds;
+    return real_recv;
 }
 
 /** Public API **/
