@@ -23,8 +23,8 @@ project = 'libmodule'
 copyright = '2019, Federico Di Pierro'
 author = 'Federico Di Pierro'
 
-version = '5.0.0'
-release = '5.0.0'
+version = '5.0.1'
+release = '5.0.1'
 
 highlight_language = "c"
 

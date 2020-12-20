@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.3.2)
 
-project(libmodule VERSION 5.0.0 LANGUAGES C CXX)
+project(libmodule VERSION 5.0.1 LANGUAGES C CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE Release)
