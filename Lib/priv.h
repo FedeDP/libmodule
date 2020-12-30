@@ -16,7 +16,11 @@
     #define M_DEBUG (void)
 #endif
 
-#define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
+#ifndef NO_CHECKS
+    #define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
+#else
+     #define M_ASSERT(cond, msg, ret)   void
+#endif
 
 #define M_RET_ASSERT(cond, ret)     M_ASSERT(cond, "("#cond ") condition failed.", ret) 
 

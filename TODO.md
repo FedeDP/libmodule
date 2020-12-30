@@ -257,6 +257,9 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [ ] Add a m_mod_set_batch_size(size) to batch requests and flush them together (receive callback will receive pointer to array and length of array)?
 
+- [ ] Double check ctx_easy and mod_easy api
+- [x] Add -DNO_CHECKS to disable checks
+
 ### Generic
 
 - [x] Finally avoid injecting _self into file-global variables
@@ -385,7 +388,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [ ] Add a new module type that only acts as "router" between contexts? eg: ROUTER(name, ctxA, ctxB) 
 -> any message received from ctxA will be published in ctxB, else any message received on ctxB will be published in ctxA. eg module_add_route(self, ctxStart, ctxEnd) ?
-- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued
+- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
 
 ### Submodules
 - [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);
