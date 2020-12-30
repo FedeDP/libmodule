@@ -13,7 +13,6 @@
 - [x] Expose new public header <module/mem.h>?
 - [x] Add a MEM_LOCK macro to keep a referenced memory alive
 - [x] Fix: let user only use m_module_name()/m_module_ctx()/m_module_is() on module's reference on a deregistered module (kept alive by some PS messaging)
-- [ ] Use tagged pointers to avoid that a non-mem-ref'd pointers is passed to m_mem_ref() api?
 
 ### liburing
 
@@ -130,7 +129,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [ ] Rename stats_t to m_stats_t
 - - [x] Rename exposed flags
 - - [ ] Rename init/deinit/check etc etc to on_start(), on_stop(), should_register() etc etc...
-- [ ] Rename pubsub.c to ps.c
+- [x] Rename pubsub.c to ps.c
 - [x] Rename MODULE() to M_MOD()
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
 - [x] Rename module_cmn.h to commons.h
@@ -143,7 +142,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Split m_mem API from utils.c to its own source file
 - [x] Rename utils.c into priv.c
 - [x] Put thpool.c and mem.c into a new "utils" folder
-- [ ] Split src.c from mod.c with all m_mod_register_src() APIs
 
 ### New ctx_register API
 
@@ -179,10 +177,6 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Update tests
 - [x] Update samples
 - [x] Updated README example
-
-### Map API
-
-- [ ] Allow devs to customize hash function and take a void* as key
 
 ### New Linked list API
 
@@ -379,6 +373,10 @@ It would allows to check if same node already exists on insert, without losing t
 - - [ ] M_MOD_DENY_SUB
 - - [ ] M_MOD_DENY_LOAD
 - - [ ] M_MOD_DENY_QUIT
+
+### Map API
+
+- [ ] Allow devs to customize hash function and take a void* as key
 
 ## Ideas
 
