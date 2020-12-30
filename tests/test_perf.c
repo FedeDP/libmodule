@@ -21,7 +21,7 @@ void test_poll_perf(void **state) {
     assert_true(ret == 0);
     assert_non_null(test_ctx);
         
-    userhook_t hook = (userhook_t) { init, NULL, my_recv, NULL };
+    m_userhook_t hook = { init, NULL, my_recv, NULL };
     ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);

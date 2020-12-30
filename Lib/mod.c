@@ -419,7 +419,7 @@ int stop(m_mod_t *mod, const bool stopping) {
 
 /** Public API **/
 
-int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const userhook_t *hook, 
+int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const m_userhook_t *hook, 
                    const m_mod_flags flags, const void *userdata) {
     M_PARAM_ASSERT(name);
     M_PARAM_ASSERT(self);
@@ -482,7 +482,7 @@ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const userhook_
         }
         
         if (m_map_put(c->modules, mod->name, mod) == 0) {
-            memcpy(&mod->hook, hook, sizeof(userhook_t));
+            memcpy(&mod->hook, hook, sizeof(m_userhook_t));
             mod->state = IDLE;
             
             *self = mod;
@@ -679,7 +679,7 @@ const char *m_mod_name(const m_mod_t *mod_self) {
 
 /** Module state getters **/
 
-bool m_mod_is(const m_mod_t *mod_self, const mod_states st) {
+bool m_mod_is(const m_mod_t *mod_self, const m_mod_states st) {
     M_RET_ASSERT(mod_self, false);
     M_RET_ASSERT(mod_self->ctx->th_id == pthread_self(), false);
     M_RET_ASSERT(mod_self, false);
@@ -788,7 +788,7 @@ int m_mod_dump(const m_mod_t *mod) {
     return 0;
 }
 
-int m_mod_stats(const m_mod_t *mod, stats_t *stats) {
+int m_mod_stats(const m_mod_t *mod, m_stats_t *stats) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(stats);
     

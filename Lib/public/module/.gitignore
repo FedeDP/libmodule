@@ -1,3 +1,3 @@
 # Exclude compile time created files by cmake
-commons.h
+cmn.h
 fs.h

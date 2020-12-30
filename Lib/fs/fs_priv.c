@@ -185,7 +185,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
     
     if (!cl->read_all) {
         /* Store old context logger and replace it with a fuse one */
-        log_cb old_log = c->logger;
+        m_log_cb old_log = c->logger;
         const void *old_userdata = mod->userdata;
         c->logger = fs_logger;
         mod->userdata = (void *)fi->fh;
@@ -227,7 +227,7 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 }
 
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    const userhook_t fuse_hook = { init, NULL, receive, NULL };
+    const m_userhook_t fuse_hook = { init, NULL, receive, NULL };
     FS_CTX();
     
     if (strlen(path) > 1) {
@@ -275,7 +275,7 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
     
     switch (cmd) {
         case MOD_STATE:
-            *(mod_states *)data = mod->state;
+            *(m_mod_states *)data = mod->state;
             return 0;
         case MOD_START:
             return m_mod_start(mod);

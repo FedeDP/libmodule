@@ -14,7 +14,7 @@
     static inline m_mod_t **get_mod() { static m_mod_t *_mod = NULL; return &_mod; } \
     static void _ctor4_ m_mod_ctor(void) { \
         if (check()) { \
-            userhook_t hook = { init, eval, receive, deinit }; \
+            m_userhook_t hook = { init, eval, receive, deinit }; \
             m_mod_register(name, NULL, get_mod(), &hook, 0, NULL); \
         } \
     } \

@@ -33,6 +33,6 @@ static void receive(const m_evt_t *msg, const void *userdata) {
 }
 
 void create_module_B(m_ctx_t *c) {
-    userhook_t hook = { init, eval, receive, destroy };
+    m_userhook_t hook = { init, eval, receive, destroy };
     m_mod_register("B", c, &mod, &hook, 0, NULL);
 }

@@ -136,11 +136,11 @@ typedef struct {
 
 /* Struct that holds data for each module */
 struct _mod {
-    mod_states state;                       // module's state
+    m_mod_states state;                     // module's state
     m_mod_flags flags;                      // Module's flags
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     mod_stats_t stats;                      // Modules' stats
-    userhook_t hook;                        // module's user defined callbacks
+    m_userhook_t hook;                      // module's user defined callbacks
     m_stack_t *recvs;                       // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
     void *fs;                               // FS module priv data. NULL if unsupported
@@ -148,7 +148,7 @@ struct _mod {
     const char *local_path;                 // For runtime loaded modules: path of module
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
-    m_ctx_t *ctx;                             // Module's ctx
+    m_ctx_t *ctx;                           // Module's ctx
 };
 
 /* Struct that holds data for each context */
@@ -157,7 +157,7 @@ struct _ctx {
     bool looping;                           // Whether context is looping
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
-    log_cb logger;                          // Context's log callback
+    m_log_cb logger;                        // Context's log callback
     m_map_t *modules;                       // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     m_ctx_flags flags;                      // Context's flags
@@ -191,5 +191,5 @@ void *map_peek(const m_map_t *m);
 
 /* Gglobal variables are defined in main.c */
 extern m_map_t *ctx;
-extern memhook_t memhook;
+extern m_memhook_t memhook;
 extern pthread_mutex_t mx;

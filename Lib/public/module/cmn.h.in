@@ -69,7 +69,7 @@ typedef enum {
 } m_ctx_flags;
 
 /* Modules states */
-typedef enum { IDLE = 0x01, RUNNING = 0x02, PAUSED = 0x04, STOPPED = 0x08, ZOMBIE = 0x10 } mod_states;
+typedef enum { IDLE = 0x01, RUNNING = 0x02, PAUSED = 0x04, STOPPED = 0x08, ZOMBIE = 0x10 } m_mod_states;
 
 /* PubSub message types */
 typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
@@ -204,13 +204,13 @@ typedef void (*recv_cb)(const m_evt_t *const msg, const void *userdata);
 typedef void (*deinit_cb)(void);
 
 /* Logger callback */
-typedef void (*log_cb)(const m_mod_t *ref, const char *fmt, va_list args);
+typedef void (*m_log_cb)(const m_mod_t *ref, const char *fmt, va_list args);
 
 /* Memory management user-passed functions */
-typedef void *(*malloc_fn)(size_t size);
-typedef void *(*realloc_fn)(void *ptr, size_t size);
-typedef void *(*calloc_fn)(size_t nmemb, size_t size);
-typedef void (*free_fn)(void *ptr);
+typedef void *(*m_malloc_fn)(size_t size);
+typedef void *(*m_realloc_fn)(void *ptr, size_t size);
+typedef void *(*m_calloc_fn)(size_t nmemb, size_t size);
+typedef void (*m_free_fn)(void *ptr);
 
 /* Struct that holds user defined callbacks */
 typedef struct {
@@ -218,20 +218,20 @@ typedef struct {
     eval_cb eval;                           // module's state changed function
     recv_cb recv;                           // module's recv function
     deinit_cb deinit;                       // module's deinit function
-} userhook_t;
+} m_userhook_t;
 
 /* Struct that holds user defined memory functions */
 typedef struct {
-    malloc_fn _malloc;
-    realloc_fn _realloc;
-    calloc_fn _calloc;
-    free_fn _free;
-} memhook_t;
+    m_malloc_fn _malloc;
+    m_realloc_fn _realloc;
+    m_calloc_fn _calloc;
+    m_free_fn _free;
+} m_memhook_t;
 
 typedef struct {
     uint64_t inactive_ms;
     double activity_freq;
-} stats_t;
+} m_stats_t;
 
 /* Common to any context; set this in modules_pre_start() */
-_public_ int m_set_memhook(const memhook_t *hook);
+_public_ int m_set_memhook(const m_memhook_t *hook);

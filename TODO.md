@@ -122,13 +122,16 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [x] Rename mod_t and ctx_t
 - - [x] Rename msg_t to m_evt_t
 - - [ ] Rename msg_t sub msgs
-- - [ ] Rename m_mod_register_src() to m_mod_src_register()
+- - [ ] Rename m_mod_register_src() to m_mod_src_register() ??
 - - [ ] Rename src register types (eg: mod_tmr_t -> m_tmr_t)
-- - [ ] Rename userhook_t, log_cb / init_cb and other callbacks
-- - [ ] Rename memhook_t and its callbacks
-- - [ ] Rename stats_t to m_stats_t
+- - [x] Rename userhook_t, log_cb
+- - [ ] Rename init_cb and other callbacks
+- - [x] Rename memhook_t and its callbacks
+- - [x] Rename stats_t to m_stats_t
 - - [x] Rename exposed flags
 - - [ ] Rename init/deinit/check etc etc to on_start(), on_stop(), should_register() etc etc...
+- - [x] Rename commons.h.in to cmn.h.in
+- - [x] Rename mod_states to m_mod_states
 - [x] Rename pubsub.c to ps.c
 - [x] Rename MODULE() to M_MOD()
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter

@@ -280,7 +280,7 @@ int m_ctx_deregister(m_ctx_t **c) {
     return ret;
 }
 
-int m_ctx_set_logger(m_ctx_t *c, const log_cb logger) {
+int m_ctx_set_logger(m_ctx_t *c, const m_log_cb logger) {
     M_CTX_ASSERT(c);
     M_PARAM_ASSERT(logger);
     
@@ -441,7 +441,7 @@ int m_ctx_unload(m_ctx_t *c, const char *module_path) {
     return -ENODEV;
 }
 
-size_t m_ctx_trim(m_ctx_t *c, const stats_t *thres) {
+size_t m_ctx_trim(m_ctx_t *c, const m_stats_t *thres) {
     M_CTX_ASSERT(c);
     M_PARAM_ASSERT(thres);
 

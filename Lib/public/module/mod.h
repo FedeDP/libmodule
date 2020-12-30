@@ -1,11 +1,11 @@
 #pragma once
 
-#include "commons.h"
+#include "cmn.h"
 
 /* Module interface functions */
 
 /* Module registration */
-_public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod, const userhook_t *hook, 
+_public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod, const m_userhook_t *hook, 
                             const m_mod_flags flags, const void *userdata);
 _public_ int m_mod_deregister(m_mod_t **mod);
 
@@ -16,7 +16,7 @@ _public_ _pure_ m_ctx_t *m_mod_ctx(const m_mod_t *mod);
 _public_ _pure_ const char *m_mod_name(const m_mod_t *mod);
 
 /* Module state getters */
-_public_ _pure_ bool m_mod_is(const m_mod_t *mod, const mod_states st);
+_public_ _pure_ bool m_mod_is(const m_mod_t *mod, const m_mod_states st);
 
 /* Module state setters */
 _public_ int m_mod_start(m_mod_t *mod);
@@ -27,7 +27,7 @@ _public_ int m_mod_stop(m_mod_t *mod);
 /* Module generic functions */
 _public_ __attribute__((format (printf, 2, 3))) int m_mod_log(const m_mod_t *mod, const char *fmt, ...);
 _public_ int m_mod_dump(const m_mod_t *mod);
-_public_ _pure_ int m_mod_stats(const m_mod_t *mod, stats_t *stats);
+_public_ _pure_ int m_mod_stats(const m_mod_t *mod, m_stats_t *stats);
 
 _public_ int m_mod_set_userdata(m_mod_t *mod, const void *userdata);
 _public_ const void *m_mod_get_userdata(const m_mod_t *mod);

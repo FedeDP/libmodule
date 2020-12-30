@@ -1,12 +1,12 @@
 #pragma once
 
-#include "commons.h"
+#include "cmn.h"
 
 /* Modules interface functions */
 _public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, const m_ctx_flags flags, const void *userdata);
 _public_ int m_ctx_deregister(m_ctx_t **c);
 
-_public_ int m_ctx_set_logger(m_ctx_t *c, const log_cb logger);
+_public_ int m_ctx_set_logger(m_ctx_t *c, const m_log_cb logger);
 _public_ int m_ctx_loop(m_ctx_t *c, const int max_events);
 _public_ int m_ctx_quit(m_ctx_t *c, const uint8_t quit_code);
 
@@ -20,7 +20,7 @@ _public_ int m_ctx_dispatch(m_ctx_t *c);
 
 _public_ int m_ctx_dump(const m_ctx_t *c);
 
-_public_ size_t m_ctx_trim(m_ctx_t *c, const stats_t *thres);
+_public_ size_t m_ctx_trim(m_ctx_t *c, const m_stats_t *thres);
 
 #ifdef WITH_FS
 _public_ int m_ctx_set_fs_root(m_ctx_t *c, const char *path);

@@ -65,6 +65,6 @@ static void receive_ready(const m_evt_t *msg, const void *userdata) {
 
 void create_module_A(m_ctx_t *c) {
     static int counter;
-    userhook_t hook = { init, eval, receive, destroy };
+    m_userhook_t hook = { init, eval, receive, destroy };
     m_mod_register("A", c, &mod, &hook, 0, &counter);
 }

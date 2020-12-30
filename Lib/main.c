@@ -5,7 +5,7 @@ static _ctor1_ void libmodule_init(void);
 static _dtor0_ void libmodule_deinit(void);
 
 m_map_t *ctx = NULL;
-memhook_t memhook = { malloc, realloc, calloc, free };
+m_memhook_t memhook = { malloc, realloc, calloc, free };
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
 _public_ void _ctor0_ _weak_ m_pre_start(void) {
@@ -38,7 +38,7 @@ static void libmodule_deinit(void) {
 
 /** Public API **/
 
-int m_set_memhook(const memhook_t *hook) {
+int m_set_memhook(const m_memhook_t *hook) {
     /* 
      * Check that we are called from within m_pre_start, 
      * when library is not yet initialized 
@@ -49,7 +49,7 @@ int m_set_memhook(const memhook_t *hook) {
             M_ASSERT(hook->_realloc, "NULL realloc fn.", -1);
             M_ASSERT(hook->_calloc, "NULL calloc fn.", -1);
             M_ASSERT(hook->_free, "NULL free fn.", -1);
-            memcpy(&memhook, hook, sizeof(memhook_t));
+            memcpy(&memhook, hook, sizeof(m_memhook_t));
             return 0;
         }
         return -EINVAL;
