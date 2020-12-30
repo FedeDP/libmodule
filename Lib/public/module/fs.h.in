@@ -1,0 +1,17 @@
+#pragma once
+
+#include "commons.h"
+#include <sys/ioctl.h>      // ioctl support
+
+#define MODULE_MAGIC        'm' // libmodule API global prefix
+
+enum {
+    MOD_STATE               = _IOR(MODULE_MAGIC, 0, mod_states),
+    MOD_START               = _IO(MODULE_MAGIC, 1),
+    MOD_STOP                = _IO(MODULE_MAGIC, 2),
+    MOD_RESUME              = _IO(MODULE_MAGIC, 3),
+    MOD_PAUSE               = _IO(MODULE_MAGIC, 4),
+    MOD_STATS               = _IOR(MODULE_MAGIC, 5, stats_t),
+};
+
+_public_ int m_ctx_set_fs_root(ctx_t *c, const char *path);

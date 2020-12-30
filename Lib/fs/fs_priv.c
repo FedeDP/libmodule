@@ -4,29 +4,16 @@
 
 #include "mod.h"
 #include "mem.h"
+#include "fs.h"
 #include <fuse.h>
 #include <fuse_lowlevel.h>  // to get fuse fd to process events internally
 #include <sys/poll.h>       // poll operation support
-#include <sys/ioctl.h>      // ioctl support
 #include <limits.h>
 
 #define FS_PRIV()         fs_ctx_t *f = (fs_ctx_t *)c->fs; if (!f) { return -EINVAL; }
 #define FS_CTX()          ctx_t *c = fuse_get_context()->private_data;
 #define FS_CLIENT()       fs_client_t *cl = (fs_client_t *)fi->fh; if (!cl) { return -ENOENT; }
 #define FS_MOD()          FS_CLIENT(); mod_t *mod = cl->mod;
-
-/** TODO: these will go in a separate public header, eg: module/fs.h **/
-#define MODULE_MAGIC        'm' // libmodule API global prefix
-
-enum {
-    MOD_STATE               = _IOR(MODULE_MAGIC, 0, mod_states),
-    MOD_START               = _IO(MODULE_MAGIC, 1),
-    MOD_STOP                = _IO(MODULE_MAGIC, 2),
-    MOD_RESUME              = _IO(MODULE_MAGIC, 3),
-    MOD_PAUSE               = _IO(MODULE_MAGIC, 4),
-    MOD_STATS               = _IOR(MODULE_MAGIC, 5, stats_t),
-};
-/**                                                 **/
 
 typedef struct {
     struct fuse *handler;
@@ -443,5 +430,19 @@ int fs_end(ctx_t *c) {
     
     memhook._free(c->fs);
     c->fs = NULL;
+    return 0;
+}
+
+/** Public API **/
+
+int m_ctx_set_fs_root(ctx_t *c, const char *path) {
+    M_CTX_ASSERT(c);
+    M_RET_ASSERT(!c->looping, -EPERM);
+    M_PARAM_ASSERT(path && strlen(path));
+    
+    if (c->fs_root) {
+        memhook._free(c->fs_root);
+    }
+    c->fs_root = mem_strdup(path);
     return 0;
 }

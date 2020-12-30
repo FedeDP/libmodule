@@ -464,17 +464,3 @@ size_t m_ctx_trim(ctx_t *c, const stats_t *thres) {
     /* Number of deregistered modules */
     return initial_size - m_map_length(c->modules);
 }
-
-#ifdef WITH_FS
-int m_ctx_set_fs_root(ctx_t *c, const char *path) {
-    M_CTX_ASSERT(c);
-    M_RET_ASSERT(!c->looping, -EPERM);
-    M_PARAM_ASSERT(path && strlen(path));
-    
-    if (c->fs_root) {
-        memhook._free(c->fs_root);
-    }
-    c->fs_root = mem_strdup(path);
-    return 0;
-}
-#endif

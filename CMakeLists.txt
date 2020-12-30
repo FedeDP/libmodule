@@ -115,6 +115,9 @@ MESSAGE(STATUS "Target OS: ${CMAKE_SYSTEM_NAME}")
 # Configure files
 configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
 configure_file(Lib/public/module/commons.h.in ${PROJECT_SOURCE_DIR}/Lib/public/module/commons.h @ONLY)
+if(WITH_FS)
+    configure_file(Lib/public/module/fs.h.in ${PROJECT_SOURCE_DIR}/Lib/public/module/fs.h @ONLY)
+endif()
 
 file(GLOB PUBLIC_H Lib/public/module/*.h)
 

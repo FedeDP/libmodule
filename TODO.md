@@ -85,10 +85,10 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Creating new file will register a new "fuse"-only module
 - [x] Deleting a previously created fuse module, will deregister it
 - [x] Add an interface to customize fuse fs folder (by default: no fuse fs is created)
-- [ ] Expose <module/fs.h> with FS ioctls
-- [ ] Put m_ctx_set_fs_root() declaration in module/fs.h 
-- [ ] Put m_ctx_set_fs_root() definition in fs_priv.c
-- [ ] Only install fs.h if built WITH_FS
+- [x] Expose <module/fs.h> with FS ioctls
+- [x] Put m_ctx_set_fs_root() declaration in module/fs.h 
+- [x] Put m_ctx_set_fs_root() definition in fs_priv.c
+- [x] Only install fs.h if built WITH_FS
 - [x] Notify with poll callback when fuse-module has new receive() events enqueued
 - [x] Test poll
 - [x] Let non-fuse modules notify poll too? (ie: every module should call fs_recv... may be renamed to fs_notify())
