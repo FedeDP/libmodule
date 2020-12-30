@@ -37,10 +37,10 @@
     M_MOD_ASSERT(mod); \
     M_RET_ASSERT(m_mod_is(mod, state), -EACCES);
     
-#define M_MOD_CTX(mod)    ctx_t *c = mod->ctx;
+#define M_MOD_CTX(mod)    m_ctx_t *c = mod->ctx;
     
 #define M_CTX_MOD(ctx, name) \
-    mod_t *m = m_map_get(ctx->modules, (char *)name); \
+    m_mod_t *m = m_map_get(ctx->modules, (char *)name); \
     M_RET_ASSERT(m, -ENOENT);
 
 typedef struct _src ev_src_t;
@@ -110,7 +110,7 @@ struct _src {
     m_src_types type;
     m_src_flags flags;
     void *ev;                               // poll plugin defined data structure
-    mod_t *mod;                             // ptr needed to map an event source to a self_t in poll_plugin
+    m_mod_t *mod;                             // ptr needed to map an event source to a self_t in poll_plugin
     const void *userptr;
 };
 
@@ -148,7 +148,7 @@ struct _mod {
     const char *local_path;                 // For runtime loaded modules: path of module
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
-    ctx_t *ctx;                             // Module's ctx
+    m_ctx_t *ctx;                             // Module's ctx
 };
 
 /* Struct that holds data for each context */
@@ -169,18 +169,18 @@ struct _ctx {
 
 /* Defined in mod.c */
 int evaluate_module(void *data, const char *key, void *value);
-int start(mod_t *mod, const bool starting);
-int stop(mod_t *mod, const bool stopping);
+int start(m_mod_t *mod, const bool starting);
+int stop(m_mod_t *mod, const bool stopping);
 
 /* Defined in ctx.c */
-ctx_t *check_ctx(const char *ctx_name);
-void ctx_logger(const ctx_t *c, const mod_t *mod, const char *fmt, ...);
+m_ctx_t *check_ctx(const char *ctx_name);
+void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);
 
 /* Defined in pubsub.c */
-int tell_system_pubsub_msg(const mod_t *recipient, ctx_t *c, ps_msg_type type, 
-                           mod_t *sender, const char *topic);
+int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, ps_msg_type type, 
+                           m_mod_t *sender, const char *topic);
 int flush_pubsub_msgs(void *data, const char *key, void *value);
-void run_pubsub_cb(mod_t *mod, msg_t *msg, const ev_src_t *src);
+void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src);
 
 /* Defined in utils.c */
 char *mem_strdup(const char *s);

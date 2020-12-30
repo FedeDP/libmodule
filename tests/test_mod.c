@@ -10,11 +10,10 @@
 static bool init(void);
 static bool init_false(void);
 static bool evaluate(void);
-static void recv(const msg_t *msg, const void *userdata);
+static void recv(const m_evt_t *msg, const void *userdata);
 static void destroy(void);
 
-mod_t *mod = NULL;
-mod_t *testRef = NULL;
+m_mod_t *mod = NULL, *testRef = NULL;
 
 void test_mod_register_NULL_name(void **state) {
     (void) state; /* unused */
@@ -65,7 +64,7 @@ void test_mod_register_already_registered(void **state) {
 void test_mod_register_same_name(void **state) {
     (void) state; /* unused */
     
-    mod_t *self2 = NULL;
+    m_mod_t *self2 = NULL;
     
     userhook_t hook = (userhook_t) { init, evaluate, recv, destroy };
     int ret = m_mod_register("testName", test_ctx, &self2, &hook, 0, NULL);
@@ -472,7 +471,7 @@ static bool evaluate(void) {
     return true;
 }
 
-static void recv(const msg_t *msg, const void *userdata) {
+static void recv(const m_evt_t *msg, const void *userdata) {
     static int ctr = 0;
     if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == USER) {
         ctr++;

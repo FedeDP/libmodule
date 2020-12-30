@@ -8,8 +8,8 @@
 #define FsExposed(x) x
 #endif
 
-FsExposed(int fs_init(ctx_t *c));
-FsExposed(int fs_process(ctx_t *c));
-FsExposed(int fs_notify(const msg_t *msg));
-FsExposed(int fs_cleanup(mod_t *mod));
-FsExposed(int fs_end(ctx_t *c));
+FsExposed(int fs_init(m_ctx_t *c));
+FsExposed(int fs_process(m_ctx_t *c));
+FsExposed(int fs_notify(const m_evt_t *msg));
+FsExposed(int fs_cleanup(m_mod_t *mod));
+FsExposed(int fs_end(m_ctx_t *c));

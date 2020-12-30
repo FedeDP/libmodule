@@ -12,18 +12,18 @@ static bool A_init(void);
 static bool B_init(void);
 static bool evaluate(void);
 static void destroy(void);
-static void A_recv(const msg_t *msg, const void *userdata);
-static void A_recv_ready(const msg_t *msg, const void *userdata);
-static void B_recv(const msg_t *msg, const void *userdata);
-static void B_recv_sleeping(const msg_t *msg, const void *userdata);
+static void A_recv(const m_evt_t *msg, const void *userdata);
+static void A_recv_ready(const m_evt_t *msg, const void *userdata);
+static void B_recv(const m_evt_t *msg, const void *userdata);
+static void B_recv_sleeping(const m_evt_t *msg, const void *userdata);
 
-static mod_t *selfA, *selfB;
+static m_mod_t *selfA, *selfB;
 
 /*
  * Create "A" and "B" modules in ctx_name context.
  * These modules can share some callbacks.
  */
-void create_modules(ctx_t *c) {
+void create_modules(m_ctx_t *c) {
     userhook_t hookA = (userhook_t) { A_init, evaluate, A_recv, destroy };
     userhook_t hookB = (userhook_t) { B_init, evaluate, B_recv, destroy };
     
@@ -61,7 +61,7 @@ static void destroy(void) {
 /*
  * Our A module's poll callback.
  */
-static void A_recv(const msg_t *msg, const void *userdata) {
+static void A_recv(const m_evt_t *msg, const void *userdata) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c;
         read(msg->fd_msg->fd, &c, sizeof(char));
@@ -91,7 +91,7 @@ static void A_recv(const msg_t *msg, const void *userdata) {
     }
 }
 
-static void A_recv_ready(const msg_t *msg, const void *userdata) {
+static void A_recv_ready(const m_evt_t *msg, const void *userdata) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c;
         read(msg->fd_msg->fd, &c, sizeof(char));
@@ -131,7 +131,7 @@ static void A_recv_ready(const msg_t *msg, const void *userdata) {
 /*
  * Our B module's poll callback.
  */
-static void B_recv(const msg_t *msg, const void *userdata) {
+static void B_recv(const m_evt_t *msg, const void *userdata) {
     if (msg->type == M_SRC_TYPE_PS) {
         switch (msg->ps_msg->type) {
             case USER:
@@ -157,7 +157,7 @@ static void B_recv(const msg_t *msg, const void *userdata) {
     }
 }
 
-static void B_recv_sleeping(const msg_t *msg, const void *userdata) {
+static void B_recv_sleeping(const m_evt_t *msg, const void *userdata) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == USER) {
         if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
             m_mod_become(selfB, B_recv);

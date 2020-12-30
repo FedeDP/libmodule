@@ -35,7 +35,7 @@ static void deinit(void) {
     
 }
 
-static void receive(const msg_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg, const void *userdata) {
     switch (msg->type) {
     case M_SRC_TYPE_TMR: {
         int *data = (int *)userdata;

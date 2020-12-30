@@ -10,13 +10,13 @@
     #include <sys/event.h>
 #endif
 
-static mod_t *doggo;
+static m_mod_t *doggo;
 
 M_MOD("Pippo");
 
 static int myData = 5;
 
-static void receive_ready(const msg_t *msg, const void *userdata);
+static void receive_ready(const m_evt_t *msg, const void *userdata);
 
 static void m_mod_pre_start() {
     
@@ -49,7 +49,7 @@ static void deinit(void) {
     m_m_unref(&doggo);
 }
 
-static void receive(const msg_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg, const void *userdata) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c;
         
@@ -101,7 +101,7 @@ static void receive(const msg_t *msg, const void *userdata) {
  * Secondary poll callback.
  * Use m_become(ready) to start using this second poll callback.
  */
-static void receive_ready(const msg_t *msg, const void *userdata) {
+static void receive_ready(const m_evt_t *msg, const void *userdata) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c = 10;
         

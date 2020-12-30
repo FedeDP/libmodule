@@ -20,7 +20,7 @@ _public_ void _ctor0_ _weak_ m_pre_start(void) {
  * All it does is looping on M_CTX_DEFAULT ctx.
  */
 _public_ int _weak_ main(int argc, char *argv[]) {
-    ctx_t *c = m_map_get(ctx, M_CTX_DEFAULT);
+    m_ctx_t *c = m_map_get(ctx, M_CTX_DEFAULT);
     return m_ctx_loop(c, M_CTX_MAX_EVENTS);
 }
 

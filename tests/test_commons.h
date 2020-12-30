@@ -6,4 +6,4 @@
 #include <cmocka.h>
 #include <module/ctx.h>
 
-extern ctx_t *test_ctx;
+extern m_ctx_t *test_ctx;

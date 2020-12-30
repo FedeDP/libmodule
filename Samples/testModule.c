@@ -55,7 +55,7 @@ static void deinit(void) {
 /*
  * Default poll callback
  */
-static void receive(const msg_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg, const void *userdata) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == USER) {
         if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
             m_m_log("Received quit.\n");

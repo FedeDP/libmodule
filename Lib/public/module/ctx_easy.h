@@ -5,7 +5,7 @@
 #define ctx() *get_ctx()
 
 #define M_CTX() \
-    static inline ctx_t **get_ctx() { static ctx_t *_ctx = NULL; return &_ctx; } \
+    static inline m_ctx_t **get_ctx() { static m_ctx_t *_ctx = NULL; return &_ctx; } \
     static void _ctor2_ m_ctx_ctor(void) { \
         m_ctx_register(M_CTX_DEFAULT, get_ctx(), 0, NULL); \
     } \

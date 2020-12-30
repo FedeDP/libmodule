@@ -11,9 +11,9 @@
 #include <limits.h>
 
 #define FS_PRIV()         fs_ctx_t *f = (fs_ctx_t *)c->fs; if (!f) { return -EINVAL; }
-#define FS_CTX()          ctx_t *c = fuse_get_context()->private_data;
+#define FS_CTX()          m_ctx_t *c = fuse_get_context()->private_data;
 #define FS_CLIENT()       fs_client_t *cl = (fs_client_t *)fi->fh; if (!cl) { return -ENOENT; }
-#define FS_MOD()          FS_CLIENT(); mod_t *mod = cl->mod;
+#define FS_MOD()          FS_CLIENT(); m_mod_t *mod = cl->mod;
 
 typedef struct {
     struct fuse *handler;
@@ -24,7 +24,7 @@ typedef struct {
 } fs_ctx_t;
 
 typedef struct {
-    mod_t *mod;
+    m_mod_t *mod;
     struct fuse_pollhandle *ph;
     int in_evt;
     char *read_buf;
@@ -57,9 +57,9 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
 
 /* Internal functions */
 static void client_dtor(void *data);
-static void fs_logger(const mod_t *mod, const char *fmt, va_list args);
+static void fs_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static bool init(void);
-static void receive(const msg_t *msg, const void *userdata);
+static void receive(const m_evt_t *msg, const void *userdata);
 static void fs_wakeup_clients(fs_priv_t *fp, bool leaving);
 
 static const struct fuse_operations operations = {
@@ -105,7 +105,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
     FS_CTX();
     
     if (strlen(path) > 1) {
-        mod_t *mod = m_map_get(c->modules, path + 1);
+        m_mod_t *mod = m_map_get(c->modules, path + 1);
         if (mod) {
             fs_client_t *cl = memhook._calloc(1, sizeof(fs_client_t));
             if (!cl) {
@@ -167,7 +167,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     
     FS_CTX();
     m_itr_foreach(c->modules, {
-        mod_t *mod = m_itr_get(itr);
+        m_mod_t *mod = m_itr_get(itr);
         filler(buf, mod->name, NULL, 0, 0);
     });
     return 0;
@@ -211,7 +211,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
 static int fs_unlink(const char *path) {
     FS_CTX();
     if (strlen(path) > 1) {
-        mod_t *mod = m_map_get(c->modules, path + 1);
+        m_mod_t *mod = m_map_get(c->modules, path + 1);
         if (mod) {
             if (m_mod_deregister(&mod) == 0) {
                 return 0;
@@ -231,7 +231,7 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     FS_CTX();
     
     if (strlen(path) > 1) {
-        mod_t *mod = NULL;
+        m_mod_t *mod = NULL;
         if (m_mod_register(path + 1, c, &mod, &fuse_hook, M_MOD_NAME_DUP, NULL) == 0) {
             return 0;
         }
@@ -304,7 +304,7 @@ static void client_dtor(void *data) {
     memhook._free(cl);
 }
 
-static void fs_logger(const mod_t *mod, const char *fmt, va_list args) {
+static void fs_logger(const m_mod_t *mod, const char *fmt, va_list args) {
     fs_client_t *cl = (fs_client_t *)mod->userdata;
     if (cl->write_len < cl->read_len) {
         /* 
@@ -322,7 +322,7 @@ static bool init(void) {
     return true;
 }
 
-static void receive(const msg_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg, const void *userdata) {
     
 }
 
@@ -340,7 +340,7 @@ static void fs_wakeup_clients(fs_priv_t *fp, bool leaving) {
 
 /** Private API **/
 
-int fs_init(ctx_t *c) {
+int fs_init(m_ctx_t *c) {
     int ret = -EINVAL;
     if (c->fs_root) {
         c->fs = memhook._calloc(1, sizeof(fs_ctx_t));
@@ -371,7 +371,7 @@ int fs_init(ctx_t *c) {
     return ret;
 }
 
-int fs_process(ctx_t *c) {
+int fs_process(m_ctx_t *c) {
     FS_PRIV();
 
     struct fuse_session *sess = fuse_get_session(f->handler);
@@ -384,8 +384,8 @@ int fs_process(ctx_t *c) {
     return ret;
 }
 
-int fs_notify(const msg_t *msg) {
-    mod_t *mod = (mod_t *)msg->self;
+int fs_notify(const m_evt_t *msg) {
+    m_mod_t *mod = (m_mod_t *)msg->self;
     if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == LOOP_STOPPED) {
@@ -400,7 +400,7 @@ int fs_notify(const msg_t *msg) {
     return 0;
 }
 
-int fs_cleanup(mod_t *mod) {
+int fs_cleanup(m_mod_t *mod) {
     if (mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         fs_wakeup_clients(fp, true);
@@ -408,7 +408,7 @@ int fs_cleanup(mod_t *mod) {
     return 0;
 }
 
-int fs_end(ctx_t *c) {
+int fs_end(m_ctx_t *c) {
     FS_PRIV();
     
     /* Deregister fuse fd */
@@ -435,7 +435,7 @@ int fs_end(ctx_t *c) {
 
 /** Public API **/
 
-int m_ctx_set_fs_root(ctx_t *c, const char *path) {
+int m_ctx_set_fs_root(m_ctx_t *c, const char *path) {
     M_CTX_ASSERT(c);
     M_RET_ASSERT(!c->looping, -EPERM);
     M_PARAM_ASSERT(path && strlen(path));

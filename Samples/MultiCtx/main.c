@@ -8,12 +8,12 @@
     #include <bits/sigaction.h>
 #endif
 
-extern void create_module_A(ctx_t *c);
-extern void create_module_B(ctx_t *c);
+extern void create_module_A(m_ctx_t *c);
+extern void create_module_B(m_ctx_t *c);
 
 static void *loop(void *param);
 
-static void logger(const mod_t *self, const char *fmt, va_list args) {
+static void logger(const m_mod_t *self, const char *fmt, va_list args) {
     const char *mname = m_mod_name(self);
     const char *cname = m_ctx_name(m_mod_ctx(self));
     if (mname && cname) {
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 static void *loop(void *param) {
     char *myCtx = (char *)param;
     
-    ctx_t *c = NULL;
+    m_ctx_t *c = NULL;
     m_ctx_register(myCtx, &c, M_CTX_NAME_DUP, NULL);
     if (!strcmp(myCtx, "FirstCtx")) {
         /* Set a different logger for ctx1 context */

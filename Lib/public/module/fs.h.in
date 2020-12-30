@@ -14,4 +14,4 @@ enum {
     MOD_STATS               = _IOR(MODULE_MAGIC, 5, stats_t),
 };
 
-_public_ int m_ctx_set_fs_root(ctx_t *c, const char *path);
+_public_ int m_ctx_set_fs_root(m_ctx_t *c, const char *path);

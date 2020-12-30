@@ -5,7 +5,7 @@
 #include <string.h>
 
 static const char *myCtx = "SecondCtx";
-static mod_t *mod;
+static m_mod_t *mod;
 
 static bool init(void) {
     m_mod_register_src(mod, &((mod_sgn_t) { SIGINT }), 0, NULL);
@@ -24,7 +24,7 @@ static void destroy(void) {
     
 }
 
-static void receive(const msg_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg, const void *userdata) {
     if (msg->type != M_SRC_TYPE_PS) {
         m_mod_log(mod, "received signal %d. Leaving.\n", msg->sgn_msg->signo);
         m_mod_broadcast(mod, "Leave", M_PS_GLOBAL);
@@ -32,7 +32,7 @@ static void receive(const msg_t *msg, const void *userdata) {
     }
 }
 
-void create_module_B(ctx_t *c) {
+void create_module_B(m_ctx_t *c) {
     userhook_t hook = { init, eval, receive, destroy };
     m_mod_register("B", c, &mod, &hook, 0, NULL);
 }

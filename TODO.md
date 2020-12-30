@@ -119,8 +119,8 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename module_easy API to m_mod_*
 - [x] Rename mem API to m_mem*
 - [ ] Rename other exposed APIs (types/enums/enum values) to m_*
-- - [ ] Rename mod_t and ctx_t
-- - [ ] Rename msg_t to m_evt_t
+- - [x] Rename mod_t and ctx_t
+- - [x] Rename msg_t to m_evt_t
 - - [ ] Rename msg_t sub msgs
 - - [ ] Rename m_mod_register_src() to m_mod_src_register()
 - - [ ] Rename src register types (eg: mod_tmr_t -> m_tmr_t)

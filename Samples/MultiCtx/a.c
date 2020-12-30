@@ -5,13 +5,13 @@
 #include <string.h>
 
 static const char *myCtx = "FirstCtx";
-static mod_t *mod;
+static m_mod_t *mod;
 
 static void m_mod_pre_start(void) {
     
 }
 
-static void receive_ready(const msg_t *msg, const void *userdata);
+static void receive_ready(const m_evt_t *msg, const void *userdata);
 
 static bool init(void) {
     m_mod_register_src(mod, &((mod_tmr_t) { CLOCK_MONOTONIC, 1000 }), 0, NULL);
@@ -30,7 +30,7 @@ static void destroy(void) {
     
 }
 
-static void receive(const msg_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg, const void *userdata) {
     if (msg->type != M_SRC_TYPE_PS) {
         int *counter = (int *)m_mod_get_userdata(mod);
         m_mod_log(mod, "recv!\n");
@@ -45,7 +45,7 @@ static void receive(const msg_t *msg, const void *userdata) {
     }
 }
 
-static void receive_ready(const msg_t *msg, const void *userdata) {
+static void receive_ready(const m_evt_t *msg, const void *userdata) {
     if (msg->type != M_SRC_TYPE_PS) {
         int *counter = (int *)m_mod_get_userdata(mod);
         m_mod_log(mod, "recv2!\n");
@@ -63,7 +63,7 @@ static void receive_ready(const msg_t *msg, const void *userdata) {
     }
 }
 
-void create_module_A(ctx_t *c) {
+void create_module_A(m_ctx_t *c) {
     static int counter;
     userhook_t hook = { init, eval, receive, destroy };
     m_mod_register("A", c, &mod, &hook, 0, &counter);
