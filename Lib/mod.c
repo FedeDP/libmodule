@@ -594,43 +594,43 @@ const void *m_mod_get_userdata(const m_mod_t *mod) {
     return mod->userdata;
 }
 
-int m_mod_register_fd(m_mod_t *mod, const int fd, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_fd(m_mod_t *mod, const int fd, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(fd >= 0);
 
     return _register_src(mod, M_SRC_TYPE_FD, &fd, flags, userptr);
 }
 
-int m_mod_deregister_fd(m_mod_t *mod, const int fd) {
+int m_mod_src_deregister_fd(m_mod_t *mod, const int fd) {
     M_PARAM_ASSERT(fd >= 0);
     
     return _deregister_src(mod, M_SRC_TYPE_FD, (void *)&fd);
 }
 
-int m_mod_register_tmr(m_mod_t *mod, const mod_tmr_t *its, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_tmr(m_mod_t *mod, const mod_tmr_t *its, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(its && its->ms > 0);
     
     return _register_src(mod, M_SRC_TYPE_TMR, its, flags, userptr);
 }
 
-int m_mod_deregister_tmr(m_mod_t *mod, const mod_tmr_t *its) {
+int m_mod_src_deregister_tmr(m_mod_t *mod, const mod_tmr_t *its) {
     M_PARAM_ASSERT(its && its->ms > 0);
     
     return _deregister_src(mod, M_SRC_TYPE_TMR, (void *)its);
 }
 
-int m_mod_register_sgn(m_mod_t *mod, const mod_sgn_t *sgs, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_sgn(m_mod_t *mod, const mod_sgn_t *sgs, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(sgs && sgs->signo > 0);
     
     return _register_src(mod, M_SRC_TYPE_SGN, sgs, flags, userptr);
 }
 
-int m_mod_deregister_sgn(m_mod_t *mod, const mod_sgn_t *sgs) {
+int m_mod_src_deregister_sgn(m_mod_t *mod, const mod_sgn_t *sgs) {
     M_PARAM_ASSERT(sgs && sgs->signo > 0);
     
     return _deregister_src(mod, M_SRC_TYPE_SGN, (void *)sgs);
 }
 
-int m_mod_register_path(m_mod_t *mod, const mod_path_t *pt, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_path(m_mod_t *mod, const mod_path_t *pt, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(pt);
     M_PARAM_ASSERT(pt->path && strlen(pt->path));
     M_PARAM_ASSERT(pt->events > 0);
@@ -638,7 +638,7 @@ int m_mod_register_path(m_mod_t *mod, const mod_path_t *pt, const m_src_flags fl
     return _register_src(mod, M_SRC_TYPE_PATH, pt, flags, userptr);
 }
 
-int m_mod_deregister_path(m_mod_t *mod, const mod_path_t *pt) {
+int m_mod_src_deregister_path(m_mod_t *mod, const mod_path_t *pt) {
     M_PARAM_ASSERT(pt);
     M_PARAM_ASSERT(pt->path && strlen(pt->path));
     
@@ -657,13 +657,13 @@ int m_mod_deregister_pid(m_mod_t *mod, const mod_pid_t *pid) {
     return _deregister_src(mod, M_SRC_TYPE_PID, (void *)pid);
 }
 
-int m_mod_register_task(m_mod_t *mod, const mod_task_t *tid, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_task(m_mod_t *mod, const mod_task_t *tid, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(tid && tid->fn);
     
     return _register_src(mod, M_SRC_TYPE_TASK, tid, flags | M_SRC_ONESHOT, userptr); // force ONESHOT flag
 }
 
-int m_mod_deregister_task(m_mod_t *mod, const mod_task_t *tid) {
+int m_mod_src_deregister_task(m_mod_t *mod, const mod_task_t *tid) {
     M_PARAM_ASSERT(tid);
     
     return _deregister_src(mod, M_SRC_TYPE_TASK, (void *)tid);

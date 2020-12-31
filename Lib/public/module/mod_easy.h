@@ -47,10 +47,10 @@
 #define m_m_unbecome()                            m_mod_unbecome(mod())
 
 /* Generic event source registering functions */
-#define m_m_register_src(X, flags, userptr)       m_mod_register_src(mod(), X, flags, userptr)
-#define m_m_deregister_src(X)                     m_mod_deregister_src(mod(), X)
+#define m_m_src_register(X, flags, userptr)       m_mod_src_register(mod(), X, flags, userptr)
+#define m_m_src_deregister(X)                     m_mod_src_deregister(mod(), X)
 
-#define m_m_tell(recipient, msg, flags)           m_mod_tell(mod(), recipient, msg, flags)
-#define m_m_publish(topic, msg, flags)            m_mod_publish(mod(), topic, msg, flags)
-#define m_m_broadcast(msg, flags)                 m_mod_broadcast(mod(), msg, flags)
-#define m_m_poisonpill(recipient)                 m_mod_poisonpill(mod(), recipient)
+#define m_m_ps_tell(recipient, msg, flags)        m_mod_ps_tell(mod(), recipient, msg, flags)
+#define m_m_ps_publish(topic, msg, flags)         m_mod_ps_publish(mod(), topic, msg, flags)
+#define m_m_ps_broadcast(msg, flags)              m_mod_ps_broadcast(mod(), msg, flags)
+#define m_m_ps_poisonpill(recipient)              m_mod_ps_poisonpill(mod(), recipient)

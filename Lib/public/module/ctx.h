@@ -22,10 +22,6 @@ _public_ int m_ctx_dump(const m_ctx_t *c);
 
 _public_ size_t m_ctx_trim(m_ctx_t *c, const m_stats_t *thres);
 
-#ifdef WITH_FS
-_public_ int m_ctx_set_fs_root(m_ctx_t *c, const char *path);
-#endif
-
 /* External shared object module runtime loading */
 _public_ int m_ctx_load(m_ctx_t *c, const char *module_path, const m_mod_flags flags);
 _public_ int m_ctx_unload(m_ctx_t *c, const char *module_path);

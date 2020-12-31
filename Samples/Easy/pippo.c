@@ -23,11 +23,11 @@ static void m_mod_pre_start() {
 }
 
 static bool init(void) {
-    m_m_register_src(&((mod_sgn_t) { SIGINT }), 0, &myData);
-    m_m_register_src(&((mod_tmr_t) { CLOCK_MONOTONIC, 5000 }), M_SRC_ONESHOT, NULL);
-    m_m_register_src(STDIN_FILENO, 0, NULL);
+    m_m_src_register(&((mod_sgn_t) { SIGINT }), 0, &myData);
+    m_m_src_register(&((mod_tmr_t) { CLOCK_MONOTONIC, 5000 }), M_SRC_ONESHOT, NULL);
+    m_m_src_register(STDIN_FILENO, 0, NULL);
 #ifdef __linux__
-    m_m_register_src(&((mod_path_t) { "/home/federico", IN_CREATE }), 0, &myData);
+    m_m_src_register(&((mod_path_t) { "/home/federico", IN_CREATE }), 0, &myData);
 #else
     m_m_register_src(&((mod_path_t) { "/home/federico", NOTE_WRITE }), 0, &myData);
 #endif
@@ -73,11 +73,11 @@ static void receive(const m_evt_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'c':
                 m_m_log("Doggo, come here!\n");
-                m_m_tell(doggo, "ComeHere", 0);
+                m_m_ps_tell(doggo, "ComeHere", 0);
                 break;
             case 'q':
                 m_m_log("I have to go now!\n");
-                m_m_publish("leaving", "ByeBye", 0);
+                m_m_ps_publish("leaving", "ByeBye", 0);
                 m_ctx_quit(m_m_ctx(), 0);
                 break;
             default:
@@ -120,24 +120,24 @@ static void receive_ready(const m_evt_t *msg, const void *userdata) {
         switch (tolower(c)) {
             case 'p':
                 m_m_log("Doggo, let's play a bit!\n");
-                m_m_tell(doggo, "LetsPlay", 0);
+                m_m_ps_tell(doggo, "LetsPlay", 0);
                 break;
             case 's':
                 m_m_log("Doggo, you should sleep a bit!\n");
-                m_m_tell(doggo, "LetsSleep", 0);
+                m_m_ps_tell(doggo, "LetsSleep", 0);
                 break;
             case 'f':
                 m_m_log("Doggo, you want some of these?\n");
-                m_m_tell(doggo, "LetsEat", 0);
+                m_m_ps_tell(doggo, "LetsEat", 0);
                 break;
             case 'w':
                 m_m_log("Doggo, wake up!\n");
-                m_m_tell(doggo, "WakeUp", 0);
+                m_m_ps_tell(doggo, "WakeUp", 0);
                 break;
             case 'q':
                 m_m_dump();
                 m_m_log("I have to go now!\n");
-                m_m_publish("leaving", "ByeBye", 0);
+                m_m_ps_publish("leaving", "ByeBye", 0);
                 m_ctx_quit(m_m_ctx(), 0);
                 break;
             default:

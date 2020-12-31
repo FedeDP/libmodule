@@ -407,9 +407,10 @@ int m_ctx_load(m_ctx_t *c, const char *module_path, const m_mod_flags flags) {
         return -EPERM;
     }
     
+    /* Take most recently loaded module */
     m_mod_t *mod = map_peek(c->modules);
     mod->local_path = mem_strdup(module_path);
-    mod->flags |= flags;
+    mod->flags = flags;
     return 0;
 }
 

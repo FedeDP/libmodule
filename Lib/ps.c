@@ -258,7 +258,7 @@ int m_mod_unref(const m_mod_t *mod, m_mod_t **modref) {
     return 0;
 }
 
-int m_mod_register_sub(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_sub(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(topic);
     
@@ -306,7 +306,7 @@ int m_mod_register_sub(m_mod_t *mod, const char *topic, const m_src_flags flags,
     return ret;
 }
 
-int m_mod_deregister_sub(m_mod_t *mod, const char *topic) {
+int m_mod_src_deregister_sub(m_mod_t *mod, const char *topic) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(topic);
     
@@ -320,7 +320,7 @@ int m_mod_deregister_sub(m_mod_t *mod, const char *topic) {
     return ret;
 }
 
-int m_mod_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, const m_ps_flags flags) {
+int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, const m_ps_flags flags) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
@@ -330,7 +330,7 @@ int m_mod_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, cons
     return send_msg(mod, recipient, NULL, message, flags & ~M_PS_GLOBAL);
 }
 
-int m_mod_publish(m_mod_t *mod, const char *topic, const void *message, const m_ps_flags flags) {
+int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, const m_ps_flags flags) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(topic);
     
@@ -338,14 +338,14 @@ int m_mod_publish(m_mod_t *mod, const char *topic, const void *message, const m_
     return send_msg(mod, NULL, topic, message, flags & ~M_PS_GLOBAL);
 }
 
-int m_mod_broadcast(m_mod_t *mod, const void *message, const m_ps_flags flags) {
+int m_mod_ps_broadcast(m_mod_t *mod, const void *message, const m_ps_flags flags) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(message);
     
     return send_msg(mod, NULL, NULL, message, flags);
 }
 
-int m_mod_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
+int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */

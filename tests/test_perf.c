@@ -31,7 +31,7 @@ void test_poll_perf(void **state) {
     
     clock_t begin_tell = clock();
     for (int i = 0; i < MAX_LEN; i++) {
-        m_mod_tell(mod, mod, "Hello World", 0);
+        m_mod_ps_tell(mod, mod, "Hello World", 0);
     }
     clock_t end_tell = clock();
     double time_spent = (double)(end_tell - begin_tell);

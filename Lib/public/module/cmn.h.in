@@ -15,13 +15,13 @@
  * ctors order: 
  * 0) m_pre_start()
  * 1) libmodule_init()
- * 2) M_CTX() macro ctors (only context_easy API) 
- * 3) each module_pre_start() (only module_easy API)
- * 4) each module ctor function (only module_easy API)
+ * 2) M_CTX() macro ctors (only ctx_easy API) 
+ * 3) each module_pre_start() (only mod_easy API)
+ * 4) each module ctor function (only mod_easy API)
  * 
  * dtors order:
- * 2) each module's dtor function (only module_easy API)
- * 1) each context's dtor function (only context_easy API)
+ * 2) each module's dtor function (only mod_easy API)
+ * 1) each context's dtor function (only ctx_easy API)
  * 0) libmodule_destroy()
  */
 #define _ctor0_         __attribute__((constructor (110)))
@@ -141,7 +141,7 @@ typedef struct {
 
 /** Libmodule sub-messages received in receive() callback **/
 
-/* PubSub message */
+/* PubSub messages */
 typedef struct {
     ps_msg_type type;
     const m_mod_t *sender;
@@ -149,34 +149,34 @@ typedef struct {
     const void *data;
 } ps_msg_t;
 
-/* FD event message */
+/* Generic fd event messages */
 typedef struct {
     int fd;
 } fd_msg_t;
 
-/* Timer event message */
+/* Timer event messages */
 typedef struct {
     uint64_t ms;
 } tmr_msg_t;
 
-/* Signal event message */
+/* Signal event messages */
 typedef struct {
     unsigned int signo;
 } sgn_msg_t;
 
-/* Path event message */
+/* Path event messages */
 typedef struct {
     const char *path;
     unsigned int events;
 } path_msg_t;
 
-/* Pid event message */
+/* Pid event messages */
 typedef struct {
     pid_t pid;
     unsigned int events;
 } pid_msg_t;
 
-/* Task event message */
+/* Task event messages */
 typedef struct {
     unsigned int tid;
     int retval;

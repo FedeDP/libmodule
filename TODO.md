@@ -122,7 +122,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [x] Rename mod_t and ctx_t
 - - [x] Rename msg_t to m_evt_t
 - - [ ] Rename msg_t sub msgs
-- - [ ] Rename m_mod_register_src() to m_mod_src_register() ??
+- - [x] Rename m_mod_register_src() to m_mod_src_register() ??
 - - [ ] Rename src register types (eg: mod_tmr_t -> m_tmr_t)
 - - [x] Rename userhook_t, log_cb
 - - [ ] Rename init_cb and other callbacks
@@ -260,6 +260,20 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Double check ctx_easy and mod_easy api
 - [x] Add -DNO_CHECKS to disable checks
 
+- [ ] Avoid direct inclusion of cmn.h and itr.h (?)
+- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
+
+### Module permissions management
+- [ ] Add some permission management to modules, through m_mod_flags, eg:
+- - [ ] M_MOD_ALLOW_PUB
+- - [ ] M_MOD_ALLOW_SUB
+- - [ ] M_MOD_ALLOW_LOAD
+- - [ ] M_MOD_ALLOW_QUIT
+- - [ ] M_MOD_ALLOW_ALL
+- [ ] m_mod_register() flags
+- [ ] m_mod_load() flags
+- [ ] Move m_ctx_load to m_mod_load?
+
 ### Generic
 
 - [x] Finally avoid injecting _self into file-global variables
@@ -371,14 +385,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Use unlikely() macro for M_MOD_ASSERT
 
-## 6.1.0
-
-### Module permissions management
-- [ ] Add some permission management to modules, through m_mod_flags, eg:
-- - [ ] M_MOD_DENY_PUB
-- - [ ] M_MOD_DENY_SUB
-- - [ ] M_MOD_DENY_LOAD
-- - [ ] M_MOD_DENY_QUIT
+## 6.1.0 (7.0.0?)
 
 ### Map API
 
@@ -388,7 +395,6 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [ ] Add a new module type that only acts as "router" between contexts? eg: ROUTER(name, ctxA, ctxB) 
 -> any message received from ctxA will be published in ctxB, else any message received on ctxB will be published in ctxA. eg module_add_route(self, ctxStart, ctxEnd) ?
-- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
 
 ### Submodules
 - [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);

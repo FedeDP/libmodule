@@ -11,7 +11,7 @@ static void module_pre_start(void) {
 
 static bool init(void) {
     /* Doggo should subscribe to "leaving" topic */
-    m_m_register_src("leaving", 0, NULL);
+    m_m_src_register("leaving", 0, NULL);
     return true;
 }
 
@@ -33,7 +33,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
         case USER:
             if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
                 m_m_log("Running...\n");
-                m_m_tell(msg->ps_msg->sender, "BauBau", 0);
+                m_m_ps_tell(msg->ps_msg->sender, "BauBau", 0);
             } else if (!strcmp((char *)msg->ps_msg->data, "LetsPlay")) {
                 m_m_log("BauBau BauuBauuu!\n");
             } else if (!strcmp((char *)msg->ps_msg->data, "LetsEat")) {

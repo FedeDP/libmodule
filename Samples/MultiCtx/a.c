@@ -14,7 +14,7 @@ static void m_mod_pre_start(void) {
 static void receive_ready(const m_evt_t *msg, const void *userdata);
 
 static bool init(void) {
-    m_mod_register_src(mod, &((mod_tmr_t) { CLOCK_MONOTONIC, 1000 }), 0, NULL);
+    m_mod_src_register(mod, &((mod_tmr_t) { CLOCK_MONOTONIC, 1000 }), 0, NULL);
     return true;
 }
 

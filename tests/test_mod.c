@@ -122,7 +122,7 @@ void test_mod_pause(void **state) {
     assert_true(m_mod_is(mod, PAUSED));
     
     /* Test module_tell for paused modules */
-    ret = m_mod_tell(mod, mod, (unsigned char *)"Paused!", 0);
+    ret = m_mod_ps_tell(mod, mod, (unsigned char *)"Paused!", 0);
     assert_true(ret == 0);
 }
 
@@ -258,46 +258,46 @@ void test_mod_unbecome(void **state) {
 void test_mod_add_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_fd(mod, -1, M_SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_src_register_fd(mod, -1, M_SRC_FD_AUTOCLOSE, NULL);
     assert_false(ret == 0);
 }
 
 void test_mod_add_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_fd(NULL, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_src_register_fd(NULL, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
     assert_false(ret == 0);
 }
 
 void test_mod_add_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_fd(mod, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_src_register_fd(mod, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == 0);
     
     /* Try to register again */
-    ret = m_mod_register_fd(mod, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
+    ret = m_mod_src_register_fd(mod, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == -EEXIST);
 }
 
 void test_mod_rm_wrong_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_deregister_fd(mod, -1);
+    int ret = m_mod_src_deregister_fd(mod, -1);
     assert_false(ret == 0);
 }
 
 void test_mod_rm_wrong_fd_2(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_deregister_fd(mod, STDIN_FILENO + 1);
+    int ret = m_mod_src_deregister_fd(mod, STDIN_FILENO + 1);
     assert_false(ret == 0);
 }
 
 void test_mod_rm_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_deregister_fd(NULL, STDIN_FILENO);
+    int ret = m_mod_src_deregister_fd(NULL, STDIN_FILENO);
     assert_false(ret == 0);
 }
 
@@ -308,7 +308,7 @@ static int fd_is_valid(int fd) {
 void test_mod_rm_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_deregister_fd(mod, STDIN_FILENO);
+    int ret = m_mod_src_deregister_fd(mod, STDIN_FILENO);
     assert_true(ret == 0);
     
     /* Fd is now closed (module_deregister_fd with SRC_FD_AUTOCLOSE thus is no more valid */
@@ -319,21 +319,21 @@ void test_mod_subscribe_NULL_topic(void **state) {
     (void) state; /* unused */
     
     // module_register_source won't even let you use NULL as topic as it only expects "int" or "(const) char *"
-    int ret = m_mod_register_sub(mod, NULL, 0, NULL);
+    int ret = m_mod_src_register_sub(mod, NULL, 0, NULL);
     assert_false(ret == 0);
 }
 
 void test_mod_subscribe_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_src(NULL, "topic", 0, NULL);
+    int ret = m_mod_src_register(NULL, "topic", 0, NULL);
     assert_false(ret == 0);
 }
 
 void test_mod_subscribe(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register_src(mod, "topic", 0, NULL);
+    int ret = m_mod_src_register(mod, "topic", 0, NULL);
     assert_true(ret == 0);
 }
 
@@ -384,21 +384,21 @@ void test_mod_unref(void **state) {
 void test_mod_tell_NULL_recipient(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_tell(mod, NULL, (unsigned char *)"hi!", 0);
+    int ret = m_mod_ps_tell(mod, NULL, (unsigned char *)"hi!", 0);
     assert_false(ret == 0);
 }
 
 void test_mod_tell_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_tell(NULL, testRef, (unsigned char *)"hi!", 0);
+    int ret = m_mod_ps_tell(NULL, testRef, (unsigned char *)"hi!", 0);
     assert_false(ret == 0);
 }
 
 void test_mod_tell_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_tell(mod, testRef, NULL, 0);
+    int ret = m_mod_ps_tell(mod, testRef, NULL, 0);
     assert_false(ret == 0);
 }
 
@@ -406,56 +406,56 @@ void test_mod_tell_NULL_msg(void **state) {
 void test_mod_tell(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_tell(mod, testRef, strdup("hi1!"), M_PS_AUTOFREE);
+    int ret = m_mod_ps_tell(mod, testRef, strdup("hi1!"), M_PS_AUTOFREE);
     assert_true(ret == 0);
 }
 
 void test_mod_publish_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_publish(NULL, "topic", (unsigned char *)"hi!", 0);
+    int ret = m_mod_ps_publish(NULL, "topic", (unsigned char *)"hi!", 0);
     assert_false(ret == 0);
 }
 
 void test_mod_publish_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_publish(mod, "topic", NULL, 0);
+    int ret = m_mod_ps_publish(mod, "topic", NULL, 0);
     assert_false(ret == 0);
 }
 
 void test_mod_publish_NULL_topic(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_publish(mod, NULL, (unsigned char *)"hi!", 0);
+    int ret = m_mod_ps_publish(mod, NULL, (unsigned char *)"hi!", 0);
     assert_false(ret == 0);
 }
 
 void test_mod_publish(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_publish(mod, "topic", (unsigned char *)"hi2!", 0);
+    int ret = m_mod_ps_publish(mod, "topic", (unsigned char *)"hi2!", 0);
     assert_true(ret == 0);
 }
 
 void test_mod_broadcast_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_broadcast(NULL, (unsigned char *)"hi!", 0);
+    int ret = m_mod_ps_broadcast(NULL, (unsigned char *)"hi!", 0);
     assert_false(ret == 0);
 }
 
 void test_mod_broadcast_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_broadcast(mod, NULL, 0);
+    int ret = m_mod_ps_broadcast(mod, NULL, 0);
     assert_false(ret == 0);
 }
 
 void test_mod_broadcast(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_broadcast(mod, (unsigned char *)"hi3!", 0);
+    int ret = m_mod_ps_broadcast(mod, (unsigned char *)"hi3!", 0);
     assert_true(ret == 0);
 }
 
