@@ -84,7 +84,7 @@ static void A_recv(const m_evt_t *msg, const void *userdata) {
                 break;
         }
     } else {
-        if (msg->ps_msg->type == USER  && !strcmp((char *)msg->ps_msg->data, "BauBau")) {
+        if (msg->ps_msg->type == M_PS_USER && !strcmp((char *)msg->ps_msg->data, "BauBau")) {
             m_mod_become(selfA, A_recv_ready);
             m_mod_log(selfA, "Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
@@ -134,7 +134,7 @@ static void A_recv_ready(const m_evt_t *msg, const void *userdata) {
 static void B_recv(const m_evt_t *msg, const void *userdata) {
     if (msg->type == M_SRC_TYPE_PS) {
         switch (msg->ps_msg->type) {
-            case USER:
+            case M_PS_USER:
                 if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
                     m_mod_log(selfB, "Running...\n");
                     m_mod_ps_tell(selfB, msg->ps_msg->sender, (unsigned char *)"BauBau", 0);
@@ -158,7 +158,7 @@ static void B_recv(const m_evt_t *msg, const void *userdata) {
 }
 
 static void B_recv_sleeping(const m_evt_t *msg, const void *userdata) {
-    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == USER) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
         if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
             m_mod_become(selfB, B_recv);
             m_mod_log(selfB, "Yawn...\n");

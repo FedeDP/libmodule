@@ -72,7 +72,7 @@ typedef enum {
 typedef enum { IDLE = 0x01, RUNNING = 0x02, PAUSED = 0x04, STOPPED = 0x08, ZOMBIE = 0x10 } m_mod_states;
 
 /* PubSub message types */
-typedef enum { USER, LOOP_STARTED, LOOP_STOPPED, MODULE_STARTED, MODULE_STOPPED, MODULE_POISONPILL } ps_msg_type;
+typedef enum { M_PS_USER, M_PS_CTX_STARTED, M_PS_CTX_STOPPED, M_PS_MOD_STARTED, M_PS_MOD_STOPPED, M_PS_MOD_POISONPILL } m_ps_types;
 
 /* Module event sources' types */
 typedef enum {
@@ -88,7 +88,7 @@ typedef enum {
 
 /* 
  * Module event sources' flags:
- * First 8 bits are reserved for generic source flags.
+ * First 8 bits are reserved for common source flags.
  * Then, each source type has 8 bits reserved for its flags.
  */
 #define M_FLAG_SHIFT(type, val)   val << (8 * (type + 1))
@@ -113,7 +113,7 @@ typedef enum {
     M_PS_GLOBAL     = 0x02      // Only useful for module_broadcast. Broadcast a message to any context.
 } m_ps_flags;
 
-/* m_mod_src_register() special types. */
+/* m_mod_src_register() special types (ie: input types to register a src) */
 typedef struct {
     clockid_t clock_id;     // Clock_id (eg: CLOCK_MONOTONIC). Unsupported on libkqueue/kqueue
     uint64_t ms;            // Timer in ms
@@ -139,61 +139,61 @@ typedef struct {
     m_thpool_t *thpool;     // optional threadpool on which job should run
 } m_src_task_t;
 
-/** Libmodule sub-messages received in receive() callback **/
+/** Libmodule output messages received in receive() callback **/
 
 /* PubSub messages */
 typedef struct {
-    ps_msg_type type;
+    m_ps_types type;
     const m_mod_t *sender;
     const char *topic;
     const void *data;
-} ps_msg_t;
+} m_evt_ps_t;
 
 /* Generic fd event messages */
 typedef struct {
     int fd;
-} fd_msg_t;
+} m_evt_fd_t;
 
 /* Timer event messages */
 typedef struct {
     uint64_t ms;
-} tmr_msg_t;
+} m_evt_tmr_t;
 
 /* Signal event messages */
 typedef struct {
     unsigned int signo;
-} sgn_msg_t;
+} m_evt_sgn_t;
 
 /* Path event messages */
 typedef struct {
     const char *path;
     unsigned int events;
-} path_msg_t;
+} m_evt_path_t;
 
 /* Pid event messages */
 typedef struct {
     pid_t pid;
     unsigned int events;
-} pid_msg_t;
+} m_evt_pid_t;
 
 /* Task event messages */
 typedef struct {
     unsigned int tid;
     int retval;
-} task_msg_t;
+} m_evt_task_t;
 
 /* Libmodule receive() main message type */
 typedef struct {
     const m_mod_t *self;
     const m_src_types type;
     union {
-        const fd_msg_t      *fd_msg;
-        const ps_msg_t      *ps_msg;
-        const tmr_msg_t     *tmr_msg;
-        const sgn_msg_t     *sgn_msg;
-        const path_msg_t    *pt_msg;
-        const pid_msg_t     *pid_msg;
-        const task_msg_t    *task_msg;
+        const m_evt_fd_t      *fd_msg;
+        const m_evt_ps_t      *ps_msg;
+        const m_evt_tmr_t     *tmr_msg;
+        const m_evt_sgn_t     *sgn_msg;
+        const m_evt_path_t    *pt_msg;
+        const m_evt_pid_t     *pid_msg;
+        const m_evt_task_t    *task_msg;
     };
 } m_evt_t;
 

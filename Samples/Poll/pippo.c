@@ -71,7 +71,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
                 break;
         }
     } else {
-        if (msg->ps_msg->type == USER && !strcmp((char *)msg->ps_msg->data, "BauBau")) {
+        if (msg->ps_msg->type == M_PS_USER && !strcmp((char *)msg->ps_msg->data, "BauBau")) {
             m_m_become(ready);
             m_m_log("Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }

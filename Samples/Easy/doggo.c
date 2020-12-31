@@ -38,7 +38,7 @@ static void deinit(void) {
 static void receive(const m_evt_t *msg, const void *userdata) {
     if (msg->type == M_SRC_TYPE_PS) {
         switch (msg->ps_msg->type) {
-        case USER:
+        case M_PS_USER:
             if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
                 m_m_log("Running...\n");
                 m_m_ps_tell(msg->ps_msg->sender, "BauBau", 0);
@@ -58,7 +58,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
                 m_m_log("???\n");
             }
             break;
-        case MODULE_STOPPED: {
+        case M_PS_MOD_STOPPED: {
                 if (msg->ps_msg->sender) {
                     const char *name = m_mod_name(msg->ps_msg->sender);
                     m_m_log("Module '%s' has been stopped.\n", name);
@@ -75,7 +75,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
 
 static void receive_sleeping(const m_evt_t *msg, const void *userdata) {
     if (msg->type == M_SRC_TYPE_PS) {
-        if (msg->ps_msg->type == USER) {
+        if (msg->ps_msg->type == M_PS_USER) {
             if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
                 m_m_unbecome();
                 m_m_log("Yawn...\n");
@@ -83,7 +83,7 @@ static void receive_sleeping(const m_evt_t *msg, const void *userdata) {
             } else {
                 m_m_log("ZzzZzz...\n");
             }
-        } else if (msg->ps_msg->type == MODULE_STARTED) {
+        } else if (msg->ps_msg->type == M_PS_MOD_STARTED) {
             new_mod = msg->ps_msg->sender;
             /* A new module has been started */
             const char *name = m_mod_name(new_mod);

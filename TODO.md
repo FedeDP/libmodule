@@ -121,7 +121,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [ ] Rename other exposed APIs (types/enums/enum values) to m_*
 - - [x] Rename mod_t and ctx_t
 - - [x] Rename msg_t to m_evt_t
-- - [ ] Rename msg_t sub msgs
+- - [x] Rename msg_t sub msgs
 - - [x] Rename m_mod_register_src() to m_mod_src_register() ??
 - - [x] Rename src register types (eg: mod_tmr_t -> m_tmr_t)
 - - [x] Rename userhook_t, log_cb
@@ -262,6 +262,8 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [ ] Avoid direct inclusion of cmn.h and itr.h (?)
 - [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
+
+- [ ] Put src_userdata inside m_evt_t struct and avoid passing it as param to recv_cb
 
 ### Module permissions management
 - [ ] Add some permission management to modules, through m_mod_flags, eg:

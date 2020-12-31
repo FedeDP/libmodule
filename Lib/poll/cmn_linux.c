@@ -86,7 +86,7 @@ void create_priv_fd(ev_src_t *tmp) {
     }
 }
 
-int poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {
+int poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_sgn_t *sgn_msg) {
     struct signalfd_siginfo fdsi;
     const size_t s = read(src->sgn_src.f.fd, &fdsi, sizeof(struct signalfd_siginfo));
     if (s == sizeof(struct signalfd_siginfo)) {
@@ -95,7 +95,7 @@ int poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t 
     return -errno;
 }
 
-int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t *tm_msg) {
+int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_tmr_t *tm_msg) {
     uint64_t t;
     if (read(src->tmr_src.f.fd, &t, sizeof(uint64_t)) == sizeof(uint64_t)) {
         return 0;
@@ -103,7 +103,7 @@ int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t 
     return -errno;
 }
 
-int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, path_msg_t *pt_msg) {
+int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_path_t *pt_msg) {
     char buffer[BUF_LEN];
     const size_t length = read(src->path_src.f.fd, buffer, BUF_LEN);
     if (length > 0) {
@@ -116,12 +116,12 @@ int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, path_msg_t 
     return -errno;
 }
 
-int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg) {
+int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_pid_t *pid_msg) {
     pid_msg->events = 0;
     return 0; // nothing to do
 }
 
-int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, task_msg_t *task_msg) {
+int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_task_t *task_msg) {
     uint64_t u;
     if (read(src->task_src.f.fd, &u, sizeof(uint64_t)) == sizeof(uint64_t)) {
         task_msg->retval = src->task_src.retval;

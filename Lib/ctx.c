@@ -89,14 +89,14 @@ static int loop_start(m_ctx_t *c, const int max_events) {
         m_map_iterate(c->modules, evaluate_module, NULL);
 
         /* Tell every RUNNING module that loop is started */
-        tell_system_pubsub_msg(NULL, c, LOOP_STARTED, NULL, NULL);
+        tell_system_pubsub_msg(NULL, c, M_PS_CTX_STARTED, NULL, NULL);
     }
     return ret;
 }
 
 static uint8_t loop_stop(m_ctx_t *c) {
     /* Tell every module that loop is stopped */
-    tell_system_pubsub_msg(NULL, c, LOOP_STOPPED, NULL, NULL);
+    tell_system_pubsub_msg(NULL, c, M_PS_CTX_STOPPED, NULL, NULL);
 
     /* Flush pubsub msg to avoid memleaks */
     m_map_iterate(c->modules, flush_pubsub_msgs, NULL);
@@ -137,12 +137,12 @@ static int recv_events(m_ctx_t *c, int timeout) {
             m_mod_t *mod = p->mod;
 
             m_evt_t msg = { .type = p->type };
-            fd_msg_t fd_msg;
-            tmr_msg_t tm_msg;
-            sgn_msg_t sgn_msg;
-            path_msg_t pt_msg;
-            pid_msg_t pid_msg;
-            task_msg_t task_msg;
+            m_evt_fd_t fd_msg;
+            m_evt_tmr_t tm_msg;
+            m_evt_sgn_t sgn_msg;
+            m_evt_path_t pt_msg;
+            m_evt_pid_t pid_msg;
+            m_evt_task_t task_msg;
             ps_priv_t *ps_msg;
             
             M_DEBUG("'%s' received %u type msg.\n", mod->name, msg.type);
@@ -203,7 +203,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
              */
             if (msg.fd_msg) {
                 recved++;
-                if (msg.type != M_SRC_TYPE_PS || msg.ps_msg->type != MODULE_POISONPILL) {
+                if (msg.type != M_SRC_TYPE_PS || msg.ps_msg->type != M_PS_MOD_POISONPILL) {
                     run_pubsub_cb(mod, &msg, p);
                 } else {
                     M_DEBUG("PoisonPilling '%s'.\n", mod->name);

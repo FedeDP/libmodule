@@ -52,7 +52,7 @@ static bool init(void) {
 
 static void my_recv(const m_evt_t *msg, const void *userdata) {    
     if (msg->type == M_SRC_TYPE_PS && 
-        msg->ps_msg->type == USER && 
+        msg->ps_msg->type == M_PS_USER && 
         ++ctr == MAX_LEN) {
            
         m_ctx_quit(test_ctx, 0);

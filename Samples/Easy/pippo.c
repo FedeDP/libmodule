@@ -87,7 +87,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
                 }
                 break;
         }
-    } else if (msg->ps_msg->type == USER && 
+    } else if (msg->ps_msg->type == M_PS_USER && 
         !strcmp((char *)msg->ps_msg->data, "BauBau")) {
         
         m_ctx_dump(m_m_ctx());

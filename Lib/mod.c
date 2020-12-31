@@ -378,7 +378,7 @@ int start(m_mod_t *mod, const bool starting) {
     /* Call module init() callback only if module is being (re)started */
     if (!starting || mod->hook.init()) {
         M_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
-        tell_system_pubsub_msg(NULL, c, MODULE_STARTED, mod, NULL);
+        tell_system_pubsub_msg(NULL, c, M_PS_MOD_STARTED, mod, NULL);
         return 0;
     }
     
@@ -413,7 +413,7 @@ int stop(m_mod_t *mod, const bool stopping) {
     
     M_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
     
-    tell_system_pubsub_msg(NULL, c, MODULE_STOPPED, mod, NULL);
+    tell_system_pubsub_msg(NULL, c, M_PS_MOD_STOPPED, mod, NULL);
     return 0;
 }
 

@@ -120,7 +120,7 @@ struct _src {
 
 /* Struct that holds pubsub messaging, private. It keeps reference count */
 typedef struct {
-    ps_msg_t msg;
+    m_evt_ps_t msg;
     m_ps_flags flags;
     ev_src_t *sub;
 } ps_priv_t;
@@ -181,7 +181,7 @@ m_ctx_t *check_ctx(const char *ctx_name);
 void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);
 
 /* Defined in pubsub.c */
-int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, ps_msg_type type, 
+int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_ps_types type, 
                            m_mod_t *sender, const char *topic);
 int flush_pubsub_msgs(void *data, const char *key, void *value);
 void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src);

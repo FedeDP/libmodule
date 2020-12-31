@@ -119,27 +119,27 @@ ev_src_t *poll_recv(poll_priv_t *priv, const int idx) {
     return (ev_src_t *)kp->pevents[idx].udata;
 }
 
-int poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, sgn_msg_t *sgn_msg) {
+int poll_consume_sgn(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_sgn_t *sgn_msg) {
     return 0;
 }
 
-int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, tmr_msg_t *tm_msg) {
+int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_tmr_t *tm_msg) {
     return 0;
 }
 
-int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, path_msg_t *pt_msg) {
+int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_path_t *pt_msg) {
     GET_PRIV_DATA();
     pt_msg->events = kp->pevents[idx].fflags;
     return 0;
 }
 
-int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, pid_msg_t *pid_msg) {
+int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_pid_t *pid_msg) {
     GET_PRIV_DATA();
     pid_msg->events = kp->pevents[idx].fflags;
     return 0;
 }
 
-int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, task_msg_t *task_msg) {
+int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_task_t *task_msg) {
     GET_PRIV_DATA();
     task_msg->retval = src->task_src.retval;
     return 0;

@@ -61,8 +61,8 @@ static int tell_if(void *data, const char *key, void *value) {
     ev_src_t *sub = msg->msg.topic ? (ev_src_t *)key : NULL;            // key is indeed a subscription when we are publishing (check tell_subscribers()) !!
 
     if (m_mod_is(mod, RUNNING | PAUSED) &&                              // mod is running or paused
-        ((msg->msg.type != USER && msg->msg.sender != mod) ||           // system messages with sender != this module (avoid sending ourselves system messages produced by us)
-        (msg->msg.type == USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
+        ((msg->msg.type != M_PS_USER && msg->msg.sender != mod) ||           // system messages with sender != this module (avoid sending ourselves system messages produced by us)
+        (msg->msg.type == M_PS_USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || sub)))) {
         
         M_DEBUG("Telling a message to '%s'\n", mod->name);
@@ -146,14 +146,14 @@ static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c) {
         tell_if(m, NULL, (m_mod_t *)recipient);
     } else if (!(m->flags & M_PS_GLOBAL)) {
         /* Local Broadcast or SYSTEM messages */
-        if (m->msg.type != USER || !m->msg.topic) {
+        if (m->msg.type != M_PS_USER || !m->msg.topic) {
             m_map_iterate(c->modules, tell_if, m);
         } else {
             tell_subscribers(m, NULL, c);
         }
     } else {
         /* Global Broadcast or SYSTEM messages */
-        if (m->msg.type != USER || !m->msg.topic) {
+        if (m->msg.type != M_PS_USER || !m->msg.topic) {
             m_map_iterate(ctx, tell_global, m);
         } else {
             m_map_iterate(ctx, tell_subscribers, m);
@@ -169,13 +169,13 @@ static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic,
     
     mod->stats.sent_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    ps_priv_t m = { { USER, mod, topic, message }, flags, NULL };
+    ps_priv_t m = { { M_PS_USER, mod, topic, message }, flags, NULL };
     return tell_pubsub_msg(&m, recipient, c);
 }
 
 /** Private API **/
 
-int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, ps_msg_type type, m_mod_t *sender, const char *topic) {
+int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_ps_types type, m_mod_t *sender, const char *topic) {
     if (sender) {
         fetch_ms(&sender->stats.last_seen, &sender->stats.action_ctr);
     }
@@ -353,5 +353,5 @@ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     M_PARAM_ASSERT(m_mod_is(recipient, RUNNING));
     M_MOD_CTX(mod);
     
-    return tell_system_pubsub_msg(recipient, c, MODULE_POISONPILL, mod, NULL);
+    return tell_system_pubsub_msg(recipient, c, M_PS_MOD_POISONPILL, mod, NULL);
 }

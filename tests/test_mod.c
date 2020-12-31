@@ -473,7 +473,7 @@ static bool evaluate(void) {
 
 static void recv(const m_evt_t *msg, const void *userdata) {
     static int ctr = 0;
-    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == USER) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
         ctr++;
         if (!strcmp((char *)msg->ps_msg->data, "hi3!")) {
             m_ctx_quit(test_ctx, ctr);
