@@ -19,7 +19,7 @@ static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c);
 static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic, 
                     const void *message, const m_ps_flags flags);
 
-extern int fs_notify(const m_evt_t *msg);
+extern int fs_notify(m_mod_t *mod, const m_evt_t *msg);
 
 static void subscribtions_dtor(void *data) {
     ev_src_t *sub = (ev_src_t *)data;
@@ -60,7 +60,7 @@ static int tell_if(void *data, const char *key, void *value) {
     ps_priv_t *msg = (ps_priv_t *)data;
     ev_src_t *sub = msg->msg.topic ? (ev_src_t *)key : NULL;            // key is indeed a subscription when we are publishing (check tell_subscribers()) !!
 
-    if (m_mod_is(mod, RUNNING | PAUSED) &&                              // mod is running or paused
+    if (m_mod_is(mod, M_MOD_RUNNING | M_MOD_PAUSED) &&                              // mod is running or paused
         ((msg->msg.type != M_PS_USER && msg->msg.sender != mod) ||           // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == M_PS_USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || sub)))) {
@@ -126,7 +126,7 @@ static int tell_subscribers(void *data, const char *key, void *value) {
         m_mod_t *mod = m_itr_get(itr);
         ev_src_t *sub = NULL;
         
-        if (m_mod_is(mod, RUNNING | PAUSED) && (sub = fetch_sub(mod, msg->msg.topic))) {
+        if (m_mod_is(mod, M_MOD_RUNNING | M_MOD_PAUSED) && (sub = fetch_sub(mod, msg->msg.topic))) {
             const int idx = __builtin_ctz(get_prio_flag(sub->flags)); // count trailing zeroes
             m_queue_enqueue(prio_subs[idx], sub);
         }
@@ -196,7 +196,7 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
          * While stopping module, manage_fds() will call this with data != NULL
          * to let us know we should destroy all enqueued messages.
          */
-        if (!data && m_mod_is(mod, RUNNING)) {
+        if (!data && m_mod_is(mod, M_MOD_RUNNING)) {
             M_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             m_evt_t msg = { .type = M_SRC_TYPE_PS, .ps_msg = &mm->msg };
             run_pubsub_cb(mod, &msg, mm->sub);
@@ -215,11 +215,9 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
         /* Fallback to module default receive */
         cb = mod->hook.recv;
     }
-    
-    msg->self = mod;
-    
+        
     /* Notify underlying fuse fs */
-    fs_notify(msg);
+    fs_notify(mod, msg);
         
     /* Finally call user callback */
     cb(msg, src ? src->userptr : NULL);
@@ -350,7 +348,7 @@ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
     M_PARAM_ASSERT(mod->ctx == recipient->ctx);
-    M_PARAM_ASSERT(m_mod_is(recipient, RUNNING));
+    M_PARAM_ASSERT(m_mod_is(recipient, M_MOD_RUNNING));
     M_MOD_CTX(mod);
     
     return tell_system_pubsub_msg(recipient, c, M_PS_MOD_POISONPILL, mod, NULL);

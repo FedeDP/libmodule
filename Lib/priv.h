@@ -35,7 +35,7 @@
 #define M_MOD_ASSERT(mod) \
     M_PARAM_ASSERT(mod); \
     M_TH_ASSERT(mod->ctx); \
-    M_RET_ASSERT(!m_mod_is(mod, ZOMBIE), -EACCES);
+    M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), -EACCES);
     
 #define M_MOD_ASSERT_STATE(mod, state) \
     M_MOD_ASSERT(mod); \

@@ -25,7 +25,7 @@ void test_poll_perf(void **state) {
     ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
-    assert_true(m_mod_is(mod, IDLE));
+    assert_true(m_mod_is(mod, M_MOD_IDLE));
     
     m_mod_start(mod);
     

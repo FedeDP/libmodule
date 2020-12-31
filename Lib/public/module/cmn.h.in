@@ -69,7 +69,7 @@ typedef enum {
 } m_ctx_flags;
 
 /* Modules states */
-typedef enum { IDLE = 0x01, RUNNING = 0x02, PAUSED = 0x04, STOPPED = 0x08, ZOMBIE = 0x10 } m_mod_states;
+typedef enum { M_MOD_IDLE = 0x01, M_MOD_RUNNING = 0x02, M_MOD_PAUSED = 0x04, M_MOD_STOPPED = 0x08, M_MOD_ZOMBIE = 0x10 } m_mod_states;
 
 /* PubSub message types */
 typedef enum { M_PS_USER, M_PS_CTX_STARTED, M_PS_CTX_STOPPED, M_PS_MOD_STARTED, M_PS_MOD_STOPPED, M_PS_MOD_POISONPILL } m_ps_types;
@@ -184,9 +184,8 @@ typedef struct {
 
 /* Libmodule receive() main message type */
 typedef struct {
-    const m_mod_t *self;
-    const m_src_types type;
-    union {
+    const m_src_types type;                         // Event type
+    union {                                         // Events
         const m_evt_fd_t      *fd_msg;
         const m_evt_ps_t      *ps_msg;
         const m_evt_tmr_t     *tmr_msg;

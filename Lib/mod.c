@@ -106,7 +106,7 @@ static void src_priv_dtor(void *data) {
     M_MOD_CTX(t->mod);
     
     /* If a fd is deregistered for a RUNNING module, stop polling on it */
-    if (m_mod_is(t->mod, RUNNING)) {
+    if (m_mod_is(t->mod, M_MOD_RUNNING)) {
         poll_set_new_evt(&c->ppriv, t, RM);
     }
     
@@ -232,7 +232,7 @@ static int _register_src(m_mod_t *mod, const m_src_types type, const void *src_d
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         /* If a src is registered at runtime, start receiving its events */
-        if (m_mod_is(mod, RUNNING)) {
+        if (m_mod_is(mod, M_MOD_RUNNING)) {
             M_MOD_CTX(mod);
             ret = poll_set_new_evt(&c->ppriv, src, ADD);
             
@@ -344,7 +344,7 @@ static void reset_module(m_mod_t *mod) {
 
 int evaluate_module(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
-    if (m_mod_is(mod, IDLE) && 
+    if (m_mod_is(mod, M_MOD_IDLE) && 
         (!mod->hook.eval || mod->hook.eval())) {
         
         start(mod, true);
@@ -373,7 +373,7 @@ int start(m_mod_t *mod, const bool starting) {
     int ret = manage_fds(mod, c, ADD, false);
     M_ASSERT(!ret, errors[starting], ret);
     
-    mod->state = RUNNING;
+    mod->state = M_MOD_RUNNING;
     
     /* Call module init() callback only if module is being (re)started */
     if (!starting || mod->hook.init()) {
@@ -395,7 +395,7 @@ int stop(m_mod_t *mod, const bool stopping) {
     int ret = manage_fds(mod, c, RM, stopping);
     M_ASSERT(!ret, errors[stopping], ret);
     
-    mod->state = stopping ? STOPPED : PAUSED;
+    mod->state = stopping ? M_MOD_STOPPED : M_MOD_PAUSED;
     
     /*
      * When module gets stopped, its write-end pubsub fd is closed too 
@@ -483,7 +483,7 @@ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const m_userhoo
         
         if (m_map_put(c->modules, mod->name, mod) == 0) {
             memcpy(&mod->hook, hook, sizeof(m_userhook_t));
-            mod->state = IDLE;
+            mod->state = M_MOD_IDLE;
             
             *self = mod;
             
@@ -515,7 +515,7 @@ int m_mod_deregister(m_mod_t **mod) {
     M_MEM_LOCK(m, {
         /* Stop module */
         stop(m, true);
-        m->state = ZOMBIE;
+        m->state = M_MOD_ZOMBIE;
         
         /* Remove the module from the context */
         m_map_remove(c->modules, m->name);
@@ -541,7 +541,7 @@ int m_mod_deregister(m_mod_t **mod) {
 m_ctx_t *m_mod_ctx(const m_mod_t *mod) {
     M_RET_ASSERT(mod, NULL);
     M_RET_ASSERT(mod->ctx->th_id == pthread_self(), NULL);
-    M_RET_ASSERT(!m_mod_is(mod, ZOMBIE), NULL);
+    M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), NULL);
     
     return mod->ctx;
 }
@@ -549,7 +549,7 @@ m_ctx_t *m_mod_ctx(const m_mod_t *mod) {
 
 int m_mod_become(m_mod_t *mod, const recv_cb new_recv) {
     M_PARAM_ASSERT(new_recv);
-    M_MOD_ASSERT_STATE(mod, RUNNING);
+    M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
     
     int ret = m_stack_push(mod->recvs, new_recv);
     if (ret == 0) {
@@ -559,7 +559,7 @@ int m_mod_become(m_mod_t *mod, const recv_cb new_recv) {
 }
 
 int m_mod_unbecome(m_mod_t *mod) {
-    M_MOD_ASSERT_STATE(mod, RUNNING);
+    M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
     
     if (m_stack_pop(mod->recvs) != NULL) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
@@ -589,7 +589,7 @@ int m_mod_set_userdata(m_mod_t *mod, const void *userdata) {
 const void *m_mod_get_userdata(const m_mod_t *mod) {
     M_RET_ASSERT(mod, NULL);
     M_RET_ASSERT(mod->ctx->th_id == pthread_self(), NULL);
-    M_RET_ASSERT(!m_mod_is(mod, ZOMBIE), NULL);
+    M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), NULL);
     
     return mod->userdata;
 }
@@ -803,25 +803,25 @@ int m_mod_stats(const m_mod_t *mod, m_stats_t *stats) {
 /** Module state setters **/
 
 int m_mod_start(m_mod_t *mod) {
-    M_MOD_ASSERT_STATE(mod, IDLE | STOPPED);
+    M_MOD_ASSERT_STATE(mod, M_MOD_IDLE | M_MOD_STOPPED);
     
     return start(mod, true);
 }
 
 int m_mod_pause(m_mod_t *mod) {
-    M_MOD_ASSERT_STATE(mod, RUNNING);
+    M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
     
     return stop(mod, false);
 }
 
 int m_mod_resume(m_mod_t *mod) {
-    M_MOD_ASSERT_STATE(mod, PAUSED);
+    M_MOD_ASSERT_STATE(mod, M_MOD_PAUSED);
     
     return start(mod, false);
 }
 
 int m_mod_stop(m_mod_t *mod) {
-    M_MOD_ASSERT_STATE(mod, RUNNING | PAUSED);
+    M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING | M_MOD_PAUSED);
     
     return stop(mod, true);
 }

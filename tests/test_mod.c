@@ -48,7 +48,7 @@ void test_mod_register(void **state) {
     int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
-    assert_true(m_mod_is(mod, IDLE));
+    assert_true(m_mod_is(mod, M_MOD_IDLE));
 }
 
 void test_mod_register_already_registered(void **state) {
@@ -58,7 +58,7 @@ void test_mod_register_already_registered(void **state) {
     int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_non_null(mod);
-    assert_true(m_mod_is(mod, IDLE));
+    assert_true(m_mod_is(mod, M_MOD_IDLE));
 }
 
 void test_mod_register_same_name(void **state) {
@@ -95,11 +95,11 @@ void test_mod_false_init(void **state) {
     int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
-    assert_true(m_mod_is(mod, IDLE));
+    assert_true(m_mod_is(mod, M_MOD_IDLE));
     
     ret = m_mod_start(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(mod, STOPPED));
+    assert_true(m_mod_is(mod, M_MOD_STOPPED));
     
     ret = m_mod_deregister(&mod);
     assert_true(ret == 0);
@@ -111,7 +111,7 @@ void test_mod_pause_NULL_self(void **state) {
     
     int ret = m_mod_pause(NULL);
     assert_false(ret == 0);
-    assert_true(m_mod_is(mod, RUNNING));
+    assert_true(m_mod_is(mod, M_MOD_RUNNING));
 }
 
 void test_mod_pause(void **state) {
@@ -119,7 +119,7 @@ void test_mod_pause(void **state) {
     
     int ret = m_mod_pause(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(mod, PAUSED));
+    assert_true(m_mod_is(mod, M_MOD_PAUSED));
     
     /* Test module_tell for paused modules */
     ret = m_mod_ps_tell(mod, mod, (unsigned char *)"Paused!", 0);
@@ -131,7 +131,7 @@ void test_mod_resume_NULL_self(void **state) {
     
     int ret = m_mod_resume(NULL);
     assert_false(ret == 0);
-    assert_true(m_mod_is(mod, PAUSED));
+    assert_true(m_mod_is(mod, M_MOD_PAUSED));
 }
 
 void test_mod_resume(void **state) {
@@ -139,7 +139,7 @@ void test_mod_resume(void **state) {
     
     int ret = m_mod_resume(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(mod, RUNNING));
+    assert_true(m_mod_is(mod, M_MOD_RUNNING));
 }
 
 void test_mod_stop_NULL_self(void **state) {
@@ -147,7 +147,7 @@ void test_mod_stop_NULL_self(void **state) {
     
     int ret = m_mod_stop(NULL);
     assert_false(ret == 0);
-    assert_false(m_mod_is(mod, STOPPED));
+    assert_false(m_mod_is(mod, M_MOD_STOPPED));
 }
 
 void test_mod_stop(void **state) {
@@ -155,7 +155,7 @@ void test_mod_stop(void **state) {
     
     int ret = m_mod_stop(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(mod, STOPPED));
+    assert_true(m_mod_is(mod, M_MOD_STOPPED));
 }
 
 void test_mod_start_NULL_self(void **state) {
@@ -163,7 +163,7 @@ void test_mod_start_NULL_self(void **state) {
     
     int ret = m_mod_start(NULL);
     assert_false(ret == 0);
-    assert_false(m_mod_is(mod, RUNNING));
+    assert_false(m_mod_is(mod, M_MOD_RUNNING));
 }
 
 void test_mod_start(void **state) {
@@ -171,7 +171,7 @@ void test_mod_start(void **state) {
     
     int ret = m_mod_start(mod);
     assert_true(ret == 0);
-    assert_true(m_mod_is(mod, RUNNING));
+    assert_true(m_mod_is(mod, M_MOD_RUNNING));
 }
 
 void test_mod_log_NULL_self(void **state) {
