@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef LIBMODULE_CORE_H
+    #define LIBMODULE_CORE_H
+#endif
+
 #include "cmn.h"
 
 /* Module interface functions */

@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef LIBMODULE_MEM_H
+    #define LIBMODULE_MEM_H
+#endif
 #include "cmn.h"
 
 #define M_MEM_LOCK(ptr, fn) \

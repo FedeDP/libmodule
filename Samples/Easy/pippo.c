@@ -29,7 +29,7 @@ static bool init(void) {
 #ifdef __linux__
     m_m_src_register(&((m_src_path_t) { "/home/federico", IN_CREATE }), 0, &myData);
 #else
-    m_m_register_src(&((mod_path_t) { "/home/federico", NOTE_WRITE }), 0, &myData);
+    m_m_src_register(&((m_src_path_t) { "/home/federico", NOTE_WRITE }), 0, &myData);
 #endif
     
     /* Get Doggo module reference */

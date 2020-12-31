@@ -1,5 +1,9 @@
 #pragma once
 
+#if (!defined LIBMODULE_CORE_H && !defined LIBMODULE_STRUCT_H)
+    #error "Libmodule cmn.h should not be explicitly included."
+#endif
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>

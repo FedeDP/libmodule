@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef LIBMODULE_TH_H
+    #define LIBMODULE_TH_H
+#endif
 #include "cmn.h"
 #include <pthread.h>
 

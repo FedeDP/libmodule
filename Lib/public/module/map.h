@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef LIBMODULE_STRUCT_H
+    #define LIBMODULE_STRUCT_H
+#endif
 #include "cmn.h"
 
 /** Hashmap interface **/

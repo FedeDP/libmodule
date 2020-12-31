@@ -25,7 +25,7 @@ M_MOD("Pippo");
 
 static void init(void) {
     /* Register STDIN fd, without autoclosing it at the end */
-    m_m_register_src(STDIN_FILENO, 0, NULL);
+    m_m_src_register(STDIN_FILENO, 0, NULL);
     return true;
 }
 
@@ -43,8 +43,8 @@ static void destroy(void) {
     
 }
 
-static void receive(const msg_t *msg, const void *userdata) {
-    if (msg->type == TYPE_FD) {
+static void receive(const m_evt_t *const msg, const void *userdata) {
+    if (msg->type == M_SRC_TYPE_FD) {
         char c;
         read(msg->fd_msg->fd, &c, sizeof(char));
         switch (tolower(c)) {
@@ -58,8 +58,8 @@ static void receive(const msg_t *msg, const void *userdata) {
                 }
                 break;
         }
-    } else if (msg->type == TYPE_PS && msg->pubsub_msg->type == USER && 
-        !strcmp((char *)msg->pubsub_msg->message, "ByeBye")) {
+    } else if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER && 
+        !strcmp((char *)msg->ps_msg->data, "ByeBye")) {
         
         m_ctx_quit(m_m_ctx(), 0);
     }

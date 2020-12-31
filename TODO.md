@@ -257,10 +257,11 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [ ] Add a m_mod_set_batch_size(size) to batch requests and flush them together (receive callback will receive pointer to array and length of array)?
 
-- [ ] Double check ctx_easy and mod_easy api
+- [x] Double check ctx_easy and mod_easy api
 - [x] Add -DNO_CHECKS to disable checks
 
-- [ ] Avoid direct inclusion of cmn.h and itr.h (?)
+- [x] Avoid direct inclusion of cmn.h
+
 - [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
 
 - [ ] Put src_userdata inside m_evt_t struct and avoid passing it as param to recv_cb
