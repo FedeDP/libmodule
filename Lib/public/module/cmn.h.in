@@ -113,31 +113,31 @@ typedef enum {
     M_PS_GLOBAL     = 0x02      // Only useful for module_broadcast. Broadcast a message to any context.
 } m_ps_flags;
 
-/* module_register_src() request special types. */
+/* m_mod_src_register() special types. */
 typedef struct {
     clockid_t clock_id;     // Clock_id (eg: CLOCK_MONOTONIC). Unsupported on libkqueue/kqueue
     uint64_t ms;            // Timer in ms
-} mod_tmr_t;
+} m_src_tmr_t;
 
 typedef struct {
     unsigned int signo;     // Requested signal number source, as defined in signal.h
-} mod_sgn_t;
+} m_src_sgn_t;
 
 typedef struct {
     const char *path;       // Path of file/folder to which subscribe for events
     unsigned int events;    // Desired events
-} mod_path_t;
+} m_src_path_t;
 
 typedef struct {
     pid_t pid;              // Desired process id
     unsigned int events;    // Desired events. Unused on linux: only process exit is supported
-} mod_pid_t;
+} m_src_pid_t;
 
 typedef struct {
     unsigned int tid;       // Desired thread id
     int (*fn)(void *);      // Function to be run on thread
     m_thpool_t *thpool;     // optional threadpool on which job should run
-} mod_task_t;
+} m_src_task_t;
 
 /** Libmodule sub-messages received in receive() callback **/
 

@@ -196,17 +196,17 @@ static int _register_src(m_mod_t *mod, const m_src_types type, const void *src_d
     }
     case M_SRC_TYPE_TMR: {
         tmr_src_t *tm_src = &src->tmr_src;
-        memcpy(&tm_src->its, src_data, sizeof(mod_tmr_t));
+        memcpy(&tm_src->its, src_data, sizeof(m_src_tmr_t));
         break;
     }
     case M_SRC_TYPE_SGN: {
         sgn_src_t *sgn_src = &src->sgn_src;
-        memcpy(&sgn_src->sgs, src_data, sizeof(mod_sgn_t));
+        memcpy(&sgn_src->sgs, src_data, sizeof(m_src_sgn_t));
         break;
     }
     case M_SRC_TYPE_PATH: {
         path_src_t *pt_src = &src->path_src;
-        memcpy(&pt_src->pt, src_data, sizeof(mod_path_t));
+        memcpy(&pt_src->pt, src_data, sizeof(m_src_path_t));
         if (flags & M_SRC_DUP) {
             pt_src->pt.path = mem_strdup(pt_src->pt.path);
         }
@@ -214,12 +214,12 @@ static int _register_src(m_mod_t *mod, const m_src_types type, const void *src_d
     }
     case M_SRC_TYPE_PID: {
         pid_src_t *pid_src = &src->pid_src;
-        memcpy(&pid_src->pid, src_data, sizeof(mod_pid_t));
+        memcpy(&pid_src->pid, src_data, sizeof(m_src_pid_t));
         break;
     }
     case M_SRC_TYPE_TASK: {
         task_src_t *task_src = &src->task_src;
-        memcpy(&task_src->tid, src_data, sizeof(mod_task_t));
+        memcpy(&task_src->tid, src_data, sizeof(m_src_task_t));
         break;
     }
     default:
@@ -266,35 +266,35 @@ static int fdcmp(void *my_data, void *node_data) {
 
 static int tmrcmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
-    const mod_tmr_t *its = (const mod_tmr_t *)my_data;
+    const m_src_tmr_t *its = (const m_src_tmr_t *)my_data;
     
     return its->ms - src->tmr_src.its.ms;
 }
 
 static int sgncmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
-    const mod_sgn_t *sgs = (const mod_sgn_t *)my_data;
+    const m_src_sgn_t *sgs = (const m_src_sgn_t *)my_data;
     
     return sgs->signo - src->sgn_src.sgs.signo;
 }
 
 static int pathcmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
-    const mod_path_t *pt = (const mod_path_t *)my_data;
+    const m_src_path_t *pt = (const m_src_path_t *)my_data;
     
     return strcmp(pt->path, src->path_src.pt.path);
 }
 
 static int pidcmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
-    const mod_pid_t *pid = (const mod_pid_t *)my_data;
+    const m_src_pid_t *pid = (const m_src_pid_t *)my_data;
     
     return pid->pid - src->pid_src.pid.pid;
 }
 
 static int taskcmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
-    const mod_task_t *tid = (const mod_task_t *)my_data;
+    const m_src_task_t *tid = (const m_src_task_t *)my_data;
     
     return tid->tid - src->task_src.tid.tid;;
 }
@@ -606,31 +606,31 @@ int m_mod_src_deregister_fd(m_mod_t *mod, const int fd) {
     return _deregister_src(mod, M_SRC_TYPE_FD, (void *)&fd);
 }
 
-int m_mod_src_register_tmr(m_mod_t *mod, const mod_tmr_t *its, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_tmr(m_mod_t *mod, const m_src_tmr_t *its, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(its && its->ms > 0);
     
     return _register_src(mod, M_SRC_TYPE_TMR, its, flags, userptr);
 }
 
-int m_mod_src_deregister_tmr(m_mod_t *mod, const mod_tmr_t *its) {
+int m_mod_src_deregister_tmr(m_mod_t *mod, const m_src_tmr_t *its) {
     M_PARAM_ASSERT(its && its->ms > 0);
     
     return _deregister_src(mod, M_SRC_TYPE_TMR, (void *)its);
 }
 
-int m_mod_src_register_sgn(m_mod_t *mod, const mod_sgn_t *sgs, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_sgn(m_mod_t *mod, const m_src_sgn_t *sgs, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(sgs && sgs->signo > 0);
     
     return _register_src(mod, M_SRC_TYPE_SGN, sgs, flags, userptr);
 }
 
-int m_mod_src_deregister_sgn(m_mod_t *mod, const mod_sgn_t *sgs) {
+int m_mod_src_deregister_sgn(m_mod_t *mod, const m_src_sgn_t *sgs) {
     M_PARAM_ASSERT(sgs && sgs->signo > 0);
     
     return _deregister_src(mod, M_SRC_TYPE_SGN, (void *)sgs);
 }
 
-int m_mod_src_register_path(m_mod_t *mod, const mod_path_t *pt, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_path(m_mod_t *mod, const m_src_path_t *pt, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(pt);
     M_PARAM_ASSERT(pt->path && strlen(pt->path));
     M_PARAM_ASSERT(pt->events > 0);
@@ -638,32 +638,32 @@ int m_mod_src_register_path(m_mod_t *mod, const mod_path_t *pt, const m_src_flag
     return _register_src(mod, M_SRC_TYPE_PATH, pt, flags, userptr);
 }
 
-int m_mod_src_deregister_path(m_mod_t *mod, const mod_path_t *pt) {
+int m_mod_src_deregister_path(m_mod_t *mod, const m_src_path_t *pt) {
     M_PARAM_ASSERT(pt);
     M_PARAM_ASSERT(pt->path && strlen(pt->path));
     
     return _deregister_src(mod, M_SRC_TYPE_PATH, (void *)pt);
 }
 
-int m_mod_register_pid(m_mod_t *mod, const mod_pid_t *pid, const m_src_flags flags, const void *userptr) {
+int m_mod_register_pid(m_mod_t *mod, const m_src_pid_t *pid, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(pid && pid->pid > 0);
     
     return _register_src(mod, M_SRC_TYPE_PID, pid, flags, userptr);
 }
 
-int m_mod_deregister_pid(m_mod_t *mod, const mod_pid_t *pid) {
+int m_mod_deregister_pid(m_mod_t *mod, const m_src_pid_t *pid) {
     M_PARAM_ASSERT(pid && pid->pid > 0);
     
     return _deregister_src(mod, M_SRC_TYPE_PID, (void *)pid);
 }
 
-int m_mod_src_register_task(m_mod_t *mod, const mod_task_t *tid, const m_src_flags flags, const void *userptr) {
+int m_mod_src_register_task(m_mod_t *mod, const m_src_task_t *tid, const m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(tid && tid->fn);
     
     return _register_src(mod, M_SRC_TYPE_TASK, tid, flags | M_SRC_ONESHOT, userptr); // force ONESHOT flag
 }
 
-int m_mod_src_deregister_task(m_mod_t *mod, const mod_task_t *tid) {
+int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid) {
     M_PARAM_ASSERT(tid);
     
     return _deregister_src(mod, M_SRC_TYPE_TASK, (void *)tid);

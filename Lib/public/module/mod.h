@@ -48,20 +48,20 @@ _public_ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient);
 _public_ int m_mod_src_register_fd(m_mod_t *mod, const int fd, const m_src_flags flags, const void *userptr);
 _public_ int m_mod_src_deregister_fd(m_mod_t *mod, const int fd);
 
-_public_ int m_mod_src_register_tmr(m_mod_t *mod, const mod_tmr_t *its, const m_src_flags flags, const void *userptr);
-_public_ int m_mod_src_deregister_tmr(m_mod_t *mod, const mod_tmr_t *its);
+_public_ int m_mod_src_register_tmr(m_mod_t *mod, const m_src_tmr_t *its, const m_src_flags flags, const void *userptr);
+_public_ int m_mod_src_deregister_tmr(m_mod_t *mod, const m_src_tmr_t *its);
 
-_public_ int m_mod_src_register_sgn(m_mod_t *mod, const mod_sgn_t *its, const m_src_flags flags, const void *userptr);
-_public_ int m_mod_src_deregister_sgn(m_mod_t *mod, const mod_sgn_t *its);
+_public_ int m_mod_src_register_sgn(m_mod_t *mod, const m_src_sgn_t *its, const m_src_flags flags, const void *userptr);
+_public_ int m_mod_src_deregister_sgn(m_mod_t *mod, const m_src_sgn_t *its);
 
-_public_ int m_mod_src_register_path(m_mod_t *mod, const mod_path_t *its, const m_src_flags flags, const void *userptr);
-_public_ int m_mod_src_deregister_path(m_mod_t *mod, const mod_path_t *its);
+_public_ int m_mod_src_register_path(m_mod_t *mod, const m_src_path_t *its, const m_src_flags flags, const void *userptr);
+_public_ int m_mod_src_deregister_path(m_mod_t *mod, const m_src_path_t *its);
 
-_public_ int m_mod_register_pid(m_mod_t *mod, const mod_pid_t *pid, const m_src_flags flags, const void *userptr);
-_public_ int m_mod_deregister_pid(m_mod_t *mod, const mod_pid_t *pid);
+_public_ int m_mod_register_pid(m_mod_t *mod, const m_src_pid_t *pid, const m_src_flags flags, const void *userptr);
+_public_ int m_mod_deregister_pid(m_mod_t *mod, const m_src_pid_t *pid);
 
-_public_ int m_mod_src_register_task(m_mod_t *mod, const mod_task_t *tid, const m_src_flags flags, const void *userptr);
-_public_ int m_mod_src_deregister_task(m_mod_t *mod, const mod_task_t *tid);
+_public_ int m_mod_src_register_task(m_mod_t *mod, const m_src_task_t *tid, const m_src_flags flags, const void *userptr);
+_public_ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid);
 
 _public_ int m_mod_src_register_sub(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr);
 _public_ int m_mod_src_deregister_sub(m_mod_t *mod, const char *topic);
@@ -70,19 +70,19 @@ _public_ int m_mod_src_deregister_sub(m_mod_t *mod, const char *topic);
 #define m_mod_src_register(mod, X, flags, userptr) _Generic((X) + 0, \
     int: m_mod_src_register_fd, \
     char *: m_mod_src_register_sub, \
-    mod_tmr_t *: m_mod_src_register_tmr, \
-    mod_sgn_t *: m_mod_src_register_sgn, \
-    mod_path_t *: m_mod_src_register_path, \
-    mod_pid_t *: m_mod_register_pid, \
-    mod_task_t *: m_mod_src_register_task \
+    m_src_tmr_t *: m_mod_src_register_tmr, \
+    m_src_sgn_t *: m_mod_src_register_sgn, \
+    m_src_path_t *: m_mod_src_register_path, \
+    m_src_pid_t *: m_mod_register_pid, \
+    m_src_task_t *: m_mod_src_register_task \
     )(mod, X, flags, userptr)
 
 #define m_mod_src_deregister(mod, X) _Generic((X) + 0, \
     int: m_mod_src_deregister_fd, \
     char *: m_mod_src_deregister_sub, \
-    mod_tmr_t *: m_mod_src_deregister_tmr, \
-    mod_sgn_t *: m_mod_src_deregister_sgn, \
-    mod_path_t *: m_mod_src_deregister_path, \
-    mod_pid_t *: m_mod_deregister_pid, \
-    mod_task_t *: m_mod_src_deregister_task \
+    m_src_tmr_t *: m_mod_src_deregister_tmr, \
+    m_src_sgn_t *: m_mod_src_deregister_sgn, \
+    m_src_path_t *: m_mod_src_deregister_path, \
+    m_src_pid_t *: m_mod_deregister_pid, \
+    m_src_task_t *: m_mod_src_deregister_task \
     )(mod, X)

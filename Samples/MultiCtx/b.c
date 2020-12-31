@@ -8,7 +8,7 @@ static const char *myCtx = "SecondCtx";
 static m_mod_t *mod;
 
 static bool init(void) {
-    m_mod_src_register(mod, &((mod_sgn_t) { SIGINT }), 0, NULL);
+    m_mod_src_register(mod, &((m_src_sgn_t) { SIGINT }), 0, NULL);
     return true;
 }
 

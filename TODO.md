@@ -123,7 +123,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [x] Rename msg_t to m_evt_t
 - - [ ] Rename msg_t sub msgs
 - - [x] Rename m_mod_register_src() to m_mod_src_register() ??
-- - [ ] Rename src register types (eg: mod_tmr_t -> m_tmr_t)
+- - [x] Rename src register types (eg: mod_tmr_t -> m_tmr_t)
 - - [x] Rename userhook_t, log_cb
 - - [ ] Rename init_cb and other callbacks
 - - [x] Rename memhook_t and its callbacks

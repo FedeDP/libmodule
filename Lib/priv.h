@@ -59,7 +59,7 @@ typedef struct {
 #ifdef __linux__
     fd_src_t f;
 #endif
-    mod_tmr_t its;
+    m_src_tmr_t its;
 } tmr_src_t;
 
 /* Struct that holds signals to self_t mapping for poll plugin */
@@ -67,13 +67,13 @@ typedef struct {
 #ifdef __linux__
     fd_src_t f;
 #endif
-    mod_sgn_t sgs;
+    m_src_sgn_t sgs;
 } sgn_src_t;
 
 /* Struct that holds paths to self_t mapping for poll plugin */
 typedef struct {
     fd_src_t f; // in kqueue EVFILT_VNODE: open(path) is needed. Thus a fd is needed too.
-    mod_path_t pt;
+    m_src_path_t pt;
 } path_src_t;
 
 /* Struct that holds pids to self_t mapping for poll plugin */
@@ -81,7 +81,7 @@ typedef struct {
 #ifdef __linux__
     fd_src_t f;
 #endif
-    mod_pid_t pid;
+    m_src_pid_t pid;
 } pid_src_t;
 
 /* Struct that holds task to self_t mapping for poll plugin */
@@ -89,7 +89,7 @@ typedef struct {
 #ifdef __linux__
     fd_src_t f;
 #endif
-    mod_task_t tid;
+    m_src_task_t tid;
     pthread_t th;
     int retval;
 } task_src_t;

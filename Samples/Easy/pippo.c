@@ -23,11 +23,11 @@ static void m_mod_pre_start() {
 }
 
 static bool init(void) {
-    m_m_src_register(&((mod_sgn_t) { SIGINT }), 0, &myData);
-    m_m_src_register(&((mod_tmr_t) { CLOCK_MONOTONIC, 5000 }), M_SRC_ONESHOT, NULL);
+    m_m_src_register(&((m_src_sgn_t) { SIGINT }), 0, &myData);
+    m_m_src_register(&((m_src_tmr_t) { CLOCK_MONOTONIC, 5000 }), M_SRC_ONESHOT, NULL);
     m_m_src_register(STDIN_FILENO, 0, NULL);
 #ifdef __linux__
-    m_m_src_register(&((mod_path_t) { "/home/federico", IN_CREATE }), 0, &myData);
+    m_m_src_register(&((m_src_path_t) { "/home/federico", IN_CREATE }), 0, &myData);
 #else
     m_m_register_src(&((mod_path_t) { "/home/federico", NOTE_WRITE }), 0, &myData);
 #endif

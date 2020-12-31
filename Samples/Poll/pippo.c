@@ -18,7 +18,7 @@ static void module_pre_start(void) {
 }
 
 static bool init(void) {
-    m_m_src_register(&((mod_sgn_t) { SIGINT }), 0, &myData);
+    m_m_src_register(&((m_src_sgn_t) { SIGINT }), 0, &myData);
     m_m_src_register(STDIN_FILENO, 0, NULL);
     
     /* Get Doggo reference */

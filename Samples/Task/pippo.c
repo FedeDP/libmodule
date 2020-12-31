@@ -18,8 +18,8 @@ static void module_pre_start(void) {
 static bool init(void) {
     m_m_log("Starting data val: %d\n", thData);
     
-    m_m_src_register(&((mod_tmr_t) { CLOCK_MONOTONIC, 1000 }), 0, &tmrData);
-    m_m_src_register(&((mod_task_t) { 8, inc }), 0, &thData);
+    m_m_src_register(&((m_src_tmr_t) { CLOCK_MONOTONIC, 1000 }), 0, &tmrData);
+    m_m_src_register(&((m_src_task_t) { 8, inc }), 0, &thData);
     return true;
 }
 
