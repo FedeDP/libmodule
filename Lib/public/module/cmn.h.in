@@ -1,6 +1,6 @@
 #pragma once
 
-#if (!defined LIBMODULE_CORE_H && !defined LIBMODULE_STRUCT_H)
+#if (!defined LIBMODULE_CORE_H && !defined LIBMODULE_STRUCT_H && !defined LIBMODULE_MEM_H && !defined LIBMODULE_TH_H)
     #error "Libmodule cmn.h should not be explicitly included."
 #endif
 
