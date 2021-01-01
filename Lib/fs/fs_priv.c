@@ -384,7 +384,8 @@ int fs_process(m_ctx_t *c) {
     return ret;
 }
 
-int fs_notify(m_mod_t *mod, const m_evt_t *msg) {
+int fs_notify(const m_evt_t *msg) {
+    m_mod_t *mod = (m_mod_t *)msg->self;
     if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_CTX_STOPPED) {
