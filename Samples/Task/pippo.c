@@ -23,10 +23,6 @@ static bool init(void) {
     return true;
 }
 
-static bool check(void) {
-    return true;
-}
-
 static bool eval(void) {
     return true;
 }
@@ -35,10 +31,10 @@ static void deinit(void) {
     
 }
 
-static void receive(const m_evt_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg) {
     switch (msg->type) {
     case M_SRC_TYPE_TMR: {
-        int *data = (int *)userdata;
+        int *data = (int *)msg->userdata;
         if (*data == 5) {
             m_m_log("Timed out.\n");
             m_c_quit(0);

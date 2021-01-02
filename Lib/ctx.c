@@ -1,7 +1,6 @@
 #include "mod.h"
 #include "ctx.h"
 #include "fs_priv.h"
-#include <dlfcn.h> // dlopen
 
 static int ctx_new(const char *ctx_name, m_ctx_t **c, const m_ctx_flags flags, const void *userdata);
 static void ctx_dtor(void *data);
@@ -383,63 +382,6 @@ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "\t]\n");
     ctx_logger(c, NULL, "}\n");
     return 0;
-}
-
-
-int m_ctx_load(m_ctx_t *c, const char *module_path, const m_mod_flags flags) {
-    M_CTX_ASSERT(c);
-    M_PARAM_ASSERT(module_path);
-    
-    const int module_size = m_map_length(c->modules);
-    
-    void *handle = dlopen(module_path, RTLD_NOW);
-    if (!handle) {
-        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
-        return -errno;
-    }
-    
-    /* 
-     * Check that requested module has been created in requested ctx, 
-     * by looking at requested ctx number of modules
-     */
-    if (module_size == m_map_length(c->modules)) { 
-        dlclose(handle);
-        return -EPERM;
-    }
-    
-    /* Take most recently loaded module */
-    m_mod_t *mod = map_peek(c->modules);
-    mod->local_path = mem_strdup(module_path);
-    mod->flags = flags;
-    return 0;
-}
-
-int m_ctx_unload(m_ctx_t *c, const char *module_path) {
-    M_CTX_ASSERT(c);
-    M_PARAM_ASSERT(module_path);    
-    
-    /* Check if desired module is actually loaded in context */
-    bool found = false;
-    m_itr_foreach(c->modules, {
-        m_mod_t *mod = m_itr_get(itr);
-        if (mod->local_path && !strcmp(mod->local_path, module_path)) {
-            found = true;
-            memhook._free(itr);
-            break;
-        }
-    });
-    
-    if (found) {
-        void *handle = dlopen(module_path, RTLD_NOLOAD);
-        if (handle) {
-            dlclose(handle);
-            return 0;
-        }
-        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
-        return -errno;
-    }
-    M_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, c->name);
-    return -ENODEV;
 }
 
 size_t m_ctx_trim(m_ctx_t *c, const m_stats_t *thres) {

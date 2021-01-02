@@ -23,17 +23,6 @@ static bool init(void) {
 }
 
 /* 
- * Whether this module should be actually created:
- * true if module must be created, !true otherwise.
- * 
- * Use this function as a starting filter: 
- * you may desire that a module is not started in certain conditions.
- */
-static bool check(void) {
-    return true;
-}
-
-/* 
  * Should return not-0 value when module can be actually started (and thus polled).
  * Use this to check intra-modules dependencies or any other env variable.
  * 
@@ -55,7 +44,7 @@ static void deinit(void) {
 /*
  * Default poll callback
  */
-static void receive(const m_evt_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
         if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
             m_m_log("Received quit.\n");

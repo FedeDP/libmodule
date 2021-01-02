@@ -29,11 +29,6 @@ static void init(void) {
     return true;
 }
 
-static bool check(void) {
-    /* Should module be registered? */
-    return true;
-}
-
 static bool eval(void) {
     /* Should module be started? */
     return true;

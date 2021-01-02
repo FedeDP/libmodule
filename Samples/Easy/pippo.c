@@ -16,7 +16,7 @@ M_MOD("Pippo");
 
 static int myData = 5;
 
-static void receive_ready(const m_evt_t *msg, const void *userdata);
+static void receive_ready(const m_evt_t *msg);
 
 static void m_mod_pre_start() {
     
@@ -37,10 +37,6 @@ static bool init(void) {
     return true;
 }
 
-static bool check(void) {
-    return true;
-}
-
 static bool eval(void) {
     return true;
 }
@@ -49,14 +45,14 @@ static void deinit(void) {
     m_m_unref(&doggo);
 }
 
-static void receive(const m_evt_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c;
         
         /* Forcefully quit if we received a signal */
         if (msg->type == M_SRC_TYPE_SGN) {
             c = 'q';
-            int *data = (int *)userdata;
+            int *data = (int *)msg->userdata;
             if (data) {
                 m_m_log("Data is %d. Received %d.\n", *data, msg->sgn_msg->signo);
             }
@@ -101,7 +97,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
  * Secondary poll callback.
  * Use m_become(ready) to start using this second poll callback.
  */
-static void receive_ready(const m_evt_t *msg, const void *userdata) {
+static void receive_ready(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c = 10;
         

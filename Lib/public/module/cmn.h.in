@@ -199,12 +199,13 @@ typedef struct {
         const m_evt_pid_t     *pid_msg;
         const m_evt_task_t    *task_msg;
     };
+    const void *userdata;
 } m_evt_t;
 
 /* Callbacks typedefs */
 typedef bool (*init_cb)(void);
 typedef bool (*eval_cb)(void);
-typedef void (*recv_cb)(const m_evt_t *const msg, const void *userdata);
+typedef void (*recv_cb)(const m_evt_t *const msg);
 typedef void (*deinit_cb)(void);
 
 /* Logger callback */

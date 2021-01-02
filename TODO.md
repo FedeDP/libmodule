@@ -129,7 +129,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [x] Rename memhook_t and its callbacks
 - - [x] Rename stats_t to m_stats_t
 - - [x] Rename exposed flags
-- - [ ] Rename init/deinit/check etc etc to on_start(), on_stop(), should_register() etc etc...
+- - [ ] Rename init/deinit/check etc etc to on_start(), on_stop(), on_event(), on_eval() etc etc...
 - - [x] Rename commons.h.in to cmn.h.in
 - - [x] Rename mod_states to m_mod_states
 - [x] Rename pubsub.c to ps.c
@@ -229,6 +229,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 ### DOC
 
+- [ ] rewrite from scratch!
 - [ ] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
 - [ ] Fully rewrite documentation per-namespace
 - [ ] Add build options doc
@@ -264,18 +265,27 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
 
-- [ ] Put src_userdata inside m_evt_t struct and avoid passing it as param to recv_cb
+- [x] Put src_userdata inside m_evt_t struct and avoid passing it as param to recv_cb
+- [ ] switch m_evt_t to be mem ref'd. This way clients can keep a ref by calling m_mem_ref() on message
+- [ ] document behaviour 
+
+- [x] drop check() callback on easy API
+- [ ] add m_mod_ prefix to callbacks, eg m_mod_prestart, m_mod_on_start() ecc ecc
+- [ ] Use M_M() macro instead of M_MOD? More coherent with easy API; eg: M_MOD(name, ctx) -> M_M(Name) (use null as ctx)
+- [ ] use m_m_ prefix for callbacks?
+
+- [x] move m_ctx_load under mod namespace, ie m_mod_load(). 
+- [x] In general, follow the following idea: "what are we {loading,dumping, registering...}?" A module. Thus mod namespace
 
 ### Module permissions management
-- [ ] Add some permission management to modules, through m_mod_flags, eg:
+- [ ] Add some permission management to modules, through m_mod_perms flags, eg:
 - - [ ] M_MOD_ALLOW_PUB
 - - [ ] M_MOD_ALLOW_SUB
 - - [ ] M_MOD_ALLOW_LOAD
 - - [ ] M_MOD_ALLOW_QUIT
 - - [ ] M_MOD_ALLOW_ALL
-- [ ] m_mod_register() flags
-- [ ] m_mod_load() flags
-- [ ] Move m_ctx_load to m_mod_load?
+- [ ] m_mod_register() add flags
+- [ ] m_mod_load() add flags
 
 ### Generic
 

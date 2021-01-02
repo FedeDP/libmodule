@@ -217,12 +217,13 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
     }
     
     msg->self = mod;
+    msg->userdata = src ? src->userptr : NULL;
     
     /* Notify underlying fuse fs */
     fs_notify(msg);
         
     /* Finally call user callback */
-    cb(msg, src ? src->userptr : NULL);
+    cb(msg);
 
     if (msg->type == M_SRC_TYPE_PS) {
         ps_priv_t *mm = (ps_priv_t *)msg->ps_msg;

@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-static void receive_sleeping(const m_evt_t *msg, const void *userdata);
+static void receive_sleeping(const m_evt_t *msg);
 
 static const m_mod_t *new_mod;
 
@@ -20,10 +20,6 @@ static bool init(void) {
     return true;
 }
 
-static bool check(void) {
-    return true;
-}
-
 static bool eval(void) {
     return true;
 }
@@ -35,7 +31,7 @@ static void deinit(void) {
 /*
  * Default poll callback
  */
-static void receive(const m_evt_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS) {
         switch (msg->ps_msg->type) {
         case M_PS_USER:
@@ -51,7 +47,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
                 m_m_log("ZzzZzz...\n");
                 
                 /* Test runtime module loading */
-                m_ctx_load(m_m_ctx(), "./libtestmod.so", 0);
+                m_m_load("./libtestmod.so", 0, NULL);
             } else if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
                 m_m_log("Sob...\n");
             } else if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
@@ -73,7 +69,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
     }
 }
 
-static void receive_sleeping(const m_evt_t *msg, const void *userdata) {
+static void receive_sleeping(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS) {
         if (msg->ps_msg->type == M_PS_USER) {
             if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {

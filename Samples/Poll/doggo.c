@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 
-static void receive_sleeping(const m_evt_t *msg, const void *userdata);
+static void receive_sleeping(const m_evt_t *msg);
 
 M_MOD("Doggo");
 
@@ -15,10 +15,6 @@ static bool init(void) {
     return true;
 }
 
-static bool check(void) {
-    return true;
-}
-
 static bool eval(void) {
     return true;
 }
@@ -27,7 +23,7 @@ static void deinit(void) {
     
 }
 
-static void receive(const m_evt_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS) {
         switch (msg->ps_msg->type) {
         case M_PS_USER:
@@ -53,7 +49,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
     }
 }
 
-static void receive_sleeping(const m_evt_t *msg, const void *userdata) {
+static void receive_sleeping(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
         if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
             m_m_unbecome();

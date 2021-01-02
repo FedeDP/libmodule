@@ -13,6 +13,10 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod, const m
                             const m_mod_flags flags, const void *userdata);
 _public_ int m_mod_deregister(m_mod_t **mod);
 
+/* External shared object module runtime loading */
+_public_ int m_mod_load(const m_mod_t *mod, const char *module_path, const m_mod_flags flags, m_mod_t **ref);
+_public_ int m_mod_unload(const m_mod_t *mod, const char *module_path);
+
 /* Retrieve module context */
 _public_ _pure_ m_ctx_t *m_mod_ctx(const m_mod_t *mod);
 

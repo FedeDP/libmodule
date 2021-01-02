@@ -23,6 +23,3 @@
 #define m_c_trim(thres)               m_ctx_trim(ctx(), thres)
 
 #define m_c_dump()                    m_ctx_dump(ctx())
-
-#define m_c_load(path, flags)         m_ctx_load(ctx(), path, flags)
-#define m_c_unload(path)              m_ctx_unload(ctx(), path)

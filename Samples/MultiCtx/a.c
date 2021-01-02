@@ -18,10 +18,6 @@ static bool init(void) {
     return true;
 }
 
-static bool check(void) {
-    return true;
-}
-
 static bool eval(void) {
     return true;
 }

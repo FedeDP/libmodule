@@ -1,6 +1,7 @@
 #include "mod.h"
 #include "ctx.h"
 #include "poll_priv.h"
+#include <dlfcn.h> // dlopen
 
 /** Generic module interface **/
 
@@ -536,6 +537,70 @@ int m_mod_deregister(m_mod_t **mod) {
         return m_ctx_deregister(&c);
     }
     return 0;
+}
+
+
+int m_mod_load(const m_mod_t *mod, const char *module_path, const m_mod_flags flags, m_mod_t **ref) {
+    M_MOD_ASSERT(mod);
+    M_MOD_CTX(mod);
+    M_PARAM_ASSERT(module_path);
+    
+    const int module_size = m_map_length(c->modules);
+    
+    void *handle = dlopen(module_path, RTLD_NOW);
+    if (!handle) {
+        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
+        return -errno;
+    }
+    
+    /* 
+     * Check that requested module has been created in requested ctx, 
+     * by looking at requested ctx number of modules
+     */
+    if (module_size == m_map_length(c->modules)) { 
+        dlclose(handle);
+        return -EPERM;
+    }
+    
+    /* Take most recently loaded module */
+    m_mod_t *new_mod = map_peek(c->modules);
+    new_mod->local_path = mem_strdup(module_path);
+    new_mod->flags = flags;
+    
+    /* Store a reference to new module if requested */
+    if (ref != NULL) {
+        *ref = new_mod;
+    }
+    return 0;
+}
+
+int m_mod_unload(const m_mod_t *mod, const char *module_path) {
+    M_MOD_ASSERT(mod);
+    M_MOD_CTX(mod)
+    M_PARAM_ASSERT(module_path);    
+    
+    /* Check if desired module is actually loaded in context */
+    bool found = false;
+    m_itr_foreach(c->modules, {
+        m_mod_t *mod = m_itr_get(itr);
+        if (mod->local_path && !strcmp(mod->local_path, module_path)) {
+            found = true;
+            memhook._free(itr);
+            break;
+        }
+    });
+    
+    if (found) {
+        void *handle = dlopen(module_path, RTLD_NOLOAD);
+        if (handle) {
+            dlclose(handle);
+            return 0;
+        }
+        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
+        return -errno;
+    }
+    M_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, c->name);
+    return -ENODEV;
 }
 
 m_ctx_t *m_mod_ctx(const m_mod_t *mod) {
