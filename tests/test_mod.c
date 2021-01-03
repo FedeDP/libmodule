@@ -10,7 +10,7 @@
 static bool init(void);
 static bool init_false(void);
 static bool evaluate(void);
-static void recv(const m_evt_t *msg, const void *userdata);
+static void recv(const m_evt_t *msg);
 static void destroy(void);
 
 m_mod_t *mod = NULL, *testRef = NULL;
@@ -471,7 +471,7 @@ static bool evaluate(void) {
     return true;
 }
 
-static void recv(const m_evt_t *msg, const void *userdata) {
+static void recv(const m_evt_t *msg) {
     static int ctr = 0;
     if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
         ctr++;

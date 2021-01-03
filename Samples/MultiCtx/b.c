@@ -20,7 +20,7 @@ static void destroy(void) {
     
 }
 
-static void receive(const m_evt_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         m_mod_log(mod, "received signal %d. Leaving.\n", msg->sgn_msg->signo);
         m_mod_ps_broadcast(mod, "Leave", M_PS_GLOBAL);

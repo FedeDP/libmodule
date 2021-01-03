@@ -9,7 +9,7 @@
 #define MAX_LEN 5000
 
 static bool init(void);
-static void my_recv(const m_evt_t *msg, const void *userdata);
+static void my_recv(const m_evt_t *msg);
 
 static m_mod_t *mod = NULL;
 static int ctr = 0;
@@ -50,7 +50,7 @@ static bool init(void) {
     return true;
 }
 
-static void my_recv(const m_evt_t *msg, const void *userdata) {    
+static void my_recv(const m_evt_t *msg) {    
     if (msg->type == M_SRC_TYPE_PS && 
         msg->ps_msg->type == M_PS_USER && 
         ++ctr == MAX_LEN) {

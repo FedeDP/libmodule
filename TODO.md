@@ -257,7 +257,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Add a message compact time, eg: m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
 - [ ] during compaction time, duplicated messages are erased
 
-- [ ] Add a m_mod_set_batch_size(size) to batch requests and flush them together (receive callback will receive pointer to array and length of array)?
+- [ ] Add a m_mod_set_batch_size(size) to batch events and flush them together (receive callback will receive pointer to array and length of array)?
 
 - [x] Double check ctx_easy and mod_easy api
 - [x] Add -DNO_CHECKS to disable checks
@@ -267,7 +267,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
 
 - [x] Put src_userdata inside m_evt_t struct and avoid passing it as param to recv_cb
-- [ ] switch m_evt_t to be mem ref'd. This way clients can keep a ref by calling m_mem_ref() on message
+- [x] switch m_evt_t to be mem ref'd. This way clients can keep a ref by calling m_mem_ref() on message
 - [ ] document behaviour 
 
 - [x] drop check() callback on easy API

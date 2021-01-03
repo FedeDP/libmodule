@@ -11,7 +11,7 @@ static void m_mod_pre_start(void) {
     
 }
 
-static void receive_ready(const m_evt_t *msg, const void *userdata);
+static void receive_ready(const m_evt_t *msg);
 
 static bool init(void) {
     m_mod_src_register(mod, &((m_src_tmr_t) { CLOCK_MONOTONIC, 1000 }), 0, NULL);
@@ -26,7 +26,7 @@ static void destroy(void) {
     
 }
 
-static void receive(const m_evt_t *msg, const void *userdata) {
+static void receive(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         int *counter = (int *)m_mod_get_userdata(mod);
         m_mod_log(mod, "recv!\n");
@@ -41,7 +41,7 @@ static void receive(const m_evt_t *msg, const void *userdata) {
     }
 }
 
-static void receive_ready(const m_evt_t *msg, const void *userdata) {
+static void receive_ready(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         int *counter = (int *)m_mod_get_userdata(mod);
         m_mod_log(mod, "recv2!\n");

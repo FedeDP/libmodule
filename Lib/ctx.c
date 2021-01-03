@@ -135,75 +135,68 @@ static int recv_events(m_ctx_t *c, int timeout) {
         if (p && p->mod) {
             m_mod_t *mod = p->mod;
 
-            m_evt_t msg = { .type = p->type };
-            m_evt_fd_t fd_msg;
-            m_evt_tmr_t tm_msg;
-            m_evt_sgn_t sgn_msg;
-            m_evt_path_t pt_msg;
-            m_evt_pid_t pid_msg;
-            m_evt_task_t task_msg;
-            ps_priv_t *ps_msg;
-            
-            M_DEBUG("'%s' received %u type msg.\n", mod->name, msg.type);
-            switch (msg.type) {
-            case M_SRC_TYPE_FD:
-                /* Received from FD */
-                fd_msg.fd = p->fd_src.fd;
-                msg.fd_msg = &fd_msg;
-                break;
-            case M_SRC_TYPE_PS:
-                /* Received on pubsub interface */
-                if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-                    M_DEBUG("Failed to read message: %s\n", strerror(errno));
-                } else {
-                    msg.ps_msg = &ps_msg->msg;
-                    p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
+            errno = 0;
+            m_evt_t *msg = new_evt(p->type);
+            if (msg) {
+                M_DEBUG("'%s' received %u type msg.\n", mod->name, msg->type);
+                switch (msg->type) {
+                case M_SRC_TYPE_FD:
+                    /* Received from FD */
+                    msg->fd_msg = m_mem_new(sizeof(msg->fd_msg), NULL);
+                    msg->fd_msg->fd = p->fd_src.fd;
+                    break;
+                case M_SRC_TYPE_PS: {
+                    ps_priv_t *ps_msg;
+                    /* Received on pubsub interface */
+                    if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
+                        M_DEBUG("Failed to read message: %s\n", strerror(errno));
+                    } else {
+                        msg->ps_msg = &ps_msg->msg;
+                        p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
+                    }
+                    break;
                 }
-                break;
-            case M_SRC_TYPE_SGN:
-                if (poll_consume_sgn(&c->ppriv, i, p, &sgn_msg) == 0) {
-                    sgn_msg.signo = p->sgn_src.sgs.signo;
-                    msg.sgn_msg = &sgn_msg;
+                case M_SRC_TYPE_SGN:
+                    msg->sgn_msg = m_mem_new(sizeof(msg->sgn_msg), NULL);
+                    if (poll_consume_sgn(&c->ppriv, i, p, msg->sgn_msg) == 0) {
+                        msg->sgn_msg->signo = p->sgn_src.sgs.signo;
+                    }
+                    break;
+                case M_SRC_TYPE_TMR:
+                    msg->tmr_msg = m_mem_new(sizeof(msg->sgn_msg), NULL);
+                    if (poll_consume_tmr(&c->ppriv, i, p,  msg->tmr_msg) == 0) {
+                        msg->tmr_msg->ms = p->tmr_src.its.ms;
+                    }
+                    break;
+                case M_SRC_TYPE_PATH:
+                    msg->pt_msg = m_mem_new(sizeof(msg->pt_msg), NULL);
+                    if (poll_consume_pt(&c->ppriv, i, p, msg->pt_msg) == 0) {
+                        msg->pt_msg->path = p->path_src.pt.path;
+                    }
+                    break;
+                case M_SRC_TYPE_PID:
+                    msg->pid_msg = m_mem_new(sizeof(msg->pid_msg), NULL);
+                    if (poll_consume_pid(&c->ppriv, i, p, msg->pid_msg) == 0) {
+                        msg->pid_msg->pid = p->pid_src.pid.pid;
+                    }
+                    break;
+                case M_SRC_TYPE_TASK:
+                    msg->task_msg = m_mem_new(sizeof(msg->task_msg), NULL);
+                    if (poll_consume_task(&c->ppriv, i, p, msg->task_msg) == 0) {
+                        msg->task_msg->tid = p->task_src.tid.tid;
+                        pthread_join(p->task_src.th, NULL);
+                    }
+                    break;
+                default:
+                    M_DEBUG("Unmanaged src %d.\n", msg->type);
+                    break;
                 }
-                break;
-            case M_SRC_TYPE_TMR:
-                if (poll_consume_tmr(&c->ppriv, i, p, &tm_msg) == 0) {
-                    tm_msg.ms = p->tmr_src.its.ms;
-                    msg.tmr_msg = &tm_msg;
-                }
-                break;
-            case M_SRC_TYPE_PATH:
-                if (poll_consume_pt(&c->ppriv, i, p, &pt_msg) == 0) {
-                    pt_msg.path = p->path_src.pt.path;
-                    msg.pt_msg = &pt_msg;
-                }
-                break;
-            case M_SRC_TYPE_PID:
-                if (poll_consume_pid(&c->ppriv, i, p, &pid_msg) == 0) {
-                    pid_msg.pid = p->pid_src.pid.pid;
-                    msg.pid_msg = &pid_msg;
-                }
-                break;
-            case M_SRC_TYPE_TASK:
-                if (poll_consume_task(&c->ppriv, i, p, &task_msg) == 0) {
-                    task_msg.tid = p->task_src.tid.tid;
-                    msg.task_msg = &task_msg;
-                }
-                pthread_join(p->task_src.th, NULL);
-                break;
-            default:
-                M_DEBUG("Unmanaged src %d.\n", msg.type);
-                break;
             }
 
-            /* 
-             * Here we only check if fd_msg != NULL as 
-             * all internal *_msg pointers share same memory area (inside union)
-             */
-            if (msg.fd_msg) {
+            if (errno == 0) {
                 recved++;
-                if (msg.type != M_SRC_TYPE_PS || msg.ps_msg->type != M_PS_MOD_POISONPILL) {
-                    run_pubsub_cb(mod, &msg, p);
+                if (msg->type != M_SRC_TYPE_PS || msg->ps_msg->type != M_PS_MOD_POISONPILL) {
+                    run_pubsub_cb(mod, msg, p);
                 } else {
                     M_DEBUG("PoisonPilling '%s'.\n", mod->name);
                     stop(mod, true);
@@ -217,8 +210,6 @@ static int recv_events(m_ctx_t *c, int timeout) {
                         m_map_remove(mod->subscriptions, p->ps_src.topic);
                     }
                 }
-            } else {
-                errno = EAGAIN;
             }
         } else {
             /* Forward error to below handling code */

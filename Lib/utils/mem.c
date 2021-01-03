@@ -36,7 +36,7 @@ void m_mem_unref(void *src) {
         mem_header_t *header = get_header(src);
         if (--header->refs == 0) {
             if (header->dtor) {
-                header->dtor(src); // destroy internal data
+                header->dtor(src); // destroy private data
             }
             memhook._free(header);
         }

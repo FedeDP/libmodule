@@ -189,6 +189,7 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src);
 /* Defined in utils.c */
 char *mem_strdup(const char *s);
 void fetch_ms(uint64_t *val, uint64_t *ctr);
+m_evt_t *new_evt(m_src_types type);
 
 /* Defined in map.c */
 void *map_peek(const m_map_t *m);

@@ -198,12 +198,15 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
          */
         if (!data && m_mod_is(mod, M_MOD_RUNNING)) {
             M_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
-            m_evt_t msg = { .type = M_SRC_TYPE_PS, .ps_msg = &mm->msg };
-            run_pubsub_cb(mod, &msg, mm->sub);
-        } else {
-            M_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
-            m_mem_unref(mm);
+            m_evt_t *msg = new_evt(M_SRC_TYPE_PS);
+            if (msg) {
+                msg->ps_msg = &mm->msg;
+                run_pubsub_cb(mod, msg, mm->sub);
+                continue;
+            }
         }
+        M_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
+        m_mem_unref(mm);
     }
     return 0;
 }
@@ -225,10 +228,8 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
     /* Finally call user callback */
     cb(msg);
 
-    if (msg->type == M_SRC_TYPE_PS) {
-        ps_priv_t *mm = (ps_priv_t *)msg->ps_msg;
-        m_mem_unref(mm);
-    }
+    /* Unref the message */
+    m_mem_unref(msg);
     
     mod->stats.recv_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
