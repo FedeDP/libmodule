@@ -194,6 +194,9 @@ m_evt_t *new_evt(m_src_types type);
 /* Defined in map.c */
 void *map_peek(const m_map_t *m);
 
+/* Defined in mem.c; used internally as dtor cb for structs APIs userptr, when it is memory ref counted */
+void mem_dtor(void *src);
+
 /* Gglobal variables are defined in main.c */
 extern m_map_t *ctx;
 extern m_memhook_t memhook;

@@ -22,7 +22,7 @@ static int ctx_new(const char *ctx_name, m_ctx_t **c, const m_ctx_flags flags, c
     (*c)->userdata = userdata;
     (*c)->th_id = pthread_self();
     (*c)->logger = default_logger;
-    (*c)->modules = m_map_new(0, m_mem_unref);
+    (*c)->modules = m_map_new(0, mem_dtor);
     
     if ((*c)->flags & M_CTX_NAME_DUP) {
         (*c)->flags |= M_CTX_NAME_AUTOFREE;

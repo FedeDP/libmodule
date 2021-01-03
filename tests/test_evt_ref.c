@@ -1,20 +1,19 @@
-#include "test_perf.h"
+#include "test_evt_ref.h"
 #include <module/mod.h>
 #include <module/ctx.h>
+#include <module/mem.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_LEN 5000
-
 static bool init(void);
-static void my_recv(const m_evt_t *msg);
+static void my_recv(const m_evt_t *const msg);
 
 static m_mod_t *mod = NULL;
-static int ctr = 0;
+static m_evt_t *ref;
 
-void test_poll_perf(void **state) {
+void test_evt_ref(void **state) {
     (void) state; /* unused */
     
     test_ctx = NULL;
@@ -30,20 +29,13 @@ void test_poll_perf(void **state) {
     assert_true(m_mod_is(mod, M_MOD_IDLE));
     
     m_mod_start(mod);
-    
-    clock_t begin_tell = clock();
-    for (int i = 0; i < MAX_LEN; i++) {
-        m_mod_ps_tell(mod, mod, "Hello World", 0);
-    }
-    clock_t end_tell = clock();
-    double time_spent = (double)(end_tell - begin_tell);
-    printf("Messages feeding took %.2lf us\n", time_spent);
+    m_mod_ps_tell(mod, mod,  "Hello World", 0);
     
     m_ctx_loop(test_ctx, M_CTX_MAX_EVENTS);
     
-    clock_t end_recv = clock();
-    time_spent = (double)(end_recv - end_tell);
-    printf("Messages fetching took %.2lf us\n", time_spent);
+    /* Test that ref event is not nil */
+    assert_non_null(ref);
+    ref = m_mem_unref(ref);
     
     m_mod_deregister(&mod);
 }
@@ -52,11 +44,12 @@ static bool init(void) {
     return true;
 }
 
-static void my_recv(const m_evt_t *msg) {    
+static void my_recv(const m_evt_t *const msg) {  
     if (msg->type == M_SRC_TYPE_PS && 
-        msg->ps_msg->type == M_PS_USER && 
-        ++ctr == MAX_LEN) {
-           
+        msg->ps_msg->type == M_PS_USER) {
+
+        ref = m_mem_ref((void *)msg);
         m_ctx_quit(test_ctx, 0);
     }
 }
+

@@ -5,6 +5,7 @@
 #include "test_queue.h"
 #include "test_list.h"
 #include "test_bst.h"
+#include "test_evt_ref.h"
 #include "test_perf.h"
 
 int main(void) {
@@ -192,6 +193,9 @@ int main(void) {
         cmocka_unit_test(test_bst_traverse),
         cmocka_unit_test(test_bst_clear),
         cmocka_unit_test(test_bst_free),
+        
+        /* Test m_evt_t reference */
+        cmocka_unit_test(test_evt_ref),
         
         /* Test poll plugin performance */
         cmocka_unit_test(test_poll_perf)

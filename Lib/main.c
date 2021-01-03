@@ -27,7 +27,7 @@ _public_ int _weak_ main(int argc, char *argv[]) {
 static void libmodule_init(void) {
     M_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
     pthread_mutex_init(&mx, NULL);
-    ctx = m_map_new(0, m_mem_unref);
+    ctx = m_map_new(0, mem_dtor);
 }
 
 static void libmodule_deinit(void) {
