@@ -59,7 +59,7 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
 static void client_dtor(void *data);
 static void fs_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static bool init(void);
-static void receive(const m_evt_t *msg, const void *userdata);
+static void receive(const m_evt_t *const msg);
 static void fs_wakeup_clients(fs_priv_t *fp, bool leaving);
 
 static const struct fuse_operations operations = {
@@ -322,7 +322,7 @@ static bool init(void) {
     return true;
 }
 
-static void receive(const m_evt_t *msg, const void *userdata) {
+static void receive(const m_evt_t *const msg) {
     
 }
 

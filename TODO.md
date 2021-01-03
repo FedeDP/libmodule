@@ -13,6 +13,7 @@
 - [x] Expose new public header <module/mem.h>?
 - [x] Add a MEM_LOCK macro to keep a referenced memory alive
 - [x] Fix: let user only use m_module_name()/m_module_ctx()/m_module_is() on module's reference on a deregistered module (kept alive by some PS messaging)
+- [x] Use flexible array member, less tricky
 
 ### liburing
 
@@ -278,12 +279,11 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] In general, follow the following idea: "what are we {loading,dumping, registering...}?" A module. Thus mod namespace
 
 ### Module permissions management
-- [ ] Add some permission management to modules, through m_mod_perms flags, eg:
-- - [ ] M_MOD_ALLOW_PUB
-- - [ ] M_MOD_ALLOW_SUB
-- - [ ] M_MOD_ALLOW_LOAD
-- - [ ] M_MOD_ALLOW_QUIT
-- - [ ] M_MOD_ALLOW_ALL
+- [ ] Add some permission management to modules, through m_mod_flags, eg:
+- - [ ] M_MOD_DENY_PUB
+- - [ ] M_MOD_DENY_SUB
+- - [ ] M_MOD_DENY_LOAD
+- - [ ] M_MOD_DENY_CTX (module cannot access its ctx)
 - [ ] m_mod_register() add flags
 - [ ] m_mod_load() add flags
 

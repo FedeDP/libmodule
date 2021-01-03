@@ -3,21 +3,20 @@
 typedef struct {
     size_t refs;
     m_ref_dtor dtor;
+    uint8_t data[]; // Use flexible array member
 } mem_header_t;
 
-static inline mem_header_t *get_header(void *src);
-
-static inline mem_header_t *get_header(void *src) {
-    return (mem_header_t *)(((uint8_t *)src) - sizeof(mem_header_t));
+static inline mem_header_t *get_header(uint8_t *src) {
+    return (mem_header_t *)(src - sizeof(mem_header_t));
 }
 
 /* Create new ref counted memory area */
 void *m_mem_new(size_t size, m_ref_dtor dtor) {
-    mem_header_t *header = memhook._calloc(1, size + sizeof(mem_header_t));
+    mem_header_t *header = memhook._calloc(1, sizeof(mem_header_t) + size);
     if (header) {
         header->refs = 1;
         header->dtor = dtor;
-        return &header[1];
+        return header->data;
     }
     return NULL;
 }
