@@ -272,7 +272,7 @@ int m_mod_src_register_sub(m_mod_t *mod, const char *topic, const m_src_flags fl
         
         /* Lazy subscriptions map init */
         if (!mod->subscriptions)  {
-            mod->subscriptions = m_map_new(M_MAP_VAL_ALLOW_UPDATE, m_mem_unref);
+            mod->subscriptions = m_map_new(M_MAP_VAL_ALLOW_UPDATE, mem_dtor);
             M_ALLOC_ASSERT(mod->subscriptions);
         } else {
             ev_src_t *old_sub = m_map_get(mod->subscriptions, topic);

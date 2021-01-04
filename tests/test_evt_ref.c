@@ -36,6 +36,7 @@ void test_evt_ref(void **state) {
     /* Test that ref event is not nil */
     assert_non_null(ref);
     ref = m_mem_unref(ref);
+    assert_null(ref);
     
     m_mod_deregister(&mod);
 }

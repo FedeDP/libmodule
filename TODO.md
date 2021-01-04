@@ -235,6 +235,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Fully rewrite documentation per-namespace
 - [ ] Add build options doc
 - [ ] Auto-generate API doc, using eg: https://github.com/jnikula/hawkmoth or with doxygen (and drop rtd) https://goseeky.wordpress.com/2017/07/22/documentation-101-doxygen-with-github-pages/
+- [ ] document m_evt_t memref'd behaviour 
 
 ### Remaining fixes/Improvements
 
@@ -257,7 +258,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Add a message compact time, eg: m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
 - [ ] during compaction time, duplicated messages are erased
 
-- [ ] Add a m_mod_set_batch_size(size) to batch events and flush them together (receive callback will receive pointer to array and length of array)?
+- [ ] Add a m_mod_set_batch_size(size) to batch events and flush them together
 
 - [x] Double check ctx_easy and mod_easy api
 - [x] Add -DNO_CHECKS to disable checks
@@ -268,7 +269,6 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Put src_userdata inside m_evt_t struct and avoid passing it as param to recv_cb
 - [x] switch m_evt_t to be mem ref'd. This way clients can keep a ref by calling m_mem_ref() on message
-- [ ] document behaviour 
 
 - [x] drop check() callback on easy API
 - [ ] add m_mod_ prefix to callbacks, eg m_mod_prestart, m_mod_on_start() ecc ecc

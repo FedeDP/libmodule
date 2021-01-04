@@ -64,7 +64,7 @@ static void destroy(void) {
 static void A_recv(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c;
-        read(msg->fd_msg->fd, &c, sizeof(char));
+        (void)!read(msg->fd_msg->fd, &c, sizeof(char));
         
         switch (tolower(c)) {
             case 'c':
@@ -94,7 +94,7 @@ static void A_recv(const m_evt_t *msg) {
 static void A_recv_ready(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c;
-        read(msg->fd_msg->fd, &c, sizeof(char));
+        (void)!read(msg->fd_msg->fd, &c, sizeof(char));
         
         switch (tolower(c)) {
             case 'p':

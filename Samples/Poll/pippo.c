@@ -46,7 +46,7 @@ static void receive(const m_evt_t *msg) {
                 m_m_log("Received %d. Data is %d\n", msg->sgn_msg->signo, *data);
             }
         } else if (msg->type == M_SRC_TYPE_FD) {
-            read(msg->fd_msg->fd, &c, sizeof(char));
+            (void)!read(msg->fd_msg->fd, &c, sizeof(char));
         }
         
         switch (tolower(c)) {
@@ -87,7 +87,7 @@ static void receive_ready(const m_evt_t *msg) {
             c = 'q';
             m_m_log("Received %d.\n", msg->sgn_msg->signo);
         } else if (msg->type == M_SRC_TYPE_FD) {
-            read(msg->fd_msg->fd, &c, sizeof(char));
+            (void)!read(msg->fd_msg->fd, &c, sizeof(char));
         }
         
         switch (tolower(c)) {
