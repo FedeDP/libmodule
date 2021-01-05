@@ -10,6 +10,8 @@
 
 #define unlikely(x)     __builtin_expect((x),0)
 
+#define M_CTX_DEFAULT  "default"
+
 #ifndef NDEBUG
     #define M_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
 #else

@@ -1,24 +1,22 @@
 #include "test_mod.h"
 #include <module/mod.h>
 #include <module/ctx.h>
+#include <module/mem.h>
 #include <unistd.h>
 #include <sys/stat.h> 
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 
-static bool init(void);
 static bool init_false(void);
-static bool evaluate(void);
 static void recv(const m_evt_t *msg);
-static void destroy(void);
 
 m_mod_t *mod = NULL, *testRef = NULL;
 
 void test_mod_register_NULL_name(void **state) {
     (void) state; /* unused */
 
-    m_userhook_t hook = (m_userhook_t) { init, evaluate, recv, destroy };
+    m_userhook_t hook = { .on_evt = recv };
     int ret = m_mod_register(NULL, test_ctx, &mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(mod);
@@ -27,7 +25,7 @@ void test_mod_register_NULL_name(void **state) {
 void test_mod_register_NULL_self(void **state) {
     (void) state; /* unused */
     
-    m_userhook_t hook = (m_userhook_t) { init, evaluate, recv, destroy };
+    m_userhook_t hook = { .on_evt = recv };
     int ret = m_mod_register("testName", test_ctx, NULL, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(mod);
@@ -44,7 +42,7 @@ void test_mod_register_NULL_hook(void **state) {
 void test_mod_register(void **state) {
     (void) state; /* unused */
     
-    m_userhook_t hook = (m_userhook_t) { init, evaluate, recv, destroy };
+    m_userhook_t hook = { .on_evt = recv };
     int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
@@ -54,7 +52,7 @@ void test_mod_register(void **state) {
 void test_mod_register_already_registered(void **state) {
     (void) state; /* unused */
     
-    m_userhook_t hook = (m_userhook_t) { init, evaluate, recv, destroy };
+    m_userhook_t hook = { .on_evt = recv };
     int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_non_null(mod);
@@ -66,7 +64,7 @@ void test_mod_register_same_name(void **state) {
     
     m_mod_t *self2 = NULL;
     
-    m_userhook_t hook = (m_userhook_t) { init, evaluate, recv, destroy };
+    m_userhook_t hook = { .on_evt = recv };
     int ret = m_mod_register("testName", test_ctx, &self2, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(self2);
@@ -91,7 +89,7 @@ void test_mod_deregister(void **state) {
 void test_mod_false_init(void **state) {
     (void) state; /* unused */
     
-    m_userhook_t hook = (m_userhook_t) { init_false, evaluate, recv, destroy };
+    m_userhook_t hook = { .on_start = init_false, .on_evt = recv };
     int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
@@ -340,44 +338,35 @@ void test_mod_subscribe(void **state) {
 void test_mod_ref_NULL_name(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ref(mod, NULL, &testRef);
-    assert_false(ret == 0);
+    testRef = m_mod_ref(mod, NULL);
+    assert_null(testRef);
 }
 
 void test_mod_ref_unexhistent_name(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ref(mod, "testName2", &testRef);
-    assert_false(ret == 0);
-}
-
-void test_mod_ref_NULL_ref(void **state) {
-    (void) state; /* unused */
-    
-    int ret = m_mod_ref(mod, "testName2", NULL);
-    assert_false(ret == 0);
+    testRef = m_mod_ref(mod, "testName2");
+    assert_null(testRef);
 }
 
 void test_mod_ref(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ref(mod, "testName", &testRef);
-    assert_true(ret == 0);
+    testRef = m_mod_ref(mod, "testName");
     assert_non_null(testRef);
 }
 
 void test_mod_unref_NULL_ref(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_unref(mod, NULL);
-    assert_false(ret == 0);
+    void *data = m_mem_unref(NULL);
+    assert_null(data);
 }
 
 void test_mod_unref(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_unref(mod, &testRef);
-    assert_true(ret == 0);
+    testRef = m_mem_unref(testRef);
     assert_null(testRef);
 }
 
@@ -459,16 +448,8 @@ void test_mod_broadcast(void **state) {
     assert_true(ret == 0);
 }
 
-static bool init(void) {
-    return true;
-}
-
 static bool init_false(void) {
     return false;
-}
-
-static bool evaluate(void) {
-    return true;
 }
 
 static void recv(const m_evt_t *msg) {
@@ -479,8 +460,4 @@ static void recv(const m_evt_t *msg) {
             m_ctx_quit(test_ctx, ctr);
         }
     }
-}
-
-static void destroy(void) {
-    
 }

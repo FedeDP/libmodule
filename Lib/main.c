@@ -12,16 +12,53 @@ _public_ void _ctor0_ _weak_ m_pre_start(void) {
     M_DEBUG("Pre-starting libmodule.\n");
 }
 
+static void *thread_loop(void *param) {
+    m_ctx_t *c = (m_ctx_t *)param;
+    /* 
+     * Store thread which registered the context;
+     * Set current thread instead.
+     * Loop on context until it ends.
+     * Reset initial thread id.
+     */ 
+    pthread_t old_thid = m_ctx_get_th(c);
+    m_ctx_set_th(c, pthread_self());
+    m_ctx_loop(c, M_CTX_MAX_EVENTS);
+    m_ctx_set_th(c, old_thid);
+    return NULL;
+}
+
 /*
  * This is an exported global weak symbol.
  * It means that if a program does not implement any main(int, char *[]),
  * this will be used by default.
  *
- * All it does is looping on M_CTX_DEFAULT ctx.
+ * All it does is looping on any ctx, each on its own thread.
  */
 _public_ int _weak_ main(int argc, char *argv[]) {
-    m_ctx_t *c = m_map_get(ctx, M_CTX_DEFAULT);
-    return m_ctx_loop(c, M_CTX_MAX_EVENTS);
+    pthread_t *threads = NULL;
+    if (m_map_length(ctx) > 1) {
+        M_DEBUG("Allocating %ld pthreads.\n", m_map_length(ctx));
+        threads = calloc(m_map_length(ctx), sizeof(pthread_t));
+    }
+    m_itr_foreach(ctx, {
+        m_ctx_t *c = m_itr_get(itr);
+        if (!threads) {
+            M_DEBUG("Running in single ctx mode: '%s'\n", c->name);
+            m_ctx_loop(c, M_CTX_MAX_EVENTS);
+        } else {
+            M_DEBUG("Starting '%s' thread\n", c->name);
+            pthread_create(&threads[m_itr_idx(itr)], NULL, thread_loop, c);
+        }
+    })
+    
+    if (threads) {
+        M_DEBUG("Waiting all threads.\n");
+        for (int i = 0; i < m_map_length(ctx); i++) {
+            pthread_join(threads[i], NULL);
+        }
+        memhook._free(threads);
+    }
+    return 0;
 }
 
 static void libmodule_init(void) {

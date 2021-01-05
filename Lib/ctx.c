@@ -327,6 +327,20 @@ const char *m_ctx_name(const m_ctx_t *c) {
     return c->name;
 }
 
+pthread_t m_ctx_get_th(m_ctx_t *c) {
+    M_PARAM_ASSERT(c);
+
+    return c->th_id;
+}
+
+int m_ctx_set_th(m_ctx_t *c, const pthread_t id) {
+    M_PARAM_ASSERT(c);
+    M_ASSERT(!c->looping, "Cannot attach context to thread while looping.", -EINVAL);
+
+    c->th_id = id;
+    return 0;
+}
+
 int m_ctx_dispatch(m_ctx_t *c) {
     M_CTX_ASSERT(c);
     

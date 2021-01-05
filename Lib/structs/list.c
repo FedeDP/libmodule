@@ -15,6 +15,7 @@ struct _list_itr {
     list_node **elem;
     m_list_t *l;
     ssize_t diff;
+    size_t idx;
 };
 
 static inline int insert_node(m_list_t *l, list_node **elem, void *data);
@@ -75,6 +76,7 @@ int m_list_itr_next(m_list_itr_t **itr) {
         } 
         i->diff = 0;
     }
+    i->idx++;
     if (!*(i->elem)) {
         memhook._free(*itr);
         *itr = NULL;
@@ -112,6 +114,12 @@ int m_list_itr_remove(m_list_itr_t *itr) {
     
     itr->diff--; // notify list to avoid skipping 1 element on next list_itr_next() call
     return remove_node(itr->l, itr->elem);
+}
+
+size_t m_list_itr_idx(const m_list_itr_t *itr) {
+    M_PARAM_ASSERT(itr);
+    
+    return itr->idx;
 }
 
 int m_list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr) {

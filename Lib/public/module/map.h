@@ -32,6 +32,7 @@ _public_ int m_map_itr_remove(m_map_itr_t *itr);
 _public_ const char *m_map_itr_get_key(const m_map_itr_t *itr);
 _public_ void *m_map_itr_get_data(const m_map_itr_t *itr);
 _public_ int m_map_itr_set_data(const m_map_itr_t *itr, void *value);
+_public_ size_t m_map_itr_idx(const m_map_itr_t *itr);
 _public_ int m_map_iterate(m_map_t *m, const m_map_cb fn, void *userptr);
 _public_ int m_map_put(m_map_t *m, const char *key, void *value);
 _public_ void *m_map_get(const m_map_t *m, const char *key);

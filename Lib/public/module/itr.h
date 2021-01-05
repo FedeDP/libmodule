@@ -26,6 +26,14 @@
     m_bst_itr_t **: m_bst_itr_next \
     )(X)
     
+#define m_itr_idx(X) _Generic((X), \
+    m_map_itr_t *: m_map_itr_idx, \
+    m_list_itr_t *: m_list_itr_idx, \
+    m_stack_itr_t *: m_stack_itr_idx, \
+    m_queue_itr_t *: m_queue_itr_idx, \
+    m_bst_itr_t *: m_bst_itr_idx \
+    )(X)
+    
 #define m_itr_get(X) _Generic((X), \
     m_map_itr_t *: m_map_itr_get_data, \
     m_list_itr_t *: m_list_itr_get_data, \

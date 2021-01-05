@@ -3,7 +3,7 @@
 
 /** This is a test module needed for Easy example, to runtime link another module **/
 
-M_MOD("Test");
+M_MOD("Test", NULL);
 
 /*
  * This function is automatically called before registering the module. 

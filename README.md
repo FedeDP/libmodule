@@ -15,13 +15,13 @@ Unsurprisingly, module is the core concept of libmodule architecture.
 A module is an Actor that can listen on socket events too.  
 Frankly speaking, it is denoted by a M_MOD() macro plus a bunch of mandatory callbacks, eg:
 ```C
-#include <module/module_easy.h>
-#include <module/modules_easy.h>
+#include <module/mod_easy.h>
+#include <module/ctx_easy.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 
-M_MOD("Pippo");
+M_MOD("Pippo", NULL);
 
 static void init(void) {
     /* Register STDIN fd, without autoclosing it at the end */
@@ -38,7 +38,7 @@ static void destroy(void) {
     
 }
 
-static void receive(const m_evt_t *const msg, const void *userdata) {
+static void receive(const m_evt_t *const msg) {
     if (msg->type == M_SRC_TYPE_FD) {
         char c;
         read(msg->fd_msg->fd, &c, sizeof(char));

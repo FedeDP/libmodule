@@ -1,4 +1,5 @@
 #include <module/mod_easy.h>
+#include <module/mem.h>
 #include <module/ctx.h>
 #include <unistd.h>
 #include <string.h>
@@ -12,7 +13,7 @@
 
 static m_mod_t *doggo;
 
-M_MOD("Pippo");
+M_MOD("Pippo", NULL);
 
 static int myData = 5;
 
@@ -33,7 +34,7 @@ static bool init(void) {
 #endif
     
     /* Get Doggo module reference */
-    m_m_ref("Doggo", &doggo);
+    doggo = m_m_ref("Doggo");
     return true;
 }
 
@@ -42,7 +43,7 @@ static bool eval(void) {
 }
 
 static void deinit(void) {
-    m_m_unref(&doggo);
+    m_mem_unrefp((void **)&doggo);
 }
 
 static void receive(const m_evt_t *msg) {

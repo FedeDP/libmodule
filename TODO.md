@@ -15,6 +15,8 @@
 - [x] Fix: let user only use m_module_name()/m_module_ctx()/m_module_is() on module's reference on a deregistered module (kept alive by some PS messaging)
 - [x] Use flexible array member, less tricky
 
+- [x] Fix m_mod_ref API (use just m_mod_ref and leave unref/unrefp to mem API)
+
 ### liburing
 
 - [x] Introduce an uring poll plugin
@@ -126,13 +128,16 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [x] Rename m_mod_register_src() to m_mod_src_register() ??
 - - [x] Rename src register types (eg: mod_tmr_t -> m_tmr_t)
 - - [x] Rename userhook_t, log_cb
-- - [ ] Rename init_cb and other callbacks
+- - [x] Rename init_cb and other callbacks
 - - [x] Rename memhook_t and its callbacks
 - - [x] Rename stats_t to m_stats_t
 - - [x] Rename exposed flags
+- - [ ] add m_mod_ prefix to callbacks, eg m_mod_prestart, m_mod_on_start() ecc ecc
 - - [ ] Rename init/deinit/check etc etc to on_start(), on_stop(), on_event(), on_eval() etc etc...
 - - [x] Rename commons.h.in to cmn.h.in
 - - [x] Rename mod_states to m_mod_states
+- - [ ] Use M_M() macro instead of M_MOD? More coherent with easy API; eg: M_MOD(name, ctx) -> M_M(Name) (use null as ctx)
+- - [ ] use m_m_ prefix for callbacks?
 - [x] Rename pubsub.c to ps.c
 - [x] Rename MODULE() to M_MOD()
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
@@ -255,11 +260,6 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Expose mod/ctx -> flags and ctx->userdata in mod/ctx_dump()
 
-- [ ] Add a message compact time, eg: m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
-- [ ] during compaction time, duplicated messages are erased
-
-- [ ] Add a m_mod_set_batch_size(size) to batch events and flush them together
-
 - [x] Double check ctx_easy and mod_easy api
 - [x] Add -DNO_CHECKS to disable checks
 
@@ -271,12 +271,11 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] switch m_evt_t to be mem ref'd. This way clients can keep a ref by calling m_mem_ref() on message
 
 - [x] drop check() callback on easy API
-- [ ] add m_mod_ prefix to callbacks, eg m_mod_prestart, m_mod_on_start() ecc ecc
-- [ ] Use M_M() macro instead of M_MOD? More coherent with easy API; eg: M_MOD(name, ctx) -> M_M(Name) (use null as ctx)
-- [ ] use m_m_ prefix for callbacks?
 
 - [x] move m_ctx_load under mod namespace, ie m_mod_load(). 
 - [x] In general, follow the following idea: "what are we {loading,dumping, registering...}?" A module. Thus mod namespace
+
+- [x] Make module on_evt callback only mandatory cb
 
 ### Module permissions management
 - [ ] Add some permission management to modules, through m_mod_flags, eg:
@@ -288,8 +287,6 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] m_mod_load() add flags
 
 ### Generic
-
-- [x] Finally avoid injecting _self into file-global variables
 
 - [x] Add a module_get_userdata function
 
@@ -400,6 +397,9 @@ It would allows to check if same node already exists on insert, without losing t
 
 ## 6.1.0 (7.0.0?)
 
+### Generic
+- [ ] Improve multithread support ?
+
 ### Map API
 
 - [ ] Allow devs to customize hash function and take a void* as key
@@ -418,3 +418,6 @@ It would allows to check if same node already exists on insert, without losing t
 
 ### Generic
 - [ ] Akka-persistence like message store? (ie: store all messages and replay them)
+- [ ] Add a message compact time, eg: m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
+- [ ] during compaction time, duplicated messages are erased
+- [ ] Add a m_mod_set_batch_size(size) to batch events and flush them together

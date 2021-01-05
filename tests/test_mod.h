@@ -40,7 +40,6 @@ void test_mod_subscribe_NULL_self(void **state);
 void test_mod_subscribe(void **state);
 void test_mod_ref_NULL_name(void **state);
 void test_mod_ref_unexhistent_name(void **state);
-void test_mod_ref_NULL_ref(void **state);
 void test_mod_ref(void **state);
 void test_mod_unref_NULL_ref(void **state);
 void test_mod_unref(void **state);

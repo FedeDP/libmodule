@@ -96,7 +96,6 @@ int main(void) {
         /* Test module ref */
         cmocka_unit_test(test_mod_ref_NULL_name),
         cmocka_unit_test(test_mod_ref_unexhistent_name),
-        cmocka_unit_test(test_mod_ref_NULL_ref),
         cmocka_unit_test(test_mod_ref),
         
         /* Test module tell */

@@ -24,3 +24,6 @@ _public_ int m_ctx_dispatch(m_ctx_t *c);
 _public_ int m_ctx_dump(const m_ctx_t *c);
 
 _public_ size_t m_ctx_trim(m_ctx_t *c, const m_stats_t *thres);
+
+_public_ pthread_t m_ctx_get_th(m_ctx_t *c);
+_public_ int m_ctx_set_th(m_ctx_t *c, const pthread_t id);

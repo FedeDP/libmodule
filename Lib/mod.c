@@ -346,7 +346,7 @@ static void reset_module(m_mod_t *mod) {
 int evaluate_module(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
     if (m_mod_is(mod, M_MOD_IDLE) && 
-        (!mod->hook.eval || mod->hook.eval())) {
+        (!mod->hook.on_eval || mod->hook.on_eval())) {
         
         start(mod, true);
     }
@@ -377,7 +377,7 @@ int start(m_mod_t *mod, const bool starting) {
     mod->state = M_MOD_RUNNING;
     
     /* Call module init() callback only if module is being (re)started */
-    if (!starting || mod->hook.init()) {
+    if (!starting || !mod->hook.on_start || mod->hook.on_start()) {
         M_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
         tell_system_pubsub_msg(NULL, c, M_PS_MOD_STARTED, mod, NULL);
         return 0;
@@ -407,8 +407,8 @@ int stop(m_mod_t *mod, const bool stopping) {
      */
     if (stopping) {
         reset_module(mod);
-        if (mod->hook.deinit) {
-            mod->hook.deinit();
+        if (mod->hook.on_stop) {
+            mod->hook.on_stop();
         }
     }
     
@@ -426,9 +426,8 @@ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const m_userhoo
     M_PARAM_ASSERT(self);
     M_PARAM_ASSERT(!*self);
     M_PARAM_ASSERT(hook);
-    /* Mandatory callbacks */
-    M_PARAM_ASSERT(hook->init);
-    M_PARAM_ASSERT(hook->recv);
+    /* Mandatory callback */
+    M_PARAM_ASSERT(hook->on_evt);
 
     /* Use default context, if NULL is passed, eventually creating it. */
     if (!c) {
@@ -612,7 +611,7 @@ m_ctx_t *m_mod_ctx(const m_mod_t *mod) {
 }
 
 
-int m_mod_become(m_mod_t *mod, const recv_cb new_recv) {
+int m_mod_become(m_mod_t *mod, const m_evt_cb new_recv) {
     M_PARAM_ASSERT(new_recv);
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
     
@@ -737,7 +736,6 @@ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid) {
 const char *m_mod_name(const m_mod_t *mod_self) {
     M_RET_ASSERT(mod_self, NULL);
     M_RET_ASSERT(mod_self->ctx->th_id == pthread_self(), NULL);
-    M_RET_ASSERT(mod_self, NULL);
     
     return mod_self->name;
 }
@@ -747,7 +745,6 @@ const char *m_mod_name(const m_mod_t *mod_self) {
 bool m_mod_is(const m_mod_t *mod_self, const m_mod_states st) {
     M_RET_ASSERT(mod_self, false);
     M_RET_ASSERT(mod_self->ctx->th_id == pthread_self(), false);
-    M_RET_ASSERT(mod_self, false);
     
     return mod_self->state & st;
 }

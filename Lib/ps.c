@@ -55,12 +55,17 @@ found:
     return sub;
 }
 
+/* 
+ * Note: we cannot use m_mod_is() here as this function may be called
+ * from another ctx when M_PS_GLOBAL is set on a broadcast message,
+ * as it would fail because it is being called by different thread.
+ */
 static int tell_if(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
-    ev_src_t *sub = msg->msg.topic ? (ev_src_t *)key : NULL;            // key is indeed a subscription when we are publishing (check tell_subscribers()) !!
+    ev_src_t *sub = msg->msg.topic ? (ev_src_t *)key : NULL;                 // key is indeed a subscription when we are publishing (check tell_subscribers()) !!
 
-    if (m_mod_is(mod, M_MOD_RUNNING | M_MOD_PAUSED) &&                              // mod is running or paused
+    if (mod->state & (M_MOD_RUNNING | M_MOD_PAUSED) &&                       // mod is running or paused
         ((msg->msg.type != M_PS_USER && msg->msg.sender != mod) ||           // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == M_PS_USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || sub)))) {
@@ -152,12 +157,7 @@ static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c) {
             tell_subscribers(m, NULL, c);
         }
     } else {
-        /* Global Broadcast or SYSTEM messages */
-        if (m->msg.type != M_PS_USER || !m->msg.topic) {
-            m_map_iterate(ctx, tell_global, m);
-        } else {
-            m_map_iterate(ctx, tell_subscribers, m);
-        }
+        m_map_iterate(ctx, tell_global, m);
     }
     return 0;
 }
@@ -213,10 +213,10 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
 
 void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
     /* If module is using some different receive function, honor it. */
-    recv_cb cb = m_stack_peek(mod->recvs);
+    m_evt_cb cb = m_stack_peek(mod->recvs);
     if (!cb) {
         /* Fallback to module default receive */
-        cb = mod->hook.recv;
+        cb = mod->hook.on_evt;
     }
     
     msg->self = mod;
@@ -237,27 +237,15 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
 
 /** Public API **/
 
-int m_mod_ref(const m_mod_t *mod, const char *name, m_mod_t **modref) {
-    M_MOD_ASSERT(mod);
-    M_PARAM_ASSERT(name);
-    M_PARAM_ASSERT(modref);
-    M_PARAM_ASSERT(!*modref);
-    M_CTX_MOD(mod->ctx, name);
-    M_PARAM_ASSERT(mod->ctx == m->ctx);
+m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
+    M_RET_ASSERT(mod, NULL);
+    M_RET_ASSERT(name, NULL);
     
-    *modref = m_mem_ref(m);
-    return 0;
-}
-
-int m_mod_unref(const m_mod_t *mod, m_mod_t **modref) {
-    M_MOD_ASSERT(mod);
-    M_PARAM_ASSERT(modref);
-    M_PARAM_ASSERT(*modref);
-    M_PARAM_ASSERT(mod->ctx == (*modref)->ctx);
-    
-    m_mem_unref(*modref);
-    *modref = NULL;
-    return 0;
+    m_mod_t *m = m_map_get(mod->ctx->modules, name);
+    if (m) {
+        return m_mem_ref(m);
+    }
+    return NULL;
 }
 
 int m_mod_src_register_sub(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {

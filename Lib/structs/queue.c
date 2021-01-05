@@ -16,6 +16,7 @@ struct _queue_itr {
     m_queue_t *q;
     queue_elem **elem;
     bool removed;
+    size_t idx;
 };
 
 /** Public API **/
@@ -48,6 +49,7 @@ int m_queue_itr_next(m_queue_itr_t **itr) {
     } else {
         i->removed = false;
     }
+    i->idx++;
     if (!*i->elem) {
         memhook._free(*itr);
         *itr = NULL;
@@ -85,6 +87,12 @@ int m_queue_itr_set_data(const m_queue_itr_t *itr, void *value) {
     
     (*itr->elem)->userptr = value;
     return 0;
+}
+
+size_t m_queue_itr_idx(const m_queue_itr_t *itr) {
+    M_PARAM_ASSERT(itr);
+    
+    return itr->idx;
 }
 
 int m_queue_iterate(const m_queue_t *q, const m_queue_cb fn, void *userptr) {

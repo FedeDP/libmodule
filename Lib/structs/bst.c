@@ -19,6 +19,7 @@ struct _bst_itr {
     bst_node **curr;
     bst_node *prev;
     m_bst_t *l;
+    size_t idx;
 };
 
 static inline int insert_node(m_bst_t *l, bst_node **elem, bst_node *parent, void *data);
@@ -276,6 +277,7 @@ int m_bst_itr_next(m_bst_itr_t **itr) {
         i->curr = &i->l->root;
     }
     i->removed = false;
+    i->idx++;
     if (!*i->curr) {
         memhook._free(*itr);
         *itr = NULL;
@@ -316,6 +318,12 @@ void *m_bst_itr_get_data(const m_bst_itr_t *itr) {
     M_RET_ASSERT(*(itr->curr), NULL);
 
     return (*itr->curr)->userptr;
+}
+
+size_t m_bst_itr_idx(const m_bst_itr_t *itr) {
+    M_PARAM_ASSERT(itr);
+    
+    return itr->idx;
 }
 
 int m_bst_clear(m_bst_t *l) {

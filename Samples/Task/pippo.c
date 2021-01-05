@@ -2,9 +2,9 @@
 #include <module/ctx_easy.h>
 #include <assert.h>
 
-M_CTX();
+M_CTX("Task");
 
-M_MOD("Pippo");
+M_MOD("Pippo", m_ctx);
 
 static int thData;
 static int tmrData;

@@ -4,7 +4,9 @@
 
 static void receive_sleeping(const m_evt_t *msg);
 
-M_MOD("Doggo");
+extern m_ctx_t *get_poll_ctx(void);
+
+M_MOD("Doggo", get_poll_ctx());
 
 static void module_pre_start(void) {
 }

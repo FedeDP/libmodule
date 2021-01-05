@@ -42,6 +42,7 @@ struct _map_itr {
     m_map_t *m;
     map_elem *curr;
     bool removed;
+    size_t idx;
 };
 
 static map_elem *hashmap_entry_find(const m_map_t *m, const char *key, bool find_empty);
@@ -293,6 +294,7 @@ int m_map_itr_next(m_map_itr_t **itr) {
     } else {
         /* Normally: start from subsequent element */
         i->curr = i->curr + 1 - i->removed;
+        i->idx++;
     }
     
     i->removed = false;
@@ -338,6 +340,12 @@ int m_map_itr_set_data(const m_map_itr_t *itr, void *value) {
     
     itr->curr->data = value;
     return 0;
+}
+
+size_t m_map_itr_idx(const m_map_itr_t *itr) {
+    M_PARAM_ASSERT(itr);
+    
+    return itr->idx;
 }
 
 /*

@@ -3,7 +3,7 @@
 extern void create_modules(m_ctx_t *c);
 extern void destroy_modules(void);
 
-M_CTX();
+M_CTX("Shared");
 
 /*
  * This function is automatically called before initing any module.
@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
      * We will use "test" as new context name.
      * New context will be created as soon as first module is added to it.
      */
-    create_modules(ctx());
+    create_modules(m_ctx);
 
     /*
      * Loop on this context to get our modules' events

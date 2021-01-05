@@ -40,10 +40,9 @@ _public_ _pure_ int m_mod_stats(const m_mod_t *mod, m_stats_t *stats);
 _public_ int m_mod_set_userdata(m_mod_t *mod, const void *userdata);
 _public_ const void *m_mod_get_userdata(const m_mod_t *mod);
 
-_public_ int m_mod_ref(const m_mod_t *mod, const char *name, m_mod_t **modref);
-_public_ int m_mod_unref(const m_mod_t *mod, m_mod_t **modref);
+_public_ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name);
 
-_public_ int m_mod_become(m_mod_t *mod, const recv_cb new_recv);
+_public_ int m_mod_become(m_mod_t *mod, const m_evt_cb new_recv);
 _public_ int m_mod_unbecome(m_mod_t *mod);
 
 /* Module PubSub interface */

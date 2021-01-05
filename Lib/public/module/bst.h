@@ -35,6 +35,7 @@ _public_ void *m_bst_find(m_bst_t *l, void *data);
 _public_ int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr);
 _public_ m_bst_itr_t *m_bst_itr_new(const m_bst_t *l);
 _public_ int m_bst_itr_next(m_bst_itr_t **itr);
+_public_ size_t m_bst_itr_idx(const m_bst_itr_t *itr);
 _public_ int m_bst_itr_remove(m_bst_itr_t *itr);
 _public_ void *m_bst_itr_get_data(const m_bst_itr_t *itr);
 _public_ int m_bst_clear(m_bst_t *l);

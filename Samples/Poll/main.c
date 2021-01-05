@@ -1,7 +1,12 @@
 #include <module/ctx_easy.h>
 #include <poll.h>
 
-M_CTX();
+/* Using ctx_easy API here */
+
+M_CTX("Poll");
+
+m_ctx_t *get_poll_ctx(void) { 
+    return m_ctx; }
 
 /*
  * This function is automatically called before initing any module.

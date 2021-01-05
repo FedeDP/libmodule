@@ -25,6 +25,7 @@ _public_ int m_queue_itr_next(m_queue_itr_t **itr);
 _public_ int m_queue_itr_remove(m_queue_itr_t *itr);
 _public_ void *m_queue_itr_get_data(const m_queue_itr_t *itr);
 _public_ int m_queue_itr_set_data(const m_queue_itr_t *itr, void *value);
+_public_ size_t m_queue_itr_idx(const m_queue_itr_t *itr);
 _public_ int m_queue_iterate(const m_queue_t *q, const m_queue_cb fn, void *userptr);
 _public_ int m_queue_enqueue(m_queue_t *q, void *data);
 _public_ void *m_queue_dequeue(m_queue_t *q);

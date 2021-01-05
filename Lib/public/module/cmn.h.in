@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <time.h>
+#include <pthread.h>
 
 #define MODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
 #define MODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
@@ -41,7 +42,6 @@
 #define _weak_          __attribute__((weak))
 #define _public_        __attribute__ ((visibility("default")))
 
-#define M_CTX_DEFAULT  "default"
 #define M_CTX_MAX_EVENTS   64
 
 /** Structs types **/
@@ -97,7 +97,7 @@ typedef enum {
  */
 #define M_FLAG_SHIFT(type, val)   val << (8 * (type + 1))
 typedef enum {
-    M_SRC_AUTOFREE        =       0x01, // Automatically free userdata upon deregistation.
+    M_SRC_AUTOFREE        =       0x01, // Automatically free userdata upon source deregistation.
     M_SRC_ONESHOT         =       0x02, // Run just once then automatically deregister source.
     M_SRC_DUP             =       0x04, // Duplicate PubSub topic, source fd or source path.
     M_SRC_PS_PRIO_LOWEST  =       M_FLAG_SHIFT(M_SRC_TYPE_PS, 0x01), // PubSub subscription low priority
@@ -199,14 +199,14 @@ typedef struct {
         m_evt_pid_t     *pid_msg;
         m_evt_task_t    *task_msg;
     };
-    const void *userdata;
+    const void *userdata;                           // Event userdata, passed through m_mod_src_register()
 } m_evt_t;
 
 /* Callbacks typedefs */
-typedef bool (*init_cb)(void);
-typedef bool (*eval_cb)(void);
-typedef void (*recv_cb)(const m_evt_t *const msg);
-typedef void (*deinit_cb)(void);
+typedef bool (*m_start_cb)(void);
+typedef bool (*m_eval_cb)(void);
+typedef void (*m_evt_cb)(const m_evt_t *const msg);
+typedef void (*m_stop_cb)(void);
 
 /* Logger callback */
 typedef void (*m_log_cb)(const m_mod_t *ref, const char *fmt, va_list args);
@@ -219,10 +219,10 @@ typedef void (*m_free_fn)(void *ptr);
 
 /* Struct that holds user defined callbacks */
 typedef struct {
-    init_cb init;                           // module's init function
-    eval_cb eval;                           // module's state changed function
-    recv_cb recv;                           // module's recv function
-    deinit_cb deinit;                       // module's deinit function
+    m_start_cb on_start;
+    m_eval_cb on_eval;
+    m_evt_cb on_evt;
+    m_stop_cb on_stop;
 } m_userhook_t;
 
 /* Struct that holds user defined memory functions */
@@ -238,5 +238,8 @@ typedef struct {
     double activity_freq;
 } m_stats_t;
 
-/* Common to any context; set this in modules_pre_start() */
+/* 
+ * Common to any context; set this in m_pre_start(), 
+ * ie: before library is inited and internal structures allocated 
+ */
 _public_ int m_set_memhook(const m_memhook_t *hook);

@@ -2,24 +2,23 @@
 
 #include "ctx.h"
 
-#define ctx() *get_ctx()
-
-#define M_CTX() \
-    static inline m_ctx_t **get_ctx() { static m_ctx_t *_ctx = NULL; return &_ctx; } \
+#define M_CTX(ctx_name) \
+    _Static_assert(ctx_name != NULL, "NULL ctx name."); \
+    static m_ctx_t *m_ctx; \
     static void _ctor2_ m_ctx_ctor(void) { \
-        m_ctx_register(M_CTX_DEFAULT, get_ctx(), 0, NULL); \
+        m_ctx_register(ctx_name, &m_ctx, 0, NULL); \
     } \
-    static void _dtor1_ m_ctx_dtor(void) { m_ctx_deregister(get_ctx()); }
+    static void _dtor1_ m_ctx_dtor(void) { m_ctx_deregister(&m_ctx); }
 
-/* Defines for easy API (with no need bothering with both self and ctx) */
-#define m_c_set_logger(log)           m_ctx_set_logger(ctx(), log)
-#define m_c_loop()                    m_ctx_loop(ctx(), M_CTX_MAX_EVENTS)
-#define m_c_quit(code)                m_ctx_quit(ctx(), code)
+/* Defines for easy API (with no need bothering with ctx handler) */
+#define m_c_set_logger(log)           m_ctx_set_logger(m_ctx, log)
+#define m_c_loop()                    m_ctx_loop(m_ctx, M_CTX_MAX_EVENTS)
+#define m_c_quit(code)                m_ctx_quit(m_ctx, code)
 
-#define m_c_fd()                      m_ctx_fd(ctx())
-#define m_c_name()                    m_ctx_name(ctx())
-#define m_c_dispatch()                m_ctx_dispatch(ctx())
+#define m_c_fd()                      m_ctx_fd(m_ctx)
+#define m_c_name()                    m_ctx_name(m_ctx)
+#define m_c_dispatch()                m_ctx_dispatch(m_ctx)
 
-#define m_c_trim(thres)               m_ctx_trim(ctx(), thres)
+#define m_c_trim(thres)               m_ctx_trim(m_ctx, thres)
 
-#define m_c_dump()                    m_ctx_dump(ctx())
+#define m_c_dump()                    m_ctx_dump(m_ctx)
