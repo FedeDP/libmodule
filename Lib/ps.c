@@ -58,7 +58,7 @@ found:
 /* 
  * Note: we cannot use m_mod_is() here as this function may be called
  * from another ctx when M_PS_GLOBAL is set on a broadcast message,
- * as it would fail because it is being called by different thread.
+ * and it would fail because it is being called by different thread.
  */
 static int tell_if(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
@@ -242,10 +242,7 @@ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
     M_RET_ASSERT(name, NULL);
     
     m_mod_t *m = m_map_get(mod->ctx->modules, name);
-    if (m) {
-        return m_mem_ref(m);
-    }
-    return NULL;
+    return m_mem_ref(m);
 }
 
 int m_mod_src_register_sub(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {

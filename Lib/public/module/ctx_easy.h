@@ -3,7 +3,6 @@
 #include "ctx.h"
 
 #define M_CTX(ctx_name) \
-    _Static_assert(ctx_name != NULL, "NULL ctx name."); \
     static m_ctx_t *m_ctx; \
     static void _ctor2_ m_ctx_ctor(void) { \
         m_ctx_register(ctx_name, &m_ctx, 0, NULL); \
