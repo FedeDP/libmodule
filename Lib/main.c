@@ -47,7 +47,7 @@ _public_ int _weak_ main(int argc, char *argv[]) {
             m_ctx_loop(c, M_CTX_MAX_EVENTS);
         } else {
             M_DEBUG("Starting '%s' thread\n", c->name);
-            pthread_create(&threads[m_itr_idx(itr)], NULL, thread_loop, c);
+            pthread_create(&threads[idx], NULL, thread_loop, c);
         }
     })
     

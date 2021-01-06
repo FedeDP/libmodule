@@ -15,7 +15,6 @@ struct _stack_itr {
     m_stack_t *s;
     stack_elem **elem;
     bool removed;
-    size_t idx;
 };
 
 /** Public API **/
@@ -48,7 +47,6 @@ int m_stack_itr_next(m_stack_itr_t **itr) {
     } else {
         i->removed = false;
     }
-    i->idx++;
     if (!*i->elem) {
         memhook._free(*itr);
         *itr = NULL;
@@ -85,12 +83,6 @@ int m_stack_itr_set_data(const m_stack_itr_t *itr, void *value) {
     
     (*itr->elem)->userptr = value;
     return 0;
-}
-
-size_t m_stack_itr_idx(const m_stack_itr_t *itr) {
-    M_PARAM_ASSERT(itr);
-    
-    return itr->idx;
 }
 
 int m_stack_iterate(const m_stack_t *s, const m_stack_cb fn, void *userptr) {

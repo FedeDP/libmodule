@@ -29,7 +29,6 @@ _public_ void *m_list_itr_get_data(const m_list_itr_t *itr);
 _public_ int m_list_itr_set_data(m_list_itr_t *itr, void *value);
 _public_ int m_list_itr_insert(m_list_itr_t *itr, void *value);
 _public_ int m_list_itr_remove(m_list_itr_t *itr);
-_public_ size_t m_list_itr_idx(const m_list_itr_t *itr);
 _public_ int m_list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr);
 _public_ int m_list_insert(m_list_t *l, void *data, const m_list_cmp comp);
 _public_ int m_list_remove(m_list_t *l, void *data, const m_list_cmp comp);
