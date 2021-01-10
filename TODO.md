@@ -1,5 +1,14 @@
 ## 6.0.0
 
+### Multithread support
+
+https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
+
+- [ ] Improve multithread support
+- [ ] As writing an address in a pipe is atomic, may be each "write" op to a module can be internally mapped to a message to it;
+- [ ] All modules have a cmd_piped_fd; calling eg: m_mod_become(X) would internally be translated to "m_cmd_enqueue(M_BECOME, X)" and that would be atomic;
+then module reads from cmd_piped_fd and executes the requested op
+
 ### Reference-counted objects' life management
 
 - [x] Keep objects alive as long as someone references them
@@ -247,6 +256,9 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Expose recv_msg/sent_msg in stats_t and use them as threshold too in m_ctx_trim
 - [ ] Fix fetch_ms()! Only count actions as actions triggered by API call (ie: user called an API function on the module)
 
+- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
+- [ ] Then, on unstash() each module will have a stashing_pipe_fd and all messages will be written to the piped fd; then asynchronously fetched as normal messages
+
 - [x] Improve init/destroy: if init() gets called at each module (re)start() we need a counterpart, eg: deinit(), called at each stop().
 - [x] Then drop destroy() API, useless
 
@@ -265,8 +277,6 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Avoid direct inclusion of cmn.h
 
-- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
-
 - [x] Put src_userdata inside m_evt_t struct and avoid passing it as param to recv_cb
 - [x] switch m_evt_t to be mem ref'd. This way clients can keep a ref by calling m_mem_ref() on message
 
@@ -278,13 +288,11 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Make module on_evt callback only mandatory cb
 
 ### Module permissions management
-- [ ] Add some permission management to modules, through m_mod_flags, eg:
-- - [ ] M_MOD_DENY_PUB
-- - [ ] M_MOD_DENY_SUB
-- - [ ] M_MOD_DENY_LOAD
-- - [ ] M_MOD_DENY_CTX (module cannot access its ctx)
-- [ ] m_mod_register() add flags
-- [ ] m_mod_load() add flags
+- [x] Add some permission management to modules, through m_mod_flags, eg:
+- - [x] M_MOD_DENY_PUB
+- - [x] M_MOD_DENY_SUB
+- - [x] M_MOD_DENY_LOAD
+- - [x] M_MOD_DENY_CTX (module cannot access its ctx)
 
 ### Generic
 
@@ -395,10 +403,9 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Use unlikely() macro for M_MOD_ASSERT
 
-## 6.1.0 (7.0.0?)
+- [ ] Fix enums with 64b values (eg: m_mod_flags and m_src_flags)
 
-### Generic
-- [ ] Improve multithread support ?
+## 6.1.0 (7.0.0?)
 
 ### Map API
 

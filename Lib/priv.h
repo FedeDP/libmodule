@@ -7,6 +7,8 @@
 #include "mem.h"
 #include "thpool.h"
 #include "itr.h"
+#include "ctx.h"
+#include "mod.h"
 
 #define unlikely(x)     __builtin_expect((x),0)
 
@@ -38,6 +40,10 @@
     M_PARAM_ASSERT(mod); \
     M_TH_ASSERT(mod->ctx); \
     M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), -EACCES);
+
+#define M_MOD_ASSERT_PERM(mod, perm) \
+    M_MOD_ASSERT(mod); \
+    M_RET_ASSERT(!(mod->flags & perm), -EPERM);
     
 #define M_MOD_ASSERT_STATE(mod, state) \
     M_MOD_ASSERT(mod); \

@@ -245,8 +245,8 @@ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
     return m_mem_ref(m);
 }
 
-int m_mod_src_register_sub(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {
-    M_MOD_ASSERT(mod);
+int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {
+    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
     
     /* Check if it is a valid regex: compile it */
@@ -293,8 +293,8 @@ int m_mod_src_register_sub(m_mod_t *mod, const char *topic, const m_src_flags fl
     return ret;
 }
 
-int m_mod_src_deregister_sub(m_mod_t *mod, const char *topic) {
-    M_MOD_ASSERT(mod);
+int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic) {
+    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
     
     int ret = m_map_remove(mod->subscriptions, topic);
@@ -308,7 +308,7 @@ int m_mod_src_deregister_sub(m_mod_t *mod, const char *topic) {
 }
 
 int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, const m_ps_flags flags) {
-    M_MOD_ASSERT(mod);
+    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
     M_PARAM_ASSERT(mod->ctx == recipient->ctx);
@@ -318,7 +318,7 @@ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, c
 }
 
 int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, const m_ps_flags flags) {
-    M_MOD_ASSERT(mod);
+    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(topic);
     
     /* Eventually cleanup PS_GLOBAL flag */    
@@ -326,14 +326,14 @@ int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, const
 }
 
 int m_mod_ps_broadcast(m_mod_t *mod, const void *message, const m_ps_flags flags) {
-    M_MOD_ASSERT(mod);
+    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(message);
     
     return send_msg(mod, NULL, NULL, message, flags);
 }
 
 int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
-    M_MOD_ASSERT(mod);
+    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
     M_PARAM_ASSERT(mod->ctx == recipient->ctx);

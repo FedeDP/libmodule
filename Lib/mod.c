@@ -540,7 +540,7 @@ int m_mod_deregister(m_mod_t **mod) {
 
 
 int m_mod_load(const m_mod_t *mod, const char *module_path, const m_mod_flags flags, m_mod_t **ref) {
-    M_MOD_ASSERT(mod);
+    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_LOAD);
     M_MOD_CTX(mod);
     M_PARAM_ASSERT(module_path);
     
@@ -564,7 +564,7 @@ int m_mod_load(const m_mod_t *mod, const char *module_path, const m_mod_flags fl
     /* Take most recently loaded module */
     m_mod_t *new_mod = map_peek(c->modules);
     new_mod->local_path = mem_strdup(module_path);
-    new_mod->flags = flags;
+    new_mod->flags |= flags;
     
     /* Store a reference to new module if requested */
     if (ref != NULL) {
@@ -574,7 +574,7 @@ int m_mod_load(const m_mod_t *mod, const char *module_path, const m_mod_flags fl
 }
 
 int m_mod_unload(const m_mod_t *mod, const char *module_path) {
-    M_MOD_ASSERT(mod);
+    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_LOAD);
     M_MOD_CTX(mod)
     M_PARAM_ASSERT(module_path);    
     
@@ -606,6 +606,7 @@ m_ctx_t *m_mod_ctx(const m_mod_t *mod) {
     M_RET_ASSERT(mod, NULL);
     M_RET_ASSERT(mod->ctx->th_id == pthread_self(), NULL);
     M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), NULL);
+    M_RET_ASSERT(!(mod->flags & M_MOD_DENY_CTX), NULL);
     
     return mod->ctx;
 }
