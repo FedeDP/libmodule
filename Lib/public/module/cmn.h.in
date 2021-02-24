@@ -38,10 +38,6 @@
 #define _dtor1_         __attribute__((destructor (111)))
 #define _dtor2_         __attribute__((destructor (112)))
 
-#define _pure_          __attribute__((pure))
-#define _weak_          __attribute__((weak))
-#define _public_        __attribute__ ((visibility("default")))
-
 /** Structs types **/
 
 /* Incomplete structure declaration to mod handler */
@@ -203,4 +199,4 @@ typedef struct {
  * Common to any context; set this in m_pre_start(), 
  * ie: before library is inited and internal structures allocated 
  */
-_public_ int m_set_memhook(const m_memhook_t *hook);
+int m_set_memhook(const m_memhook_t *hook);

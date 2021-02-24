@@ -65,7 +65,7 @@ static void *thpool_thread(void *thpool) {
     pthread_exit(NULL);
 }
 
-m_thpool_t *m_thpool_new(const uint8_t thread_count, const pthread_attr_t *attrs) {
+_public_ m_thpool_t *m_thpool_new(const uint8_t thread_count, const pthread_attr_t *attrs) {
     M_RET_ASSERT(thread_count > 0, NULL);
     
     m_thpool_t *pool = memhook._calloc(1, sizeof(m_thpool_t));
@@ -125,7 +125,7 @@ m_thpool_t *m_thpool_new(const uint8_t thread_count, const pthread_attr_t *attrs
     return pool;
 }
 
-int m_thpool_add(m_thpool_t *pool, m_thpool_task task, void *arg) {
+_public_ int m_thpool_add(m_thpool_t *pool, m_thpool_task task, void *arg) {
     M_PARAM_ASSERT(pool);
     M_PARAM_ASSERT(task);
     M_THREADS_ASSERT(pool, -EPERM);
@@ -149,14 +149,14 @@ int m_thpool_add(m_thpool_t *pool, m_thpool_task task, void *arg) {
     return unlock_ret;
 }
 
-bool m_thpool_joinable(m_thpool_t *pool) {
+_public_ bool m_thpool_joinable(m_thpool_t *pool) {
     M_RET_ASSERT(pool, false);
     M_THREADS_ASSERT(pool, false);
     
     return pool->joinable;
 }
 
-ssize_t m_thpool_length(m_thpool_t *pool) {
+_public_ ssize_t m_thpool_length(m_thpool_t *pool) {
     M_PARAM_ASSERT(pool);
     M_THREADS_ASSERT(pool, -EPERM);
     
@@ -174,7 +174,7 @@ ssize_t m_thpool_length(m_thpool_t *pool) {
     return unlock_ret;
 }
 
-ssize_t m_thpool_clear(m_thpool_t *pool) {
+_public_ ssize_t m_thpool_clear(m_thpool_t *pool) {
     M_PARAM_ASSERT(pool);
     M_THREADS_ASSERT(pool, -EPERM);
     
@@ -192,7 +192,7 @@ ssize_t m_thpool_clear(m_thpool_t *pool) {
     return unlock_ret;
 }
 
-int m_thpool_wait(m_thpool_t *pool) {
+_public_ int m_thpool_wait(m_thpool_t *pool) {
     M_PARAM_ASSERT(pool);
     M_THREADS_ASSERT(pool, -EPERM);
     M_PARAM_ASSERT(pool->joinable);
@@ -220,7 +220,7 @@ int m_thpool_wait(m_thpool_t *pool) {
     return ret;
 }
 
-int m_thpool_free(m_thpool_t **pool) {
+_public_ int m_thpool_free(m_thpool_t **pool) {
     M_PARAM_ASSERT(pool && *pool);
 
     m_thpool_t *p = *pool;

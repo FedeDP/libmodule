@@ -60,3 +60,6 @@ Build/
 
 # Readthedocs doc build folder
 docs/_build
+
+.idea/
+cmake-build-debug/

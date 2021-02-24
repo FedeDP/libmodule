@@ -46,7 +46,7 @@ static inline int remove_node(m_list_t *l, list_node **elem) {
 
 /** Public API **/
 
-m_list_t *m_list_new(const m_list_dtor fn) {
+_public_ m_list_t *m_list_new(const m_list_dtor fn) {
     m_list_t *l = memhook._calloc(1, sizeof(m_list_t));
     if (l) {
         l->dtor = fn;
@@ -54,7 +54,7 @@ m_list_t *m_list_new(const m_list_dtor fn) {
     return l;
 }
 
-m_list_itr_t *m_list_itr_new(const m_list_t *l) {
+_public_ m_list_itr_t *m_list_itr_new(const m_list_t *l) {
     M_RET_ASSERT(m_list_length(l) > 0, NULL);
     
     m_list_itr_t *itr = memhook._calloc(1, sizeof(m_list_itr_t));
@@ -65,7 +65,7 @@ m_list_itr_t *m_list_itr_new(const m_list_t *l) {
     return itr;
 }
 
-int m_list_itr_next(m_list_itr_t **itr) {
+_public_ int m_list_itr_next(m_list_itr_t **itr) {
     M_PARAM_ASSERT(itr && *itr);
     
     m_list_itr_t *i = *itr;
@@ -82,14 +82,14 @@ int m_list_itr_next(m_list_itr_t **itr) {
     return 0;
 }
 
-void *m_list_itr_get_data(const m_list_itr_t *itr) {
+_public_ void *m_list_itr_get_data(const m_list_itr_t *itr) {
     M_RET_ASSERT(itr, NULL);
     M_RET_ASSERT(*itr->elem, NULL);
     
     return (*itr->elem)->userptr;
 }
 
-int m_list_itr_set_data(m_list_itr_t *itr, void *value) {
+_public_ int m_list_itr_set_data(m_list_itr_t *itr, void *value) {
     M_PARAM_ASSERT(itr);
     M_PARAM_ASSERT(value);
     M_RET_ASSERT(*itr->elem, -EINVAL);
@@ -98,7 +98,7 @@ int m_list_itr_set_data(m_list_itr_t *itr, void *value) {
     return 0;
 }
 
-int m_list_itr_insert(m_list_itr_t *itr, void *value) {
+_public_ int m_list_itr_insert(m_list_itr_t *itr, void *value) {
     M_PARAM_ASSERT(itr);
     M_PARAM_ASSERT(value);
     
@@ -106,7 +106,7 @@ int m_list_itr_insert(m_list_itr_t *itr, void *value) {
     return insert_node(itr->l, itr->elem, value);
 }
 
-int m_list_itr_remove(m_list_itr_t *itr) {
+_public_ int m_list_itr_remove(m_list_itr_t *itr) {
     M_PARAM_ASSERT(itr);
     M_RET_ASSERT(*itr->elem, -EINVAL);
     
@@ -114,7 +114,7 @@ int m_list_itr_remove(m_list_itr_t *itr) {
     return remove_node(itr->l, itr->elem);
 }
 
-int m_list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr) {
+_public_ int m_list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr) {
     M_PARAM_ASSERT(fn);
     M_PARAM_ASSERT(m_list_length(l) > 0);
     
@@ -134,7 +134,7 @@ int m_list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr) {
     return 0;
 }
 
-int m_list_insert(m_list_t *l, void *data, const m_list_cmp comp) {
+_public_ int m_list_insert(m_list_t *l, void *data, const m_list_cmp comp) {
     M_PARAM_ASSERT(l);
     M_PARAM_ASSERT(data);
     
@@ -149,7 +149,7 @@ int m_list_insert(m_list_t *l, void *data, const m_list_cmp comp) {
     return insert_node(l, tmp, data);
 }
 
-int m_list_remove(m_list_t *l, void *data, const m_list_cmp comp) {
+_public_ int m_list_remove(m_list_t *l, void *data, const m_list_cmp comp) {
     M_PARAM_ASSERT(m_list_length(l) > 0);
     M_PARAM_ASSERT(data);
     
@@ -163,7 +163,7 @@ int m_list_remove(m_list_t *l, void *data, const m_list_cmp comp) {
     return remove_node(l, tmp);
 }
 
-void *m_list_find(m_list_t *l, void *data, const m_list_cmp comp) {
+_public_ void *m_list_find(m_list_t *l, void *data, const m_list_cmp comp) {
     M_RET_ASSERT(l, NULL);
     M_RET_ASSERT(data, NULL);
     
@@ -177,7 +177,7 @@ void *m_list_find(m_list_t *l, void *data, const m_list_cmp comp) {
     return NULL;
 }
 
-int m_list_clear(m_list_t *l) {
+_public_ int m_list_clear(m_list_t *l) {
     M_PARAM_ASSERT(l);
     
     for (m_list_itr_t *itr = m_list_itr_new(l); itr; m_list_itr_next(&itr)) {
@@ -186,7 +186,7 @@ int m_list_clear(m_list_t *l) {
     return 0;
 }
 
-int m_list_free(m_list_t **l) {
+_public_ int m_list_free(m_list_t **l) {
     M_PARAM_ASSERT(l);
     
     int ret = m_list_clear(*l);
@@ -197,7 +197,7 @@ int m_list_free(m_list_t **l) {
     return ret;
 }
 
-ssize_t m_list_length(const m_list_t *l) {
+_public_ ssize_t m_list_length(const m_list_t *l) {
     M_PARAM_ASSERT(l);
     
     return l->len;

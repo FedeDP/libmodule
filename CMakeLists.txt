@@ -70,11 +70,6 @@ else()
     set(LIBRARY_TYPE SHARED)
 endif()
 
-option(UNSAFE "build ${PROJECT_NAME} disabling various safety checks in its public API, speeding up libmodule." OFF)
-if(UNSAFE)
-    add_compile_definitions(NO_CHECKS)
-endif()
-
 # Set requested poll plugin
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     option(WITH_LIBURING "build ${PROJECT_NAME} with liburing support" OFF)

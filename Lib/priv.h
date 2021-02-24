@@ -11,6 +11,9 @@
 #include "mod.h"
 
 #define unlikely(x)     __builtin_expect((x),0)
+#define _pure_          __attribute__((pure))
+#define _weak_          __attribute__((weak))
+#define _public_        __attribute__ ((visibility("default")))
 
 #define M_CTX_DEFAULT  "default"
 
@@ -20,11 +23,7 @@
     #define M_DEBUG (void)
 #endif
 
-#ifndef NO_CHECKS
-    #define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
-#else
-     #define M_ASSERT(cond, msg, ret)   void
-#endif
+#define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
 
 #define M_RET_ASSERT(cond, ret)     M_ASSERT(cond, "("#cond ") condition failed.", ret) 
 

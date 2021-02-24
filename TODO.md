@@ -1,13 +1,16 @@
 ## 6.0.0
 
-### Multithread support
+### Changes
 
-https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
-
-- [ ] Improve multithread support
-- [ ] As writing an address in a pipe is atomic, may be each "write" op to a module can be internally mapped to a message to it;
-- [ ] All modules have a cmd_piped_fd; calling eg: m_mod_become(X) would internally be translated to "m_cmd_enqueue(M_BECOME, X)" and that would be atomic;
-then module reads from cmd_piped_fd and executes the requested op
+- [ ] drop multi ctx support
+- [ ] offer a single default ctx (no api to change / register it) always up
+- [ ] m_ctx_X will become m_X
+- [ ] improve main? Eg some default flags to change some ctx settings?
+- [ ] offer an api to run module's recv on their own thread (register flag: M_MOD_THreaded), it means their receive() will be run async
+- [ ] drop m_ps_ flag for broadcast to all contexts
+- [ ] drop m_mod_set_userdata: only allow userdata to be set during m_mod_register()
+- [ ] rename m_mod_get_userdata() to m_mod_userdata()
+- [x] drop m_ctx_trim()
 
 ### Reference-counted objects' life management
 
@@ -25,6 +28,8 @@ then module reads from cmd_piped_fd and executes the requested op
 - [x] Use flexible array member, less tricky
 
 - [x] Fix m_mod_ref API (use just m_mod_ref and leave unref/unrefp to mem API)
+
+- [x] add m_mem_size() API
 
 ### liburing
 
@@ -160,6 +165,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Split m_mem API from utils.c to its own source file
 - [x] Rename utils.c into priv.c
 - [x] Put thpool.c and mem.c into a new "utils" folder
+- [x] Move _public_ out of headers, to function definitions
 
 ### New ctx_register API
 
@@ -253,7 +259,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 ### Remaining fixes/Improvements
 
-- [ ] Expose recv_msg/sent_msg in stats_t and use them as threshold too in m_ctx_trim
+- [ ] Expose recv_msg/sent_msg in stats_t
 - [ ] Fix fetch_ms()! Only count actions as actions triggered by API call (ie: user called an API function on the module)
 
 - [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
@@ -273,7 +279,6 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Expose mod/ctx -> flags and ctx->userdata in mod/ctx_dump()
 
 - [x] Double check ctx_easy and mod_easy api
-- [x] Add -DNO_CHECKS to disable checks
 
 - [x] Avoid direct inclusion of cmn.h
 
@@ -309,8 +314,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Drop C++ support (useless...)
 
 - [x] keep some module stats, eg: time_t last_msg ( last recved), and messages per millisecond
-- [x] add a modules_trim function to deregister "inactive" modules, ie modules whose values are below user settled thresholds
-- [x] Add a stats_t type and use that as parameter to modules_trim?
+
 - [x] Add module_get_stats() API
 - [x] Split "recv_msg/sent_msg" from stats.msg_ctr
 
@@ -407,14 +411,25 @@ It would allows to check if same node already exists on insert, without losing t
 
 ## 6.1.0 (7.0.0?)
 
+### Thread-safe
+
+https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
+
+- [ ] Improve multithread support
+- [ ] As writing an address in a pipe is atomic, may be each call on a module can be an "op" written to its pipe
+- [ ] All modules have a cmd_piped_fd; calling eg: m_mod_become(X) would internally be translated to "m_cmd_enqueue(M_BECOME, X)" and that would be atomic;
+  then module reads from cmd_piped_fd and executes the requested op
+- [ ] need a way to map m_mod_ API arguments though
+
 ### Map API
 
 - [ ] Allow devs to customize hash function and take a void* as key
 
-## Ideas
+### Replay API
 
-- [ ] Add a new module type that only acts as "router" between contexts? eg: ROUTER(name, ctxA, ctxB) 
--> any message received from ctxA will be published in ctxB, else any message received on ctxB will be published in ctxA. eg module_add_route(self, ctxStart, ctxEnd) ?
+- [ ] Publish to require a m_mem_t. Thus we have access to object size.
+- [ ] add a m_replay() api to store and replay any message received in a previous run?
+- [ ] add a "--replay-from" cmdline switch to default main
 
 ### Submodules
 - [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);
@@ -424,7 +439,6 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] m_forward -> like m_tell but to all children
 
 ### Generic
-- [ ] Akka-persistence like message store? (ie: store all messages and replay them)
 - [ ] Add a message compact time, eg: m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
 - [ ] during compaction time, duplicated messages are erased
 - [ ] Add a m_mod_set_batch_size(size) to batch events and flush them together

@@ -237,7 +237,7 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
 
 /** Public API **/
 
-m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
+_public_ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
     M_RET_ASSERT(mod, NULL);
     M_RET_ASSERT(name, NULL);
     
@@ -245,7 +245,7 @@ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
     return m_mem_ref(m);
 }
 
-int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {
+_public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
     
@@ -293,7 +293,7 @@ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, const m_src_flags flags,
     return ret;
 }
 
-int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic) {
+_public_ int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
     
@@ -307,7 +307,7 @@ int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic) {
     return ret;
 }
 
-int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, const m_ps_flags flags) {
+_public_ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, const m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
@@ -317,7 +317,7 @@ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, c
     return send_msg(mod, recipient, NULL, message, flags & ~M_PS_GLOBAL);
 }
 
-int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, const m_ps_flags flags) {
+_public_ int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, const m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(topic);
     
@@ -325,14 +325,14 @@ int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, const
     return send_msg(mod, NULL, topic, message, flags & ~M_PS_GLOBAL);
 }
 
-int m_mod_ps_broadcast(m_mod_t *mod, const void *message, const m_ps_flags flags) {
+_public_ int m_mod_ps_broadcast(m_mod_t *mod, const void *message, const m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(message);
     
     return send_msg(mod, NULL, NULL, message, flags);
 }
 
-int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
+_public_ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */

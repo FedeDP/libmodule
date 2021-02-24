@@ -18,6 +18,4 @@
 #define m_c_name()                    m_ctx_name(m_ctx)
 #define m_c_dispatch()                m_ctx_dispatch(m_ctx)
 
-#define m_c_trim(thres)               m_ctx_trim(m_ctx, thres)
-
 #define m_c_dump()                    m_ctx_dump(m_ctx)

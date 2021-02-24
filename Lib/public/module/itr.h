@@ -54,3 +54,11 @@
         size_t idx = 0; \
         for (__auto_type itr = m_itr_new(X); itr; m_itr_next(&itr), idx++) fn; \
     }
+
+#define m_iterate(X, cb, up) _Generic((X), \
+    m_map_t *: m_map_iterate, \
+    m_list_itr_t *: m_list_iterate, \
+    m_stack_itr_t *: m_stack_iterate, \
+    m_queue_itr_t *: m_queue_iterate, \
+    m_bst_itr_t *: m_bst_iterate \
+    )(X, cb, up)

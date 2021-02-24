@@ -178,7 +178,7 @@ static inline bst_node **bst_next(bst_node **node) {
 
 /** Public API **/
 
-m_bst_t *m_bst_new(const m_bst_cmp comp, const m_bst_dtor fn) {
+_public_ m_bst_t *m_bst_new(const m_bst_cmp comp, const m_bst_dtor fn) {
     m_bst_t *l = memhook._calloc(1, sizeof(m_bst_t));
     if (l) {
         l->dtor = fn;
@@ -187,7 +187,7 @@ m_bst_t *m_bst_new(const m_bst_cmp comp, const m_bst_dtor fn) {
     return l;
 }
 
-int m_bst_insert(m_bst_t *l, void *data) {
+_public_ int m_bst_insert(m_bst_t *l, void *data) {
     M_PARAM_ASSERT(l);
     M_PARAM_ASSERT(data);
     
@@ -199,7 +199,7 @@ int m_bst_insert(m_bst_t *l, void *data) {
     return insert_node(l, node, parent, data);
 }
 
-int m_bst_remove(m_bst_t *l, void *data) {
+_public_ int m_bst_remove(m_bst_t *l, void *data) {
     M_PARAM_ASSERT(m_bst_length(l) > 0);
     M_PARAM_ASSERT(data);
     
@@ -210,7 +210,7 @@ int m_bst_remove(m_bst_t *l, void *data) {
     return -ENOENT;
 }
 
-void *m_bst_find(m_bst_t *l, void *data) {
+_public_ void *m_bst_find(m_bst_t *l, void *data) {
     M_RET_ASSERT(l, NULL);
     M_RET_ASSERT(data, NULL);
     
@@ -221,7 +221,11 @@ void *m_bst_find(m_bst_t *l, void *data) {
     return NULL;
 }
 
-int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr) {
+_public_ int m_bst_iterate(m_bst_t *l, m_bst_cb cb, void *userptr) {
+    return m_bst_traverse(l, M_BST_PRE, cb, userptr);
+}
+
+_public_ int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr) {
     M_PARAM_ASSERT(l);
     M_PARAM_ASSERT(cb);
     
@@ -243,7 +247,7 @@ int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr) {
     return ret >= 0 ? 0 : ret;
 }
 
-m_bst_itr_t *m_bst_itr_new(const m_bst_t *l) {
+_public_ m_bst_itr_t *m_bst_itr_new(const m_bst_t *l) {
     M_RET_ASSERT(m_bst_length(l) > 0, NULL);
 
     m_bst_itr_t *itr = memhook._calloc(1, sizeof(m_bst_itr_t));
@@ -254,7 +258,7 @@ m_bst_itr_t *m_bst_itr_new(const m_bst_t *l) {
     return itr;
 }
 
-int m_bst_itr_next(m_bst_itr_t **itr) {
+_public_ int m_bst_itr_next(m_bst_itr_t **itr) {
     M_PARAM_ASSERT(itr && *itr);
 
     m_bst_itr_t *i = *itr;
@@ -283,7 +287,7 @@ int m_bst_itr_next(m_bst_itr_t **itr) {
     return 0;
 }
 
-int m_bst_itr_remove(m_bst_itr_t *itr) {
+_public_ int m_bst_itr_remove(m_bst_itr_t *itr) {
     M_PARAM_ASSERT(itr && !itr->removed);
     M_PARAM_ASSERT(*(itr->curr));
     
@@ -311,14 +315,14 @@ int m_bst_itr_remove(m_bst_itr_t *itr) {
     return ret;
 }
 
-void *m_bst_itr_get_data(const m_bst_itr_t *itr) {
+_public_ void *m_bst_itr_get_data(const m_bst_itr_t *itr) {
     M_RET_ASSERT(itr && !itr->removed, NULL);
     M_RET_ASSERT(*(itr->curr), NULL);
 
     return (*itr->curr)->userptr;
 }
 
-int m_bst_clear(m_bst_t *l) {
+_public_ int m_bst_clear(m_bst_t *l) {
     M_PARAM_ASSERT(m_bst_length(l) > 0);
     
     for (m_bst_itr_t *itr = m_bst_itr_new(l); itr; m_bst_itr_next(&itr)) {
@@ -328,7 +332,7 @@ int m_bst_clear(m_bst_t *l) {
     return 0;
 }
 
-int m_bst_free(m_bst_t **l) {
+_public_ int m_bst_free(m_bst_t **l) {
     M_PARAM_ASSERT(l);
     
     m_bst_clear(*l);
@@ -337,7 +341,7 @@ int m_bst_free(m_bst_t **l) {
     return 0;
 }
 
-ssize_t m_bst_length(const m_bst_t *l) {
+_public_ ssize_t m_bst_length(const m_bst_t *l) {
     M_PARAM_ASSERT(l);
     
     return l->len;

@@ -248,7 +248,7 @@ void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ..
 
 /** Public API **/
 
-int m_ctx_register(const char *ctx_name, m_ctx_t **c, const m_ctx_flags flags, const void *userdata) {
+_public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, const m_ctx_flags flags, const void *userdata) {
     M_PARAM_ASSERT(ctx_name);
     M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(!*c);
@@ -259,7 +259,7 @@ int m_ctx_register(const char *ctx_name, m_ctx_t **c, const m_ctx_flags flags, c
     return ctx_new(ctx_name, c, flags, userdata);
 }
 
-int m_ctx_deregister(m_ctx_t **c) {
+_public_ int m_ctx_deregister(m_ctx_t **c) {
     M_PARAM_ASSERT(c);
     M_CTX_ASSERT((*c));
     
@@ -270,7 +270,7 @@ int m_ctx_deregister(m_ctx_t **c) {
     return ret;
 }
 
-int m_ctx_set_logger(m_ctx_t *c, const m_log_cb logger) {
+_public_ int m_ctx_set_logger(m_ctx_t *c, const m_log_cb logger) {
     M_CTX_ASSERT(c);
     M_PARAM_ASSERT(logger);
     
@@ -278,7 +278,7 @@ int m_ctx_set_logger(m_ctx_t *c, const m_log_cb logger) {
     return 0;
 }
 
-int m_ctx_loop(m_ctx_t *c, const int max_events) {
+_public_ int m_ctx_loop(m_ctx_t *c, const int max_events) {
     M_CTX_ASSERT(c);
     M_PARAM_ASSERT(max_events > 0);
     M_ASSERT(!c->looping, "Context already looping.", -EINVAL);
@@ -293,47 +293,47 @@ int m_ctx_loop(m_ctx_t *c, const int max_events) {
     return ret;
 }
 
-int m_ctx_quit(m_ctx_t *c, const uint8_t quit_code) {
+_public_ int m_ctx_quit(m_ctx_t *c, const uint8_t quit_code) {
     M_CTX_ASSERT(c);
     M_ASSERT(c->looping, "Context not looping.", -EINVAL);
        
     return loop_quit(c, quit_code);
 }
 
-int m_ctx_fd(const m_ctx_t *c) {
+_public_ int m_ctx_fd(const m_ctx_t *c) {
     M_CTX_ASSERT(c);
     
     return dup(poll_get_fd(&c->ppriv));
 }
 
-int m_ctx_set_userdata(m_ctx_t *c, const void *userdata) {
+_public_ int m_ctx_set_userdata(m_ctx_t *c, const void *userdata) {
     M_CTX_ASSERT(c);
     
     c->userdata = userdata;
     return 0;
 }
 
-const void *m_ctx_get_userdata(const m_ctx_t *c) {
+_public_ const void *m_ctx_get_userdata(const m_ctx_t *c) {
     M_RET_ASSERT(c, NULL);
     M_RET_ASSERT(c->th_id == pthread_self(), NULL);
     
     return c->userdata;
 }
 
-const char *m_ctx_name(const m_ctx_t *c) {
+_public_ _pure_ const char *m_ctx_name(const m_ctx_t *c) {
     M_RET_ASSERT(c, NULL);
     M_RET_ASSERT(c->th_id == pthread_self(), NULL);
     
     return c->name;
 }
 
-pthread_t m_ctx_get_th(m_ctx_t *c) {
+_public_ pthread_t m_ctx_get_th(m_ctx_t *c) {
     M_PARAM_ASSERT(c);
 
     return c->th_id;
 }
 
-int m_ctx_set_th(m_ctx_t *c, const pthread_t id) {
+_public_ int m_ctx_set_th(m_ctx_t *c, const pthread_t id) {
     M_PARAM_ASSERT(c);
     M_ASSERT(!c->looping, "Cannot attach context to thread while looping.", -EINVAL);
 
@@ -341,7 +341,7 @@ int m_ctx_set_th(m_ctx_t *c, const pthread_t id) {
     return 0;
 }
 
-int m_ctx_dispatch(m_ctx_t *c) {
+_public_ int m_ctx_dispatch(m_ctx_t *c) {
     M_CTX_ASSERT(c);
     
     if (!c->looping) {
@@ -358,7 +358,7 @@ int m_ctx_dispatch(m_ctx_t *c) {
     return recv_events(c, 0);
 }
 
-int m_ctx_dump(const m_ctx_t *c) {
+_public_ int m_ctx_dump(const m_ctx_t *c) {
     M_CTX_ASSERT(c);
     
     ctx_logger(c, NULL, "{\n");
@@ -387,28 +387,4 @@ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "\t]\n");
     ctx_logger(c, NULL, "}\n");
     return 0;
-}
-
-size_t m_ctx_trim(m_ctx_t *c, const m_stats_t *thres) {
-    M_CTX_ASSERT(c);
-    M_PARAM_ASSERT(thres);
-
-    uint64_t curr_ms = 0;
-    fetch_ms(&curr_ms, NULL);
-    const size_t initial_size = m_map_length(c->modules);
-    m_itr_foreach(c->modules, {
-        m_mod_t *mod = m_itr_get(itr);
-
-        if (curr_ms - mod->stats.last_seen >= thres->inactive_ms) {
-            m_mod_deregister(&mod);
-        } else {
-            const double freq = (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
-            if (freq < thres->activity_freq) {
-                m_mod_deregister(&mod);
-            }
-        }
-    });
-    
-    /* Number of deregistered modules */
-    return initial_size - m_map_length(c->modules);
 }

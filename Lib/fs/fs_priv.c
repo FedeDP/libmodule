@@ -435,7 +435,7 @@ int fs_end(m_ctx_t *c) {
 
 /** Public API **/
 
-int m_ctx_set_fs_root(m_ctx_t *c, const char *path) {
+_public_ int m_ctx_set_fs_root(m_ctx_t *c, const char *path) {
     M_CTX_ASSERT(c);
     M_RET_ASSERT(!c->looping, -EPERM);
     M_PARAM_ASSERT(path && strlen(path));
