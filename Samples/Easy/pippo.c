@@ -13,14 +13,14 @@
 
 static m_mod_t *doggo;
 
-M_MOD("Pippo", NULL);
+M_MOD("Pippo");
 
 static int myData = 5;
 
 static void receive_ready(const m_evt_t *msg);
 
 static void m_mod_pre_start() {
-    
+
 }
 
 static bool init(void) {
@@ -75,7 +75,7 @@ static void receive(const m_evt_t *msg) {
             case 'q':
                 m_m_log("I have to go now!\n");
                 m_m_ps_publish("leaving", "ByeBye", 0);
-                m_ctx_quit(m_m_ctx(), 0);
+                m_ctx_quit(0);
                 break;
             default:
                 /* Avoid newline */
@@ -87,7 +87,7 @@ static void receive(const m_evt_t *msg) {
     } else if (msg->ps_msg->type == M_PS_USER && 
         !strcmp((char *)msg->ps_msg->data, "BauBau")) {
         
-        m_ctx_dump(m_m_ctx());
+        m_ctx_dump();
         
         m_m_become(ready);
         m_m_log("Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
@@ -135,7 +135,7 @@ static void receive_ready(const m_evt_t *msg) {
                 m_m_dump();
                 m_m_log("I have to go now!\n");
                 m_m_ps_publish("leaving", "ByeBye", 0);
-                m_ctx_quit(m_m_ctx(), 0);
+                m_ctx_quit(0);
                 break;
             default:
                 /* Avoid newline */

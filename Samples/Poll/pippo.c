@@ -10,7 +10,7 @@ static m_mod_t *doggo;
 
 extern m_ctx_t *get_poll_ctx(void);
 
-M_MOD("Pippo", get_poll_ctx());
+M_MOD("Pippo");
 
 static int myData = 5;
 
@@ -60,7 +60,7 @@ static void receive(const m_evt_t *msg) {
             case 'q':
                 m_m_log("I have to go now!\n");
                 m_m_ps_publish("leaving", "ByeBye", 0);
-                m_ctx_quit(m_m_ctx(), 0);
+                m_ctx_quit(0);
                 break;
             default:
                 /* Avoid newline */
@@ -113,7 +113,7 @@ static void receive_ready(const m_evt_t *msg) {
             case 'q':
                 m_m_log("I have to go now!\n");
                 m_m_ps_publish("leaving", "ByeBye", 0);
-                m_ctx_quit(m_m_ctx(), 0);
+                m_ctx_quit(0);
                 break;
             default:
                 /* Avoid newline */

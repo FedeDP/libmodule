@@ -21,8 +21,6 @@ void test_mod_log_NULL_self(void **state);
 void test_mod_log(void **state);
 void test_mod_dump_NULL_self(void **state);
 void test_mod_dump(void **state);
-void test_mod_set_userdata_NULL_self(void **state);
-void test_mod_set_userdata(void **state);
 void test_mod_become_NULL_self(void **state);
 void test_mod_become_NULL_func(void **state);
 void test_mod_become(void **state);

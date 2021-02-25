@@ -17,7 +17,7 @@ void test_mod_register_NULL_name(void **state) {
     (void) state; /* unused */
 
     m_userhook_t hook = { .on_evt = recv };
-    int ret = m_mod_register(NULL, test_ctx, &mod, &hook, 0, NULL);
+    int ret = m_mod_register(NULL, &mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(mod);
 }
@@ -26,7 +26,7 @@ void test_mod_register_NULL_self(void **state) {
     (void) state; /* unused */
     
     m_userhook_t hook = { .on_evt = recv };
-    int ret = m_mod_register("testName", test_ctx, NULL, &hook, 0, NULL);
+    int ret = m_mod_register("testName", NULL, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(mod);
 }
@@ -34,7 +34,7 @@ void test_mod_register_NULL_self(void **state) {
 void test_mod_register_NULL_hook(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_register("testName", test_ctx, &mod, NULL, 0, NULL);    
+    int ret = m_mod_register("testName", &mod, NULL, 0, NULL);
     assert_false(ret == 0);
     assert_null(mod);
 }
@@ -43,7 +43,7 @@ void test_mod_register(void **state) {
     (void) state; /* unused */
     
     m_userhook_t hook = { .on_evt = recv };
-    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
+    int ret = m_mod_register("testName", &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
     assert_true(m_mod_is(mod, M_MOD_IDLE));
@@ -53,7 +53,7 @@ void test_mod_register_already_registered(void **state) {
     (void) state; /* unused */
     
     m_userhook_t hook = { .on_evt = recv };
-    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
+    int ret = m_mod_register("testName", &mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_non_null(mod);
     assert_true(m_mod_is(mod, M_MOD_IDLE));
@@ -65,7 +65,7 @@ void test_mod_register_same_name(void **state) {
     m_mod_t *self2 = NULL;
     
     m_userhook_t hook = { .on_evt = recv };
-    int ret = m_mod_register("testName", test_ctx, &self2, &hook, 0, NULL);
+    int ret = m_mod_register("testName", &self2, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(self2);
 }
@@ -90,7 +90,7 @@ void test_mod_false_init(void **state) {
     (void) state; /* unused */
     
     m_userhook_t hook = { .on_start = init_false, .on_evt = recv };
-    int ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
+    int ret = m_mod_register("testName", &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
     assert_true(m_mod_is(mod, M_MOD_IDLE));
@@ -197,20 +197,6 @@ void test_mod_dump(void **state) {
     (void) state; /* unused */
     
     int ret = m_mod_dump(mod);
-    assert_true(ret == 0);
-}
-
-void test_mod_set_userdata_NULL_self(void **state) {
-    (void) state; /* unused */
-    
-    int ret = m_mod_set_userdata(NULL, NULL);
-    assert_false(ret == 0);
-}
-
-void test_mod_set_userdata(void **state) {
-    (void) state; /* unused */
-    
-    int ret = m_mod_set_userdata(mod, NULL);
     assert_true(ret == 0);
 }
 
@@ -457,7 +443,7 @@ static void recv(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
         ctr++;
         if (!strcmp((char *)msg->ps_msg->data, "hi3!")) {
-            m_ctx_quit(test_ctx, ctr);
+            m_ctx_quit(ctr);
         }
     }
 }

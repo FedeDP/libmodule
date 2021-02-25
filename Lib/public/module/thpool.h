@@ -10,7 +10,7 @@ typedef void *(*m_thpool_task)(void *);
 
 typedef struct _thpool m_thpool_t;
 
-m_thpool_t *m_thpool_new(const uint8_t thread_count, const pthread_attr_t *attrs);
+m_thpool_t *m_thpool_new(uint8_t thread_count, const pthread_attr_t *attrs);
 int m_thpool_add(m_thpool_t *pool, m_thpool_task task, void *arg);
 bool m_thpool_joinable(m_thpool_t *pool);
 ssize_t m_thpool_length(m_thpool_t *pool);

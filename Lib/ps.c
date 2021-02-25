@@ -149,15 +149,13 @@ static int tell_subscribers(void *data, const char *key, void *value) {
 static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c) {    
     if (recipient) { // it is a direct tell
         tell_if(m, NULL, (m_mod_t *)recipient);
-    } else if (!(m->flags & M_PS_GLOBAL)) {
-        /* Local Broadcast or SYSTEM messages */
+    } else {
+        /* Broadcast or SYSTEM messages */
         if (m->msg.type != M_PS_USER || !m->msg.topic) {
             m_map_iterate(c->modules, tell_if, m);
         } else {
             tell_subscribers(m, NULL, c);
         }
-    } else {
-        m_map_iterate(ctx, tell_global, m);
     }
     return 0;
 }
@@ -165,21 +163,22 @@ static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c) {
 static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic, 
                     const void *message, const m_ps_flags flags) {
     M_PARAM_ASSERT(message);
-    M_MOD_CTX(mod);
-    
+
     mod->stats.sent_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     ps_priv_t m = { { M_PS_USER, mod, topic, message }, flags, NULL };
-    return tell_pubsub_msg(&m, recipient, c);
+    return tell_pubsub_msg(&m, recipient, ctx);
 }
 
 /** Private API **/
 
 int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_ps_types type, m_mod_t *sender, const char *topic) {
     if (sender) {
+        // A module sent a M_PS_MOD_POISONPILL message to another
+        sender->stats.sent_msgs++;
         fetch_ms(&sender->stats.last_seen, &sender->stats.action_ctr);
     }
-    ps_priv_t m = { { type, sender, topic, c->userdata }, 0, NULL };
+    ps_priv_t m = { { type, sender, topic, NULL }, 0, NULL };
     return tell_pubsub_msg(&m, recipient, c);
 }
 
@@ -241,11 +240,11 @@ _public_ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
     M_RET_ASSERT(mod, NULL);
     M_RET_ASSERT(name, NULL);
     
-    m_mod_t *m = m_map_get(mod->ctx->modules, name);
+    m_mod_t *m = m_map_get(ctx->modules, name);
     return m_mem_ref(m);
 }
 
-_public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, const m_src_flags flags, const void *userptr) {
+_public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
     
@@ -307,25 +306,23 @@ _public_ int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic) {
     return ret;
 }
 
-_public_ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, const m_ps_flags flags) {
+_public_ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(recipient);
-    /* only same ctx modules can talk */
-    M_PARAM_ASSERT(mod->ctx == recipient->ctx);
 
     /* Eventually cleanup PS_GLOBAL flag */    
-    return send_msg(mod, recipient, NULL, message, flags & ~M_PS_GLOBAL);
+    return send_msg(mod, recipient, NULL, message, flags);
 }
 
-_public_ int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, const m_ps_flags flags) {
+_public_ int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(topic);
     
     /* Eventually cleanup PS_GLOBAL flag */    
-    return send_msg(mod, NULL, topic, message, flags & ~M_PS_GLOBAL);
+    return send_msg(mod, NULL, topic, message, flags);
 }
 
-_public_ int m_mod_ps_broadcast(m_mod_t *mod, const void *message, const m_ps_flags flags) {
+_public_ int m_mod_ps_broadcast(m_mod_t *mod, const void *message, m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(message);
     
@@ -335,10 +332,7 @@ _public_ int m_mod_ps_broadcast(m_mod_t *mod, const void *message, const m_ps_fl
 _public_ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(recipient);
-    /* only same ctx modules can talk */
-    M_PARAM_ASSERT(mod->ctx == recipient->ctx);
     M_PARAM_ASSERT(m_mod_is(recipient, M_MOD_RUNNING));
-    M_MOD_CTX(mod);
-    
-    return tell_system_pubsub_msg(recipient, c, M_PS_MOD_POISONPILL, mod, NULL);
+
+    return tell_system_pubsub_msg(recipient, ctx, M_PS_MOD_POISONPILL, mod, NULL);
 }

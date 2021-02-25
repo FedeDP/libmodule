@@ -20,23 +20,19 @@
  * ctors order: 
  * 0) m_pre_start()
  * 1) libmodule_init()
- * 2) M_CTX() macro ctors (only ctx_easy API) 
- * 3) each module_pre_start() (only mod_easy API)
- * 4) each module ctor function (only mod_easy API)
+ * 2) each module_pre_start() (only mod_easy API)
+ * 3) each module ctor function (only mod_easy API)
  * 
  * dtors order:
- * 2) each module's dtor function (only mod_easy API)
- * 1) each context's dtor function (only ctx_easy API)
+ * 1) each module's dtor function (only mod_easy API)
  * 0) libmodule_destroy()
  */
 #define _ctor0_         __attribute__((constructor (110)))
 #define _ctor1_         __attribute__((constructor (111)))
-#define _ctor2_         __attribute__((constructor (112)))
-#define _ctor3_         __attribute__((constructor (113)))
-#define _ctor4_         __attribute__((constructor (114)))
+#define _ctor2_         __attribute__((constructor (113)))
+#define _ctor3_         __attribute__((constructor (114)))
 #define _dtor0_         __attribute__((destructor (110)))
 #define _dtor1_         __attribute__((destructor (111)))
-#define _dtor2_         __attribute__((destructor (112)))
 
 /** Structs types **/
 
@@ -74,11 +70,11 @@ typedef enum {
     M_SRC_AUTOFREE        =       0x01, // Automatically free userdata upon source deregistation.
     M_SRC_ONESHOT         =       0x02, // Run just once then automatically deregister source.
     M_SRC_DUP             =       0x04, // Duplicate PubSub topic, source fd or source path.
-    M_SRC_PS_PRIO_LOWEST  =       M_SRC_SHIFT(M_SRC_TYPE_PS, 0x01), // PubSub subscription low priority
+    M_SRC_PS_PRIO_LOWEST  =       M_SRC_SHIFT(M_SRC_TYPE_PS, 0x01), // PubSub subscription lowest priority
     M_SRC_PS_PRIO_LOW     =       M_SRC_SHIFT(M_SRC_TYPE_PS, 0x02), // PubSub subscription low priority
     M_SRC_PS_PRIO_NORM    =       M_SRC_SHIFT(M_SRC_TYPE_PS, 0x04), // PubSub subscription mid priority (default)
     M_SRC_PS_PRIO_HIGH    =       M_SRC_SHIFT(M_SRC_TYPE_PS, 0x08), // PubSub subscription high priority
-    M_SRC_PS_PRIO_HIGHEST =       M_SRC_SHIFT(M_SRC_TYPE_PS, 0x10), // PubSub subscription high priority
+    M_SRC_PS_PRIO_HIGHEST =       M_SRC_SHIFT(M_SRC_TYPE_PS, 0x10), // PubSub subscription highest priority
     M_SRC_FD_AUTOCLOSE    =       M_SRC_SHIFT(M_SRC_TYPE_FD, 0x01), // Automatically close fd upon deregistation.
     M_SRC_TMR_ABSOLUTE    =       M_SRC_SHIFT(M_SRC_TYPE_TMR, 0x01) // Absolute timer
 } m_src_flags;
@@ -88,7 +84,6 @@ typedef enum {
  */
 typedef enum {
     M_PS_AUTOFREE   = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_msg ref counter goes to 0)
-    M_PS_GLOBAL     = 0x02      // Only useful for module_broadcast. Broadcast a message to any context.
 } m_ps_flags;
 
 /* m_mod_src_register() special types (ie: input types to register a src) */
@@ -193,6 +188,8 @@ typedef struct {
 typedef struct {
     uint64_t inactive_ms;
     double activity_freq;
+    uint64_t sent_msgs;
+    uint64_t recv_msgs;
 } m_stats_t;
 
 /* 

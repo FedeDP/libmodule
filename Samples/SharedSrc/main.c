@@ -1,9 +1,7 @@
-#include <module/ctx_easy.h>
+#include <module/ctx.h>
 
-extern void create_modules(m_ctx_t *c);
+extern void create_modules(void);
 extern void destroy_modules(void);
-
-M_CTX("Shared");
 
 /*
  * This function is automatically called before initing any module.
@@ -21,12 +19,12 @@ int main(int argc, char *argv[]) {
      * We will use "test" as new context name.
      * New context will be created as soon as first module is added to it.
      */
-    create_modules(m_ctx);
+    create_modules();
 
     /*
      * Loop on this context to get our modules' events
      */
-    m_c_loop();
+    m_ctx_loop();
     
     /*
      * Finally, destroy our modules

@@ -7,6 +7,7 @@ typedef struct _elem {
 
 struct _list {
     size_t len;
+    m_list_cmp comp;
     m_list_dtor dtor;
     list_node *data;
 };
@@ -46,9 +47,10 @@ static inline int remove_node(m_list_t *l, list_node **elem) {
 
 /** Public API **/
 
-_public_ m_list_t *m_list_new(const m_list_dtor fn) {
+_public_ m_list_t *m_list_new(m_list_cmp comp, m_list_dtor fn) {
     m_list_t *l = memhook._calloc(1, sizeof(m_list_t));
     if (l) {
+        l->comp = comp;
         l->dtor = fn;
     }
     return l;
@@ -114,7 +116,7 @@ _public_ int m_list_itr_remove(m_list_itr_t *itr) {
     return remove_node(itr->l, itr->elem);
 }
 
-_public_ int m_list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr) {
+_public_ int m_list_iterate(const m_list_t *l, m_list_cb fn, void *userptr) {
     M_PARAM_ASSERT(fn);
     M_PARAM_ASSERT(m_list_length(l) > 0);
     
@@ -134,13 +136,13 @@ _public_ int m_list_iterate(const m_list_t *l, const m_list_cb fn, void *userptr
     return 0;
 }
 
-_public_ int m_list_insert(m_list_t *l, void *data, const m_list_cmp comp) {
+_public_ int m_list_insert(m_list_t *l, void *data) {
     M_PARAM_ASSERT(l);
     M_PARAM_ASSERT(data);
     
     list_node **tmp = &l->data;
-    for (int i = 0; i < l->len && comp; i++) {
-        if (comp(data, (*tmp)->userptr) == 0) {
+    for (int i = 0; i < l->len && l->comp; i++) {
+        if (l->comp(data, (*tmp)->userptr) == 0) {
             break;
         }
         tmp = &(*tmp)->next;
@@ -149,13 +151,13 @@ _public_ int m_list_insert(m_list_t *l, void *data, const m_list_cmp comp) {
     return insert_node(l, tmp, data);
 }
 
-_public_ int m_list_remove(m_list_t *l, void *data, const m_list_cmp comp) {
+_public_ int m_list_remove(m_list_t *l, void *data) {
     M_PARAM_ASSERT(m_list_length(l) > 0);
     M_PARAM_ASSERT(data);
     
     list_node **tmp = &l->data;
     for (int i = 0; i < l->len; i++) {
-        if ((comp && comp(data, (*tmp)->userptr) == 0) || (*tmp)->userptr == data) {
+        if ((l->comp && l->comp(data, (*tmp)->userptr) == 0) || (*tmp)->userptr == data) {
             break;
         }
         tmp = &(*tmp)->next;
@@ -163,13 +165,13 @@ _public_ int m_list_remove(m_list_t *l, void *data, const m_list_cmp comp) {
     return remove_node(l, tmp);
 }
 
-_public_ void *m_list_find(m_list_t *l, void *data, const m_list_cmp comp) {
+_public_ void *m_list_find(m_list_t *l, void *data) {
     M_RET_ASSERT(l, NULL);
     M_RET_ASSERT(data, NULL);
     
     list_node **tmp = &l->data;
     for (int i = 0; i < l->len; i++) {
-        if ((comp && comp(data, (*tmp)->userptr) == 0) || (*tmp)->userptr == data) {
+        if ((l->comp && l->comp(data, (*tmp)->userptr) == 0) || (*tmp)->userptr == data) {
             return (*tmp)->userptr;
         }
         tmp = &(*tmp)->next;

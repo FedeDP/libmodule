@@ -8,13 +8,13 @@
 #include <fuse.h>
 #include <fuse_lowlevel.h>  // to get fuse fd to process events internally
 #include <sys/poll.h>       // poll operation support
-#include <limits.h>
 
 #define FS_PRIV()         fs_ctx_t *f = (fs_ctx_t *)c->fs; if (!f) { return -EINVAL; }
 #define FS_CTX()          m_ctx_t *c = fuse_get_context()->private_data;
 #define FS_CLIENT()       fs_client_t *cl = (fs_client_t *)fi->fh; if (!cl) { return -ENOENT; }
 #define FS_MOD()          FS_CLIENT(); m_mod_t *mod = cl->mod;
 
+/* Context fs priv data */
 typedef struct {
     struct fuse *handler;
     struct fuse_buf buf;
@@ -23,6 +23,7 @@ typedef struct {
     ev_src_t *src;
 } fs_ctx_t;
 
+/* poll client fs data */
 typedef struct {
     m_mod_t *mod;
     struct fuse_pollhandle *ph;
@@ -33,6 +34,7 @@ typedef struct {
     bool read_all;
 } fs_client_t;
 
+/* Module fs priv data (list of clients) */
 typedef struct {
     m_list_t *clients;
 } fs_priv_t;
@@ -108,9 +110,8 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
         m_mod_t *mod = m_map_get(c->modules, path + 1);
         if (mod) {
             fs_client_t *cl = memhook._calloc(1, sizeof(fs_client_t));
-            if (!cl) {
-                return -ENOMEM;
-            }
+            M_ALLOC_ASSERT(cl);
+
             if (!mod->fs) {
                 mod->fs = memhook._calloc(1, sizeof(fs_priv_t));
                 if (!mod->fs) {
@@ -120,7 +121,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
             }
             fs_priv_t *fp = (fs_priv_t *)mod->fs;
             if (!fp->clients) { 
-                fp->clients = m_list_new(client_dtor);
+                fp->clients = m_list_new(NULL, client_dtor);
                 if (!fp->clients) {
                     memhook._free(cl);
                     memhook._free(fp);
@@ -129,7 +130,7 @@ static int fs_open(const char *path, struct fuse_file_info *fi) {
                 }
             }
             cl->mod = m_mem_ref(mod); // keep module alive while any client uses it
-            m_list_insert(fp->clients, cl, NULL);
+            m_list_insert(fp->clients, cl);
             fi->fh = (uint64_t) cl;
             fi->direct_io = 1;
             fi->nonseekable = 1;
@@ -145,10 +146,11 @@ static int fs_release(const char *path, struct fuse_file_info *fi) {
     fi->fh = 0;
     fs_priv_t *fp = (fs_priv_t *)mod->fs;
     if (fp) {
-        m_list_remove(fp->clients, cl, NULL);
+        m_list_remove(fp->clients, cl);
         if (m_list_length(fp->clients) == 0) {
             m_list_free(&fp->clients);
             memhook._free(fp);
+            mod->fs = NULL;
         }
         return 0;
     }
@@ -228,11 +230,9 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     const m_userhook_t fuse_hook = { init, NULL, receive, NULL };
-    FS_CTX();
-    
     if (strlen(path) > 1) {
         m_mod_t *mod = NULL;
-        if (m_mod_register(path + 1, c, &mod, &fuse_hook, M_MOD_NAME_DUP, NULL) == 0) {
+        if (m_mod_register(path + 1, &mod, &fuse_hook, M_MOD_NAME_DUP, NULL) == 0) {
             return 0;
         }
         return -EPERM;
@@ -242,11 +242,10 @@ static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
 
 static int fs_poll(const char *path, struct fuse_file_info *fi,
                      struct fuse_pollhandle *ph, unsigned *reventsp) {
-    FS_MOD();
+    FS_CLIENT();
 
     if (ph) {
         if (cl->in_evt) {
-            fs_priv_t *fp = (fs_priv_t *)mod->fs;
             if (cl->in_evt == 1) {
                 *reventsp |= POLLIN;
             } else {
@@ -341,8 +340,13 @@ static void fs_wakeup_clients(fs_priv_t *fp, bool leaving) {
 /** Private API **/
 
 int fs_init(m_ctx_t *c) {
-    int ret = -EINVAL;
+    int ret = 0;
     if (c->fs_root) {
+        ret = mkdir(c->fs_root, 0777);
+        if (ret != 0) {
+            return -errno;
+        }
+
         c->fs = memhook._calloc(1, sizeof(fs_ctx_t));
         M_ALLOC_ASSERT(c->fs);
         
@@ -356,7 +360,6 @@ int fs_init(m_ctx_t *c) {
         
         f->start = time(NULL);
         
-        mkdir(c->fs_root, 0777);
         ret = fuse_mount(f->handler, c->fs_root);
         if (ret == 0) {
             f->src = memhook._calloc(1, sizeof(ev_src_t));
@@ -426,7 +429,7 @@ int fs_end(m_ctx_t *c) {
     fuse_opt_free_args(&f->args);
 
     /* Delete folder */
-    remove(c->name);
+    remove(c->fs_root);
     
     memhook._free(c->fs);
     c->fs = NULL;
@@ -435,14 +438,17 @@ int fs_end(m_ctx_t *c) {
 
 /** Public API **/
 
-_public_ int m_ctx_set_fs_root(m_ctx_t *c, const char *path) {
-    M_CTX_ASSERT(c);
-    M_RET_ASSERT(!c->looping, -EPERM);
+_public_ const char *m_ctx_fs_get_root(void) {
+    return ctx->fs_root;
+}
+
+_public_ int m_ctx_fs_set_root(const char *path) {
+    M_RET_ASSERT(!ctx->looping, -EPERM);
     M_PARAM_ASSERT(path && strlen(path));
-    
-    if (c->fs_root) {
-        memhook._free(c->fs_root);
+
+    if (ctx->fs_root) {
+        memhook._free(ctx->fs_root);
     }
-    c->fs_root = mem_strdup(path);
+    ctx->fs_root = mem_strdup(path);
     return 0;
 }

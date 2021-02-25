@@ -28,7 +28,7 @@ typedef enum {
     M_BST_IN
 } m_bst_order;
 
-m_bst_t *m_bst_new(const m_bst_cmp comp, const m_bst_dtor fn);
+m_bst_t *m_bst_new(m_bst_cmp comp, m_bst_dtor fn);
 int m_bst_insert(m_bst_t *l, void *data);
 int m_bst_remove(m_bst_t *l, void *data);
 void *m_bst_find(m_bst_t *l, void *data);

@@ -15,10 +15,6 @@ int main(void) {
         cmocka_unit_test(test_mod_register_NULL_self),
         cmocka_unit_test(test_mod_register_NULL_hook),
         
-        /* Test ctx register */
-        cmocka_unit_test(test_ctx_register_NULL_name),
-        cmocka_unit_test(test_ctx_register),
-        
         /* Finally regiter module */
         cmocka_unit_test(test_mod_register),
         
@@ -36,11 +32,8 @@ int main(void) {
         cmocka_unit_test(test_mod_register_same_name),
         
         /* Test modules_ API */
-        cmocka_unit_test(test_ctx_set_logger_NULL_ctx),
         cmocka_unit_test(test_ctx_set_logger_NULL_logger),
         cmocka_unit_test(test_ctx_set_logger),
-        cmocka_unit_test(test_ctx_loop_NULL_ctx),
-        cmocka_unit_test(test_ctx_quit_NULL_ctx),
         cmocka_unit_test(test_ctx_quit_no_loop),
         cmocka_unit_test(test_ctx_dump),
         
@@ -63,10 +56,6 @@ int main(void) {
         /* Test module dumper */
         cmocka_unit_test(test_mod_dump_NULL_self),
         cmocka_unit_test(test_mod_dump),
-        
-        /* Test module set userdata */
-        cmocka_unit_test(test_mod_set_userdata_NULL_self),
-        cmocka_unit_test(test_mod_set_userdata),
         
         /* Test module become */
         cmocka_unit_test(test_mod_become_NULL_self),
@@ -119,7 +108,6 @@ int main(void) {
         cmocka_unit_test(test_ctx_loop),
         
         /* We have 0 messages now */
-        cmocka_unit_test(test_ctx_dispatch_NULL_ctx),
         cmocka_unit_test(test_ctx_dispatch),
         
         /* Test module unref */
@@ -135,17 +123,8 @@ int main(void) {
         /* Test that if init returns false, module is stopped */
         cmocka_unit_test(test_mod_false_init),
         
-        /* Test ctx deregister */
-        cmocka_unit_test(test_ctx_deregister_NULL_name),
-        cmocka_unit_test(test_ctx_deregister),
-        
-        /* We have no more our module and its ctx */
-        cmocka_unit_test(test_ctx_loop_no_maxevents),
-        
         /* Test modules_ API: it should fail now */
-        cmocka_unit_test(test_ctx_set_logger_no_ctx), // here context is already destroyed
         cmocka_unit_test(test_ctx_quit_no_loop), // here context is already destroyed
-        cmocka_unit_test(test_ctx_dump_no_ctx), // here context is already destroyed
 
         /* Test Map API */
         cmocka_unit_test(test_map_put),
@@ -182,6 +161,7 @@ int main(void) {
         cmocka_unit_test(test_list_remove),
         cmocka_unit_test(test_list_clear),
         cmocka_unit_test(test_list_free),
+        cmocka_unit_test(test_list_int),
         
         /* Test BST API */
         cmocka_unit_test(test_bst_insert),

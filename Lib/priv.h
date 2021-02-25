@@ -15,13 +15,15 @@
 #define _weak_          __attribute__((weak))
 #define _public_        __attribute__ ((visibility("default")))
 
-#define M_CTX_DEFAULT  "default"
+#define M_CTX_DEFAULT  "libmodule"
 
 #ifndef NDEBUG
-    #define M_DEBUG printf("Libmodule @ %s:%d| ", __func__, __LINE__); printf
+    #define M_DEBUG printf("| D | libmodule@%s:%d | ", __func__, __LINE__); printf
 #else
     #define M_DEBUG (void)
 #endif
+
+#define M_WARN printf("| W | libmodule@%s:%d | ", __func__, __LINE__); printf
 
 #define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
 
@@ -29,15 +31,9 @@
 
 #define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM);
 #define M_PARAM_ASSERT(cond)        M_RET_ASSERT(cond, -EINVAL);
-#define M_TH_ASSERT(ctx)            M_RET_ASSERT(ctx->th_id == pthread_self(), -EPERM);
-
-#define M_CTX_ASSERT(c) \
-    M_PARAM_ASSERT(c); \
-    M_TH_ASSERT(c);
 
 #define M_MOD_ASSERT(mod) \
     M_PARAM_ASSERT(mod); \
-    M_TH_ASSERT(mod->ctx); \
     M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), -EACCES);
 
 #define M_MOD_ASSERT_PERM(mod, perm) \
@@ -47,14 +43,6 @@
 #define M_MOD_ASSERT_STATE(mod, state) \
     M_MOD_ASSERT(mod); \
     M_RET_ASSERT(m_mod_is(mod, state), -EACCES);
-    
-#define M_MOD_CTX(mod)    m_ctx_t *c = mod->ctx;
-    
-#define M_CTX_MOD(ctx, name) \
-    m_mod_t *m = m_map_get(ctx->modules, (char *)name); \
-    M_RET_ASSERT(m, -ENOENT);
-
-typedef struct _src ev_src_t;
 
 /* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
@@ -108,7 +96,7 @@ typedef struct {
 } ps_src_t;
 
 /* Struct that holds generic "event source" data */
-struct _src {
+typedef struct {
     union {
         ps_src_t    ps_src;
         fd_src_t    fd_src;
@@ -121,9 +109,9 @@ struct _src {
     m_src_types type;
     m_src_flags flags;
     void *ev;                               // poll plugin defined data structure
-    m_mod_t *mod;                             // ptr needed to map an event source to a self_t in poll_plugin
+    m_mod_t *mod;                           // ptr needed to map an event source to a module in poll_plugin
     const void *userptr;
-};
+} ev_src_t;
 
 /* Struct that holds pubsub messaging, private. It keeps reference count */
 typedef struct {
@@ -159,32 +147,28 @@ struct _mod {
     const char *local_path;                 // For runtime loaded modules: path of module
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
-    m_ctx_t *ctx;                           // Module's ctx
 };
 
-/* Struct that holds data for each context */
+/* Struct that holds data for main context */
 struct _ctx {
-    const char *name;                       // Context's name'
     bool looping;                           // Whether context is looping
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
     m_log_cb logger;                        // Context's log callback
     m_map_t *modules;                       // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
-    m_ctx_flags flags;                      // Context's flags
-    pthread_t th_id;                        // Main context's thread
     char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
-    const void *userdata;                   // Context's user defined data
+    char *name;
 };
 
 /* Defined in mod.c */
 int evaluate_module(void *data, const char *key, void *value);
-int start(m_mod_t *mod, const bool starting);
-int stop(m_mod_t *mod, const bool stopping);
+int start(m_mod_t *mod, bool starting);
+int stop(m_mod_t *mod, bool stopping);
 
 /* Defined in ctx.c */
-m_ctx_t *check_ctx(const char *ctx_name);
+int ctx_new(m_ctx_t **c);
 void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);
 
 /* Defined in pubsub.c */
@@ -205,6 +189,5 @@ void *map_peek(const m_map_t *m);
 void mem_dtor(void *src);
 
 /* Gglobal variables are defined in main.c */
-extern m_map_t *ctx;
+extern m_ctx_t *ctx;
 extern m_memhook_t memhook;
-extern pthread_mutex_t mx;

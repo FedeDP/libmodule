@@ -178,7 +178,7 @@ static inline bst_node **bst_next(bst_node **node) {
 
 /** Public API **/
 
-_public_ m_bst_t *m_bst_new(const m_bst_cmp comp, const m_bst_dtor fn) {
+_public_ m_bst_t *m_bst_new(m_bst_cmp comp, m_bst_dtor fn) {
     m_bst_t *l = memhook._calloc(1, sizeof(m_bst_t));
     if (l) {
         l->dtor = fn;

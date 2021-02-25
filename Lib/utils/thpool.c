@@ -65,7 +65,7 @@ static void *thpool_thread(void *thpool) {
     pthread_exit(NULL);
 }
 
-_public_ m_thpool_t *m_thpool_new(const uint8_t thread_count, const pthread_attr_t *attrs) {
+_public_ m_thpool_t *m_thpool_new(uint8_t thread_count, const pthread_attr_t *attrs) {
     M_RET_ASSERT(thread_count > 0, NULL);
     
     m_thpool_t *pool = memhook._calloc(1, sizeof(m_thpool_t));

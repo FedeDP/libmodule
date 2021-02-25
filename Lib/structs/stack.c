@@ -19,7 +19,7 @@ struct _stack_itr {
 
 /** Public API **/
 
-_public_ m_stack_t *m_stack_new(const m_stack_dtor fn) {
+_public_ m_stack_t *m_stack_new(m_stack_dtor fn) {
     m_stack_t *s = memhook._calloc(1, sizeof(m_stack_t));
     if (s) {
         s->dtor = fn;
@@ -85,7 +85,7 @@ _public_ int m_stack_itr_set_data(const m_stack_itr_t *itr, void *value) {
     return 0;
 }
 
-_public_ int m_stack_iterate(const m_stack_t *s, const m_stack_cb fn, void *userptr) {
+_public_ int m_stack_iterate(const m_stack_t *s, m_stack_cb fn, void *userptr) {
     M_PARAM_ASSERT(fn);
     M_PARAM_ASSERT(m_stack_length(s) > 0);
     

@@ -2,21 +2,20 @@
 
 #include "mod.h"
 
-#define M_MOD(name, ctx) \
+#define M_MOD(name) \
     static bool init(void); \
     static bool eval(void); \
     static void receive(const m_evt_t *const msg); \
     static void deinit(void); \
     static m_mod_t *m_mod; \
-    static void _ctor4_ m_mod_ctor(void) { \
+    static void _ctor3_ m_mod_ctor(void) { \
         m_userhook_t hook = { init, eval, receive, deinit }; \
-        m_mod_register(name, ctx, &m_mod, &hook, 0, NULL); \
+        m_mod_register(name, &m_mod, &hook, M_MOD_PERSIST, NULL); \
     } \
-    static void _dtor2_ m_mod_dtor(void) { m_mod_deregister(&m_mod); } \
-    static void _ctor3_ m_mod_pre_start(void)
+    static void _dtor1_ m_mod_dtor(void) { m_mod_deregister(&m_mod); } \
+    static void _ctor2_ m_mod_pre_start(void)
 
 /* Defines for easy API (with no need bothering with mod handler) */
-#define m_m_ctx()                                 m_mod_ctx(m_mod)
 
 #define m_m_load(path, flags, ref)                m_mod_load(m_mod, path, flags, ref)
 #define m_m_unload(path)                          m_mod_unload(m_mod, path)
@@ -30,8 +29,7 @@
 #define m_m_resume()                              m_mod_resume(m_mod)
 #define m_m_stop()                                m_mod_stop(m_mod)
 
-#define m_m_set_userdata(userdata)                m_mod_set_userdata(m_mod, userdata)
-#define m_m_get_userdata()                        m_mod_get_userdata(m_mod)
+#define m_m_userdata()                            m_mod_userdata(m_mod)
 
 #define m_m_log(...)                              m_mod_log(m_mod, ##__VA_ARGS__)
 

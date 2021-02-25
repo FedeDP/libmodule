@@ -2,15 +2,19 @@
 
 ### Changes
 
-- [ ] drop multi ctx support
-- [ ] offer a single default ctx (no api to change / register it) always up
-- [ ] m_ctx_X will become m_X
-- [ ] improve main? Eg some default flags to change some ctx settings?
-- [ ] offer an api to run module's recv on their own thread (register flag: M_MOD_THreaded), it means their receive() will be run async
-- [ ] drop m_ps_ flag for broadcast to all contexts
-- [ ] drop m_mod_set_userdata: only allow userdata to be set during m_mod_register()
-- [ ] rename m_mod_get_userdata() to m_mod_userdata()
+- [x] drop multi ctx support
+- [x] offer a single default ctx (no api to change / register it) always up
+- [x] improve main? Eg some default flags to change some ctx settings? (eg: enable fuse fs, change fuse fs root...)
+- [x] Add a weak m_ctx_pre_loop() symbol called by weak main, to allow users to customize eg: parsing cmdline flags or whatever,
+  even when using default main
+- [x] drop m_ps_ flag for broadcast to all contexts
+- [x] drop m_mod_set_userdata: only allow userdata to be set during m_mod_register()
+- [x] rename m_mod_get_userdata() to m_mod_userdata()
 - [x] drop m_ctx_trim()
+- [x] Add a ctx_set_name() function and use the name in logger
+- [x] Fix build
+- [x] fix tests
+- [x] fix samples
 
 ### Reference-counted objects' life management
 
@@ -150,7 +154,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [ ] Rename init/deinit/check etc etc to on_start(), on_stop(), on_event(), on_eval() etc etc...
 - - [x] Rename commons.h.in to cmn.h.in
 - - [x] Rename mod_states to m_mod_states
-- - [ ] Use M_M() macro instead of M_MOD? More coherent with easy API; eg: M_MOD(name, ctx) -> M_M(Name) (use null as ctx)
+- - [ ] Use M_M() macro instead of M_MOD? More coherent with easy API
 - - [ ] use m_m_ prefix for callbacks?
 - [x] Rename pubsub.c to ps.c
 - [x] Rename MODULE() to M_MOD()
@@ -255,15 +259,12 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Fully rewrite documentation per-namespace
 - [ ] Add build options doc
 - [ ] Auto-generate API doc, using eg: https://github.com/jnikula/hawkmoth or with doxygen (and drop rtd) https://goseeky.wordpress.com/2017/07/22/documentation-101-doxygen-with-github-pages/
-- [ ] document m_evt_t memref'd behaviour 
+- [ ] document m_evt_t memref'd behaviour!!!
+- [ ] Document m_ctx_pre_loop()!
 
 ### Remaining fixes/Improvements
 
-- [ ] Expose recv_msg/sent_msg in stats_t
-- [ ] Fix fetch_ms()! Only count actions as actions triggered by API call (ie: user called an API function on the module)
-
-- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
-- [ ] Then, on unstash() each module will have a stashing_pipe_fd and all messages will be written to the piped fd; then asynchronously fetched as normal messages
+- [x] Expose recv_msg/sent_msg in stats_t
 
 - [x] Improve init/destroy: if init() gets called at each module (re)start() we need a counterpart, eg: deinit(), called at each stop().
 - [x] Then drop destroy() API, useless
@@ -297,7 +298,6 @@ It would allows to check if same node already exists on insert, without losing t
 - - [x] M_MOD_DENY_PUB
 - - [x] M_MOD_DENY_SUB
 - - [x] M_MOD_DENY_LOAD
-- - [x] M_MOD_DENY_CTX (module cannot access its ctx)
 
 ### Generic
 
@@ -407,7 +407,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Use unlikely() macro for M_MOD_ASSERT
 
-- [ ] Fix enums with 64b values (eg: m_mod_flags and m_src_flags)
+- [ ] FIX enums with 64b values (eg: m_mod_flags and m_src_flags)
 
 ## 6.1.0 (7.0.0?)
 
@@ -420,6 +420,7 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 - [ ] All modules have a cmd_piped_fd; calling eg: m_mod_become(X) would internally be translated to "m_cmd_enqueue(M_BECOME, X)" and that would be atomic;
   then module reads from cmd_piped_fd and executes the requested op
 - [ ] need a way to map m_mod_ API arguments though
+- [ ] offer an api to run module's recv on their own thread (register flag: M_MOD_THreaded), it means their receive() will be run async
 
 ### Map API
 
@@ -430,6 +431,16 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 - [ ] Publish to require a m_mem_t. Thus we have access to object size.
 - [ ] add a m_replay() api to store and replay any message received in a previous run?
 - [ ] add a "--replay-from" cmdline switch to default main
+
+### Stash API
+
+- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
+- [ ] Then, on unstash() each module will have a stashing_pipe_fd and all messages will be written to the piped fd; then asynchronously fetched as normal messages
+
+### Module thresh API
+
+- [ ] Allow user to set a thresh on module's stats; when thresh is reached, a callback is called
+- [ ] Eg: if a module is receiving way too messages, it can be significant for the application
 
 ### Submodules
 - [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);

@@ -1,10 +1,8 @@
 #include <module/mod_easy.h>
-#include <module/ctx_easy.h>
+#include <module/ctx.h>
 #include <assert.h>
 
-M_CTX("Task");
-
-M_MOD("Pippo", m_ctx);
+M_MOD("Pippo");
 
 static int thData;
 static int tmrData;
@@ -37,7 +35,7 @@ static void receive(const m_evt_t *msg) {
         int *data = (int *)msg->userdata;
         if (*data == 5) {
             m_m_log("Timed out.\n");
-            m_c_quit(0);
+            m_ctx_quit(0);
             m_m_log("Final data val: %d\n", thData);
         } else {
             (*data)++;

@@ -2,8 +2,6 @@
 #include <module/mod.h>
 #include <module/ctx.h>
 #include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <time.h>
 
 #define MAX_LEN 5000
@@ -16,15 +14,9 @@ static int ctr = 0;
 
 void test_poll_perf(void **state) {
     (void) state; /* unused */
-    
-    test_ctx = NULL;
-    
-    int ret = m_ctx_register("perf", &test_ctx, 0, NULL);
-    assert_true(ret == 0);
-    assert_non_null(test_ctx);
         
     m_userhook_t hook = { init, NULL, my_recv, NULL };
-    ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
+    int ret = m_mod_register("testName", &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
     assert_true(m_mod_is(mod, M_MOD_IDLE));
@@ -39,7 +31,7 @@ void test_poll_perf(void **state) {
     double time_spent = (double)(end_tell - begin_tell);
     printf("Messages feeding took %.2lf us\n", time_spent);
     
-    m_ctx_loop(test_ctx, M_CTX_MAX_EVENTS);
+    m_ctx_loop();
     
     clock_t end_recv = clock();
     time_spent = (double)(end_recv - end_tell);
@@ -57,6 +49,6 @@ static void my_recv(const m_evt_t *msg) {
         msg->ps_msg->type == M_PS_USER && 
         ++ctr == MAX_LEN) {
            
-        m_ctx_quit(test_ctx, 0);
+        m_ctx_quit(0);
     }
 }

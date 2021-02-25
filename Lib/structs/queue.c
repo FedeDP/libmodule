@@ -20,7 +20,7 @@ struct _queue_itr {
 
 /** Public API **/
 
-_public_ m_queue_t *m_queue_new(const m_queue_dtor fn) {
+_public_ m_queue_t *m_queue_new(m_queue_dtor fn) {
     m_queue_t *q = memhook._calloc(1, sizeof(m_queue_t));
     if (q) {
         q->dtor = fn;
@@ -86,7 +86,7 @@ _public_ int m_queue_itr_set_data(const m_queue_itr_t *itr, void *value) {
     return 0;
 }
 
-_public_ int m_queue_iterate(const m_queue_t *q, const m_queue_cb fn, void *userptr) {
+_public_ int m_queue_iterate(const m_queue_t *q, m_queue_cb fn, void *userptr) {
     M_PARAM_ASSERT(fn);
     M_PARAM_ASSERT(m_queue_length(q) > 0);
     
