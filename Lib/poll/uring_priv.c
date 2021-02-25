@@ -34,7 +34,7 @@ int poll_create(poll_priv_t *priv) {
     priv->data = memhook._calloc(1, sizeof(uring_priv_t));
     M_ALLOC_ASSERT(priv->data);
     GET_PRIV_DATA();
-    up->req_list = m_list_new(NULL);
+    up->req_list = m_list_new(NULL, NULL);
     M_ALLOC_ASSERT(up->req_list);
     return 0;
 }
@@ -95,9 +95,9 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
          * we will register any request as soon as ring gets inited.
          */
         if (flag == ADD) {
-            m_list_insert(up->req_list, tmp, NULL);
+            m_list_insert(up->req_list, tmp);
         } else {
-            m_list_remove(up->req_list, tmp, NULL);
+            m_list_remove(up->req_list, tmp);
         }
     }
     return ret;
