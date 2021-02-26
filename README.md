@@ -16,12 +16,12 @@ A module is an Actor that can listen on socket events too.
 Frankly speaking, it is denoted by a M_MOD() macro plus a bunch of mandatory callbacks, eg:
 ```C
 #include <module/mod_easy.h>
-#include <module/ctx_easy.h>
+#include <module/ctx.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 
-M_MOD("Pippo", NULL);
+M_MOD("Pippo");
 
 static void init(void) {
     /* Register STDIN fd, without autoclosing it at the end */

@@ -8,8 +8,6 @@
 
 static m_mod_t *doggo;
 
-extern m_ctx_t *get_poll_ctx(void);
-
 M_MOD("Pippo");
 
 static int myData = 5;

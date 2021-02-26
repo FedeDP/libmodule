@@ -1,8 +1,6 @@
 #include <module/mod_easy.h> 
 #include <module/ctx.h> 
-#include <unistd.h>
 #include <string.h>
-#include <stdlib.h>
 
 static void receive_sleeping(const m_evt_t *msg);
 

@@ -1,6 +1,5 @@
 #include <module/mod_easy.h>
 #include <module/ctx.h>
-#include <assert.h>
 
 M_MOD("Pippo");
 
@@ -52,11 +51,6 @@ static void receive(const m_evt_t *msg) {
 }
 
 static int inc(void *udata) {
-    /* 
-     * YOU CANNOT CALL libmodule API
-     * from a different thread where it was registered.
-     */
-    assert(m_m_name() == NULL);
     int *d = (int *)udata;
     while (*d < 3) {
         (*d)++;

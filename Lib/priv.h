@@ -150,7 +150,7 @@ struct _mod {
 };
 
 /* Struct that holds data for main context */
-struct _ctx {
+typedef struct {
     bool looping;                           // Whether context is looping
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
@@ -160,7 +160,7 @@ struct _ctx {
     char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
     char *name;
-};
+} m_ctx_t;
 
 /* Defined in mod.c */
 int evaluate_module(void *data, const char *key, void *value);

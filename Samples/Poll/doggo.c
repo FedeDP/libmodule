@@ -1,14 +1,12 @@
 #include <module/mod_easy.h> 
-#include <unistd.h>
 #include <string.h>
 
 static void receive_sleeping(const m_evt_t *msg);
 
-extern m_ctx_t *get_poll_ctx(void);
-
 M_MOD("Doggo");
 
 static void module_pre_start(void) {
+
 }
 
 static bool init(void) {

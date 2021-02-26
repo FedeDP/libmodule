@@ -219,11 +219,10 @@ It would allows to check if same node already exists on insert, without losing t
 
 ### DOC
 
-- [ ] rewrite from scratch!
-- [ ] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
+- [ ] rewrite from scratch in markdown!
 - [ ] Fully rewrite documentation per-namespace
+- [ ] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
 - [ ] Add build options doc
-- [ ] Auto-generate API doc, using eg: https://github.com/jnikula/hawkmoth or with doxygen (and drop rtd) https://goseeky.wordpress.com/2017/07/22/documentation-101-doxygen-with-github-pages/
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document m_ctx_pre_loop()!
 
@@ -372,7 +371,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Use unlikely() macro for M_MOD_ASSERT
 
-- [ ] FIX enums with 64b values (eg: m_mod_flags and m_src_flags)
+- [ ] FIX enums with 64b values (eg: m_src_flags)
 
 ## 6.1.0 (7.0.0?)
 
@@ -387,10 +386,6 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 - [ ] need a way to map m_mod_ API arguments though
 - [ ] offer an api to run module's recv on their own thread (register flag: M_MOD_THreaded), it means their receive() will be run async
 
-### Map API
-
-- [ ] Allow devs to customize hash function and take a void* as key
-
 ### Replay API
 
 - [ ] Publish to require a m_mem_t. Thus we have access to object size.
@@ -404,7 +399,7 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 
 ### Module thresh API
 
-- [ ] Allow user to set a thresh on module's stats; when thresh is reached, a callback is called
+- [ ] Allow user to set a thresh on module's stats; when thresh is reached, a system msg M_PS_MOD_THRESH is sent
 - [ ] Eg: if a module is receiving way too messages, it can be significant for the application
 
 ### Submodules

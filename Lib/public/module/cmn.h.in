@@ -39,14 +39,18 @@
 /* Incomplete structure declaration to mod handler */
 typedef struct _mod m_mod_t;
 
-/* Incomplete structure declaration to ctx handler */
-typedef struct _ctx m_ctx_t;
-
 /* Forward declaration for thpool, used in m_task_t */
 typedef struct _thpool m_thpool_t;
 
 /* PubSub message types */
-typedef enum { M_PS_USER, M_PS_CTX_STARTED, M_PS_CTX_STOPPED, M_PS_MOD_STARTED, M_PS_MOD_STOPPED, M_PS_MOD_POISONPILL } m_ps_types;
+typedef enum {
+    M_PS_USER,
+    M_PS_CTX_STARTED,
+    M_PS_CTX_STOPPED,
+    M_PS_MOD_STARTED,
+    M_PS_MOD_STOPPED,
+    M_PS_MOD_POISONPILL
+} m_ps_types;
 
 /* Module event sources' types */
 typedef enum {
@@ -76,7 +80,7 @@ typedef enum {
     M_SRC_PS_PRIO_HIGH    =       M_SRC_SHIFT(M_SRC_TYPE_PS, 0x08), // PubSub subscription high priority
     M_SRC_PS_PRIO_HIGHEST =       M_SRC_SHIFT(M_SRC_TYPE_PS, 0x10), // PubSub subscription highest priority
     M_SRC_FD_AUTOCLOSE    =       M_SRC_SHIFT(M_SRC_TYPE_FD, 0x01), // Automatically close fd upon deregistation.
-    M_SRC_TMR_ABSOLUTE    =       M_SRC_SHIFT(M_SRC_TYPE_TMR, 0x01) // Absolute timer
+    M_SRC_TMR_ABSOLUTE    =       M_SRC_SHIFT(M_SRC_TYPE_TMR, 0x01), // Absolute timer
 } m_src_flags;
 
 /* 
@@ -86,7 +90,8 @@ typedef enum {
     M_PS_AUTOFREE   = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_msg ref counter goes to 0)
 } m_ps_flags;
 
-/* m_mod_src_register() special types (ie: input types to register a src) */
+/** Libmodule input src types for m_mod_src_register() API **/
+
 typedef struct {
     clockid_t clock_id;     // Clock_id (eg: CLOCK_MONOTONIC). Unsupported on libkqueue/kqueue
     uint64_t ms;            // Timer in ms

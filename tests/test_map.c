@@ -155,7 +155,9 @@ void test_map_free(void **state) {
 
 void test_map_stress(void **state) {
     (void) state; /* unused */
-    
+
+    clock_t begin_tell = clock();
+
     int ret;
     my_map = m_map_new(M_MAP_KEY_DUP, NULL);
     const int size = 1000000;
@@ -176,4 +178,8 @@ void test_map_stress(void **state) {
     ret = m_map_free(&my_map);
     assert_true(ret == 0);
     assert_null(my_map);
+
+    clock_t end_tell = clock();
+    double time_spent = (double)(end_tell - begin_tell);
+    printf("Map stress test took %.2lf us\n", time_spent);
 }

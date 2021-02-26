@@ -7,7 +7,13 @@
 #include "cmn.h"
 
 /* Modules states */
-typedef enum { M_MOD_IDLE = 0x01, M_MOD_RUNNING = 0x02, M_MOD_PAUSED = 0x04, M_MOD_STOPPED = 0x08, M_MOD_ZOMBIE = 0x10 } m_mod_states;
+typedef enum {
+    M_MOD_IDLE = 0x01,
+    M_MOD_RUNNING = 0x02,
+    M_MOD_PAUSED = 0x04,
+    M_MOD_STOPPED = 0x08,
+    M_MOD_ZOMBIE = 0x10
+} m_mod_states;
 
 /* Modules flags, leave upper 16b for module permissions management */
 #define M_MOD_PERM(val)     val << 16
