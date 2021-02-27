@@ -16,7 +16,7 @@ m_mod_t *mod = NULL, *testRef = NULL;
 void test_mod_register_NULL_name(void **state) {
     (void) state; /* unused */
 
-    m_userhook_t hook = { .on_evt = recv };
+    m_mod_hook_t hook = { .on_evt = recv };
     int ret = m_mod_register(NULL, &mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(mod);
@@ -25,7 +25,7 @@ void test_mod_register_NULL_name(void **state) {
 void test_mod_register_NULL_self(void **state) {
     (void) state; /* unused */
     
-    m_userhook_t hook = { .on_evt = recv };
+    m_mod_hook_t hook = { .on_evt = recv };
     int ret = m_mod_register("testName", NULL, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(mod);
@@ -42,7 +42,7 @@ void test_mod_register_NULL_hook(void **state) {
 void test_mod_register(void **state) {
     (void) state; /* unused */
     
-    m_userhook_t hook = { .on_evt = recv };
+    m_mod_hook_t hook = { .on_evt = recv };
     int ret = m_mod_register("testName", &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
@@ -52,7 +52,7 @@ void test_mod_register(void **state) {
 void test_mod_register_already_registered(void **state) {
     (void) state; /* unused */
     
-    m_userhook_t hook = { .on_evt = recv };
+    m_mod_hook_t hook = { .on_evt = recv };
     int ret = m_mod_register("testName", &mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_non_null(mod);
@@ -64,7 +64,7 @@ void test_mod_register_same_name(void **state) {
     
     m_mod_t *self2 = NULL;
     
-    m_userhook_t hook = { .on_evt = recv };
+    m_mod_hook_t hook = { .on_evt = recv };
     int ret = m_mod_register("testName", &self2, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(self2);
@@ -89,7 +89,7 @@ void test_mod_deregister(void **state) {
 void test_mod_false_init(void **state) {
     (void) state; /* unused */
     
-    m_userhook_t hook = { .on_start = init_false, .on_evt = recv };
+    m_mod_hook_t hook = { .on_start = init_false, .on_evt = recv };
     int ret = m_mod_register("testName", &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);

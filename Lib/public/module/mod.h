@@ -40,12 +40,12 @@ typedef struct {
     m_eval_cb on_eval;
     m_evt_cb on_evt;
     m_stop_cb on_stop;
-} m_userhook_t;
+} m_mod_hook_t;
 
 /* Module interface functions */
 
 /* Module registration */
-int m_mod_register(const char *name, m_mod_t **mod, const m_userhook_t *hook,
+int m_mod_register(const char *name, m_mod_t **mod, const m_mod_hook_t *hook,
                    m_mod_flags flags, const void *userdata);
 int m_mod_deregister(m_mod_t **mod);
 

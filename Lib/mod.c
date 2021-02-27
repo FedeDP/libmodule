@@ -414,7 +414,7 @@ int stop(m_mod_t *mod, bool stopping) {
 
 /** Public API **/
 
-_public_ int m_mod_register(const char *name, m_mod_t **self, const m_userhook_t *hook,
+_public_ int m_mod_register(const char *name, m_mod_t **self, const m_mod_hook_t *hook,
                             m_mod_flags flags, const void *userdata) {
     M_PARAM_ASSERT(name);
     M_PARAM_ASSERT(self);
@@ -467,7 +467,7 @@ _public_ int m_mod_register(const char *name, m_mod_t **self, const m_userhook_t
         }
         
         if (m_map_put(ctx->modules, mod->name, mod) == 0) {
-            memcpy(&mod->hook, hook, sizeof(m_userhook_t));
+            memcpy(&mod->hook, hook, sizeof(m_mod_hook_t));
             mod->state = M_MOD_IDLE;
             
             *self = mod;

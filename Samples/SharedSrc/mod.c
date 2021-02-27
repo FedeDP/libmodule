@@ -24,8 +24,8 @@ static m_mod_t *selfA, *selfB;
  * These modules can share some callbacks.
  */
 void create_modules(void) {
-    m_userhook_t hookA = (m_userhook_t) { A_init, evaluate, A_recv, destroy };
-    m_userhook_t hookB = (m_userhook_t) { B_init, evaluate, B_recv, destroy };
+    m_mod_hook_t hookA = (m_mod_hook_t) {A_init, evaluate, A_recv, destroy };
+    m_mod_hook_t hookB = (m_mod_hook_t) {B_init, evaluate, B_recv, destroy };
     
     m_mod_register("Pippo", &selfA, &hookA, 0, NULL);
     m_mod_register("Doggo", &selfB, &hookB, 0, NULL);

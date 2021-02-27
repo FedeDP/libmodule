@@ -9,7 +9,7 @@
     static void deinit(void); \
     static m_mod_t *m_mod; \
     static void _ctor3_ m_mod_ctor(void) { \
-        m_userhook_t hook = { init, eval, receive, deinit }; \
+        m_mod_hook_t hook = { init, eval, receive, deinit }; \
         m_mod_register(name, &m_mod, &hook, M_MOD_PERSIST, NULL); \
     } \
     static void _dtor1_ m_mod_dtor(void) { m_mod_deregister(&m_mod); } \

@@ -139,7 +139,7 @@ struct _mod {
     m_mod_flags flags;                      // Module's flags
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     mod_stats_t stats;                      // Modules' stats
-    m_userhook_t hook;                      // module's user defined callbacks
+    m_mod_hook_t hook;                      // module's user defined callbacks
     m_stack_t *recvs;                       // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
     void *fs;                               // FS module priv data. NULL if unsupported

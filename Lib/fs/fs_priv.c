@@ -229,7 +229,7 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 }
 
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    const m_userhook_t fuse_hook = { init, NULL, receive, NULL };
+    const m_mod_hook_t fuse_hook = {init, NULL, receive, NULL };
     if (strlen(path) > 1) {
         m_mod_t *mod = NULL;
         if (m_mod_register(path + 1, &mod, &fuse_hook, M_MOD_NAME_DUP, NULL) == 0) {

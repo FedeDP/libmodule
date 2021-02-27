@@ -15,7 +15,7 @@ static int ctr = 0;
 void test_poll_perf(void **state) {
     (void) state; /* unused */
         
-    m_userhook_t hook = { init, NULL, my_recv, NULL };
+    m_mod_hook_t hook = {init, NULL, my_recv, NULL };
     int ret = m_mod_register("testName", &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
