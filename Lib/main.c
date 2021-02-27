@@ -4,7 +4,7 @@
 #include "priv.h"
 
 m_ctx_t *ctx = NULL;
-m_memhook_t memhook = { malloc, realloc, calloc, free };
+m_memhook_t memhook = { malloc, calloc, free };
 
 _public_ _ctor0_ _weak_ void m_pre_start(void) {
     M_DEBUG("Pre-starting libmodule.\n");
@@ -53,7 +53,7 @@ _public_ _weak_ int main(int argc, char *argv[]) {
 }
 
 static _ctor1_ void libmodule_init(void) {
-    M_DEBUG("Initializing libmodule %d.%d.%d.\n", MODULE_VERSION_MAJ, MODULE_VERSION_MIN, MODULE_VERSION_PAT);
+    M_DEBUG("Initializing libmodule %d.%d.%d.\n", LIBMODULE_VERSION_MAJ, LIBMODULE_VERSION_MIN, LIBMODULE_VERSION_PAT);
     ctx_new(&ctx);
     assert(ctx != NULL);
 }
@@ -73,7 +73,6 @@ int m_set_memhook(const m_memhook_t *hook) {
     M_RET_ASSERT(!ctx, -EPERM);
     M_PARAM_ASSERT(hook);
     M_PARAM_ASSERT(hook->_malloc);
-    M_PARAM_ASSERT(hook->_realloc);
     M_PARAM_ASSERT(hook->_calloc);
     M_PARAM_ASSERT(hook->_free);
 

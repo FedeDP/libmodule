@@ -12,20 +12,20 @@
 #include <time.h>
 #include <pthread.h>
 
-#define MODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
-#define MODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
-#define MODULE_VERSION_PAT @PROJECT_VERSION_PATCH@
+#define LIBMODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
+#define LIBMODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
+#define LIBMODULE_VERSION_PAT @PROJECT_VERSION_PATCH@
 
 /* 
  * ctors order: 
- * 0) m_pre_start()
- * 1) libmodule_init()
- * 2) each module_pre_start() (only mod_easy API)
- * 3) each module ctor function (only mod_easy API)
+ * 0) global m_pre_start(), usefult to set your own memhook if desired
+ * 1) internal libmodule_init()
+ * 2) each m_m_pre_start() (only mod_easy API)
+ * 3) each m_m_ctor() (only mod_easy API)
  * 
  * dtors order:
- * 1) each module's dtor function (only mod_easy API)
- * 0) libmodule_destroy()
+ * 1) each m_m_dtor() (only mod_easy API)
+ * 0) internal libmodule_deinit()
  */
 #define _ctor0_         __attribute__((constructor (110)))
 #define _ctor1_         __attribute__((constructor (111)))
@@ -176,18 +176,11 @@ typedef struct {
     const void *userdata;                           // Event userdata, passed through m_mod_src_register()
 } m_evt_t;
 
-/* Memory management user-passed functions */
-typedef void *(*m_malloc_fn)(size_t size);
-typedef void *(*m_realloc_fn)(void *ptr, size_t size);
-typedef void *(*m_calloc_fn)(size_t nmemb, size_t size);
-typedef void (*m_free_fn)(void *ptr);
-
 /* Struct that holds user defined memory functions */
 typedef struct {
-    m_malloc_fn _malloc;
-    m_realloc_fn _realloc;
-    m_calloc_fn _calloc;
-    m_free_fn _free;
+    void *(*_malloc)(size_t size);
+    void *(*_calloc)(size_t nmemb, size_t size);
+    void (*_free)(void *ptr);
 } m_memhook_t;
 
 /* 
