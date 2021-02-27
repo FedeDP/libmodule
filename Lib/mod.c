@@ -347,17 +347,19 @@ int evaluate_module(void *data, const char *key, void *value) {
     if (m_mod_is(mod, M_MOD_RUNNING)) {
         uint64_t curr_ms;
         fetch_ms(&curr_ms, NULL);
-        if (mod->thresh.activity_freq != 0) {
+        if (mod->thresh.values.activity_freq != 0 && !mod->thresh.warned_activity) {
             const double act_freq = (double) mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
-            if (act_freq >= mod->thresh.activity_freq) {
+            if (act_freq >= mod->thresh.values.activity_freq) {
                 tell_system_pubsub_msg(mod, ctx, M_PS_MOD_THRESH_ACTIVITY, NULL, NULL);
+                mod->thresh.warned_activity = true;
             }
         }
 
-        if (mod->thresh.inactive_ms != 0) {
+        if (mod->thresh.values.inactive_ms != 0 && mod->thresh.warned_inactive) {
             uint64_t inactive_ms = curr_ms - mod->stats.last_seen;
-            if (inactive_ms >= mod->thresh.inactive_ms) {
+            if (inactive_ms >= mod->thresh.values.inactive_ms) {
                 tell_system_pubsub_msg(mod, ctx, M_PS_MOD_THRESH_INACTIVE, NULL, NULL);
+                mod->thresh.warned_inactive = true;
             }
         }
     }
@@ -743,6 +745,14 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     if (mod->userdata) {
         ctx_logger(ctx, mod, "\t\"UP\": %p,\n", mod->userdata);
     }
+
+    if (mod->thresh.values.inactive_ms > 0 || mod->thresh.values.activity_freq > 0) {
+        ctx_logger(ctx, mod, "\t\"Thresh\": {\n");
+        ctx_logger(ctx, mod, "\t\t\"Action_freq_ms\": %lf,\n", mod->thresh.values.activity_freq);
+        ctx_logger(ctx, mod, "\t\t\"Inactive_ms\": %" PRIu64 "\n", mod->thresh.values.inactive_ms);
+        ctx_logger(ctx, mod, "\t}\n");
+    }
+
     ctx_logger(ctx, mod, "\t\"Stats\": {\n");
     ctx_logger(ctx, mod, "\t\t\"Reg_time\": %" PRIu64 ",\n", mod->stats.registration_time);
     ctx_logger(ctx, mod, "\t\t\"Sent_msgs\": %" PRIu64 ",\n", mod->stats.sent_msgs);
@@ -855,10 +865,12 @@ _public_ int m_mod_set_thresh(m_mod_t *mod, m_mod_thresh_t *thresh) {
     M_MOD_ASSERT(mod);
 
     if (thresh) {
-        memcpy(&mod->thresh, thresh, sizeof(*thresh));
+        memcpy(&mod->thresh.values, thresh, sizeof(m_mod_thresh_t));
     } else {
-        memset(&mod->thresh, 0, sizeof(mod->thresh));
+        memset(&mod->thresh.values, 0, sizeof(m_mod_thresh_t));
     }
+    mod->thresh.warned_activity = false;
+    mod->thresh.warned_inactive = false;
     return 0;
 }
 
