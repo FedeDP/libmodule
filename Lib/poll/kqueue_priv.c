@@ -172,14 +172,16 @@ int poll_destroy(poll_priv_t *priv) {
     return 0;
 }
 
-int poll_notify_task(ev_src_t *src) {
+int poll_notify_task(poll_priv_t *priv, ev_src_t *src) {
+    GET_PRIV_DATA();
     struct kevent *_ev = (struct kevent *)src->ev;
     EV_SET(_ev, src->task_src.tid.tid, EVFILT_USER, EV_ENABLE, NOTE_FFNOP | NOTE_TRIGGER, 0, src);
-    return 0;
+    return kevent(kp->fd, _ev, 1, NULL, 0, NULL);
 }
 
-int poll_notify_thresh(ev_src_t *src) {
+int poll_notify_thresh(poll_priv_t *priv, ev_src_t *src) {
+    GET_PRIV_DATA();
     struct kevent *_ev = (struct kevent *)src->ev;
     EV_SET(_ev, src->thresh_src.thr.id, EVFILT_USER, EV_ENABLE, NOTE_FFNOP | NOTE_TRIGGER, 0, src);
-    return 0;
+    return kevent(kp->fd, _ev, 1, NULL, 0, NULL);
 }

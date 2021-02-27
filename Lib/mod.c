@@ -148,7 +148,7 @@ static void src_priv_dtor(void *data) {
 static void *task_thread(void *data) {
     ev_src_t *src = (ev_src_t *)data;    
     src->task_src.retval = src->task_src.tid.fn((void *)src->userptr);
-    poll_notify_task(src);
+    poll_notify_task(&ctx->ppriv, src);
     pthread_exit(NULL);
 }
 
@@ -382,7 +382,7 @@ int evaluate_module(void *data, const char *key, void *value) {
                 notify = alarm->inactive_ms >= thr->inactive_ms;
             }
             if (notify) {
-                poll_notify_thresh(src);
+                poll_notify_thresh(&ctx->ppriv, src);
             }
         })
     }
