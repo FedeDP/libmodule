@@ -1,29 +1,29 @@
 #include <module/mod_easy.h> 
 #include <string.h>
 
-static void receive_sleeping(const m_evt_t *msg);
+static void m_m_on_evt_sleeping(const m_evt_t *msg);
 
-M_MOD("Doggo");
+M_M("Doggo");
 
-static void module_pre_start(void) {
+static void m_m_pre_start(void) {
 
 }
 
-static bool init(void) {
+static bool m_m_on_start(void) {
     /* Doggo should subscribe to "leaving" topic */
     m_m_src_register("leaving", 0, NULL);
     return true;
 }
 
-static bool eval(void) {
+static bool m_m_on_eval(void) {
     return true;
 }
 
-static void deinit(void) {
+static void m_m_on_stop(void) {
     
 }
 
-static void receive(const m_evt_t *msg) {
+static void m_m_on_evt(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS) {
         switch (msg->ps_msg->type) {
         case M_PS_USER:
@@ -49,7 +49,7 @@ static void receive(const m_evt_t *msg) {
     }
 }
 
-static void receive_sleeping(const m_evt_t *msg) {
+static void m_m_on_evt_sleeping(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
         if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
             m_m_unbecome();

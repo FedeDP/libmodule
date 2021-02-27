@@ -1,18 +1,18 @@
 #include <module/mod_easy.h>
 #include <module/ctx.h>
 
-M_MOD("Pippo");
+M_M("Pippo");
 
 static int thData;
 static int tmrData;
 
 static int inc(void *udata);
 
-static void module_pre_start(void) {
+static void m_m_pre_start(void) {
 
 }
 
-static bool init(void) {
+static bool m_m_on_start(void) {
     m_m_log("Starting data val: %d\n", thData);
     
     m_m_src_register(&((m_src_tmr_t) { CLOCK_MONOTONIC, 1000 }), 0, &tmrData);
@@ -20,15 +20,15 @@ static bool init(void) {
     return true;
 }
 
-static bool eval(void) {
+static bool m_m_on_eval(void) {
     return true;
 }
 
-static void deinit(void) {
+static void m_m_on_stop(void) {
     
 }
 
-static void receive(const m_evt_t *msg) {
+static void m_m_on_evt(const m_evt_t *msg) {
     switch (msg->type) {
     case M_SRC_TYPE_TMR: {
         int *data = (int *)msg->userdata;

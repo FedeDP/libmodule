@@ -3,20 +3,20 @@
 
 /** This is a test module needed for Easy example, to runtime link another module **/
 
-M_MOD("Test");
+M_M("Test");
 
 /*
  * This function is automatically called before registering the module. 
  * Use this to set some  global state needed eg: in check() function 
  */
-static void module_pre_start(void) {
+static void m_m_pre_start(void) {
 }
 
 /*
  * Initializes this module's state;
  * returns a valid fd to be polled.
  */
-static bool init(void) {
+static bool m_m_on_start(void) {
     m_m_src_register("leaving", 0, NULL);
     m_m_log("Linked.\n");
     return true;
@@ -29,7 +29,7 @@ static bool init(void) {
  * Eg: you can evaluate your global state to make this module start right after
  * certain conditions are met.
  */
-static bool eval(void) {
+static bool m_m_on_eval(void) {
     return true;
 }
 
@@ -37,14 +37,14 @@ static bool eval(void) {
  * Destroyer function, called at module unload (at end of program).
  * Note that any module's fds are automatically closed for you.
  */
-static void deinit(void) {
+static void m_m_on_stop(void) {
 
 }
 
 /*
  * Default poll callback
  */
-static void receive(const m_evt_t *msg) {
+static void m_m_on_evt(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
         if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
             m_m_log("Received quit.\n");

@@ -2,34 +2,34 @@
 #include <module/ctx.h> 
 #include <string.h>
 
-static void receive_sleeping(const m_evt_t *msg);
+static void m_m_on_evt_sleeping(const m_evt_t *msg);
 
 static const m_mod_t *new_mod;
 
-M_MOD("Doggo");
+M_M("Doggo");
 
-static void m_mod_pre_start(void) {
+static void m_m_pre_start(void) {
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 
-static bool init(void) {
+static bool m_m_on_start(void) {
     /* Doggo should subscribe to "leaving" topic, as regex */
     m_m_src_register("leav[i+]ng", 0, NULL);
     return true;
 }
 
-static bool eval(void) {
+static bool m_m_on_eval(void) {
     return true;
 }
 
-static void deinit(void) {
+static void m_m_on_stop(void) {
     
 }
 
 /*
  * Default poll callback
  */
-static void receive(const m_evt_t *msg) {
+static void m_m_on_evt(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS) {
         switch (msg->ps_msg->type) {
         case M_PS_USER:
@@ -67,7 +67,7 @@ static void receive(const m_evt_t *msg) {
     }
 }
 
-static void receive_sleeping(const m_evt_t *msg) {
+static void m_m_on_evt_sleeping(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS) {
         if (msg->ps_msg->type == M_PS_USER) {
             if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {

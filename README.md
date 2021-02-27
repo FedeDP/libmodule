@@ -13,7 +13,7 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 
 Unsurprisingly, module is the core concept of libmodule architecture.  
 A module is an Actor that can listen on socket events too.  
-Frankly speaking, it is denoted by a M_MOD() macro plus a bunch of mandatory callbacks, eg:
+Frankly speaking, it is denoted by a M_M() macro plus a bunch of mandatory callbacks, eg:
 ```C
 #include <module/mod_easy.h>
 #include <module/ctx.h>
@@ -21,24 +21,24 @@ Frankly speaking, it is denoted by a M_MOD() macro plus a bunch of mandatory cal
 #include <string.h>
 #include <ctype.h>
 
-M_MOD("Pippo");
+M_M("Pippo");
 
-static void init(void) {
+static void m_m_on_start(void) {
     /* Register STDIN fd, without autoclosing it at the end */
     m_m_src_register(STDIN_FILENO, 0, NULL);
     return true;
 }
 
-static bool eval(void) {
+static bool m_m_on_eval(void) {
     /* Should module be started? */
     return true;
 }
 
-static void destroy(void) {
+static void m_m_on_stop(void) {
     
 }
 
-static void receive(const m_evt_t *const msg) {
+static void m_m_on_evt(const m_evt_t *const msg) {
     if (msg->type == M_SRC_TYPE_FD) {
         char c;
         read(msg->fd_msg->fd, &c, sizeof(char));
@@ -56,7 +56,7 @@ static void receive(const m_evt_t *const msg) {
     } else if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER && 
         !strcmp((char *)msg->ps_msg->data, "ByeBye")) {
         
-        m_ctx_quit(m_m_ctx(), 0);
+        m_ctx_quit(0);
     }
 }
 ```

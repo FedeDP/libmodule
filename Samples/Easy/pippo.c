@@ -13,17 +13,17 @@
 
 static m_mod_t *doggo;
 
-M_MOD("Pippo");
+M_M("Pippo");
 
 static int myData = 5;
 
-static void receive_ready(const m_evt_t *msg);
+static void m_m_on_evt_ready(const m_evt_t *msg);
 
-static void m_mod_pre_start() {
+static void m_m_pre_start() {
 
 }
 
-static bool init(void) {
+static bool m_m_on_start(void) {
     m_m_src_register(&((m_src_sgn_t) { SIGINT }), 0, &myData);
     m_m_src_register(&((m_src_tmr_t) { CLOCK_MONOTONIC, 5000 }), M_SRC_ONESHOT, NULL);
     m_m_src_register(STDIN_FILENO, 0, NULL);
@@ -38,15 +38,15 @@ static bool init(void) {
     return true;
 }
 
-static bool eval(void) {
+static bool m_m_on_eval(void) {
     return true;
 }
 
-static void deinit(void) {
+static void m_m_on_stop(void) {
     m_mem_unrefp((void **)&doggo);
 }
 
-static void receive(const m_evt_t *msg) {
+static void m_m_on_evt(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c;
         
@@ -96,9 +96,9 @@ static void receive(const m_evt_t *msg) {
 
 /*
  * Secondary poll callback.
- * Use m_become(ready) to start using this second poll callback.
+ * Use m_m_become(ready) to start using this second poll callback.
  */
-static void receive_ready(const m_evt_t *msg) {
+static void m_m_on_evt_ready(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c = 10;
         

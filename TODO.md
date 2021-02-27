@@ -150,14 +150,14 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [x] Rename memhook_t and its callbacks
 - - [x] Rename stats_t to m_stats_t
 - - [x] Rename exposed flags
-- - [ ] add m_mod_ prefix to callbacks, eg m_mod_prestart, m_mod_on_start() ecc ecc
-- - [ ] Rename init/deinit/check etc etc to on_start(), on_stop(), on_event(), on_eval() etc etc...
+- - [x] add m_mod_ prefix to callbacks, eg m_mod_prestart, m_mod_on_start() ecc ecc
+- - [x] Rename init/deinit/check etc etc to on_start(), on_stop(), on_event(), on_eval() etc etc...
 - - [x] Rename commons.h.in to cmn.h.in
 - - [x] Rename mod_states to m_mod_states
-- - [ ] Use M_M() macro instead of M_MOD? More coherent with easy API
-- - [ ] use m_m_ prefix for callbacks?
+- - [x] Use M_M() macro instead of M_M? More coherent with easy API
+- - [x] use m_m_ prefix for callbacks?
 - [x] Rename pubsub.c to ps.c
-- [x] Rename MODULE() to M_MOD()
+- [x] Rename MODULE() to M_M()
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
 - [x] Rename module_cmn.h to commons.h
 - [x] Rename complex API to m_mod/ctx_ -> "Easy" API instead "m_m_" and "m_c_"
