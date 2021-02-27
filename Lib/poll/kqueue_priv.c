@@ -148,7 +148,7 @@ int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_tas
     return 0;
 }
 
-int poll_consume_thresh(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_task_t *task_msg) {
+int poll_consume_thresh(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_thresh_t *thresh_msg) {
     return 0;
 }
 
