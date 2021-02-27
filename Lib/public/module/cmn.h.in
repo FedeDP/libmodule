@@ -1,7 +1,7 @@
 #pragma once
 
 #if (!defined LIBMODULE_CORE_H && !defined LIBMODULE_STRUCT_H && !defined LIBMODULE_MEM_H && !defined LIBMODULE_TH_H)
-#error "Libmodule cmn.h should not be explicitly included."
+    #error "Libmodule cmn.h should not be explicitly included."
 #endif
 
 #include <stdio.h>
@@ -12,9 +12,9 @@
 #include <time.h>
 #include <pthread.h>
 
-#define LIBMODULE_VERSION_MAJ 6
-#define LIBMODULE_VERSION_MIN 0
-#define LIBMODULE_VERSION_PAT 0
+#define LIBMODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
+#define LIBMODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
+#define LIBMODULE_VERSION_PAT @PROJECT_VERSION_PATCH@
 
 /*
  * ctors order:
