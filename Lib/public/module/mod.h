@@ -42,6 +42,13 @@ typedef struct {
     m_stop_cb on_stop;
 } m_mod_hook_t;
 
+typedef struct {
+    uint64_t inactive_ms;
+    double activity_freq;
+    uint64_t sent_msgs;
+    uint64_t recv_msgs;
+} m_mod_stats_t;
+
 /* Module interface functions */
 
 /* Module registration */
@@ -68,7 +75,7 @@ int m_mod_stop(m_mod_t *mod);
 /* Module generic functions */
 int m_mod_log(const m_mod_t *mod, const char *fmt, ...);
 int m_mod_dump(const m_mod_t *mod);
-int m_mod_stats(const m_mod_t *mod, m_stats_t *stats);
+int m_mod_stats(const m_mod_t *mod, m_mod_stats_t *stats);
 
 const void *m_mod_userdata(const m_mod_t *mod);
 

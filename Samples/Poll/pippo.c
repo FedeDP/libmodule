@@ -95,6 +95,7 @@ static void m_m_on_evt_ready(const m_evt_t *msg) {
             case 'p':
                 m_m_log("Doggo, let's play a bit!\n");
                 m_m_ps_tell(doggo, "LetsPlay", 0);
+                m_ctx_dump();
                 break;
             case 's':
                 m_m_log("Doggo, you should sleep a bit!\n");

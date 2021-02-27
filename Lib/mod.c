@@ -1,7 +1,6 @@
 #include "mod.h"
 #include "poll_priv.h"
 #include <dlfcn.h> // dlopen
-#include <inttypes.h> // PRIu64
 
 /** Generic module interface **/
 
@@ -371,7 +370,8 @@ int start(m_mod_t *mod, bool starting) {
     M_ASSERT(!ret, errors[starting], ret);
     
     mod->state = M_MOD_RUNNING;
-    
+    ctx->stats.running_modules++;
+
     /* Call module init() callback only if module is being (re)started */
     if (!starting || !mod->hook.on_start || mod->hook.on_start()) {
         M_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
@@ -391,6 +391,7 @@ int stop(m_mod_t *mod, bool stopping) {
     M_ASSERT(!ret, errors[stopping], ret);
     
     mod->state = stopping ? M_MOD_STOPPED : M_MOD_PAUSED;
+    ctx->stats.running_modules--;
     
     /*
      * When module gets stopped, its write-end pubsub fd is closed too 
@@ -540,7 +541,7 @@ _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags
     }
     
     /* Take most recently loaded module */
-    m_mod_t *new_mod = map_peek(ctx->modules);
+    m_mod_t *new_mod = m_map_peek(ctx->modules);
     new_mod->local_path = mem_strdup(module_path);
     new_mod->flags |= flags;
     
@@ -815,7 +816,7 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     return 0;
 }
 
-_public_ _pure_ int m_mod_stats(const m_mod_t *mod, m_stats_t *stats) {
+_public_ _pure_ int m_mod_stats(const m_mod_t *mod, m_mod_stats_t *stats) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(stats);
     

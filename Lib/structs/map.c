@@ -244,7 +244,7 @@ static void clear_elem(m_map_t *m, map_elem *removed_entry) {
 
 /** Private API **/
 
-void *map_peek(const m_map_t *m) {
+void *m_map_peek(const m_map_t *m) {
     M_RET_ASSERT(m_map_length(m) > 0, NULL);
     return m->last_insert->data;
 }

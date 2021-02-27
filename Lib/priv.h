@@ -4,6 +4,7 @@
 #include <regex.h>
 #include <string.h>
 #include <errno.h>
+#include <inttypes.h> // PRIu64
 #include "mem.h"
 #include "thpool.h"
 #include "itr.h"
@@ -133,6 +134,13 @@ typedef struct {
     uint64_t recv_msgs;
 } mod_stats_t;
 
+typedef struct {
+    uint64_t looping_start_time;
+    uint64_t idle_time;
+    uint64_t recv_msgs;
+    uint64_t running_modules;
+} ctx_stats_t;
+
 /* Struct that holds data for each module */
 struct _mod {
     m_mod_states state;                     // module's state
@@ -160,6 +168,7 @@ typedef struct {
     char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
     char *name;
+    ctx_stats_t stats;                      // Context' stats
 } m_ctx_t;
 
 /* Defined in mod.c */
@@ -183,7 +192,7 @@ void fetch_ms(uint64_t *val, uint64_t *ctr);
 m_evt_t *new_evt(m_src_types type);
 
 /* Defined in map.c */
-void *map_peek(const m_map_t *m);
+void *m_map_peek(const m_map_t *m);
 
 /* Defined in mem.c; used internally as dtor cb for structs APIs userptr, when it is memory ref counted */
 void mem_dtor(void *src);

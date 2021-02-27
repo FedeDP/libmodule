@@ -11,7 +11,7 @@ enum {
     MOD_STOP                = _IO(MODULE_MAGIC, 2),
     MOD_RESUME              = _IO(MODULE_MAGIC, 3),
     MOD_PAUSE               = _IO(MODULE_MAGIC, 4),
-    MOD_STATS               = _IOR(MODULE_MAGIC, 5, m_stats_t),
+    MOD_STATS               = _IOR(MODULE_MAGIC, 5, m_mod_stats_t),
 };
 
 const char *m_ctx_fs_get_root(void);

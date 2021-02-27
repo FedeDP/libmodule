@@ -190,13 +190,6 @@ typedef struct {
     m_free_fn _free;
 } m_memhook_t;
 
-typedef struct {
-    uint64_t inactive_ms;
-    double activity_freq;
-    uint64_t sent_msgs;
-    uint64_t recv_msgs;
-} m_stats_t;
-
 /* 
  * Common to any context; set this in m_pre_start(), 
  * ie: before library is inited and internal structures allocated 

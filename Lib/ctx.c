@@ -2,14 +2,15 @@
 #include "ctx.h"
 #include "fs_priv.h"
 
+#define M_CTX_DEFAULT_EVENTS   64
+
 static void ctx_dtor(void *data);
 static void default_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static int loop_start(m_ctx_t *c, const int max_events);
 static uint8_t loop_stop(m_ctx_t *c);
 static inline int loop_quit(m_ctx_t *c, const uint8_t quit_code);
 static int recv_events(m_ctx_t *c, int timeout);
-
-#define M_CTX_DEFAULT_EVENTS   64
+static int m_ctx_loop_events(int max_events);
 
 static void ctx_dtor(void *data) {
     M_DEBUG("Destroying context.\n");
@@ -38,6 +39,7 @@ static int loop_start(m_ctx_t *c, const int max_events) {
             M_WARN("Failed to initialize fuse fs: %s\n", strerror(-fs_ret));
         }
 
+        fetch_ms(&c->stats.looping_start_time, NULL);
         c->looping = true;
         c->quit = false;
         c->quit_code = 0;
@@ -64,7 +66,9 @@ static uint8_t loop_stop(m_ctx_t *c) {
     poll_clear(&c->ppriv);
     c->ppriv.max_events = 0;
     c->looping = false;
-    
+    c->stats.looping_start_time = 0;
+    ctx->stats.recv_msgs = 0;
+
     int ret = c->quit_code;
     
     m_mem_unref(c);
@@ -77,10 +81,21 @@ static inline int loop_quit(m_ctx_t *c, const uint8_t quit_code) {
     return 0;
 }
 
-static int recv_events(m_ctx_t *c, int timeout) {    
+static int recv_events(m_ctx_t *c, int timeout) {
+    static uint64_t last_time_called;
+
+    if (last_time_called == 0) {
+        fetch_ms(&last_time_called, NULL);
+    }
+
     errno = 0;
     int recved = 0;
-    const int nfds = poll_wait(&c->ppriv, timeout);    
+    const int nfds = poll_wait(&c->ppriv, timeout);
+
+    uint64_t now;
+    fetch_ms(&now, NULL);
+    c->stats.idle_time += now - last_time_called;
+
     for (int i = 0; i < nfds; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
         if (p && p->type == M_SRC_TYPE_FD && p->mod == NULL) {
@@ -177,6 +192,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
     
     if (recved > 0 && errno == 0) {
         m_map_iterate(c->modules, evaluate_module, NULL);
+        ctx->stats.recv_msgs += recved;
     } else if (errno) {
         /* Quit and return < 0 only for real errors */
         if (errno != EINTR && errno != EAGAIN) {
@@ -185,7 +201,23 @@ static int recv_events(m_ctx_t *c, int timeout) {
             recved = -1; // error!
         }
     }
+
+    fetch_ms(&last_time_called, NULL);
     return recved;
+}
+
+static int m_ctx_loop_events(int max_events) {
+    M_PARAM_ASSERT(max_events > 0);
+    M_ASSERT(!ctx->looping, "Context already looping.", -EINVAL);
+
+    int ret = loop_start(ctx, max_events);
+    if (ret == 0) {
+        while (!ctx->quit && m_map_length(ctx->modules) > 0) {
+            recv_events(ctx, -1);
+        }
+        return loop_stop(ctx);
+    }
+    return ret;
 }
 
 /** Private API **/
@@ -225,20 +257,6 @@ _public_ int m_ctx_set_logger(m_log_cb logger) {
     return 0;
 }
 
-_public_ int m_ctx_loop_events(int max_events) {
-    M_PARAM_ASSERT(max_events > 0);
-    M_ASSERT(!ctx->looping, "Context already looping.", -EINVAL);
-
-    int ret = loop_start(ctx, max_events);
-    if (ret == 0) {
-        while (!ctx->quit && m_map_length(ctx->modules) > 0) {
-            recv_events(ctx, -1);
-        }
-        return loop_stop(ctx);
-    }
-    return ret;
-}
-
 _public_ int m_ctx_loop(void) {
     return m_ctx_loop_events(M_CTX_DEFAULT_EVENTS);
 }
@@ -272,15 +290,27 @@ _public_ int m_ctx_dump(void) {
     ctx_logger(ctx, NULL, "{\n");
     
     ctx_logger(ctx, NULL, "\t\"Name\": \"%s\",\n", ctx->name);
-#ifdef WITH_FS
-    ctx_logger(ctx, NULL, "\t\t\"Fs_root\": \"%s\",\n", ctx->fs_root);
-#endif
+    if (ctx->fs_root && strlen(ctx->fs_root)) {
+        ctx_logger(ctx, NULL, "\t\t\"Fs_root\": \"%s\",\n", ctx->fs_root);
+    }
     ctx_logger(ctx, NULL, "\t\"State\": {\n");
     ctx_logger(ctx, NULL, "\t\t\"Quit\": %d,\n", ctx->quit);
     ctx_logger(ctx, NULL, "\t\t\"Looping\": %d,\n", ctx->looping);
-    ctx_logger(ctx, NULL, "\t\t\"Max_events\": %d\n", ctx->ppriv.max_events);
     ctx_logger(ctx, NULL, "\t},\n");
-    
+
+    uint64_t now;
+    fetch_ms(&now, NULL);
+    uint64_t looping_time = now - ctx->stats.looping_start_time;
+    uint64_t total_active_time = looping_time - ctx->stats.idle_time;
+    ctx_logger(ctx, NULL, "\t\"Stats\": {\n");
+    ctx_logger(ctx, NULL, "\t\t\"Looping_start\": %" PRIu64 ",\n", ctx->stats.looping_start_time);
+    ctx_logger(ctx, NULL, "\t\t\"Total_idle_time\": %" PRIu64 ",\n", ctx->stats.idle_time);
+    ctx_logger(ctx, NULL, "\t\t\"Total_active_time\": %" PRIu64 ",\n", total_active_time);
+    ctx_logger(ctx, NULL, "\t\t\"Recv_msgs\": %" PRIu64 ",\n", ctx->stats.recv_msgs);
+    ctx_logger(ctx, NULL, "\t\t\"Running_modules\": %" PRIu64 ",\n", ctx->stats.running_modules);
+    ctx_logger(ctx, NULL, "\t\t\"Action_freq\": %lf\n", (double)total_active_time / looping_time);
+    ctx_logger(ctx, NULL, "\t},\n");
+
     ctx_logger(ctx, NULL, "\t\"Modules\": [\n");
     int i = 0;
     m_itr_foreach(ctx->modules, {
@@ -290,6 +320,24 @@ _public_ int m_ctx_dump(void) {
     });
     ctx_logger(ctx, NULL, "\t]\n");
     ctx_logger(ctx, NULL, "}\n");
+    return 0;
+}
+
+_public_ _pure_ int m_ctx_stats(m_ctx_stats_t *stats) {
+    M_PARAM_ASSERT(ctx->looping);
+    M_PARAM_ASSERT(stats);
+
+    uint64_t now;
+    fetch_ms(&now, NULL);
+
+    stats->recv_msgs = ctx->stats.recv_msgs;
+    stats->num_modules = m_map_length(ctx->modules);
+    stats->running_modules = ctx->stats.running_modules;
+    stats->total_idle_time = ctx->stats.idle_time;
+    stats->total_looping_time = now - ctx->stats.looping_start_time;
+
+    uint64_t active_time = stats->total_looping_time - stats->total_idle_time;
+    stats->activity_freq = (double)active_time / stats->total_looping_time;
     return 0;
 }
 

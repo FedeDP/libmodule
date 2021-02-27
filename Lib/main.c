@@ -6,11 +6,11 @@
 m_ctx_t *ctx = NULL;
 m_memhook_t memhook = { malloc, realloc, calloc, free };
 
-_public_ void _ctor0_ _weak_ m_pre_start(void) {
+_public_ _ctor0_ _weak_ void m_pre_start(void) {
     M_DEBUG("Pre-starting libmodule.\n");
 }
 
-void _public_ _weak_ m_ctx_pre_loop(int argc, char *argv[]) {
+_public_ _weak_ void m_ctx_pre_loop(int argc, char *argv[]) {
     m_ctx_set_name(argv[0]);
     bool error = false;
     for (int i = 1; i < argc; i++) {
@@ -47,7 +47,7 @@ void _public_ _weak_ m_ctx_pre_loop(int argc, char *argv[]) {
  *
  * All it does is looping on ctx.
  */
-int _public_ _weak_ main(int argc, char *argv[]) {
+_public_ _weak_ int main(int argc, char *argv[]) {
     m_ctx_pre_loop(argc, argv);
     return m_ctx_loop();
 }

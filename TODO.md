@@ -15,6 +15,8 @@
 - [x] Fix build
 - [x] fix tests
 - [x] fix samples
+- [x] add m_ctx_stats() API
+- [x] Add stats to m_ctx_dump
 
 ### Reference-counted objects' life management
 
@@ -139,7 +141,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Rename module_* API to m_module_*
 - [x] Rename module_easy API to m_mod_*
 - [x] Rename mem API to m_mem*
-- [ ] Rename other exposed APIs (types/enums/enum values) to m_*
+- [x] Rename other exposed APIs (types/enums/enum values) to m_*
 - - [x] Rename mod_t and ctx_t
 - - [x] Rename msg_t to m_evt_t
 - - [x] Rename msg_t sub msgs
@@ -148,7 +150,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [x] Rename userhook_t, log_cb
 - - [x] Rename init_cb and other callbacks
 - - [x] Rename memhook_t and its callbacks
-- - [x] Rename stats_t to m_stats_t
+- - [x] Rename stats_t to m_mod_stats_t
 - - [x] Rename exposed flags
 - - [x] add m_mod_ prefix to callbacks, eg m_mod_prestart, m_mod_on_start() ecc ecc
 - - [x] Rename init/deinit/check etc etc to on_start(), on_stop(), on_event(), on_eval() etc etc...
