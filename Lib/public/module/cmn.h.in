@@ -119,6 +119,7 @@ typedef struct {
 } m_src_task_t;
 
 typedef struct {
+    unsigned int id;
     uint64_t inactive_ms;
     double activity_freq;
 } m_src_thresh_t;
@@ -168,6 +169,7 @@ typedef struct {
 
 /* Thresh event messages */
 typedef struct {
+    unsigned int id;
     uint64_t inactive_ms;
     double activity_freq;
 } m_evt_thresh_t;

@@ -740,13 +740,13 @@ _public_ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid) {
 }
 
 _public_ int m_mod_src_register_thresh(m_mod_t *mod, const m_src_thresh_t *thr, m_src_flags flags, const void *userptr) {
-    M_PARAM_ASSERT(thr);
+    M_PARAM_ASSERT(thr && (thr->activity_freq > 0 || thr->inactive_ms > 0));
 
     return _register_src(mod, M_SRC_TYPE_THRESH, thr, flags | M_SRC_ONESHOT, userptr); // force ONESHOT flag
 }
 
 _public_ int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr) {
-    M_PARAM_ASSERT(thr);
+    M_PARAM_ASSERT(thr && (thr->activity_freq > 0 || thr->inactive_ms > 0));
 
     return _deregister_src(mod, M_SRC_TYPE_THRESH, (void *)thr);
 }
