@@ -340,36 +340,33 @@ static void fs_wakeup_clients(fs_priv_t *fp, bool leaving) {
 /** Private API **/
 
 int fs_init(m_ctx_t *c) {
-    int ret = 0;
-    if (c->fs_root) {
-        ret = mkdir(c->fs_root, 0777);
-        if (ret != 0) {
-            return -errno;
-        }
+    int ret = mkdir(c->fs_root, 0777);
+    if (ret != 0) {
+        return -errno;
+    }
 
-        c->fs = memhook._calloc(1, sizeof(fs_ctx_t));
-        M_ALLOC_ASSERT(c->fs);
+    c->fs = memhook._calloc(1, sizeof(fs_ctx_t));
+    M_ALLOC_ASSERT(c->fs);
         
-        FS_PRIV();
+    FS_PRIV();
 
-        /* Mandatory fuse arg: app name */
-        fuse_opt_add_arg(&f->args, "libmodule");
+    /* Mandatory fuse arg: app name */
+    fuse_opt_add_arg(&f->args, "libmodule");
         
-        f->handler = fuse_new(&f->args, &operations, sizeof(operations), c);
-        M_ALLOC_ASSERT(f->handler);
+    f->handler = fuse_new(&f->args, &operations, sizeof(operations), c);
+    M_ALLOC_ASSERT(f->handler);
         
-        f->start = time(NULL);
+    f->start = time(NULL);
         
-        ret = fuse_mount(f->handler, c->fs_root);
-        if (ret == 0) {
-            f->src = memhook._calloc(1, sizeof(ev_src_t));
-            M_ALLOC_ASSERT(f->src);
+    ret = fuse_mount(f->handler, c->fs_root);
+    if (ret == 0) {
+        f->src = memhook._calloc(1, sizeof(ev_src_t));
+        M_ALLOC_ASSERT(f->src);
             
-            /* Actually register fuse fd in poll plugin */
-            f->src->type = M_SRC_TYPE_FD;
-            f->src->fd_src.fd = fuse_session_fd(fuse_get_session(f->handler));
-            ret = poll_set_new_evt(&c->ppriv, f->src, ADD);
-        }
+        /* Actually register fuse fd in poll plugin */
+        f->src->type = M_SRC_TYPE_FD;
+        f->src->fd_src.fd = fuse_session_fd(fuse_get_session(f->handler));
+        ret = poll_set_new_evt(&c->ppriv, f->src, ADD);
     }
     return ret;
 }
