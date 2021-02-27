@@ -173,6 +173,11 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Put thpool.c and mem.c into a new "utils" folder
 - [x] Move _public_ out of headers, to function definitions
 
+### Module thresh API
+
+- [x] Allow user to set a thresh on module's stats; when thresh is reached, a system msg M_PS_MOD_THRESH is sent
+- [x] Eg: if a module is receiving way too messages, it can be significant for the application
+
 ### New Linked list API
 
 - [x] Add linked list implementation
@@ -398,11 +403,6 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 
 - [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
 - [ ] Then, on unstash() each module will have a stashing_pipe_fd and all messages will be written to the piped fd; then asynchronously fetched as normal messages
-
-### Module thresh API
-
-- [ ] Allow user to set a thresh on module's stats; when thresh is reached, a system msg M_PS_MOD_THRESH is sent
-- [ ] Eg: if a module is receiving way too messages, it can be significant for the application
 
 ### Submodules
 - [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);

@@ -342,6 +342,27 @@ static void reset_module(m_mod_t *mod) {
 
 int evaluate_module(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
+
+    /* Check thresholds, if any is set and mod is running */
+    if (m_mod_is(mod, M_MOD_RUNNING)) {
+        uint64_t curr_ms;
+        fetch_ms(&curr_ms, NULL);
+        if (mod->thresh.activity_freq != 0) {
+            const double act_freq = (double) mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
+            if (act_freq >= mod->thresh.activity_freq) {
+                tell_system_pubsub_msg(mod, ctx, M_PS_MOD_THRESH_ACTIVITY, NULL, NULL);
+            }
+        }
+
+        if (mod->thresh.inactive_ms != 0) {
+            uint64_t inactive_ms = curr_ms - mod->stats.last_seen;
+            if (inactive_ms >= mod->thresh.inactive_ms) {
+                tell_system_pubsub_msg(mod, ctx, M_PS_MOD_THRESH_INACTIVE, NULL, NULL);
+            }
+        }
+    }
+
+    /* Check if module should be started */
     if (m_mod_is(mod, M_MOD_IDLE) && 
         (!mod->hook.on_eval || mod->hook.on_eval())) {
         
@@ -827,6 +848,25 @@ _public_ _pure_ int m_mod_stats(const m_mod_t *mod, m_mod_stats_t *stats) {
     stats->activity_freq = ((double)mod->stats.action_ctr) / (curr_ms - mod->stats.registration_time);
     stats->recv_msgs = mod->stats.recv_msgs;
     stats->sent_msgs = mod->stats.sent_msgs;
+    return 0;
+}
+
+_public_ int m_mod_set_thresh(m_mod_t *mod, m_mod_thresh_t *thresh) {
+    M_MOD_ASSERT(mod);
+
+    if (thresh) {
+        memcpy(&mod->thresh, thresh, sizeof(*thresh));
+    } else {
+        memset(&mod->thresh, 0, sizeof(mod->thresh));
+    }
+    return 0;
+}
+
+_public_ _pure_  int m_mod_get_thresh(const m_mod_t *mod, m_mod_thresh_t *thresh) {
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(thresh);
+
+    memcpy(thresh, &mod->thresh, sizeof(*thresh));
     return 0;
 }
 

@@ -49,6 +49,11 @@ typedef struct {
     uint64_t recv_msgs;
 } m_mod_stats_t;
 
+typedef struct {
+    uint64_t inactive_ms;
+    double activity_freq;
+} m_mod_thresh_t;
+
 /* Module interface functions */
 
 /* Module registration */
@@ -76,6 +81,9 @@ int m_mod_stop(m_mod_t *mod);
 int m_mod_log(const m_mod_t *mod, const char *fmt, ...);
 int m_mod_dump(const m_mod_t *mod);
 int m_mod_stats(const m_mod_t *mod, m_mod_stats_t *stats);
+
+int m_mod_set_thresh(m_mod_t *mod, m_mod_thresh_t *thresh);
+int m_mod_get_thresh(const m_mod_t *mod, m_mod_thresh_t *thresh);
 
 const void *m_mod_userdata(const m_mod_t *mod);
 

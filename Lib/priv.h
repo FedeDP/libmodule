@@ -30,20 +30,20 @@
 
 #define M_RET_ASSERT(cond, ret)     M_ASSERT(cond, "("#cond ") condition failed.", ret) 
 
-#define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM);
-#define M_PARAM_ASSERT(cond)        M_RET_ASSERT(cond, -EINVAL);
+#define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM)
+#define M_PARAM_ASSERT(cond)        M_RET_ASSERT(cond, -EINVAL)
 
 #define M_MOD_ASSERT(mod) \
     M_PARAM_ASSERT(mod); \
-    M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), -EACCES);
+    M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), -EACCES)
 
 #define M_MOD_ASSERT_PERM(mod, perm) \
     M_MOD_ASSERT(mod); \
-    M_RET_ASSERT(!(mod->flags & perm), -EPERM);
+    M_RET_ASSERT(!(mod->flags & perm), -EPERM)
     
 #define M_MOD_ASSERT_STATE(mod, state) \
     M_MOD_ASSERT(mod); \
-    M_RET_ASSERT(m_mod_is(mod, state), -EACCES);
+    M_RET_ASSERT(m_mod_is(mod, state), -EACCES)
 
 /* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
@@ -146,7 +146,8 @@ struct _mod {
     m_mod_states state;                     // module's state
     m_mod_flags flags;                      // Module's flags
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
-    mod_stats_t stats;                      // Modules' stats
+    mod_stats_t stats;                      // Module's stats
+    m_mod_thresh_t thresh;                  // Module's thresholds
     m_mod_hook_t hook;                      // module's user defined callbacks
     m_stack_t *recvs;                       // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data
