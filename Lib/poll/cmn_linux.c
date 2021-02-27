@@ -64,6 +64,11 @@ int poll_notify_task(ev_src_t *src) {
     return -errno;
 }
 
+int poll_notify_thresh(ev_src_t *src) {
+    // Inside an union: src->task_src.f.fd and src->thresh_src.f.fd share same memory
+    return poll_notify_task(src);
+}
+
 void create_priv_fd(ev_src_t *tmp) {
     switch (tmp->type) {
         case M_SRC_TYPE_TMR:
@@ -79,6 +84,7 @@ void create_priv_fd(ev_src_t *tmp) {
             create_pidfd(tmp);
             break;
         case M_SRC_TYPE_TASK:
+        case M_SRC_TYPE_THRESH:
             create_eventfd(tmp);
             break;
         default:
@@ -125,6 +131,14 @@ int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_tas
     uint64_t u;
     if (read(src->task_src.f.fd, &u, sizeof(uint64_t)) == sizeof(uint64_t)) {
         task_msg->retval = src->task_src.retval;
+        return 0;
+    }
+    return -errno;
+}
+
+int poll_consume_thresh(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_thresh_t *thresh_msg) {
+    uint64_t u;
+    if (read(src->task_src.f.fd, &u, sizeof(uint64_t)) == sizeof(uint64_t)) {
         return 0;
     }
     return -errno;

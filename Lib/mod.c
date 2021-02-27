@@ -21,6 +21,7 @@ static int sgncmp(void *my_data, void *node_data);
 static int pathcmp(void *my_data, void *node_data);
 static int pidcmp(void *my_data, void *node_data);
 static int taskcmp(void *my_data, void *node_data);
+static int threshcmp(void *my_data, void *node_data);
 
 static int manage_fds(m_mod_t *mod, m_ctx_t *c, const int flag, const bool stop);
 static void reset_module(m_mod_t *mod);
@@ -34,7 +35,8 @@ static m_bst_cmp src_cmp_map[] = {
     sgncmp,     // M_SRC_TYPE_SGN
     pathcmp,    // M_SRC_TYPE_PATH
     pidcmp,     // M_SRC_TYPE_PID
-    taskcmp     // M_SRC_TYPE_TASK
+    taskcmp,    // M_SRC_TYPE_TASK
+    threshcmp,  // M_SRC_TYPE_THRESH
 };
 _Static_assert(sizeof(src_cmp_map) / sizeof(*src_cmp_map) == M_SRC_TYPE_END, "Undefined source compare function.");
 static const char *src_names[] = {
@@ -44,7 +46,8 @@ static const char *src_names[] = {
     "Sgns",     // M_SRC_TYPE_SGN
     "Paths",    // M_SRC_TYPE_PATH
     "Pids",     // M_SRC_TYPE_PID
-    "Tasks"     // M_SRC_TYPE_TASK
+    "Tasks",    // M_SRC_TYPE_TASK
+    "Thresh",   // M_SRC_TYPE_THRESH
 };
 _Static_assert(sizeof(src_names) / sizeof(*src_names) == M_SRC_TYPE_END, "Undefined source name.");
 
@@ -179,7 +182,7 @@ static int _register_src(m_mod_t *mod, const m_src_types type, const void *src_d
      * as fd_src_t is always first struct field on linux.
      */
     src->fd_src.fd = -1;
-    
+
     switch (type) {
     case M_SRC_TYPE_PS: // M_SRC_TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
     case M_SRC_TYPE_FD: {
@@ -221,6 +224,11 @@ static int _register_src(m_mod_t *mod, const m_src_types type, const void *src_d
         memcpy(&task_src->tid, src_data, sizeof(m_src_task_t));
         break;
     }
+    case M_SRC_TYPE_THRESH: {
+        thresh_src_t *thresh_src = &src->thresh_src;
+        memcpy(&thresh_src->thr, src_data, sizeof(m_src_thresh_t));
+        break;
+    }
     default:
         M_DEBUG("Wrong src type: %d\n", type);
         memhook._free(src);
@@ -233,7 +241,7 @@ static int _register_src(m_mod_t *mod, const m_src_types type, const void *src_d
         /* If a src is registered at runtime, start receiving its events */
         if (m_mod_is(mod, M_MOD_RUNNING)) {
             ret = poll_set_new_evt(&ctx->ppriv, src, ADD);
-            
+
             /* For type task: create task thread */
             if (ret == 0 && src->type == M_SRC_TYPE_TASK) {
                 ret = start_task(src);
@@ -294,7 +302,18 @@ static int taskcmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
     const m_src_task_t *tid = (const m_src_task_t *)my_data;
     
-    return tid->tid - src->task_src.tid.tid;;
+    return tid->tid - src->task_src.tid.tid;
+}
+
+static int threshcmp(void *my_data, void *node_data) {
+    ev_src_t *src = (ev_src_t *)node_data;
+    const m_src_thresh_t *thr = (const m_src_thresh_t *)my_data;
+
+    long double my_val = (long double)thr->activity_freq
+            + (long double)thr->inactive_ms;
+    long double their_val = (long double)src->thresh_src.thr.activity_freq
+            + (long double)src->thresh_src.thr.inactive_ms;
+    return my_val - their_val;
 }
 
 static int manage_fds(m_mod_t *mod, m_ctx_t *c, const int flag, const bool stop) {    
@@ -347,21 +366,25 @@ int evaluate_module(void *data, const char *key, void *value) {
     if (m_mod_is(mod, M_MOD_RUNNING)) {
         uint64_t curr_ms;
         fetch_ms(&curr_ms, NULL);
-        if (mod->thresh.values.activity_freq != 0 && !mod->thresh.warned_activity) {
-            const double act_freq = (double) mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
-            if (act_freq >= mod->thresh.values.activity_freq) {
-                tell_system_pubsub_msg(mod, ctx, M_PS_MOD_THRESH_ACTIVITY, NULL, NULL);
-                mod->thresh.warned_activity = true;
-            }
-        }
 
-        if (mod->thresh.values.inactive_ms != 0 && mod->thresh.warned_inactive) {
-            uint64_t inactive_ms = curr_ms - mod->stats.last_seen;
-            if (inactive_ms >= mod->thresh.values.inactive_ms) {
-                tell_system_pubsub_msg(mod, ctx, M_PS_MOD_THRESH_INACTIVE, NULL, NULL);
-                mod->thresh.warned_inactive = true;
+        m_itr_foreach(mod->srcs[M_SRC_TYPE_THRESH], {
+            ev_src_t *src = (ev_src_t *)m_itr_get(itr);
+            m_src_thresh_t *thr = &src->thresh_src.thr;
+            m_src_thresh_t *alarm = &src->thresh_src.alarm;
+            bool notify = false;
+            if (thr->activity_freq != 0) {
+                alarm->activity_freq = (double) mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
+                notify = alarm->activity_freq >= thr->activity_freq;
             }
-        }
+
+            if (thr->inactive_ms != 0) {
+                alarm->inactive_ms = curr_ms - mod->stats.last_seen;
+                notify = alarm->inactive_ms >= thr->inactive_ms;
+            }
+            if (notify) {
+                poll_notify_thresh(src);
+            }
+        })
     }
 
     /* Check if module should be started */
@@ -692,13 +715,13 @@ _public_ int m_mod_src_deregister_path(m_mod_t *mod, const m_src_path_t *pt) {
     return _deregister_src(mod, M_SRC_TYPE_PATH, (void *)pt);
 }
 
-_public_ int m_mod_register_pid(m_mod_t *mod, const m_src_pid_t *pid, m_src_flags flags, const void *userptr) {
+_public_ int m_mod_src_register_pid(m_mod_t *mod, const m_src_pid_t *pid, m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(pid && pid->pid > 0);
     
     return _register_src(mod, M_SRC_TYPE_PID, pid, flags, userptr);
 }
 
-_public_ int m_mod_deregister_pid(m_mod_t *mod, const m_src_pid_t *pid) {
+_public_ int m_mod_src_deregister_pid(m_mod_t *mod, const m_src_pid_t *pid) {
     M_PARAM_ASSERT(pid && pid->pid > 0);
     
     return _deregister_src(mod, M_SRC_TYPE_PID, (void *)pid);
@@ -714,6 +737,18 @@ _public_ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid) {
     M_PARAM_ASSERT(tid);
     
     return _deregister_src(mod, M_SRC_TYPE_TASK, (void *)tid);
+}
+
+_public_ int m_mod_src_register_thresh(m_mod_t *mod, const m_src_thresh_t *thr, m_src_flags flags, const void *userptr) {
+    M_PARAM_ASSERT(thr);
+
+    return _register_src(mod, M_SRC_TYPE_THRESH, thr, flags | M_SRC_ONESHOT, userptr); // force ONESHOT flag
+}
+
+_public_ int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr) {
+    M_PARAM_ASSERT(thr);
+
+    return _deregister_src(mod, M_SRC_TYPE_THRESH, (void *)thr);
 }
 
 _public_ _pure_ const char *m_mod_name(const m_mod_t *mod_self) {
@@ -746,20 +781,13 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
         ctx_logger(ctx, mod, "\t\"UP\": %p,\n", mod->userdata);
     }
 
-    if (mod->thresh.values.inactive_ms > 0 || mod->thresh.values.activity_freq > 0) {
-        ctx_logger(ctx, mod, "\t\"Thresh\": {\n");
-        ctx_logger(ctx, mod, "\t\t\"Action_freq_ms\": %lf,\n", mod->thresh.values.activity_freq);
-        ctx_logger(ctx, mod, "\t\t\"Inactive_ms\": %" PRIu64 "\n", mod->thresh.values.inactive_ms);
-        ctx_logger(ctx, mod, "\t}\n");
-    }
-
     ctx_logger(ctx, mod, "\t\"Stats\": {\n");
     ctx_logger(ctx, mod, "\t\t\"Reg_time\": %" PRIu64 ",\n", mod->stats.registration_time);
     ctx_logger(ctx, mod, "\t\t\"Sent_msgs\": %" PRIu64 ",\n", mod->stats.sent_msgs);
     ctx_logger(ctx, mod, "\t\t\"Recv_msgs\": %" PRIu64 ",\n", mod->stats.recv_msgs);
     ctx_logger(ctx, mod, "\t\t\"Last_seen\": %" PRIu64 ",\n", mod->stats.last_seen);
     ctx_logger(ctx, mod, "\t\t\"Num_actions\": %" PRIu64 ",\n", mod->stats.action_ctr);
-    ctx_logger(ctx, mod, "\t\t\"Action_freq\": %lf\n", (double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time));
+    ctx_logger(ctx, mod, "\t\t\"Action_freq\": %Lf\n", (long double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time));
     
     bool closed_stats = false;
     int i = 0;
@@ -824,6 +852,10 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
                 case M_SRC_TYPE_TASK:
                     ctx_logger(ctx, mod, "\t\t\"TID\": %d,\n", t->task_src.tid.tid);
                     break;
+                case M_SRC_TYPE_THRESH:
+                    ctx_logger(ctx, mod, "\t\t\"INACTIVE_MS\": %d,\n", t->thresh_src.thr.inactive_ms);
+                    ctx_logger(ctx, mod, "\t\t\"ACTIVITY_FREQ\": %d,\n", t->thresh_src.thr.activity_freq);
+                    break;
                 default:
                     break;
                 }
@@ -858,27 +890,6 @@ _public_ _pure_ int m_mod_stats(const m_mod_t *mod, m_mod_stats_t *stats) {
     stats->activity_freq = ((double)mod->stats.action_ctr) / (curr_ms - mod->stats.registration_time);
     stats->recv_msgs = mod->stats.recv_msgs;
     stats->sent_msgs = mod->stats.sent_msgs;
-    return 0;
-}
-
-_public_ int m_mod_set_thresh(m_mod_t *mod, m_mod_thresh_t *thresh) {
-    M_MOD_ASSERT(mod);
-
-    if (thresh) {
-        memcpy(&mod->thresh.values, thresh, sizeof(m_mod_thresh_t));
-    } else {
-        memset(&mod->thresh.values, 0, sizeof(m_mod_thresh_t));
-    }
-    mod->thresh.warned_activity = false;
-    mod->thresh.warned_inactive = false;
-    return 0;
-}
-
-_public_ _pure_  int m_mod_get_thresh(const m_mod_t *mod, m_mod_thresh_t *thresh) {
-    M_MOD_ASSERT(mod);
-    M_PARAM_ASSERT(thresh);
-
-    memcpy(thresh, &mod->thresh, sizeof(*thresh));
     return 0;
 }
 

@@ -20,5 +20,7 @@ int poll_consume_tmr(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_tmr_
 int poll_consume_pt(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_path_t *pt_msg);
 int poll_consume_pid(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_pid_t *pid_msg);
 int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_task_t *task_msg);
+int poll_consume_thresh(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_thresh_t *thresh_msg);
 
 int poll_notify_task(ev_src_t *src);
+int poll_notify_thresh(ev_src_t *src);

@@ -73,6 +73,9 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     case M_SRC_TYPE_TASK:
         EV_SET(_ev, tmp->task_src.tid.tid, EVFILT_USER, f, NOTE_FFNOP, 0, tmp);
         break;
+    case M_SRC_TYPE_THRESH:
+        EV_SET(_ev, tmp->thresh_src.thr.id, EVFILT_USER, f, NOTE_FFNOP, 0, tmp);
+        break;
     default: 
         break;
     }
@@ -145,6 +148,10 @@ int poll_consume_task(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_tas
     return 0;
 }
 
+int poll_consume_thresh(poll_priv_t *priv, const int idx, ev_src_t *src, m_evt_task_t *task_msg) {
+    return 0;
+}
+
 int poll_get_fd(const poll_priv_t *priv) {
     GET_PRIV_DATA();
     return kp->fd;
@@ -168,5 +175,11 @@ int poll_destroy(poll_priv_t *priv) {
 int poll_notify_task(ev_src_t *src) {
     struct kevent *_ev = (struct kevent *)src->ev;
     EV_SET(_ev, src->task_src.tid.tid, EVFILT_USER, EV_ENABLE, NOTE_FFNOP | NOTE_TRIGGER, 0, src);
+    return 0;
+}
+
+int poll_notify_thresh(ev_src_t *src) {
+    struct kevent *_ev = (struct kevent *)src->ev;
+    EV_SET(_ev, src->thresh_src.thr.id, EVFILT_USER, EV_ENABLE, NOTE_FFNOP | NOTE_TRIGGER, 0, src);
     return 0;
 }

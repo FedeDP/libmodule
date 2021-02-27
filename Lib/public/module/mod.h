@@ -49,11 +49,6 @@ typedef struct {
     uint64_t recv_msgs;
 } m_mod_stats_t;
 
-typedef struct {
-    uint64_t inactive_ms;
-    double activity_freq;
-} m_mod_thresh_t;
-
 /* Module interface functions */
 
 /* Module registration */
@@ -81,9 +76,6 @@ int m_mod_stop(m_mod_t *mod);
 int m_mod_log(const m_mod_t *mod, const char *fmt, ...);
 int m_mod_dump(const m_mod_t *mod);
 int m_mod_stats(const m_mod_t *mod, m_mod_stats_t *stats);
-
-int m_mod_set_thresh(m_mod_t *mod, m_mod_thresh_t *thresh);
-int m_mod_get_thresh(const m_mod_t *mod, m_mod_thresh_t *thresh);
 
 const void *m_mod_userdata(const m_mod_t *mod);
 
@@ -113,11 +105,14 @@ int m_mod_src_deregister_sgn(m_mod_t *mod, const m_src_sgn_t *its);
 int m_mod_src_register_path(m_mod_t *mod, const m_src_path_t *its, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_path(m_mod_t *mod, const m_src_path_t *its);
 
-int m_mod_register_pid(m_mod_t *mod, const m_src_pid_t *pid, m_src_flags flags, const void *userptr);
-int m_mod_deregister_pid(m_mod_t *mod, const m_src_pid_t *pid);
+int m_mod_src_register_pid(m_mod_t *mod, const m_src_pid_t *pid, m_src_flags flags, const void *userptr);
+int m_mod_src_deregister_pid(m_mod_t *mod, const m_src_pid_t *pid);
 
 int m_mod_src_register_task(m_mod_t *mod, const m_src_task_t *tid, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid);
+
+int m_mod_src_register_thresh(m_mod_t *mod, const m_src_thresh_t *thr, m_src_flags flags, const void *userptr);
+int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr);
 
 /* Generic event source registering functions */
 #define m_mod_src_register(mod, X, flags, userptr) _Generic((X) + 0, \
@@ -126,8 +121,9 @@ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid);
     m_src_tmr_t *: m_mod_src_register_tmr, \
     m_src_sgn_t *: m_mod_src_register_sgn, \
     m_src_path_t *: m_mod_src_register_path, \
-    m_src_pid_t *: m_mod_register_pid, \
-    m_src_task_t *: m_mod_src_register_task \
+    m_src_pid_t *: m_mod_src_register_pid, \
+    m_src_task_t *: m_mod_src_register_task, \
+    m_src_thresh_t *: m_mod_src_register_thresh \
     )(mod, X, flags, userptr)
 
 #define m_mod_src_deregister(mod, X) _Generic((X) + 0, \
@@ -136,6 +132,7 @@ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid);
     m_src_tmr_t *: m_mod_src_deregister_tmr, \
     m_src_sgn_t *: m_mod_src_deregister_sgn, \
     m_src_path_t *: m_mod_src_deregister_path, \
-    m_src_pid_t *: m_mod_deregister_pid, \
-    m_src_task_t *: m_mod_src_deregister_task \
+    m_src_pid_t *: m_mod_src_deregister_pid, \
+    m_src_task_t *: m_mod_src_deregister_task, \
+    m_src_thresh_t *: m_mod_src_deregister_thresh \
     )(mod, X)

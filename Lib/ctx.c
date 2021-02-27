@@ -118,7 +118,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                 switch (msg->type) {
                 case M_SRC_TYPE_FD:
                     /* Received from FD */
-                    msg->fd_msg = m_mem_new(sizeof(msg->fd_msg), NULL);
+                    msg->fd_msg = m_mem_new(sizeof(*msg->fd_msg), NULL);
                     msg->fd_msg->fd = p->fd_src.fd;
                     break;
                 case M_SRC_TYPE_PS: {
@@ -133,34 +133,41 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     break;
                 }
                 case M_SRC_TYPE_SGN:
-                    msg->sgn_msg = m_mem_new(sizeof(msg->sgn_msg), NULL);
+                    msg->sgn_msg = m_mem_new(sizeof(*msg->sgn_msg), NULL);
                     if (poll_consume_sgn(&c->ppriv, i, p, msg->sgn_msg) == 0) {
                         msg->sgn_msg->signo = p->sgn_src.sgs.signo;
                     }
                     break;
                 case M_SRC_TYPE_TMR:
-                    msg->tmr_msg = m_mem_new(sizeof(msg->sgn_msg), NULL);
+                    msg->tmr_msg = m_mem_new(sizeof(*msg->sgn_msg), NULL);
                     if (poll_consume_tmr(&c->ppriv, i, p,  msg->tmr_msg) == 0) {
                         msg->tmr_msg->ms = p->tmr_src.its.ms;
                     }
                     break;
                 case M_SRC_TYPE_PATH:
-                    msg->pt_msg = m_mem_new(sizeof(msg->pt_msg), NULL);
+                    msg->pt_msg = m_mem_new(sizeof(*msg->pt_msg), NULL);
                     if (poll_consume_pt(&c->ppriv, i, p, msg->pt_msg) == 0) {
                         msg->pt_msg->path = p->path_src.pt.path;
                     }
                     break;
                 case M_SRC_TYPE_PID:
-                    msg->pid_msg = m_mem_new(sizeof(msg->pid_msg), NULL);
+                    msg->pid_msg = m_mem_new(sizeof(*msg->pid_msg), NULL);
                     if (poll_consume_pid(&c->ppriv, i, p, msg->pid_msg) == 0) {
                         msg->pid_msg->pid = p->pid_src.pid.pid;
                     }
                     break;
                 case M_SRC_TYPE_TASK:
-                    msg->task_msg = m_mem_new(sizeof(msg->task_msg), NULL);
+                    msg->task_msg = m_mem_new(sizeof(*msg->task_msg), NULL);
                     if (poll_consume_task(&c->ppriv, i, p, msg->task_msg) == 0) {
                         msg->task_msg->tid = p->task_src.tid.tid;
                         pthread_join(p->task_src.th, NULL);
+                    }
+                    break;
+                case M_SRC_TYPE_THRESH:
+                    msg->thresh_msg = m_mem_new(sizeof(*msg->thresh_msg), NULL);
+                    if (poll_consume_thresh(&c->ppriv, i, p, msg->thresh_msg) == 0) {
+                        msg->thresh_msg->inactive_ms = p->thresh_src.alarm.inactive_ms;
+                        msg->thresh_msg->activity_freq = p->thresh_src.alarm.activity_freq;
                     }
                     break;
                 default:
@@ -311,7 +318,7 @@ _public_ int m_ctx_dump(void) {
     ctx_logger(ctx, NULL, "\t\t\"Total_active_time\": %" PRIu64 ",\n", total_active_time);
     ctx_logger(ctx, NULL, "\t\t\"Recv_msgs\": %" PRIu64 ",\n", ctx->stats.recv_msgs);
     ctx_logger(ctx, NULL, "\t\t\"Running_modules\": %" PRIu64 ",\n", ctx->stats.running_modules);
-    ctx_logger(ctx, NULL, "\t\t\"Action_freq\": %lf\n", (double)total_active_time / looping_time);
+    ctx_logger(ctx, NULL, "\t\t\"Action_freq\": %Lf\n", (long double)total_active_time / looping_time);
     ctx_logger(ctx, NULL, "\t},\n");
 
     ctx_logger(ctx, NULL, "\t\"Modules\": [\n");

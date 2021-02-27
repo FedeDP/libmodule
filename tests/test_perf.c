@@ -11,22 +11,30 @@ static void my_recv(const m_evt_t *msg);
 
 static m_mod_t *mod;
 static int ctr;
-static bool warned;
-static m_mod_stats_t stats;
 
 void test_poll_perf(void **state) {
     (void) state; /* unused */
+    m_src_thresh_t thresh = { .activity_freq = 10.0 };
+    m_src_thresh_t alarm = {0};
         
     m_mod_hook_t hook = {init, NULL, my_recv, NULL };
     int ret = m_mod_register("testName", &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
     assert_true(m_mod_is(mod, M_MOD_IDLE));
-    
+
+    ret = m_mod_src_register(mod, &thresh, 0, &alarm);
+    assert_int_equal(ret, 0);
+
+    // test that it can be deregistered
+    ret = m_mod_src_deregister(mod, &thresh);
+    assert_int_equal(ret, 0);
+
+    ret = m_mod_src_register(mod, &thresh, 0, &alarm);
+    assert_int_equal(ret, 0);
+
     m_mod_start(mod);
 
-    m_mod_set_thresh(mod, &(m_mod_thresh_t){ .activity_freq = 10.00 });
-    
     clock_t begin_tell = clock();
     for (int i = 0; i < MAX_LEN; i++) {
         m_mod_ps_tell(mod, mod, "Hello World", 0);
@@ -41,10 +49,8 @@ void test_poll_perf(void **state) {
     time_spent = (double)(end_recv - end_tell);
     printf("Messages fetching took %.2lf us\n", time_spent);
 
-    assert_true(warned);
-    m_mod_thresh_t thresh = {0};
-    m_mod_get_thresh(mod, &thresh);
-    printf("Was warned as activity was beyond thresh: %.2lf > %.2lf.\n", stats.activity_freq, thresh.activity_freq);
+    assert_true(alarm.activity_freq > 0);
+    printf("Was warned as activity was beyond thresh: %.2lf > %.2lf.\n", alarm.activity_freq, thresh.activity_freq);
 
     m_mod_deregister(&mod);
 }
@@ -54,12 +60,11 @@ static bool init(void) {
 }
 
 static void my_recv(const m_evt_t *msg) {    
-    if (msg->type == M_SRC_TYPE_PS) {
-        if (msg->ps_msg->type == M_PS_USER && ++ctr == MAX_LEN) {
-            m_ctx_quit(0);
-        } else if (msg->ps_msg->type == M_PS_MOD_THRESH_ACTIVITY) {
-            warned = true;
-            m_mod_stats(mod, &stats);
-        }
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER && ++ctr == MAX_LEN) {
+        m_ctx_quit(0);
+    } else if (msg->type == M_SRC_TYPE_THRESH) {
+        m_src_thresh_t *alarm = (m_src_thresh_t *)msg->userdata;
+        alarm->activity_freq = msg->thresh_msg->activity_freq;
+        alarm->inactive_ms = msg->thresh_msg->inactive_ms;
     }
 }

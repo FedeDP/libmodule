@@ -177,6 +177,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 
 - [x] Allow user to set a thresh on module's stats; when thresh is reached, a system msg M_PS_MOD_THRESH is sent
 - [x] Eg: if a module is receiving way too messages, it can be significant for the application
+- [x] Rename to m_mod_src_register_thresh()?
 
 ### New Linked list API
 

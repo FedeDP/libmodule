@@ -90,6 +90,15 @@ typedef struct {
     int retval;
 } task_src_t;
 
+/* Struct that holds thresh to self_t mapping for poll plugin */
+typedef struct {
+#ifdef __linux__
+    fd_src_t f;
+#endif
+    m_src_thresh_t thr;
+    m_src_thresh_t alarm;
+} thresh_src_t;
+
 /* Struct that holds pubsub subscriptions source data */
 typedef struct {
     regex_t reg;
@@ -99,13 +108,14 @@ typedef struct {
 /* Struct that holds generic "event source" data */
 typedef struct {
     union {
-        ps_src_t    ps_src;
-        fd_src_t    fd_src;
-        tmr_src_t   tmr_src;
-        sgn_src_t   sgn_src;
-        path_src_t  path_src;
-        pid_src_t   pid_src;
-        task_src_t  task_src;
+        ps_src_t     ps_src;
+        fd_src_t     fd_src;
+        tmr_src_t    tmr_src;
+        sgn_src_t    sgn_src;
+        path_src_t   path_src;
+        pid_src_t    pid_src;
+        task_src_t   task_src;
+        thresh_src_t thresh_src;
     };
     m_src_types type;
     m_src_flags flags;
@@ -141,19 +151,12 @@ typedef struct {
     uint64_t running_modules;
 } ctx_stats_t;
 
-typedef struct {
-    m_mod_thresh_t values;
-    bool warned_inactive;
-    bool warned_activity;
-} mod_thresh_t;
-
 /* Struct that holds data for each module */
 struct _mod {
     m_mod_states state;                     // module's state
     m_mod_flags flags;                      // Module's flags
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     mod_stats_t stats;                      // Module's stats
-    mod_thresh_t thresh;                    // Module's thresholds
     m_mod_hook_t hook;                      // module's user defined callbacks
     m_stack_t *recvs;                       // Stack of recv functions for module_become/unbecome (stack of funpointers)
     const void *userdata;                   // module's user defined data

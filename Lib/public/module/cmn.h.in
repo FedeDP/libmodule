@@ -1,7 +1,7 @@
 #pragma once
 
 #if (!defined LIBMODULE_CORE_H && !defined LIBMODULE_STRUCT_H && !defined LIBMODULE_MEM_H && !defined LIBMODULE_TH_H)
-    #error "Libmodule cmn.h should not be explicitly included."
+#error "Libmodule cmn.h should not be explicitly included."
 #endif
 
 #include <stdio.h>
@@ -12,17 +12,17 @@
 #include <time.h>
 #include <pthread.h>
 
-#define LIBMODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
-#define LIBMODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
-#define LIBMODULE_VERSION_PAT @PROJECT_VERSION_PATCH@
+#define LIBMODULE_VERSION_MAJ 6
+#define LIBMODULE_VERSION_MIN 0
+#define LIBMODULE_VERSION_PAT 0
 
-/* 
- * ctors order: 
+/*
+ * ctors order:
  * 0) global m_pre_start(), usefult to set your own memhook if desired
  * 1) internal libmodule_init()
  * 2) each m_m_pre_start() (only mod_easy API)
  * 3) each m_m_ctor() (only mod_easy API)
- * 
+ *
  * dtors order:
  * 1) each m_m_dtor() (only mod_easy API)
  * 0) internal libmodule_deinit()
@@ -60,11 +60,12 @@ typedef enum {
     M_SRC_TYPE_SGN,   // Signal Source
     M_SRC_TYPE_PATH,  // Path Source
     M_SRC_TYPE_PID,   // PID Source
-    M_SRC_TYPE_TASK,  // Task source -> SRC_ONESHOT flag is forced
+    M_SRC_TYPE_TASK,  // Task source -> M_SRC_ONESHOT flag is forced
+    M_SRC_TYPE_THRESH, // Threshold source -> M_SRC_ONESHOT flag is forced
     M_SRC_TYPE_END    // End of supported sources
 } m_src_types;
 
-/* 
+/*
  * Module event sources' flags:
  * First 8 bits are reserved for common source flags.
  * Then, each source type has 8 bits reserved for its flags.
@@ -83,7 +84,7 @@ typedef enum {
     M_SRC_TMR_ABSOLUTE    =       M_SRC_SHIFT(M_SRC_TYPE_TMR, 0x01), // Absolute timer
 } m_src_flags;
 
-/* 
+/*
  * Module's pubsub API flags (module_tell(), module_publish(), module_broadcast())
  */
 typedef enum {
@@ -116,6 +117,11 @@ typedef struct {
     int (*fn)(void *);      // Function to be run on thread
     m_thpool_t *thpool;     // optional threadpool on which job should run
 } m_src_task_t;
+
+typedef struct {
+    uint64_t inactive_ms;
+    double activity_freq;
+} m_src_thresh_t;
 
 /** Libmodule output messages received in receive() callback **/
 
@@ -160,6 +166,12 @@ typedef struct {
     int retval;
 } m_evt_task_t;
 
+/* Thresh event messages */
+typedef struct {
+    uint64_t inactive_ms;
+    double activity_freq;
+} m_evt_thresh_t;
+
 /* Libmodule receive() main message type */
 typedef struct {
     const m_mod_t *self;                            // Self reference. Mostly useful when 2+ modules share same receive() callback
@@ -172,6 +184,7 @@ typedef struct {
         m_evt_path_t    *pt_msg;
         m_evt_pid_t     *pid_msg;
         m_evt_task_t    *task_msg;
+        m_evt_thresh_t  *thresh_msg;
     };
     const void *userdata;                           // Event userdata, passed through m_mod_src_register()
 } m_evt_t;
@@ -183,8 +196,8 @@ typedef struct {
     void (*_free)(void *ptr);
 } m_memhook_t;
 
-/* 
- * Common to any context; set this in m_pre_start(), 
- * ie: before library is inited and internal structures allocated 
+/*
+ * Common to any context; set this in m_pre_start(),
+ * ie: before library is inited and internal structures allocated
  */
 int m_set_memhook(const m_memhook_t *hook);

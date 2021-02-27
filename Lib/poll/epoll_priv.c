@@ -20,7 +20,7 @@ int poll_create(poll_priv_t *priv) {
 
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
     GET_PRIV_DATA();
-    
+
     /* Eventually alloc epoll data if needed */
     if (!tmp->ev) {
         if (flag == ADD) {
@@ -39,7 +39,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
     if (tmp->flags & M_SRC_ONESHOT) {
         ev->events |= EPOLLONESHOT;
     }
-    
+
     errno = 0;
     if (flag == ADD) {
         create_priv_fd(tmp);
