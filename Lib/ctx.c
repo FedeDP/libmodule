@@ -67,7 +67,8 @@ static uint8_t loop_stop(m_ctx_t *c) {
     c->ppriv.max_events = 0;
     c->looping = false;
     c->stats.looping_start_time = 0;
-    ctx->stats.recv_msgs = 0;
+    c->stats.recv_msgs = 0;
+    c->stats.idle_time = 0;
 
     int ret = c->quit_code;
     
@@ -84,7 +85,8 @@ static inline int loop_quit(m_ctx_t *c, const uint8_t quit_code) {
 static int recv_events(m_ctx_t *c, int timeout) {
     static uint64_t last_time_called;
 
-    if (last_time_called == 0) {
+    if (c->stats.recv_msgs == 0) {
+        // First time entering: (re)start counter
         fetch_ms(&last_time_called, NULL);
     }
 
@@ -92,6 +94,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
     int recved = 0;
     const int nfds = poll_wait(&c->ppriv, timeout);
 
+    // Store idling time stat
     uint64_t now;
     fetch_ms(&now, NULL);
     c->stats.idle_time += now - last_time_called;
