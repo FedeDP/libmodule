@@ -232,6 +232,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Add build options doc
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document m_ctx_pre_loop()!
+- [ ] Document stats and thresh activity_freq (num_action_per_ms)
 
 ### Remaining fixes/Improvements
 
@@ -378,8 +379,6 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Use unlikely() macro for M_MOD_ASSERT
 
-- [ ] FIX enums with 64b values (eg: m_src_flags)
-
 ## 6.1.0 (7.0.0?)
 
 ### Thread-safe
@@ -415,3 +414,4 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 - [ ] Add a message compact time, eg: m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
 - [ ] during compaction time, duplicated messages are erased
 - [ ] Add a m_mod_set_batch_size(size) to batch events and flush them together
+- [ ] FIX enums with 64b values (eg: m_src_flags)
