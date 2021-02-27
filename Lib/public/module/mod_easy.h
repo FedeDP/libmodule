@@ -8,12 +8,12 @@
     static void m_m_on_evt(const m_evt_t *const msg); \
     static void m_m_on_stop(void); \
     static m_mod_t *m_m_self; \
-    static void _ctor3_ m_m_ctor(void) { \
+    static void _m_ctor3_ m_m_ctor(void) { \
         m_mod_hook_t hook = { m_m_on_start, m_m_on_eval, m_m_on_evt, m_m_on_stop }; \
         m_mod_register(name, &m_m_self, &hook, M_MOD_PERSIST, NULL); \
     } \
-    static void _dtor1_ m_m_dtor(void) { m_mod_deregister(&m_m_self); } \
-    static void _ctor2_ m_m_pre_start(void)
+    static void _m_dtor1_ m_m_dtor(void) { m_mod_deregister(&m_m_self); } \
+    static void _m_ctor2_ m_m_pre_start(void)
 
 /* Defines for easy API (with no need bothering with mod handler) */
 

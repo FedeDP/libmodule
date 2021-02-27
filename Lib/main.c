@@ -6,7 +6,7 @@
 m_ctx_t *ctx = NULL;
 m_memhook_t memhook = { malloc, calloc, free };
 
-_public_ _ctor0_ _weak_ void m_pre_start(void) {
+_public_ _m_ctor0_ _weak_ void m_pre_start(void) {
     M_DEBUG("Pre-starting libmodule.\n");
 }
 
@@ -52,13 +52,13 @@ _public_ _weak_ int main(int argc, char *argv[]) {
     return m_ctx_loop();
 }
 
-static _ctor1_ void libmodule_init(void) {
+static _m_ctor1_ void libmodule_init(void) {
     M_DEBUG("Initializing libmodule %d.%d.%d.\n", LIBMODULE_VERSION_MAJ, LIBMODULE_VERSION_MIN, LIBMODULE_VERSION_PAT);
     ctx_new(&ctx);
     assert(ctx != NULL);
 }
 
-static _dtor0_ void libmodule_deinit(void) {
+static _m_dtor0_ void libmodule_deinit(void) {
     M_DEBUG("Destroying libmodule.\n");
     m_mem_unref(ctx);
 }
