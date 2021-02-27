@@ -11,7 +11,7 @@ static void evt_dtor(void *data) {
 char *mem_strdup(const char *s) {
     char *new = NULL;
     if (s) {
-        const int len = strlen(s) + 1;
+        const size_t len = strlen(s) + 1;
         new = memhook._malloc(len);
         if (new) {
             memcpy(new, s, len);
@@ -22,7 +22,7 @@ char *mem_strdup(const char *s) {
 
 void fetch_ms(uint64_t *val, uint64_t *ctr) {
     struct timespec spec;
-    clock_gettime(CLOCK_REALTIME, &spec);
+    clock_gettime(CLOCK_BOOTTIME, &spec);
     *val = spec.tv_sec * 1000 + spec.tv_nsec / 1000000;
     
     if (ctr) {
