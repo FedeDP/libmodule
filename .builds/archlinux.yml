@@ -25,7 +25,7 @@ tasks:
   - test: |
       cd libmodule
       (cd build_kqueue && ctest -V)
-      #(cd build_uring && ctest -V) passes 99 out of 100 tests right now. Locally, it passes all 100 tests. Don't get why does not work on CI.
+      (cd build_uring && ctest -V)
       (cd build_epoll && ctest -V)
       (cd build_fs && ctest -V)
 triggers:
