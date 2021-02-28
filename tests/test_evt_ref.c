@@ -20,7 +20,7 @@ void test_evt_ref(void **state) {
     assert_true(m_mod_is(mod, M_MOD_IDLE));
     
     m_mod_start(mod);
-    m_mod_ps_tell(mod, mod,  "Hello World", 0);
+    m_mod_ps_tell(mod, mod, "Hello World", 0);
     
     m_ctx_loop();
     

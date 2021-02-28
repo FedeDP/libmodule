@@ -16,7 +16,7 @@
 #define _weak_          __attribute__((weak))
 #define _public_        __attribute__ ((visibility("default")))
 
-#define M_CTX_DEFAULT  "libmodule"
+#define M_CTX_DEFAULT_EVENTS   64
 
 #ifndef NDEBUG
     #define M_DEBUG printf("| D | libmodule@%s:%d | ", __func__, __LINE__); printf

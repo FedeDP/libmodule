@@ -11,9 +11,9 @@ static void src_priv_dtor(void *data);
 static void *task_thread(void *data);
 static int start_task(ev_src_t *src);
 
-static int _register_src(m_mod_t *mod, const m_src_types type, const void *src_data, 
-                             const m_src_flags flags, const void *userptr);
-static int _deregister_src(m_mod_t *mod, const m_src_types type, void *src_data);
+static int _register_src(m_mod_t *mod, m_src_types type, const void *src_data,
+                             m_src_flags flags, const void *userptr);
+static int _deregister_src(m_mod_t *mod, m_src_types type, void *src_data);
 
 static int fdcmp(void *my_data, void *node_data);
 static int tmrcmp(void *my_data, void *node_data);
@@ -23,7 +23,7 @@ static int pidcmp(void *my_data, void *node_data);
 static int taskcmp(void *my_data, void *node_data);
 static int threshcmp(void *my_data, void *node_data);
 
-static int manage_fds(m_mod_t *mod, m_ctx_t *c, const int flag, const bool stop);
+static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop);
 static void reset_module(m_mod_t *mod);
 
 extern int fs_cleanup(m_mod_t *mod);
@@ -166,8 +166,8 @@ static int start_task(ev_src_t *src) {
     return ret;
 }
 
-static int _register_src(m_mod_t *mod, const m_src_types type, const void *src_data, 
-                             const m_src_flags flags, const void *userptr) {
+static int _register_src(m_mod_t *mod, m_src_types type, const void *src_data,
+                             m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT(mod);
     ev_src_t *src = memhook._calloc(1, sizeof(ev_src_t));
     M_ALLOC_ASSERT(src);
@@ -253,7 +253,7 @@ static int _register_src(m_mod_t *mod, const m_src_types type, const void *src_d
     return ret;
 }
 
-static int _deregister_src(m_mod_t *mod, const m_src_types type, void *src_data) {   
+static int _deregister_src(m_mod_t *mod, m_src_types type, void *src_data) {
     M_MOD_ASSERT(mod);
     
     int ret = m_bst_remove(mod->srcs[type], src_data);
@@ -316,7 +316,7 @@ static int threshcmp(void *my_data, void *node_data) {
     return my_val - their_val;
 }
 
-static int manage_fds(m_mod_t *mod, m_ctx_t *c, const int flag, const bool stop) {    
+static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
     int ret = 0;
     
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);

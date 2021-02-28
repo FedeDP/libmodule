@@ -52,7 +52,11 @@
 - [x] Batch-recv cqes from io_uring_wait_cqe_timeout
 - [x] Fix: avoid opening a new internal fd (timerfd, signalfd etc etc) at each new poll_set_new_evt ADD call
 - [x] Add a build-time warning when using liburing as its support is not yet stable nor complete
-
+- [x] Fix tests!
+- [ ] Fix examples: 
+  - [ ] Easy sample goes mad with STDIN_FILENO registered (it requires "enter" to be pressed before receiving any event)
+  - [ ] Poll sample does not work
+  
 ### New Sources support
 
 - [x] Rename Module_subscribe and module_register_fd to module_register_src(type), _Generic.

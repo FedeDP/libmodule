@@ -20,12 +20,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    /* Get default context fd */
+    /* Get context fd */
     int fd = m_ctx_fd();
     if (fd < 0) {
         return 1;
     }
-    
+
     struct pollfd fds;
     fds.fd = fd;
     fds.events = POLLIN;

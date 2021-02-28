@@ -114,6 +114,5 @@ int poll_destroy(poll_priv_t *priv) {
     GET_PRIV_DATA();
     poll_clear(priv);
     close(ep->fd);
-    memhook._free(ep);
     return 0;
 }

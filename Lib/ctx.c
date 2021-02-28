@@ -2,13 +2,13 @@
 #include "ctx.h"
 #include "fs_priv.h"
 
-#define M_CTX_DEFAULT_EVENTS   64
+#define M_CTX_DEFAULT  "libmodule"
 
 static void ctx_dtor(void *data);
 static void default_logger(const m_mod_t *mod, const char *fmt, va_list args);
-static int loop_start(m_ctx_t *c, const int max_events);
+static int loop_start(m_ctx_t *c, int max_events);
 static uint8_t loop_stop(m_ctx_t *c);
-static inline int loop_quit(m_ctx_t *c, const uint8_t quit_code);
+static inline int loop_quit(m_ctx_t *c, uint8_t quit_code);
 static int recv_events(m_ctx_t *c, int timeout);
 static int m_ctx_loop_events(int max_events);
 
@@ -17,6 +17,7 @@ static void ctx_dtor(void *data) {
     m_ctx_t *context = (m_ctx_t *)data;
     m_map_free(&context->modules);
     poll_destroy(&context->ppriv);
+    memhook._free(context->ppriv.data);
     memhook._free(context->fs_root);
     memhook._free(context->name);
 }
@@ -28,7 +29,7 @@ static void default_logger(const m_mod_t *mod, const char *fmt, va_list args) {
     vprintf(fmt, args);
 }
 
-static int loop_start(m_ctx_t *c, const int max_events) {
+static int loop_start(m_ctx_t *c, int max_events) {
     c->ppriv.max_events = max_events;
     int ret = poll_init(&c->ppriv);
     if (ret == 0) {
@@ -79,7 +80,7 @@ static uint8_t loop_stop(m_ctx_t *c) {
     return ret;
 }
 
-static inline int loop_quit(m_ctx_t *c, const uint8_t quit_code) {
+static inline int loop_quit(m_ctx_t *c, uint8_t quit_code) {
     c->quit = true;
     c->quit_code = quit_code;
     return 0;
@@ -297,7 +298,7 @@ _public_ int m_ctx_dispatch(void) {
         /* We are stopping! */
         return loop_stop(ctx);
     }
-    
+
     /* Recv new events, no timeout */
     return recv_events(ctx, 0);
 }

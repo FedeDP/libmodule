@@ -16,7 +16,7 @@ _public_ _weak_ void m_ctx_pre_loop(int argc, char *argv[]) {
     m_ctx_set_name(argv[0]);
     bool error = false;
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--name") == 0) {
+        if (strcmp(argv[i], "--m.ctxname") == 0) {
             if (i + 1 < argc) {
                 m_ctx_set_name(argv[++i]);
             } else {
@@ -24,7 +24,7 @@ _public_ _weak_ void m_ctx_pre_loop(int argc, char *argv[]) {
             }
         }
 #ifdef WITH_FS
-        else if (strcmp(argv[i], "--fsroot") == 0) {
+        else if (strcmp(argv[i], "--m.fsroot") == 0) {
             if (i + 1 < argc) {
                 m_ctx_fs_set_root(argv[++i]);
             } else {

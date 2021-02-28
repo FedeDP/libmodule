@@ -43,22 +43,22 @@ void test_ctx_quit_no_loop(void **state) {
 void test_ctx_loop(void **state) {
     (void) state; /* unused */
     
-    int ret = m_ctx_loop(); // modules_quit() is called with "number of USER PS messages" recv'd.
+    int ret = m_ctx_loop(); // m_ctx_quit() is called with "number of USER PS messages" recv'd.
     assert_true(ret == 3);
 }
 
 void test_ctx_dispatch(void **state) {
     (void) state; /* unused */
-    
+
     int ret = m_ctx_dispatch();
     assert_true(ret == 0);  // loop started
-    
+
     ret = m_ctx_dispatch();
     assert_true(ret == 1); // number of messages dispatched: LOOP_STARTED.
-    
+
     ret = m_ctx_quit(0);
     assert_true(ret == 0);
-    
+
     ret = m_ctx_dispatch();
     assert_true(ret == 0); // loop stopped with exit code 0
 }
