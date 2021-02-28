@@ -93,16 +93,19 @@ static int recv_events(m_ctx_t *c, int timeout) {
         fetch_ms(&last_time_called, NULL);
     }
 
-    errno = 0;
+    int err;
     int recved = 0;
+
+    errno = 0;
     const int nfds = poll_wait(&c->ppriv, timeout);
+    err = errno; // store any errno happened in poll_wait
 
     // Store idling time stat
     uint64_t now;
     fetch_ms(&now, NULL);
     c->stats.idle_time += now - last_time_called;
 
-    for (int i = 0; i < nfds; i++) {
+    for (int i = 0; i < nfds && !err; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
         if (p && p->type == M_SRC_TYPE_FD && p->mod == NULL) {
             /* Received from fuse */
@@ -113,8 +116,6 @@ static int recv_events(m_ctx_t *c, int timeout) {
         
         if (p && p->mod) {
             m_mod_t *mod = p->mod;
-
-            errno = 0;
             m_evt_t *msg = new_evt(p->type);
             if (msg) {
                 M_DEBUG("'%s' received %u type msg.\n", mod->name, msg->type);
@@ -179,8 +180,9 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     break;
                 }
             }
+            err = errno; // Store any errno happend while consuming events
 
-            if (errno == 0) {
+            if (err == 0) {
                 recved++;
                 if (msg->type != M_SRC_TYPE_PS || msg->ps_msg->type != M_PS_MOD_POISONPILL) {
                     run_pubsub_cb(mod, msg, p);
@@ -200,18 +202,18 @@ static int recv_events(m_ctx_t *c, int timeout) {
             }
         } else {
             /* Forward error to below handling code */
-            errno = EAGAIN;
+            err = EAGAIN;
         }
     }
     
-    if (recved > 0 && errno == 0) {
+    if (recved > 0 && err == 0) {
         m_map_iterate(c->modules, evaluate_module, NULL);
         ctx->stats.recv_msgs += recved;
-    } else if (errno) {
+    } else if (err) {
         /* Quit and return < 0 only for real errors */
-        if (errno != EINTR && errno != EAGAIN) {
-            fprintf(stderr, "Ctx '%s' loop error: %s.\n", c->name, strerror(errno));
-            loop_quit(c, errno);
+        if (err != EINTR && err != EAGAIN) {
+            fprintf(stderr, "Ctx '%s' loop error: %s.\n", c->name, strerror(err));
+            loop_quit(c, err);
             recved = -1; // error!
         }
     }
