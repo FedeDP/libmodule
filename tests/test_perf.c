@@ -14,7 +14,7 @@ static int ctr;
 
 void test_poll_perf(void **state) {
     (void) state; /* unused */
-    m_src_thresh_t thresh = { .activity_freq = 10.0 };
+    m_src_thresh_t thresh = { .activity_freq = 1.0 };
     m_src_thresh_t alarm = {0};
         
     m_mod_hook_t hook = {init, NULL, my_recv, NULL };
