@@ -31,30 +31,30 @@ static void m_m_on_stop(void) {
  */
 static void m_m_on_evt(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS) {
-        switch (msg->ps_msg->type) {
+        switch (msg->ps_evt->type) {
         case M_PS_USER:
-            if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
+            if (!strcmp((char *)msg->ps_evt->data, "ComeHere")) {
                 m_m_log("Running...\n");
-                m_m_ps_tell(msg->ps_msg->sender, "BauBau", 0);
-            } else if (!strcmp((char *)msg->ps_msg->data, "LetsPlay")) {
+                m_m_ps_tell(msg->ps_evt->sender, "BauBau", 0);
+            } else if (!strcmp((char *)msg->ps_evt->data, "LetsPlay")) {
                 m_m_log("BauBau BauuBauuu!\n");
-            } else if (!strcmp((char *)msg->ps_msg->data, "LetsEat")) {
+            } else if (!strcmp((char *)msg->ps_evt->data, "LetsEat")) {
                 m_m_log("Burp!\n");
-            } else if (!strcmp((char *)msg->ps_msg->data, "LetsSleep")) {
+            } else if (!strcmp((char *)msg->ps_evt->data, "LetsSleep")) {
                 m_m_become(sleeping);
                 m_m_log("ZzzZzz...\n");
                 
                 /* Test runtime module loading */
                 m_m_load("./libtestmod.so", 0, NULL);
-            } else if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
+            } else if (!strcmp((char *)msg->ps_evt->data, "ByeBye")) {
                 m_m_log("Sob...\n");
-            } else if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
+            } else if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
                 m_m_log("???\n");
             }
             break;
         case M_PS_MOD_STOPPED: {
-                if (msg->ps_msg->sender) {
-                    const char *name = m_mod_name(msg->ps_msg->sender);
+                if (msg->ps_evt->sender) {
+                    const char *name = m_mod_name(msg->ps_evt->sender);
                     m_m_log("Module '%s' has been stopped.\n", name);
                 } else {
                     m_m_log("A module has been deregistered.\n");
@@ -69,16 +69,16 @@ static void m_m_on_evt(const m_evt_t *msg) {
 
 static void m_m_on_evt_sleeping(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS) {
-        if (msg->ps_msg->type == M_PS_USER) {
-            if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
+        if (msg->ps_evt->type == M_PS_USER) {
+            if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
                 m_m_unbecome();
                 m_m_log("Yawn...\n");
                 m_m_ps_poisonpill(new_mod);
             } else {
                 m_m_log("ZzzZzz...\n");
             }
-        } else if (msg->ps_msg->type == M_PS_MOD_STARTED) {
-            new_mod = msg->ps_msg->sender;
+        } else if (msg->ps_evt->type == M_PS_MOD_STARTED) {
+            new_mod = msg->ps_evt->sender;
             /* A new module has been started */
             const char *name = m_mod_name(new_mod);
             m_m_log("Module '%s' has been started.\n", name);

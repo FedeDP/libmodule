@@ -199,7 +199,7 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
             M_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             m_evt_t *msg = new_evt(M_SRC_TYPE_PS);
             if (msg) {
-                msg->ps_msg = &mm->msg;
+                msg->ps_evt = &mm->msg;
                 run_pubsub_cb(mod, msg, mm->sub);
                 continue;
             }
@@ -219,7 +219,14 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
     }
     
     msg->self = mod;
-    msg->userdata = src ? src->userptr : NULL;
+    if (src) {
+        /*
+         * if src == NULL, do not touch it:
+         * * it will be NULL when run from ctx loop or flush_ps_messages
+         * * it will have correct value when call by m_mod_unstash API
+         */
+        msg->userdata = src->userptr;
+    }
     
     /* Notify underlying fuse fs */
     fs_notify(msg);
@@ -335,4 +342,50 @@ _public_ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     M_PARAM_ASSERT(m_mod_is(recipient, M_MOD_RUNNING));
 
     return tell_system_pubsub_msg(recipient, ctx, M_PS_MOD_POISONPILL, mod, NULL);
+}
+
+_public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(evt);
+    // Cannot stash FD evts: it would cause an infinite loop polling on it
+    M_PARAM_ASSERT(evt->type != M_SRC_TYPE_FD);
+    // Cannot stash system evts
+    M_PARAM_ASSERT(evt->type != M_SRC_TYPE_PS || evt->ps_evt->type == M_PS_USER);
+
+    m_mem_ref((void *)evt);
+    return m_queue_enqueue(mod->stashed, (void *)evt);
+}
+
+_public_ int m_mod_unstash(m_mod_t *mod) {
+    M_MOD_ASSERT(mod);
+
+    /*
+     * Peek it without dequeuing as dequeuing would call
+     * m_mem_unref thus invalidating ptr
+     */
+    m_evt_t *evt = m_queue_peek(mod->stashed);
+    if (evt) {
+        run_pubsub_cb(mod, evt, NULL);
+
+        /* Finally, remove it */
+        m_queue_dequeue(mod->stashed);
+    }
+    return 0;
+}
+
+_public_ int m_mod_unstashall(m_mod_t *mod) {
+    M_MOD_ASSERT(mod);
+
+    m_itr_foreach(mod->stashed, {
+        m_evt_t *evt = m_itr_get(itr);
+        /*
+         * Here evt has 1 ref; run_pubsub_cb() would drop it
+         * thus invalidating ptr.
+         * But m_queue_clear() still needs ptrs!
+         * Keep evts alive.
+         */
+        m_mem_ref(evt);
+        run_pubsub_cb(mod, evt, NULL);
+    });
+    return m_queue_clear(mod->stashed);
 }

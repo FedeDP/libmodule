@@ -8,10 +8,14 @@
 #include <errno.h>
 #include <string.h>
 
+
 static bool init_false(void);
 static void recv(const m_evt_t *msg);
+static void recv_ready(const m_evt_t *msg);
 
-m_mod_t *mod = NULL, *testRef = NULL;
+static int ctr;
+
+static m_mod_t *mod = NULL, *testRef = NULL;
 
 void test_mod_register_NULL_name(void **state) {
     (void) state; /* unused */
@@ -438,11 +442,31 @@ static bool init_false(void) {
     return false;
 }
 
+/*
+ * Stupidly simple test for stashing api:
+ * stash any message until "hi3!" is received.
+ * Then, set new behavior and unstash everything.
+ * Check that all stashed messages are received.
+ */
 static void recv(const m_evt_t *msg) {
-    static int ctr = 0;
-    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
         ctr++;
-        if (!strcmp((char *)msg->ps_msg->data, "hi3!")) {
+        int ret = m_mod_stash(mod, msg);
+        assert_int_equal(ret, 0);
+        if (!strcmp((char *) msg->ps_evt->data, "hi3!")) {
+            ret = m_mod_become(mod, recv_ready);
+            assert_int_equal(ret, 0);
+
+            ret = m_mod_unstashall(mod);
+            assert_int_equal(ret, 0);
+        }
+    }
+}
+
+static void recv_ready(const m_evt_t *msg) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
+        ctr--;
+        if (!strcmp((char *) msg->ps_evt->data, "hi3!")) {
             m_ctx_quit(ctr);
         }
     }

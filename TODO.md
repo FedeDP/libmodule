@@ -17,6 +17,17 @@
 - [x] fix samples
 - [x] add m_ctx_stats() API
 - [x] Add stats to m_ctx_dump
+- [x] Automatically leave context when no more modules are RUNNING in it
+- [ ] Use M_WARN macro where needed
+- [ ] Add back multi ctx support in a simple way? ie:
+  - [ ] No ctx_easy API
+  - [ ] shipped weak main will only work in mod_easy (ie: single default ctx) -> m_map_peek(ctxmap)
+  - [ ] m_mod_register() with NULL ctx -> uses default ctx, eventually creating it
+  - [ ] Add back m_mod_ctx() api
+  - [ ] keep ctx alive until it loop (m_mem_ref in loop_start and m_mem_unref in loop_stop)
+  - [ ] No broadcast between contexts!
+  - [ ] Only issue: using mod easy api but without provided main, how can users access default ctx?
+- [ ] See https://github.com/FedeDP/libmodule/commit/cb7e0ae4d4023368b08e56580bcb2a4c66ca61cf
 
 ### Reference-counted objects' life management
 
@@ -26,7 +37,7 @@
 - [x] Actually leave loop as soon as there are no more modules inside
 - [x] Keep module's alive while any message references it as sender
 - [x] Fix ref'd FS support
-- [x] Use mem_ref for create_pubsub_message too! and drop ps_msg->refs counter
+- [x] Use mem_ref for create_pubsub_message too! and drop ps_evt->refs counter
 - [x] Fix: fix ps_priv_t->sub mem_ref/unref
 - [x] Expose new public header <module/mem.h>?
 - [x] Add a MEM_LOCK macro to keep a referenced memory alive
@@ -182,6 +193,7 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - [x] Allow user to set a thresh on module's stats; when thresh is reached, a system msg M_PS_MOD_THRESH is sent
 - [x] Eg: if a module is receiving way too messages, it can be significant for the application
 - [x] Rename to m_mod_src_register_thresh()?
+- [x] Only store in alarm values that triggered event
 
 ### New Linked list API
 
@@ -275,6 +287,11 @@ It would allows to check if same node already exists on insert, without losing t
 - - [x] M_MOD_DENY_PUB
 - - [x] M_MOD_DENY_SUB
 - - [x] M_MOD_DENY_LOAD
+
+### Stash API
+
+- [x] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
+- [x] Add test
 
 ### Generic
 
@@ -400,23 +417,26 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 ### Replay API
 
 - [ ] Publish to require a m_mem_t. Thus we have access to object size.
-- [ ] add a m_replay() api to store and replay any message received in a previous run?
-- [ ] add a "--replay-from" cmdline switch to default main
-
-### Stash API
-
-- [ ] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!
-- [ ] Then, on unstash() each module will have a stashing_pipe_fd and all messages will be written to the piped fd; then asynchronously fetched as normal messages
+- [ ] add a m_replay() api to replay any message received in a previous run; M_SRC_TYPE_FD cannot be stored...
+- [ ] add a m_evt_t flag that tells if we are running from a replay  
+- [ ] add a "--m.replay-from" cmdline switch to default main
+- [ ] Basic flow: normally start program and when start looping, before actually polling, flush all messages loaded from file/db
+- [ ] Then, if "--m.store" is enabled, store any message received while looping
 
 ### Submodules
-- [ ] SUBMODULE(B, A) calls module_register(B) and module_binds_to(A);
-- [ ] SUBMODULE SHOULD BE STARTED later (after all MODULES) -> ctor3 (this way it'll support only level 1 submodules though (ie: a submodule cannot have submodules))
-- [ ] destroy children of modules at module deregister
+
+- [ ] M_SUBM(B, A) checks if A is registered, then registers B and calls m_mod_bind_to(A);
+- [ ] Else, stores "B" in a map <"A","B"> to be later retrieved while registering "A"  
+- [ ] deregister children at parent deregister
 - [ ] bind children to parent states (ie: parent paused -> children paused; parent resumed -> children resumed...)
 - [ ] m_forward -> like m_tell but to all children
 
 ### Generic
-- [ ] Add a message compact time, eg: m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
-- [ ] during compaction time, duplicated messages are erased
+
+- [ ] Add a m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
 - [ ] Add a m_mod_set_batch_size(size) to batch events and flush them together
-- [ ] FIX enums with 64b values (eg: m_src_flags)
+- [ ] on_evt callback to take "const m_queue_t *const evts"
+- [ ] when calling run_pubsub_cb(), just add the evt to module queue, 
+  then only if compact_time or batch size are satisfied, actually call the user hook
+- [ ] when unstashing or flushing ps msgs, do not account for compaction time nor batch size  
+- [ ] Fix m_src_flags with 64b values (right now there is no value over 32b thus it is not a real issue)

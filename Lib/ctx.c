@@ -33,8 +33,6 @@ static int loop_start(m_ctx_t *c, int max_events) {
     c->ppriv.max_events = max_events;
     int ret = poll_init(&c->ppriv);
     if (ret == 0) {
-        m_mem_ref(c); // Ensure ctx keeps existing while we loop
-
         /* Initialize fuse fs if requested */
         if (c->fs_root && strlen(c->fs_root)) {
             int fs_ret = fs_init(c);
@@ -66,7 +64,7 @@ static uint8_t loop_stop(m_ctx_t *c) {
     
     /* Destroy FS */
     fs_end(c);
-    
+
     poll_clear(&c->ppriv);
     c->ppriv.max_events = 0;
     c->looping = false;
@@ -74,10 +72,7 @@ static uint8_t loop_stop(m_ctx_t *c) {
     c->stats.recv_msgs = 0;
     c->stats.idle_time = 0;
 
-    int ret = c->quit_code;
-    
-    m_mem_unref(c);
-    return ret;
+    return c->quit_code;
 }
 
 static inline int loop_quit(m_ctx_t *c, uint8_t quit_code) {
@@ -123,8 +118,8 @@ static int recv_events(m_ctx_t *c, int timeout) {
                 switch (msg->type) {
                 case M_SRC_TYPE_FD:
                     /* Received from FD */
-                    msg->fd_msg = m_mem_new(sizeof(*msg->fd_msg), NULL);
-                    msg->fd_msg->fd = p->fd_src.fd;
+                    msg->fd_evt = m_mem_new(sizeof(*msg->fd_evt), NULL);
+                    msg->fd_evt->fd = p->fd_src.fd;
                     break;
                 case M_SRC_TYPE_PS: {
                     ps_priv_t *ps_msg;
@@ -132,48 +127,48 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
                         M_DEBUG("Failed to read message: %s\n", strerror(errno));
                     } else {
-                        msg->ps_msg = &ps_msg->msg;
+                        msg->ps_evt = &ps_msg->msg;
                         p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
                     }
                     break;
                 }
                 case M_SRC_TYPE_SGN:
-                    msg->sgn_msg = m_mem_new(sizeof(*msg->sgn_msg), NULL);
-                    if (poll_consume_sgn(&c->ppriv, i, p, msg->sgn_msg) == 0) {
-                        msg->sgn_msg->signo = p->sgn_src.sgs.signo;
+                    msg->sgn_evt = m_mem_new(sizeof(*msg->sgn_evt), NULL);
+                    if (poll_consume_sgn(&c->ppriv, i, p, msg->sgn_evt) == 0) {
+                        msg->sgn_evt->signo = p->sgn_src.sgs.signo;
                     }
                     break;
                 case M_SRC_TYPE_TMR:
-                    msg->tmr_msg = m_mem_new(sizeof(*msg->sgn_msg), NULL);
-                    if (poll_consume_tmr(&c->ppriv, i, p,  msg->tmr_msg) == 0) {
-                        msg->tmr_msg->ms = p->tmr_src.its.ms;
+                    msg->tmr_evt = m_mem_new(sizeof(*msg->sgn_evt), NULL);
+                    if (poll_consume_tmr(&c->ppriv, i, p,  msg->tmr_evt) == 0) {
+                        msg->tmr_evt->ms = p->tmr_src.its.ms;
                     }
                     break;
                 case M_SRC_TYPE_PATH:
-                    msg->pt_msg = m_mem_new(sizeof(*msg->pt_msg), NULL);
-                    if (poll_consume_pt(&c->ppriv, i, p, msg->pt_msg) == 0) {
-                        msg->pt_msg->path = p->path_src.pt.path;
+                    msg->path_evt = m_mem_new(sizeof(*msg->path_evt), NULL);
+                    if (poll_consume_pt(&c->ppriv, i, p, msg->path_evt) == 0) {
+                        msg->path_evt->path = p->path_src.pt.path;
                     }
                     break;
                 case M_SRC_TYPE_PID:
-                    msg->pid_msg = m_mem_new(sizeof(*msg->pid_msg), NULL);
-                    if (poll_consume_pid(&c->ppriv, i, p, msg->pid_msg) == 0) {
-                        msg->pid_msg->pid = p->pid_src.pid.pid;
+                    msg->pid_evt = m_mem_new(sizeof(*msg->pid_evt), NULL);
+                    if (poll_consume_pid(&c->ppriv, i, p, msg->pid_evt) == 0) {
+                        msg->pid_evt->pid = p->pid_src.pid.pid;
                     }
                     break;
                 case M_SRC_TYPE_TASK:
-                    msg->task_msg = m_mem_new(sizeof(*msg->task_msg), NULL);
-                    if (poll_consume_task(&c->ppriv, i, p, msg->task_msg) == 0) {
-                        msg->task_msg->tid = p->task_src.tid.tid;
+                    msg->task_evt = m_mem_new(sizeof(*msg->task_evt), NULL);
+                    if (poll_consume_task(&c->ppriv, i, p, msg->task_evt) == 0) {
+                        msg->task_evt->tid = p->task_src.tid.tid;
                         pthread_join(p->task_src.th, NULL);
                     }
                     break;
                 case M_SRC_TYPE_THRESH:
-                    msg->thresh_msg = m_mem_new(sizeof(*msg->thresh_msg), NULL);
-                    if (poll_consume_thresh(&c->ppriv, i, p, msg->thresh_msg) == 0) {
-                        msg->thresh_msg->id = p->thresh_src.thr.id;
-                        msg->thresh_msg->inactive_ms = p->thresh_src.alarm.inactive_ms;
-                        msg->thresh_msg->activity_freq = p->thresh_src.alarm.activity_freq;
+                    msg->thresh_evt = m_mem_new(sizeof(*msg->thresh_evt), NULL);
+                    if (poll_consume_thresh(&c->ppriv, i, p, msg->thresh_evt) == 0) {
+                        msg->thresh_evt->id = p->thresh_src.thr.id;
+                        msg->thresh_evt->inactive_ms = p->thresh_src.alarm.inactive_ms;
+                        msg->thresh_evt->activity_freq = p->thresh_src.alarm.activity_freq;
                     }
                     break;
                 default:
@@ -185,7 +180,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
 
             if (err == 0) {
                 recved++;
-                if (msg->type != M_SRC_TYPE_PS || msg->ps_msg->type != M_PS_MOD_POISONPILL) {
+                if (msg->type != M_SRC_TYPE_PS || msg->ps_evt->type != M_PS_MOD_POISONPILL) {
                     run_pubsub_cb(mod, msg, p);
                 } else {
                     M_DEBUG("PoisonPilling '%s'.\n", mod->name);
@@ -206,7 +201,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
             err = EAGAIN;
         }
     }
-    
+
     if (recved > 0 && err == 0) {
         m_map_iterate(c->modules, evaluate_module, NULL);
         ctx->stats.recv_msgs += recved;
@@ -229,7 +224,7 @@ static int m_ctx_loop_events(int max_events) {
 
     int ret = loop_start(ctx, max_events);
     if (ret == 0) {
-        while (!ctx->quit && m_map_length(ctx->modules) > 0) {
+        while (!ctx->quit && ctx->stats.running_modules > 0) {
             recv_events(ctx, -1);
         }
         return loop_stop(ctx);
@@ -294,7 +289,7 @@ _public_ int m_ctx_dispatch(void) {
         return loop_start(ctx, M_CTX_DEFAULT_EVENTS);
     }
     
-    if (ctx->quit || m_map_length(ctx->modules) == 0) {
+    if (ctx->quit || ctx->stats.running_modules == 0) {
         /* We are stopping! */
         return loop_stop(ctx);
     }
@@ -317,15 +312,16 @@ _public_ int m_ctx_dump(void) {
 
     uint64_t now;
     fetch_ms(&now, NULL);
-    uint64_t looping_time = now - ctx->stats.looping_start_time;
-    uint64_t total_active_time = looping_time - ctx->stats.idle_time;
+    uint64_t total_looping_time = now - ctx->stats.looping_start_time;
+    uint64_t total_busy_time = total_looping_time - ctx->stats.idle_time;
     ctx_logger(ctx, NULL, "\t\"Stats\": {\n");
-    ctx_logger(ctx, NULL, "\t\t\"Looping_start\": %" PRIu64 ",\n", ctx->stats.looping_start_time);
+    ctx_logger(ctx, NULL, "\t\t\"Looping_since\": %" PRIu64 ",\n", ctx->stats.looping_start_time);
+    ctx_logger(ctx, NULL, "\t\t\"Total_looping_time\": %" PRIu64 ",\n", total_looping_time);
     ctx_logger(ctx, NULL, "\t\t\"Total_idle_time\": %" PRIu64 ",\n", ctx->stats.idle_time);
-    ctx_logger(ctx, NULL, "\t\t\"Total_active_time\": %" PRIu64 ",\n", total_active_time);
-    ctx_logger(ctx, NULL, "\t\t\"Recv_msgs\": %" PRIu64 ",\n", ctx->stats.recv_msgs);
+    ctx_logger(ctx, NULL, "\t\t\"Total_busy_time\": %" PRIu64 ",\n", total_busy_time);
+    ctx_logger(ctx, NULL, "\t\t\"Recv_events\": %" PRIu64 ",\n", ctx->stats.recv_msgs);
+    ctx_logger(ctx, NULL, "\t\t\"Action_freq\": %Lf\n", (long double)ctx->stats.recv_msgs / total_looping_time);
     ctx_logger(ctx, NULL, "\t\t\"Running_modules\": %" PRIu64 ",\n", ctx->stats.running_modules);
-    ctx_logger(ctx, NULL, "\t\t\"Action_freq\": %Lf\n", (long double)total_active_time / looping_time);
     ctx_logger(ctx, NULL, "\t},\n");
 
     ctx_logger(ctx, NULL, "\t\"Modules\": [\n");

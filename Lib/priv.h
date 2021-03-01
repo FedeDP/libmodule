@@ -165,6 +165,7 @@ struct _mod {
     const char *local_path;                 // For runtime loaded modules: path of module
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
+    m_queue_t *stashed;                     // module's stashed messages
 };
 
 /* Struct that holds data for main context */

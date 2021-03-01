@@ -58,6 +58,7 @@ static void module_dtor(void *data) {
         
         m_map_free(&mod->subscriptions);
         m_stack_free(&mod->recvs);
+        m_queue_free(&mod->stashed);
         for (int i = 0; i < M_SRC_TYPE_END; i++) {
             m_bst_free(&mod->srcs[i]);
         }
@@ -355,6 +356,7 @@ static void reset_module(m_mod_t *mod) {
     }
     m_map_clear(mod->subscriptions);
     m_stack_clear(mod->recvs);
+    m_queue_clear(mod->stashed);
 }
 
 /** Private API **/
@@ -371,17 +373,21 @@ int evaluate_module(void *data, const char *key, void *value) {
             ev_src_t *src = (ev_src_t *)m_itr_get(itr);
             m_src_thresh_t *thr = &src->thresh_src.thr;
             m_src_thresh_t *alarm = &src->thresh_src.alarm;
-            bool notify = false;
+
             if (thr->activity_freq != 0) {
-                alarm->activity_freq = (double) mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
-                notify = alarm->activity_freq >= thr->activity_freq;
+                double activity_freq = (double) mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
+                if (activity_freq >= thr->activity_freq) {
+                    alarm->activity_freq = activity_freq;
+                }
             }
 
             if (thr->inactive_ms != 0) {
-                alarm->inactive_ms = curr_ms - mod->stats.last_seen;
-                notify = alarm->inactive_ms >= thr->inactive_ms;
+                uint64_t inactive_ms = curr_ms - mod->stats.last_seen;
+                if (inactive_ms >= thr->inactive_ms) {
+                    alarm->inactive_ms = inactive_ms;
+                }
             }
-            if (notify) {
+            if (alarm->activity_freq != 0 || alarm->inactive_ms != 0) {
                 poll_notify_thresh(&ctx->ppriv, src);
             }
         })
@@ -424,7 +430,7 @@ int start(m_mod_t *mod, bool starting) {
         tell_system_pubsub_msg(NULL, ctx, M_PS_MOD_STARTED, mod, NULL);
         return 0;
     }
-    
+
     /* If init() returns false, we need to stop this module right away */
     stop(mod, true);
     return 0;
@@ -435,10 +441,12 @@ int stop(m_mod_t *mod, bool stopping) {
 
     int ret = manage_fds(mod, ctx, RM, stopping);
     M_ASSERT(!ret, errors[stopping], ret);
-    
+
+    if (m_mod_is(mod, M_MOD_RUNNING)) {
+        ctx->stats.running_modules--;
+    }
     mod->state = stopping ? M_MOD_STOPPED : M_MOD_PAUSED;
-    ctx->stats.running_modules--;
-    
+
     /*
      * When module gets stopped, its write-end pubsub fd is closed too 
      * Read-end is already closed by manage_fds().
@@ -512,7 +520,12 @@ _public_ int m_mod_register(const char *name, m_mod_t **self, const m_mod_hook_t
         if (!mod->recvs) {
             break;
         }
-        
+
+        mod->stashed = m_queue_new(mem_dtor);
+        if (!mod->stashed) {
+            break;
+        }
+
         if (m_map_put(ctx->modules, mod->name, mod) == 0) {
             memcpy(&mod->hook, hook, sizeof(m_mod_hook_t));
             mod->state = M_MOD_IDLE;

@@ -88,7 +88,7 @@ typedef enum {
  * Module's pubsub API flags (module_tell(), module_publish(), module_broadcast())
  */
 typedef enum {
-    M_PS_AUTOFREE   = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_msg ref counter goes to 0)
+    M_PS_AUTOFREE   = 0x01,     // Autofree PubSub data after every recipient receives message (ie: when ps_evt ref counter goes to 0)
 } m_ps_flags;
 
 /** Libmodule input src types for m_mod_src_register() API **/
@@ -179,14 +179,14 @@ typedef struct {
     const m_mod_t *self;                            // Self reference. Mostly useful when 2+ modules share same receive() callback
     m_src_types type;                               // Event type
     union {                                         // Events
-        m_evt_fd_t      *fd_msg;
-        m_evt_ps_t      *ps_msg;
-        m_evt_tmr_t     *tmr_msg;
-        m_evt_sgn_t     *sgn_msg;
-        m_evt_path_t    *pt_msg;
-        m_evt_pid_t     *pid_msg;
-        m_evt_task_t    *task_msg;
-        m_evt_thresh_t  *thresh_msg;
+        m_evt_fd_t      *fd_evt;
+        m_evt_ps_t      *ps_evt;
+        m_evt_tmr_t     *tmr_evt;
+        m_evt_sgn_t     *sgn_evt;
+        m_evt_path_t    *path_evt;
+        m_evt_pid_t     *pid_evt;
+        m_evt_task_t    *task_evt;
+        m_evt_thresh_t  *thresh_evt;
     };
     const void *userdata;                           // Event userdata, passed through m_mod_src_register()
 } m_evt_t;

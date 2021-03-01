@@ -138,12 +138,8 @@ _public_ void *m_stack_peek(const m_stack_t *s) {
 _public_ int m_stack_clear(m_stack_t *s) {
     M_PARAM_ASSERT(s);
     
-    stack_elem *elem = NULL;
-    while ((elem = s->data) && s->len > 0) {
-        void *data = m_stack_pop(s);
-        if (s->dtor) {
-            s->dtor(data);
-        }
+    while (s->len > 0) {
+        m_stack_remove(s);
     }
     return 0;
 }

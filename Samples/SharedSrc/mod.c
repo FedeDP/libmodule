@@ -64,7 +64,7 @@ static void destroy(void) {
 static void A_recv(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c;
-        (void)!read(msg->fd_msg->fd, &c, sizeof(char));
+        (void)!read(msg->fd_evt->fd, &c, sizeof(char));
         
         switch (tolower(c)) {
             case 'c':
@@ -84,7 +84,7 @@ static void A_recv(const m_evt_t *msg) {
                 break;
         }
     } else {
-        if (msg->ps_msg->type == M_PS_USER && !strcmp((char *)msg->ps_msg->data, "BauBau")) {
+        if (msg->ps_evt->type == M_PS_USER && !strcmp((char *)msg->ps_evt->data, "BauBau")) {
             m_mod_become(selfA, A_recv_ready);
             m_mod_log(selfA, "Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
@@ -94,7 +94,7 @@ static void A_recv(const m_evt_t *msg) {
 static void A_recv_ready(const m_evt_t *msg) {
     if (msg->type != M_SRC_TYPE_PS) {
         char c;
-        (void)!read(msg->fd_msg->fd, &c, sizeof(char));
+        (void)!read(msg->fd_evt->fd, &c, sizeof(char));
         
         switch (tolower(c)) {
             case 'p':
@@ -133,21 +133,21 @@ static void A_recv_ready(const m_evt_t *msg) {
  */
 static void B_recv(const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS) {
-        switch (msg->ps_msg->type) {
+        switch (msg->ps_evt->type) {
             case M_PS_USER:
-                if (!strcmp((char *)msg->ps_msg->data, "ComeHere")) {
+                if (!strcmp((char *)msg->ps_evt->data, "ComeHere")) {
                     m_mod_log(selfB, "Running...\n");
-                    m_mod_ps_tell(selfB, msg->ps_msg->sender, (unsigned char *)"BauBau", 0);
-                } else if (!strcmp((char *)msg->ps_msg->data, "LetsPlay")) {
+                    m_mod_ps_tell(selfB, msg->ps_evt->sender, (unsigned char *)"BauBau", 0);
+                } else if (!strcmp((char *)msg->ps_evt->data, "LetsPlay")) {
                     m_mod_log(selfB, "BauBau BauuBauuu!\n");
-                } else if (!strcmp((char *)msg->ps_msg->data, "LetsEat")) {
+                } else if (!strcmp((char *)msg->ps_evt->data, "LetsEat")) {
                     m_mod_log(selfB, "Burp!\n");
-                } else if (!strcmp((char *)msg->ps_msg->data, "LetsSleep")) {
+                } else if (!strcmp((char *)msg->ps_evt->data, "LetsSleep")) {
                     m_mod_become(selfB, B_recv_sleeping);
                     m_mod_log(selfB, "ZzzZzz...\n");
-                } else if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
+                } else if (!strcmp((char *)msg->ps_evt->data, "ByeBye")) {
                     m_mod_log(selfB, "Sob...\n");
-                } else if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
+                } else if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
                     m_mod_log(selfB, "???\n");
                 }
                 break;
@@ -158,8 +158,8 @@ static void B_recv(const m_evt_t *msg) {
 }
 
 static void B_recv_sleeping(const m_evt_t *msg) {
-    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
-        if (!strcmp((char *)msg->ps_msg->data, "WakeUp")) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
+        if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
             m_mod_become(selfB, B_recv);
             m_mod_log(selfB, "Yawn...\n");
         } else {

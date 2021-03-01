@@ -43,8 +43,8 @@ void test_ctx_quit_no_loop(void **state) {
 void test_ctx_loop(void **state) {
     (void) state; /* unused */
     
-    int ret = m_ctx_loop(); // m_ctx_quit() is called with "number of USER PS messages" recv'd.
-    assert_true(ret == 3);
+    int ret = m_ctx_loop();
+    assert_true(ret == 0);
 }
 
 void test_ctx_dispatch(void **state) {

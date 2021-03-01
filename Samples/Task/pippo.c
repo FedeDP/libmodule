@@ -43,7 +43,7 @@ static void m_m_on_evt(const m_evt_t *msg) {
         break;
     }
     case M_SRC_TYPE_TASK:
-        m_m_log("Task id: %u ended with retval: %d\n", msg->task_msg->tid, msg->task_msg->retval);
+        m_m_log("Task id: %u ended with retval: %d\n", msg->task_evt->tid, msg->task_evt->retval);
         break;
     default:
         break;

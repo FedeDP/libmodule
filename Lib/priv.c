@@ -2,8 +2,8 @@
 
 static void evt_dtor(void *data) {
     m_evt_t *evt = (m_evt_t *)data;
-    /* We use fd_msg as all messages share address inside union */
-    m_mem_unref(evt->fd_msg);
+    /* We use fd_evt as all messages share address inside union */
+    m_mem_unref(evt->fd_evt);
 }
 
 /** Private API **/

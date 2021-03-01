@@ -44,10 +44,10 @@ static void m_m_on_evt(const m_evt_t *msg) {
             c = 'q';
             int *data = (int *)msg->userdata;
             if (data) {
-                m_m_log("Received %d. Data is %d\n", msg->sgn_msg->signo, *data);
+                m_m_log("Received %d. Data is %d\n", msg->sgn_evt->signo, *data);
             }
         } else if (msg->type == M_SRC_TYPE_FD) {
-            (void)!read(msg->fd_msg->fd, &c, sizeof(char));
+            (void)!read(msg->fd_evt->fd, &c, sizeof(char));
         }
         
         switch (tolower(c)) {
@@ -68,7 +68,7 @@ static void m_m_on_evt(const m_evt_t *msg) {
                 break;
         }
     } else {
-        if (msg->ps_msg->type == M_PS_USER && !strcmp((char *)msg->ps_msg->data, "BauBau")) {
+        if (msg->ps_evt->type == M_PS_USER && !strcmp((char *)msg->ps_evt->data, "BauBau")) {
             m_m_become(ready);
             m_m_log("Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
@@ -86,9 +86,9 @@ static void m_m_on_evt_ready(const m_evt_t *msg) {
         /* Forcefully quit if we received a SIGINT */
         if (msg->type == M_SRC_TYPE_SGN) {
             c = 'q';
-            m_m_log("Received %d.\n", msg->sgn_msg->signo);
+            m_m_log("Received %d.\n", msg->sgn_evt->signo);
         } else if (msg->type == M_SRC_TYPE_FD) {
-            (void)!read(msg->fd_msg->fd, &c, sizeof(char));
+            (void)!read(msg->fd_evt->fd, &c, sizeof(char));
         }
         
         switch (tolower(c)) {

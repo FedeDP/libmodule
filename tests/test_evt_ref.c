@@ -37,8 +37,8 @@ static bool init(void) {
 }
 
 static void my_recv(const m_evt_t *const msg) {  
-    if (msg->type == M_SRC_TYPE_PS && 
-        msg->ps_msg->type == M_PS_USER) {
+    if (msg->type == M_SRC_TYPE_PS &&
+        msg->ps_evt->type == M_PS_USER) {
 
         ref = m_mem_ref((void *)msg);
         m_ctx_quit(0);

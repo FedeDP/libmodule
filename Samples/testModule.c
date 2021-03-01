@@ -45,8 +45,8 @@ static void m_m_on_stop(void) {
  * Default poll callback
  */
 static void m_m_on_evt(const m_evt_t *msg) {
-    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER) {
-        if (!strcmp((char *)msg->ps_msg->data, "ByeBye")) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
+        if (!strcmp((char *)msg->ps_evt->data, "ByeBye")) {
             m_m_log("Received quit.\n");
         }
     }

@@ -55,16 +55,16 @@ static void m_m_on_evt(const m_evt_t *msg) {
             c = 'q';
             int *data = (int *)msg->userdata;
             if (data) {
-                m_m_log("Data is %d. Received %d.\n", *data, msg->sgn_msg->signo);
+                m_m_log("Data is %d. Received %d.\n", *data, msg->sgn_evt->signo);
             }
         } else if (msg->type == M_SRC_TYPE_TMR) {
             m_m_log("Timed out.\n");
             c = 'q';
         } else if (msg->type == M_SRC_TYPE_PATH) {
-            m_m_log("A file was created in %s.\n", msg->pt_msg->path);
+            m_m_log("A file was created in %s.\n", msg->path_evt->path);
             c = 10;
         } else {
-            (void)!read(msg->fd_msg->fd, &c, sizeof(char));
+            (void)!read(msg->fd_evt->fd, &c, sizeof(char));
         }
         
         switch (tolower(c)) {
@@ -84,8 +84,8 @@ static void m_m_on_evt(const m_evt_t *msg) {
                 }
                 break;
         }
-    } else if (msg->ps_msg->type == M_PS_USER && 
-        !strcmp((char *)msg->ps_msg->data, "BauBau")) {
+    } else if (msg->ps_evt->type == M_PS_USER &&
+               !strcmp((char *)msg->ps_evt->data, "BauBau")) {
         
         m_ctx_dump();
         
@@ -105,13 +105,13 @@ static void m_m_on_evt_ready(const m_evt_t *msg) {
         /* Forcefully quit if we received a signal */
         if (msg->type == M_SRC_TYPE_SGN) {
             c = 'q';
-            m_m_log("Received %d. Quit.\n", msg->sgn_msg->signo);
+            m_m_log("Received %d. Quit.\n", msg->sgn_evt->signo);
         } else if (msg->type == M_SRC_TYPE_FD) {
-            (void)!read(msg->fd_msg->fd, &c, sizeof(char));
+            (void)!read(msg->fd_evt->fd, &c, sizeof(char));
         } else if (msg->type == M_SRC_TYPE_TMR) {
             m_m_log("Timer expired.\n");
         } else if (msg->type == M_SRC_TYPE_PATH) {
-            m_m_log("A file was created in %s.\n", msg->pt_msg->path);
+            m_m_log("A file was created in %s.\n", msg->path_evt->path);
         }
         
         switch (tolower(c)) {

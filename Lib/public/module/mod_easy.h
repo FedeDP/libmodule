@@ -48,3 +48,7 @@
 #define m_m_ps_publish(topic, msg, flags)         m_mod_ps_publish(m_m_self, topic, msg, flags)
 #define m_m_ps_broadcast(msg, flags)              m_mod_ps_broadcast(m_m_self, msg, flags)
 #define m_m_ps_poisonpill(recipient)              m_mod_ps_poisonpill(m_m_self, recipient)
+
+#define m_m_stash(evt)                            m_mod_stash(m_m_self, evt)
+#define m_m_unstash(evt)                          m_mod_unstash(m_m_self)
+#define m_m_unstashall(evt)                       m_mod_unstashall(m_m_self)

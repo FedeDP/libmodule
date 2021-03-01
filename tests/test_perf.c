@@ -60,11 +60,11 @@ static bool init(void) {
 }
 
 static void my_recv(const m_evt_t *msg) {    
-    if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER && ++ctr == MAX_LEN) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER && ++ctr == MAX_LEN) {
         m_ctx_quit(0);
     } else if (msg->type == M_SRC_TYPE_THRESH) {
         m_src_thresh_t *alarm = (m_src_thresh_t *)msg->userdata;
-        alarm->activity_freq = msg->thresh_msg->activity_freq;
-        alarm->inactive_ms = msg->thresh_msg->inactive_ms;
+        alarm->activity_freq = msg->thresh_evt->activity_freq;
+        alarm->inactive_ms = msg->thresh_evt->inactive_ms;
     }
 }

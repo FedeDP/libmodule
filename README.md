@@ -23,7 +23,7 @@ Frankly speaking, it is denoted by a M_M() macro plus a bunch of mandatory callb
 
 M_M("Pippo");
 
-static void m_m_on_start(void) {
+static bool m_m_on_start(void) {
     /* Register STDIN fd, without autoclosing it at the end */
     m_m_src_register(STDIN_FILENO, 0, NULL);
     return true;
@@ -41,20 +41,20 @@ static void m_m_on_stop(void) {
 static void m_m_on_evt(const m_evt_t *const msg) {
     if (msg->type == M_SRC_TYPE_FD) {
         char c;
-        read(msg->fd_msg->fd, &c, sizeof(char));
+        read(msg->fd_evt->fd, &c, sizeof(char));
         switch (tolower(c)) {
             case 'q':
-                m_log("Leaving...\n");
+                m_m_log("Leaving...\n");
                 m_m_tell(self(), "ByeBye", 0);
                 break;
             default:
                 if (c != ' ' && c != '\n') {
-                    m_log("Pressed %c\n", c);
+                    m_m_log("Pressed %c\n", c);
                 }
                 break;
         }
-    } else if (msg->type == M_SRC_TYPE_PS && msg->ps_msg->type == M_PS_USER && 
-        !strcmp((char *)msg->ps_msg->data, "ByeBye")) {
+    } else if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER && 
+        !strcmp((char *)msg->ps_evt->data, "ByeBye")) {
         
         m_ctx_quit(0);
     }

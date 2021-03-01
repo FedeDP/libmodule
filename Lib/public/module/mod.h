@@ -92,6 +92,11 @@ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient);
 int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr);
 int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic);
 
+/* Events' stashing API */
+int m_mod_stash(m_mod_t *mod, const m_evt_t *evt);
+int m_mod_unstash(m_mod_t *mod);
+int m_mod_unstashall(m_mod_t *mod);
+
 /* Event Sources management */
 int m_mod_src_register_fd(m_mod_t *mod, int fd, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_fd(m_mod_t *mod, int fd);
@@ -99,11 +104,11 @@ int m_mod_src_deregister_fd(m_mod_t *mod, int fd);
 int m_mod_src_register_tmr(m_mod_t *mod, const m_src_tmr_t *its, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_tmr(m_mod_t *mod, const m_src_tmr_t *its);
 
-int m_mod_src_register_sgn(m_mod_t *mod, const m_src_sgn_t *its, m_src_flags flags, const void *userptr);
-int m_mod_src_deregister_sgn(m_mod_t *mod, const m_src_sgn_t *its);
+int m_mod_src_register_sgn(m_mod_t *mod, const m_src_sgn_t *sgs, m_src_flags flags, const void *userptr);
+int m_mod_src_deregister_sgn(m_mod_t *mod, const m_src_sgn_t *sgs);
 
-int m_mod_src_register_path(m_mod_t *mod, const m_src_path_t *its, m_src_flags flags, const void *userptr);
-int m_mod_src_deregister_path(m_mod_t *mod, const m_src_path_t *its);
+int m_mod_src_register_path(m_mod_t *mod, const m_src_path_t *pts, m_src_flags flags, const void *userptr);
+int m_mod_src_deregister_path(m_mod_t *mod, const m_src_path_t *pts);
 
 int m_mod_src_register_pid(m_mod_t *mod, const m_src_pid_t *pid, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_pid(m_mod_t *mod, const m_src_pid_t *pid);
