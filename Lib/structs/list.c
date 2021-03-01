@@ -57,7 +57,7 @@ _public_ m_list_t *m_list_new(m_list_cmp comp, m_list_dtor fn) {
 }
 
 _public_ m_list_itr_t *m_list_itr_new(const m_list_t *l) {
-    M_RET_ASSERT(m_list_length(l) > 0, NULL);
+    M_RET_ASSERT(m_list_len(l) > 0, NULL);
     
     m_list_itr_t *itr = memhook._calloc(1, sizeof(m_list_itr_t));
     if (itr) {
@@ -118,7 +118,7 @@ _public_ int m_list_itr_remove(m_list_itr_t *itr) {
 
 _public_ int m_list_iterate(const m_list_t *l, m_list_cb fn, void *userptr) {
     M_PARAM_ASSERT(fn);
-    M_PARAM_ASSERT(m_list_length(l) > 0);
+    M_PARAM_ASSERT(m_list_len(l) > 0);
     
     list_node *elem = l->data;
     while (elem) {
@@ -152,7 +152,7 @@ _public_ int m_list_insert(m_list_t *l, void *data) {
 }
 
 _public_ int m_list_remove(m_list_t *l, void *data) {
-    M_PARAM_ASSERT(m_list_length(l) > 0);
+    M_PARAM_ASSERT(m_list_len(l) > 0);
     M_PARAM_ASSERT(data);
     
     list_node **tmp = &l->data;
@@ -199,7 +199,7 @@ _public_ int m_list_free(m_list_t **l) {
     return ret;
 }
 
-_public_ ssize_t m_list_length(const m_list_t *l) {
+_public_ ssize_t m_list_len(const m_list_t *l) {
     M_PARAM_ASSERT(l);
     
     return l->len;

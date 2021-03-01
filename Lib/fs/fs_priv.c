@@ -91,7 +91,7 @@ static int fs_getattr(const char *path, struct stat *stbuf,
     stbuf->st_mtime = f->start;
     if (strcmp(path, "/") == 0) { // root dir of fuse fs
         stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = m_map_length(c->modules);
+        stbuf->st_nlink = m_map_len(c->modules);
         return 0;
     } 
     if (strlen(path) > 1 && m_map_has_key(c->modules, path + 1)) {
@@ -147,7 +147,7 @@ static int fs_release(const char *path, struct fuse_file_info *fi) {
     fs_priv_t *fp = (fs_priv_t *)mod->fs;
     if (fp) {
         m_list_remove(fp->clients, cl);
-        if (m_list_length(fp->clients) == 0) {
+        if (m_list_len(fp->clients) == 0) {
             m_list_free(&fp->clients);
             memhook._free(fp);
             mod->fs = NULL;

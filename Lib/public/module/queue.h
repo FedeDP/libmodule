@@ -32,4 +32,4 @@ void *m_queue_peek(const m_queue_t *q);
 int m_queue_remove(m_queue_t *q);
 int m_queue_clear(m_queue_t *q);
 int m_queue_free(m_queue_t **q);
-ssize_t m_queue_length(const m_queue_t *q);
+ssize_t m_queue_len(const m_queue_t *q);

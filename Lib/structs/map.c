@@ -245,7 +245,7 @@ static void clear_elem(m_map_t *m, map_elem *removed_entry) {
 /** Private API **/
 
 void *m_map_peek(const m_map_t *m) {
-    M_RET_ASSERT(m_map_length(m) > 0, NULL);
+    M_RET_ASSERT(m_map_len(m) > 0, NULL);
     return m->last_insert->data;
 }
 
@@ -273,7 +273,7 @@ _public_ m_map_t *m_map_new(m_map_flags flags, m_map_dtor fn) {
 }
 
 _public_ m_map_itr_t *m_map_itr_new(const m_map_t *m) {
-    M_RET_ASSERT(m_map_length(m) > 0, NULL);
+    M_RET_ASSERT(m_map_len(m) > 0, NULL);
     
     m_map_itr_t *itr = memhook._calloc(1, sizeof(m_map_itr_t));
     if (itr) {
@@ -357,7 +357,7 @@ _public_ int m_map_put(m_map_t *m, const char *key, void *value) {
  */
 _public_ void *m_map_get(const m_map_t *m, const char *key) {
     M_RET_ASSERT(key, NULL);
-    M_RET_ASSERT(m_map_length(m) > 0, NULL);
+    M_RET_ASSERT(m_map_len(m) > 0, NULL);
 
     /* Find data location */
     map_elem *entry = hashmap_entry_find(m, key, false);
@@ -381,7 +381,7 @@ _public_ bool m_map_has_key(const m_map_t *m, const char *key) {
  */
 _public_ int m_map_iterate(m_map_t *m, m_map_cb fn, void *userptr) {
     M_PARAM_ASSERT(fn);
-    M_PARAM_ASSERT(m_map_length(m) > 0);
+    M_PARAM_ASSERT(m_map_len(m) > 0);
     
     MAP_FOREACH(m->table, m->table_size, {
         if (!entry->key) {
@@ -414,7 +414,7 @@ _public_ int m_map_iterate(m_map_t *m, m_map_cb fn, void *userptr) {
  */
 _public_ int m_map_remove(m_map_t *m, const char *key) {
     M_PARAM_ASSERT(key);
-    M_PARAM_ASSERT(m_map_length(m) > 0);
+    M_PARAM_ASSERT(m_map_len(m) > 0);
     
     map_elem *entry = hashmap_entry_find(m, key, false);
     if (!entry) {
@@ -448,7 +448,7 @@ _public_ int m_map_free(m_map_t **m) {
 }
 
 /* Return the length of the hashmap */
-_public_ ssize_t m_map_length(const m_map_t *m) {
+_public_ ssize_t m_map_len(const m_map_t *m) {
     M_PARAM_ASSERT(m);
     
     return m->length;

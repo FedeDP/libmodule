@@ -43,10 +43,10 @@ void test_stack_peek(void **state) {
 void test_stack_length(void **state) {
     (void) state; /* unused */
     
-    int len = m_stack_length(NULL);
+    int len = m_stack_len(NULL);
     assert_false(len > 0);
     
-    len = m_stack_length(my_st);
+    len = m_stack_len(my_st);
     assert_int_equal(len, 3);
 }
 
@@ -60,7 +60,7 @@ void test_stack_iterator(void **state) {
     itr = m_itr_new(my_st);
     assert_non_null(itr);
     
-    int count = m_stack_length(my_st);
+    int count = m_stack_len(my_st);
     while (itr) {
         printf("%p\n", m_itr_get(itr));
         if (count % 2 == 0) {
@@ -85,7 +85,7 @@ void test_stack_pop(void **state) {
     assert_non_null(ptr);
     assert_string_equal(ptr, "Hello World");
     
-    int len = m_stack_length(my_st);
+    int len = m_stack_len(my_st);
     assert_int_equal(len, 1); // one element left
 }
 
@@ -98,7 +98,7 @@ void test_stack_clear(void **state) {
     ret = m_stack_clear(my_st);
     assert_true(ret == 0);
     
-    int len = m_stack_length(my_st);
+    int len = m_stack_len(my_st);
     assert_int_equal(len, 0);
 }
 

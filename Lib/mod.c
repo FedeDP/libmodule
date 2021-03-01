@@ -582,7 +582,7 @@ _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_LOAD);
     M_PARAM_ASSERT(module_path);
     
-    const int module_size = m_map_length(ctx->modules);
+    const int module_size = m_map_len(ctx->modules);
     
     void *handle = dlopen(module_path, RTLD_NOW);
     if (!handle) {
@@ -594,7 +594,7 @@ _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags
      * Check that requested module has been created in requested ctx, 
      * by looking at requested ctx number of modules
      */
-    if (module_size == m_map_length(ctx->modules)) {
+    if (module_size == m_map_len(ctx->modules)) {
         dlclose(handle);
         return -EPERM;
     }
@@ -804,7 +804,7 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     
     bool closed_stats = false;
     int i = 0;
-    if (m_map_length(mod->subscriptions) > 0) {
+    if (m_map_len(mod->subscriptions) > 0) {
         closed_stats = true;
         ctx_logger(ctx, mod, "\t},\n");
         ctx_logger(ctx, mod, "\t\"Subs\": [\n");
@@ -828,7 +828,7 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     
     /* Skip internal M_SRC_TYPE_PS */
     for (int k = M_SRC_TYPE_FD; k < M_SRC_TYPE_END; k++) {
-        if (m_bst_length(mod->srcs[k]) > 0) {
+        if (m_bst_len(mod->srcs[k]) > 0) {
             if (!closed_stats) {
                 ctx_logger(ctx, mod, "\t},\n");
                 closed_stats = true;

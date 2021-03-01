@@ -35,5 +35,5 @@ int m_list_remove(m_list_t *l, void *data);
 void *m_list_find(m_list_t *l, void *data);
 int m_list_clear(m_list_t *l);
 int m_list_free(m_list_t **l);
-ssize_t m_list_length(const m_list_t *l);
+ssize_t m_list_len(const m_list_t *l);
 

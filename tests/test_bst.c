@@ -56,10 +56,10 @@ void test_bst_insert(void **state) {
 void test_bst_length(void **state) {
     (void) state; /* unused */
     
-    int len = m_bst_length(NULL);
+    int len = m_bst_len(NULL);
     assert_false(len > 0);
     
-    len = m_bst_length(my_t);
+    len = m_bst_len(my_t);
     assert_int_equal(len, 100);
 }
 
@@ -110,7 +110,7 @@ void test_bst_remove(void **state) {
     ret = m_bst_remove(my_t, &arr[85]);
     assert_int_equal(ret, 0);
     
-    size_t len = m_bst_length(my_t);
+    size_t len = m_bst_len(my_t);
     assert_int_equal(len, 95);
 }
 
@@ -121,7 +121,7 @@ void test_bst_iterator(void **state) {
     m_bst_itr_t *it = m_bst_itr_new(NULL);
     assert_null(it);
     
-    int count = m_bst_length(my_t);
+    int count = m_bst_len(my_t);
     m_itr_foreach(my_t, {
         int *val = m_itr_get(itr);
         printf("%d\n", *val);
@@ -167,7 +167,7 @@ void test_bst_clear(void **state) {
     ret = m_bst_clear(my_t);
     assert_true(ret == 0);
     
-    int len = m_bst_length(my_t);
+    int len = m_bst_len(my_t);
     assert_int_equal(len, 0);
 }
 

@@ -43,10 +43,10 @@ void test_queue_peek(void **state) {
 void test_queue_length(void **state) {
     (void) state; /* unused */
     
-    int len = m_queue_length(NULL);
+    int len = m_queue_len(NULL);
     assert_false(len > 0);
     
-    len = m_queue_length(my_q);
+    len = m_queue_len(my_q);
     assert_int_equal(len, 3);
 }
 
@@ -60,7 +60,7 @@ void test_queue_iterator(void **state) {
     itr = m_itr_new(my_q);
     assert_non_null(itr);
     
-    int count = m_queue_length(my_q);
+    int count = m_queue_len(my_q);
     while (itr) {
         printf("%p\n", m_itr_get(itr));
         if (count % 2 == 0) {
@@ -84,7 +84,7 @@ void test_queue_dequeue(void **state) {
     assert_non_null(ptr);
     assert_int_equal(*(int *)ptr, 1);
     
-    int len = m_queue_length(my_q);
+    int len = m_queue_len(my_q);
     assert_int_equal(len, 1); // one element left
 }
 
@@ -97,7 +97,7 @@ void test_queue_clear(void **state) {
     ret = m_queue_clear(my_q);
     assert_true(ret == 0);
     
-    int len = m_queue_length(my_q);
+    int len = m_queue_len(my_q);
     assert_int_equal(len, 0);
 }
 

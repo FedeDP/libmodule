@@ -48,11 +48,11 @@ static void *thpool_thread(void *thpool) {
          * Wait on condition variable, check for spurious wakeups.
          * When returning from pthread_cond_wait(), we own the lock. 
          */
-        while (m_queue_length(pool->tasks) == 0 && !pool->shutdown) {
+        while (m_queue_len(pool->tasks) == 0 && !pool->shutdown) {
             pthread_cond_wait(&(pool->notify), &(pool->lock));
         }
         
-        if (pool->shutdown && m_queue_length(pool->tasks) == 0) {
+        if (pool->shutdown && m_queue_len(pool->tasks) == 0) {
             break;
         }
             
@@ -165,7 +165,7 @@ _public_ ssize_t m_thpool_length(m_thpool_t *pool) {
         return ret;
     }
     
-    ssize_t len = m_queue_length(pool->tasks);
+    ssize_t len = m_queue_len(pool->tasks);
     
     const int unlock_ret = pthread_mutex_unlock(&pool->lock);
     if (unlock_ret == 0) {

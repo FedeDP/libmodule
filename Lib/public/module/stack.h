@@ -32,4 +32,4 @@ void *m_stack_peek(const m_stack_t *s);
 int m_stack_clear(m_stack_t *s);
 int m_stack_remove(m_stack_t *s);
 int m_stack_free(m_stack_t **s);
-ssize_t m_stack_length(const m_stack_t *s);
+ssize_t m_stack_len(const m_stack_t *s);

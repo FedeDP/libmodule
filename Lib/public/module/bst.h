@@ -40,6 +40,6 @@ int m_bst_itr_remove(m_bst_itr_t *itr);
 void *m_bst_itr_get_data(const m_bst_itr_t *itr);
 int m_bst_clear(m_bst_t *l);
 int m_bst_free(m_bst_t **l);
-ssize_t m_bst_length(const m_bst_t *l);
+ssize_t m_bst_len(const m_bst_t *l);
 
 

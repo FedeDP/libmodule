@@ -221,9 +221,9 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
     msg->self = mod;
     if (src) {
         /*
-         * if src == NULL, do not touch it:
-         * * it will be NULL when run from ctx loop or flush_ps_messages
-         * * it will have correct value when call by m_mod_unstash API
+         * if src == NULL, do not touch msg->userdata:
+         * * it will be NULL when called from ctx loop or flush_ps_messages
+         * * it will already be valued when call by m_mod_unstash API
          */
         msg->userdata = src->userptr;
     }
@@ -306,7 +306,7 @@ _public_ int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic) {
     int ret = m_map_remove(mod->subscriptions, topic);
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-        if (m_map_length(mod->subscriptions) == 0) {
+        if (m_map_len(mod->subscriptions) == 0) {
             m_map_free(&mod->subscriptions);
         }
     }
@@ -387,5 +387,11 @@ _public_ int m_mod_unstashall(m_mod_t *mod) {
         m_mem_ref(evt);
         run_pubsub_cb(mod, evt, NULL);
     });
-    return m_queue_clear(mod->stashed);
+    /* Return number of events unstashed or error */
+    const int len = m_queue_len(mod->stashed);
+    int ret = m_queue_clear(mod->stashed);
+    if (ret == 0) {
+        ret = len;
+    }
+    return ret;
 }

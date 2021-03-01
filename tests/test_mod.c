@@ -3,11 +3,9 @@
 #include <module/ctx.h>
 #include <module/mem.h>
 #include <unistd.h>
-#include <sys/stat.h> 
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-
 
 static bool init_false(void);
 static void recv(const m_evt_t *msg);
@@ -458,7 +456,7 @@ static void recv(const m_evt_t *msg) {
             assert_int_equal(ret, 0);
 
             ret = m_mod_unstashall(mod);
-            assert_int_equal(ret, 0);
+            assert_int_equal(ret, 3); // 3 messages unstashed
         }
     }
 }

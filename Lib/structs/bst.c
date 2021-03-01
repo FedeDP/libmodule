@@ -200,7 +200,7 @@ _public_ int m_bst_insert(m_bst_t *l, void *data) {
 }
 
 _public_ int m_bst_remove(m_bst_t *l, void *data) {
-    M_PARAM_ASSERT(m_bst_length(l) > 0);
+    M_PARAM_ASSERT(m_bst_len(l) > 0);
     M_PARAM_ASSERT(data);
     
     bst_node **node = bst_find(l, data, NULL);
@@ -248,7 +248,7 @@ _public_ int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *use
 }
 
 _public_ m_bst_itr_t *m_bst_itr_new(const m_bst_t *l) {
-    M_RET_ASSERT(m_bst_length(l) > 0, NULL);
+    M_RET_ASSERT(m_bst_len(l) > 0, NULL);
 
     m_bst_itr_t *itr = memhook._calloc(1, sizeof(m_bst_itr_t));
     if (itr) {
@@ -323,7 +323,7 @@ _public_ void *m_bst_itr_get_data(const m_bst_itr_t *itr) {
 }
 
 _public_ int m_bst_clear(m_bst_t *l) {
-    M_PARAM_ASSERT(m_bst_length(l) > 0);
+    M_PARAM_ASSERT(m_bst_len(l) > 0);
     
     for (m_bst_itr_t *itr = m_bst_itr_new(l); itr; m_bst_itr_next(&itr)) {
         m_bst_itr_remove(itr);
@@ -341,7 +341,7 @@ _public_ int m_bst_free(m_bst_t **l) {
     return 0;
 }
 
-_public_ ssize_t m_bst_length(const m_bst_t *l) {
+_public_ ssize_t m_bst_len(const m_bst_t *l) {
     M_PARAM_ASSERT(l);
     
     return l->len;

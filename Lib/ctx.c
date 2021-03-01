@@ -329,7 +329,7 @@ _public_ int m_ctx_dump(void) {
     m_itr_foreach(ctx->modules, {
         const char *mod_name = m_map_itr_get_key(itr);
         const m_mod_t *mod = m_itr_get(itr);
-        ctx_logger(ctx, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < m_map_length(ctx->modules) ? ',' : ' ');
+        ctx_logger(ctx, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < m_map_len(ctx->modules) ? ',' : ' ');
     });
     ctx_logger(ctx, NULL, "\t]\n");
     ctx_logger(ctx, NULL, "}\n");
@@ -344,7 +344,7 @@ _public_ _pure_ int m_ctx_stats(m_ctx_stats_t *stats) {
     fetch_ms(&now, NULL);
 
     stats->recv_msgs = ctx->stats.recv_msgs;
-    stats->num_modules = m_map_length(ctx->modules);
+    stats->num_modules = m_map_len(ctx->modules);
     stats->running_modules = ctx->stats.running_modules;
     stats->total_idle_time = ctx->stats.idle_time;
     stats->total_looping_time = now - ctx->stats.looping_start_time;

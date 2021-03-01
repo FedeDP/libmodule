@@ -39,4 +39,4 @@ bool m_map_has_key(const m_map_t *m, const char *key);
 int m_map_remove(m_map_t *m, const char *key);
 int m_map_clear(m_map_t *m);
 int m_map_free(m_map_t **m);
-ssize_t m_map_length(const m_map_t *m);
+ssize_t m_map_len(const m_map_t *m);

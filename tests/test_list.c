@@ -33,10 +33,10 @@ void test_list_insert(void **state) {
 void test_list_length(void **state) {
     (void) state; /* unused */
     
-    int len = m_list_length(NULL);
+    int len = m_list_len(NULL);
     assert_false(len > 0);
     
-    len = m_list_length(my_l);
+    len = m_list_len(my_l);
     assert_int_equal(len, 3);
 }
 
@@ -50,7 +50,7 @@ void test_list_iterator(void **state) {
     itr = m_list_itr_new(my_l);
     assert_non_null(itr);
     
-    int count = m_list_length(my_l);
+    int count = m_list_len(my_l);
 
     while (count) {
         count--;
@@ -102,7 +102,7 @@ void test_list_remove(void **state) {
     ret = m_list_remove(my_l, &val2);
     assert_true(ret == 0);
     
-    int len = m_list_length(my_l);
+    int len = m_list_len(my_l);
     assert_int_equal(len, 1); // one element left, ie: val3
 }
 
@@ -115,7 +115,7 @@ void test_list_clear(void **state) {
     ret = m_list_clear(my_l);
     assert_true(ret == 0);
     
-    int len = m_list_length(my_l);
+    int len = m_list_len(my_l);
     assert_int_equal(len, 0);
 }
 
@@ -145,7 +145,7 @@ void test_list_int(void **state) {
         ret = m_list_insert(my_l, p);
         assert_true(ret == 0);
     }
-    int len = m_list_length(my_l);
+    int len = m_list_len(my_l);
     assert_int_equal(len, 10);
 
     int val = 5;
@@ -156,19 +156,19 @@ void test_list_int(void **state) {
     val = 7;
     ret = m_list_remove(my_l, &val);
     assert_int_equal(ret, 0);
-    len = m_list_length(my_l);
+    len = m_list_len(my_l);
     assert_int_equal(len, 9);
 
     val = 9;
     ret = m_list_remove(my_l, &val);
     assert_int_equal(ret, 0);
-    len = m_list_length(my_l);
+    len = m_list_len(my_l);
     assert_int_equal(len, 8);
 
     val = 10;
     ret = m_list_remove(my_l, &val);
     assert_false(ret == 0); // nonexistent!
-    len = m_list_length(my_l);
+    len = m_list_len(my_l);
     assert_int_equal(len, 8);
 
     ret = m_list_free(&my_l);
