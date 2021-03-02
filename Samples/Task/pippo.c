@@ -8,6 +8,11 @@ static int tmrData;
 
 static int inc(void *udata);
 
+/* Hook on m_ctx_pre_loop() weak symbol */
+void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
+    printf("Task example starting.\n");
+}
+
 static void m_m_pre_start(void) {
 
 }
@@ -34,7 +39,7 @@ static void m_m_on_evt(const m_evt_t *msg) {
         int *data = (int *)msg->userdata;
         if (*data == 5) {
             m_m_log("Timed out.\n");
-            m_ctx_quit(0);
+            m_ctx_quit(m_m_ctx(), 0);
             m_m_log("Final data val: %d\n", thData);
         } else {
             (*data)++;

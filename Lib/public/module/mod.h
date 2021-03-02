@@ -23,9 +23,10 @@ typedef enum {
     M_MOD_ALLOW_REPLACE     = 0x04,         // Can module be replaced by another module with same name?
     M_MOD_PERSIST           = 0x08,         // Module cannot be deregistered by direct call to m_mod_deregister (or by FS delete) while its context is looping
     M_MOD_USERDATA_AUTOFREE = 0x10,         // Automatically free module userdata upon deregister
-    M_MOD_DENY_LOAD         = M_MOD_PERM(0x01), // Deny access to m_mod_(un)load()
-    M_MOD_DENY_PUB          = M_MOD_PERM(0x02), // Deny access to module's publishing functions: m_mod_ps_{tell,publish,broadcast,poisonpill}
-    M_MOD_DENY_SUB          = M_MOD_PERM(0x04), // Deny access to m_mod_ps_(un)subscribe()
+    M_MOD_DENY_CTX          = M_MOD_PERM(0x01), // Deny access to module's ctx through m_mod_ctx() (it means the module won't be able to call ctx API)
+    M_MOD_DENY_LOAD         = M_MOD_PERM(0x02), // Deny access to m_mod_(un)load()
+    M_MOD_DENY_PUB          = M_MOD_PERM(0x04), // Deny access to module's publishing functions: m_mod_ps_{tell,publish,broadcast,poisonpill}
+    M_MOD_DENY_SUB          = M_MOD_PERM(0x08), // Deny access to m_mod_ps_(un)subscribe()
 } m_mod_flags;
 
 /* Callbacks typedefs */
@@ -52,13 +53,16 @@ typedef struct {
 /* Module interface functions */
 
 /* Module registration */
-int m_mod_register(const char *name, m_mod_t **mod, const m_mod_hook_t *hook,
+int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod, const m_mod_hook_t *hook,
                    m_mod_flags flags, const void *userdata);
 int m_mod_deregister(m_mod_t **mod);
 
 /* External shared object module runtime loading */
 int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags flags, m_mod_t **ref);
 int m_mod_unload(const m_mod_t *mod, const char *module_path);
+
+/* Retrieve module context */
+m_ctx_t *m_mod_ctx(const m_mod_t *mod);
 
 /* Retrieve module name */
 const char *m_mod_name(const m_mod_t *mod);

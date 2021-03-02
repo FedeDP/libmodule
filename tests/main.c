@@ -14,6 +14,10 @@ int main(void) {
         cmocka_unit_test(test_mod_register_NULL_name),
         cmocka_unit_test(test_mod_register_NULL_self),
         cmocka_unit_test(test_mod_register_NULL_hook),
+
+        /* Test ctx register */
+        cmocka_unit_test(test_ctx_register_NULL_name),
+        cmocka_unit_test(test_ctx_register),
         
         /* Finally regiter module */
         cmocka_unit_test(test_mod_register),
@@ -122,6 +126,10 @@ int main(void) {
         
         /* Test that if init returns false, module is stopped */
         cmocka_unit_test(test_mod_false_init),
+
+        /* Test ctx deregister */
+        cmocka_unit_test(test_ctx_deregister_NULL_name),
+        cmocka_unit_test(test_ctx_deregister),
         
         /* Test modules_ API: it should fail now */
         cmocka_unit_test(test_ctx_quit_no_loop), // here context is already destroyed

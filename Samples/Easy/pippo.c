@@ -75,7 +75,7 @@ static void m_m_on_evt(const m_evt_t *msg) {
             case 'q':
                 m_m_log("I have to go now!\n");
                 m_m_ps_publish("leaving", "ByeBye", 0);
-                m_ctx_quit(0);
+                m_ctx_quit(m_m_ctx(), 0);
                 break;
             default:
                 /* Avoid newline */
@@ -87,7 +87,7 @@ static void m_m_on_evt(const m_evt_t *msg) {
     } else if (msg->ps_evt->type == M_PS_USER &&
                !strcmp((char *)msg->ps_evt->data, "BauBau")) {
         
-        m_ctx_dump();
+        m_ctx_dump(m_m_ctx());
         
         m_m_become(ready);
         m_m_log("Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
@@ -118,7 +118,7 @@ static void m_m_on_evt_ready(const m_evt_t *msg) {
             case 'p':
                 m_m_log("Doggo, let's play a bit!\n");
                 m_m_ps_tell(doggo, "LetsPlay", 0);
-                m_ctx_dump();
+                m_ctx_dump(m_m_ctx());
                 break;
             case 's':
                 m_m_log("Doggo, you should sleep a bit!\n");
@@ -136,7 +136,7 @@ static void m_m_on_evt_ready(const m_evt_t *msg) {
                 m_m_dump();
                 m_m_log("I have to go now!\n");
                 m_m_ps_publish("leaving", "ByeBye", 0);
-                m_ctx_quit(0);
+                m_ctx_quit(m_m_ctx(), 0);
                 break;
             default:
                 /* Avoid newline */

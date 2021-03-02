@@ -231,8 +231,9 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     const m_mod_hook_t fuse_hook = {init, NULL, receive, NULL };
     if (strlen(path) > 1) {
+        FS_CTX();
         m_mod_t *mod = NULL;
-        if (m_mod_register(path + 1, &mod, &fuse_hook, M_MOD_NAME_DUP, NULL) == 0) {
+        if (m_mod_register(path + 1, c, &mod, &fuse_hook, M_MOD_NAME_DUP, NULL) == 0) {
             return 0;
         }
         return -EPERM;
@@ -435,17 +436,20 @@ int fs_end(m_ctx_t *c) {
 
 /** Public API **/
 
-_public_ const char *m_ctx_fs_get_root(void) {
-    return ctx->fs_root;
+_public_ const char *m_ctx_fs_get_root(const m_ctx_t *c) {
+    M_RET_ASSERT(c, NULL);
+
+    return c->fs_root;
 }
 
-_public_ int m_ctx_fs_set_root(const char *path) {
-    M_RET_ASSERT(!ctx->looping, -EPERM);
+_public_ int m_ctx_fs_set_root(m_ctx_t *c, const char *path) {
+    M_PARAM_ASSERT(c);
+    M_RET_ASSERT(!c->looping, -EPERM);
     M_PARAM_ASSERT(path && strlen(path));
 
-    if (ctx->fs_root) {
-        memhook._free(ctx->fs_root);
+    if (c->fs_root) {
+        memhook._free(c->fs_root);
     }
-    ctx->fs_root = mem_strdup(path);
+    c->fs_root = mem_strdup(path);
     return 0;
 }

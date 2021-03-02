@@ -19,15 +19,16 @@
 - [x] Add stats to m_ctx_dump
 - [x] Automatically leave context when no more modules are RUNNING in it
 - [ ] Use M_WARN macro where needed
-- [ ] Add back multi ctx support in a simple way? ie:
-  - [ ] No ctx_easy API
-  - [ ] shipped weak main will only work in mod_easy (ie: single default ctx) -> m_map_peek(ctxmap)
-  - [ ] m_mod_register() with NULL ctx -> uses default ctx, eventually creating it
-  - [ ] Add back m_mod_ctx() api
-  - [ ] keep ctx alive until it loop (m_mem_ref in loop_start and m_mem_unref in loop_stop)
-  - [ ] No broadcast between contexts!
-  - [ ] Only issue: using mod easy api but without provided main, how can users access default ctx?
-- [ ] See https://github.com/FedeDP/libmodule/commit/cb7e0ae4d4023368b08e56580bcb2a4c66ca61cf
+- [x] Add back multi ctx support in a simple way? ie:
+  - [x] No ctx_easy API
+  - [x] shipped weak main will only work in mod_easy (ie: single default ctx) -> m_map_peek(ctxmap)
+  - [x] m_mod_register() with NULL ctx -> uses default ctx, eventually creating it
+  - [x] Add back m_mod_ctx() api
+  - [x] keep ctx alive while it loops (m_mem_ref in loop_start and m_mem_unref in loop_stop)
+  - [x] No broadcast between contexts!
+  - [x] Only issue: using mod easy api but without provided main, how can users access default ctx?
+- [x] Add README under each example
+- [ ] Split event sources code from mod.c to src.c
 
 ### Reference-counted objects' life management
 
@@ -247,6 +248,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Fully rewrite documentation per-namespace
 - [ ] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
 - [ ] Add build options doc
+- [ ] Document multiple ps_flags in subscribe() (ie: we only account for lowest priority value)  
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document m_ctx_pre_loop()!
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)

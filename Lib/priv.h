@@ -12,19 +12,19 @@
 #include "mod.h"
 
 #define unlikely(x)     __builtin_expect((x),0)
-#define _pure_          __attribute__((pure))
 #define _weak_          __attribute__((weak))
 #define _public_        __attribute__ ((visibility("default")))
 
 #define M_CTX_DEFAULT_EVENTS   64
+#define M_CTX_DEFAULT  "libmodule"
 
 #ifndef NDEBUG
-    #define M_DEBUG printf("| D | libmodule@%s:%d | ", __func__, __LINE__); printf
+    #define M_DEBUG printf("| D | %s@%s:%d | ", M_CTX_DEFAULT, __func__, __LINE__); printf
 #else
     #define M_DEBUG (void)
 #endif
 
-#define M_WARN printf("| W | libmodule@%s:%d | ", __func__, __LINE__); printf
+#define M_WARN printf("| W | %s@%s:%d | ", M_CTX_DEFAULT, __func__, __LINE__); printf
 
 #define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
 
@@ -44,6 +44,8 @@
 #define M_MOD_ASSERT_STATE(mod, state) \
     M_MOD_ASSERT(mod); \
     M_RET_ASSERT(m_mod_is(mod, state), -EACCES)
+
+#define M_MOD_CTX(mod)    m_ctx_t *c = mod->ctx;
 
 /* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
@@ -166,21 +168,24 @@ struct _mod {
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     m_queue_t *stashed;                     // module's stashed messages
+    m_ctx_t *ctx;                           // Module's ctx
 };
 
 /* Struct that holds data for main context */
-typedef struct {
+struct _ctx {
+    const char *name;
     bool looping;                           // Whether context is looping
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
     m_log_cb logger;                        // Context's log callback
     m_map_t *modules;                       // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
+    m_ctx_flags flags;                      // Context's flags
     char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
-    char *name;
     ctx_stats_t stats;                      // Context' stats
-} m_ctx_t;
+    const void *userdata;                   // Context's user defined data
+};
 
 /* Defined in mod.c */
 int evaluate_module(void *data, const char *key, void *value);
@@ -188,7 +193,8 @@ int start(m_mod_t *mod, bool starting);
 int stop(m_mod_t *mod, bool stopping);
 
 /* Defined in ctx.c */
-int ctx_new(m_ctx_t **c);
+int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
+m_ctx_t *check_ctx(const char *ctx_name);
 void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);
 
 /* Defined in pubsub.c */
@@ -209,5 +215,6 @@ void *m_map_peek(const m_map_t *m);
 void mem_dtor(void *src);
 
 /* Gglobal variables are defined in main.c */
-extern m_ctx_t *ctx;
+extern m_map_t *ctx;
 extern m_memhook_t memhook;
+extern pthread_mutex_t mx;

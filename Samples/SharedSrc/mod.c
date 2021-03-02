@@ -23,12 +23,12 @@ static m_mod_t *selfA, *selfB;
  * Create "A" and "B" modules in ctx_name context.
  * These modules can share some callbacks.
  */
-void create_modules(void) {
+void create_modules(m_ctx_t *c) {
     m_mod_hook_t hookA = (m_mod_hook_t) {A_init, evaluate, A_recv, destroy };
     m_mod_hook_t hookB = (m_mod_hook_t) {B_init, evaluate, B_recv, destroy };
     
-    m_mod_register("Pippo", &selfA, &hookA, 0, NULL);
-    m_mod_register("Doggo", &selfB, &hookB, 0, NULL);
+    m_mod_register("Pippo", c, &selfA, &hookA, 0, NULL);
+    m_mod_register("Doggo", c, &selfB, &hookB, 0, NULL);
 }
 
 /*
@@ -74,7 +74,7 @@ static void A_recv(const m_evt_t *msg) {
             case 'q':
                 m_mod_log(selfA, "I have to go now!\n");
                 m_mod_ps_publish(selfA, "leaving", (unsigned char *)"ByeBye", 0);
-                m_ctx_quit(0);
+                m_ctx_quit(m_mod_ctx(selfA), 0);
                 break;
             default:
                 /* Avoid newline */
@@ -116,7 +116,7 @@ static void A_recv_ready(const m_evt_t *msg) {
             case 'q':
                 m_mod_log(selfA, "I have to go now!\n");
                 m_mod_ps_publish(selfA, "leaving", (unsigned char *)"ByeBye", 0);
-                m_ctx_quit(0);
+                m_ctx_quit(m_mod_ctx(selfA), 0);
                 break;
             default:
                 /* Avoid newline */

@@ -13,11 +13,11 @@ static int tell_if(void *data, const char *key, void *value);
 static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub);
 static int tell_global(void *data, const char *key, void *value);
 static void ps_msg_dtor(void *data);
-static int get_prio_flag(const m_src_flags flag);
+static int get_prio_flag(m_src_flags flag);
 static int tell_subscribers(void *data, const char *key, void *value);
 static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c);
 static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic, 
-                    const void *message, const m_ps_flags flags);
+                    const void *message, m_ps_flags flags);
 
 extern int fs_notify(const m_evt_t *msg);
 
@@ -113,7 +113,7 @@ static void ps_msg_dtor(void *data) {
     }
 }
 
-static inline int get_prio_flag(const m_src_flags flag) {
+static inline int get_prio_flag(m_src_flags flag) {
     /* Remove generic src flags (>> 8) and apply PRIO mask */
     return (flag >> 8) & M_SRC_PS_PRIO_MASK;
 }
@@ -161,13 +161,13 @@ static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c) {
 }
 
 static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic, 
-                    const void *message, const m_ps_flags flags) {
+                    const void *message, m_ps_flags flags) {
     M_PARAM_ASSERT(message);
 
     mod->stats.sent_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     ps_priv_t m = { { M_PS_USER, mod, topic, message }, flags, NULL };
-    return tell_pubsub_msg(&m, recipient, ctx);
+    return tell_pubsub_msg(&m, recipient, mod->ctx);
 }
 
 /** Private API **/
@@ -178,7 +178,7 @@ int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_ps_types type
         sender->stats.sent_msgs++;
         fetch_ms(&sender->stats.last_seen, &sender->stats.action_ctr);
     }
-    ps_priv_t m = { { type, sender, topic, NULL }, 0, NULL };
+    ps_priv_t m = { { type, sender, topic, c->userdata }, 0, NULL };
     return tell_pubsub_msg(&m, recipient, c);
 }
 
@@ -243,22 +243,24 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
 
 /** Public API **/
 
+/* Must be unref through m_mem_unref() */
 _public_ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
     M_RET_ASSERT(mod, NULL);
     M_RET_ASSERT(name, NULL);
-    
-    m_mod_t *m = m_map_get(ctx->modules, name);
+    M_MOD_CTX(mod);
+
+    m_mod_t *m = m_map_get(c->modules, name);
     return m_mem_ref(m);
 }
 
 _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
-    
+
     /* Check if it is a valid regex: compile it */
     regex_t regex;
     int ret = regcomp(&regex, topic, REG_NOSUB);
-    if (!ret) {
+    if (ret == 0) {
         M_DEBUG("'%s' is a valid regex.\n", topic);
         
         /* Lazy subscriptions map init */
@@ -275,15 +277,18 @@ _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags fla
                 }
             }
         }
-        
+
         /* Store new sub as ref'd memory */
         ev_src_t *sub = m_mem_new(sizeof(ev_src_t), subscribtions_dtor);
         M_ALLOC_ASSERT(sub);
-        
+
         ps_src_t *ps_src = &sub->ps_src;
         sub->type = M_SRC_TYPE_PS;
         sub->flags = flags;
-        /* No priority set, default to NORM priority */
+        /*
+         * No priority set, default to NORM priority.
+         * If multiple priorities are set, the lowest-priority value wins.
+         */
         if (get_prio_flag(sub->flags) == 0) {
             sub->flags |= M_SRC_PS_PRIO_NORM;
         }
@@ -316,6 +321,8 @@ _public_ int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic) {
 _public_ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(recipient);
+    /* only same ctx modules can talk */
+    M_PARAM_ASSERT(mod->ctx == recipient->ctx);
 
     /* Eventually cleanup PS_GLOBAL flag */    
     return send_msg(mod, recipient, NULL, message, flags);
@@ -339,9 +346,11 @@ _public_ int m_mod_ps_broadcast(m_mod_t *mod, const void *message, m_ps_flags fl
 _public_ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(recipient);
+    /* only same ctx modules can talk */
+    M_PARAM_ASSERT(mod->ctx == recipient->ctx);
     M_PARAM_ASSERT(m_mod_is(recipient, M_MOD_RUNNING));
 
-    return tell_system_pubsub_msg(recipient, ctx, M_PS_MOD_POISONPILL, mod, NULL);
+    return tell_system_pubsub_msg(recipient, mod->ctx, M_PS_MOD_POISONPILL, mod, NULL);
 }
 
 _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {

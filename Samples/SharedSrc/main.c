@@ -1,6 +1,6 @@
 #include <module/ctx.h>
 
-extern void create_modules(void);
+extern void create_modules(m_ctx_t *c);
 extern void destroy_modules(void);
 
 /*
@@ -14,21 +14,26 @@ void m_pre_start() {
 }
 
 int main(int argc, char *argv[]) {
-    /* 
-     * Firstly, create our desired modules.
-     * We will use "test" as new context name.
-     * New context will be created as soon as first module is added to it.
+    /*
+     * Register the context
      */
-    create_modules();
+    m_ctx_t *c = NULL;
+    m_ctx_register("SharedSrc", &c, 0, NULL);
 
     /*
-     * Loop on this context to get our modules' events
+     * Create the modules in the context
      */
-    m_ctx_loop();
+    create_modules(c);
+
+    /*
+     * Loop on context to fetch modules' events
+     */
+    m_ctx_loop(c);
     
     /*
-     * Finally, destroy our modules
+     * Finally, destroy our modules and ctx
      */
     destroy_modules();
+    m_ctx_deregister(&c);
     return 0;
 }

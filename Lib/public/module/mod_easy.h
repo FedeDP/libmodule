@@ -10,7 +10,7 @@
     static m_mod_t *m_m_self; \
     static void _m_ctor3_ m_m_ctor(void) { \
         m_mod_hook_t hook = { m_m_on_start, m_m_on_eval, m_m_on_evt, m_m_on_stop }; \
-        m_mod_register(name, &m_m_self, &hook, M_MOD_PERSIST, NULL); \
+        m_mod_register(name, NULL, &m_m_self, &hook, M_MOD_PERSIST, NULL); \
     } \
     static void _m_dtor1_ m_m_dtor(void) { m_mod_deregister(&m_m_self); } \
     static void _m_ctor2_ m_m_pre_start(void)
@@ -19,6 +19,8 @@
 
 #define m_m_load(path, flags, ref)                m_mod_load(m_m_self, path, flags, ref)
 #define m_m_unload(path)                          m_mod_unload(m_m_self, path)
+
+#define m_m_ctx()                                 m_mod_ctx(m_m_self)
 
 #define m_m_is(state)                             m_mod_is(m_m_self, state)
 #define m_m_dump()                                m_mod_dump(m_m_self)

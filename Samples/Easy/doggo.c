@@ -44,8 +44,8 @@ static void m_m_on_evt(const m_evt_t *msg) {
                 m_m_become(sleeping);
                 m_m_log("ZzzZzz...\n");
                 
-                /* Test runtime module loading */
-                m_m_load("./libtestmod.so", 0, NULL);
+                /* Test runtime module loading; loaded module won't have direct access to CTX */
+                m_m_load("./libtestmod.so", M_MOD_DENY_CTX, NULL);
             } else if (!strcmp((char *)msg->ps_evt->data, "ByeBye")) {
                 m_m_log("Sob...\n");
             } else if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {

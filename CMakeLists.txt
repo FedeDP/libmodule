@@ -147,7 +147,7 @@ install(FILES ${CMAKE_BINARY_DIR}/libmodule.pc
 install(FILES LICENSE
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/licenses/${PROJECT_NAME})
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -std=c11 -fvisibility=hidden -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -fvisibility=hidden")
 
 # Packaging support

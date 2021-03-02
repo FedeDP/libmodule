@@ -36,8 +36,9 @@
 
 /** Structs types **/
 
-/* Incomplete structure declaration to mod handler */
+/* Incomplete structure declaration to mod and ctx handlers */
 typedef struct _mod m_mod_t;
+typedef struct _ctx m_ctx_t;
 
 /* Forward declaration for thpool, used in m_task_t */
 typedef struct _thpool m_thpool_t;

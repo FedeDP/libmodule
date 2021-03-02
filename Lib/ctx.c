@@ -2,15 +2,13 @@
 #include "ctx.h"
 #include "fs_priv.h"
 
-#define M_CTX_DEFAULT  "libmodule"
-
 static void ctx_dtor(void *data);
 static void default_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static int loop_start(m_ctx_t *c, int max_events);
 static uint8_t loop_stop(m_ctx_t *c);
 static inline int loop_quit(m_ctx_t *c, uint8_t quit_code);
 static int recv_events(m_ctx_t *c, int timeout);
-static int m_ctx_loop_events(int max_events);
+static int m_ctx_loop_events(m_ctx_t *c, int max_events);
 
 static void ctx_dtor(void *data) {
     M_DEBUG("Destroying context.\n");
@@ -19,12 +17,19 @@ static void ctx_dtor(void *data) {
     poll_destroy(&context->ppriv);
     memhook._free(context->ppriv.data);
     memhook._free(context->fs_root);
-    memhook._free(context->name);
+
+    if (context->flags & M_CTX_NAME_AUTOFREE) {
+        memhook._free((void *)context->name);
+    }
+
+    if (context->flags & M_CTX_USERDATA_AUTOFREE) {
+        memhook._free((void *)context->userdata);
+    }
 }
 
 static void default_logger(const m_mod_t *mod, const char *fmt, va_list args) {
     if (mod) {
-        printf("[%s]|%s|: ", ctx->name, mod->name);
+        printf("[%s]|%s|: ", mod->ctx->name, mod->name);
     }
     vprintf(fmt, args);
 }
@@ -33,6 +38,8 @@ static int loop_start(m_ctx_t *c, int max_events) {
     c->ppriv.max_events = max_events;
     int ret = poll_init(&c->ppriv);
     if (ret == 0) {
+        m_mem_ref(c); // Ensure ctx keeps existing while we loop
+
         /* Initialize fuse fs if requested */
         if (c->fs_root && strlen(c->fs_root)) {
             int fs_ret = fs_init(c);
@@ -72,10 +79,13 @@ static uint8_t loop_stop(m_ctx_t *c) {
     c->stats.recv_msgs = 0;
     c->stats.idle_time = 0;
 
-    return c->quit_code;
+    int ret = c->quit_code;
+
+    m_mem_unref(c);
+    return ret;
 }
 
-static inline int loop_quit(m_ctx_t *c, uint8_t quit_code) {
+static int loop_quit(m_ctx_t *c, uint8_t quit_code) {
     c->quit = true;
     c->quit_code = quit_code;
     return 0;
@@ -204,7 +214,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
 
     if (recved > 0 && err == 0) {
         m_map_iterate(c->modules, evaluate_module, NULL);
-        ctx->stats.recv_msgs += recved;
+        c->stats.recv_msgs += recved;
     } else if (err) {
         /* Quit and return < 0 only for real errors */
         if (err != EINTR && err != EAGAIN) {
@@ -218,39 +228,68 @@ static int recv_events(m_ctx_t *c, int timeout) {
     return recved;
 }
 
-static int m_ctx_loop_events(int max_events) {
+static int m_ctx_loop_events(m_ctx_t *c, int max_events) {
+    M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(max_events > 0);
-    M_ASSERT(!ctx->looping, "Context already looping.", -EINVAL);
+    M_ASSERT(!c->looping, "Context already looping.", -EINVAL);
 
-    int ret = loop_start(ctx, max_events);
+    int ret = loop_start(c, max_events);
     if (ret == 0) {
-        while (!ctx->quit && ctx->stats.running_modules > 0) {
-            recv_events(ctx, -1);
+        while (!c->quit && c->stats.running_modules > 0) {
+            recv_events(c, -1);
         }
-        return loop_stop(ctx);
+        return loop_stop(c);
     }
     return ret;
 }
 
 /** Private API **/
 
-int ctx_new(m_ctx_t **c) {
-    M_DEBUG("Creating context.\n");
+int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
+    pthread_mutex_lock(&mx);
+
+    M_DEBUG("Creating context '%s'.\n", ctx_name);
+
     *c = m_mem_new(sizeof(m_ctx_t), ctx_dtor);
     M_ALLOC_ASSERT(*c);
 
+    (*c)->flags = flags;
+    (*c)->userdata = userdata;
     (*c)->logger = default_logger;
     (*c)->modules = m_map_new(0, mem_dtor);
-    (*c)->name = mem_strdup(M_CTX_DEFAULT);
 
-    M_ALLOC_ASSERT((*c)->modules);
+    if ((*c)->flags & M_CTX_NAME_DUP) {
+        (*c)->flags |= M_CTX_NAME_AUTOFREE;
+        (*c)->name = mem_strdup(ctx_name);
+    } else {
+        (*c)->name = ctx_name;
+    }
 
-    int ret = poll_create(&(*c)->ppriv);
+    int ret = -ENOMEM;
+    if ((*c)->modules && (*c)->name) {
+        ret = m_map_put(ctx, (*c)->name, *c);
+        if (ret == 0) {
+            ret = poll_create(&(*c)->ppriv);
+        }
+    }
+
     if (ret != 0) {
-        m_mem_unref(*c);
+        /* Map_remove automatically unref ctx for us */
+        if (m_map_remove(ctx, (*c)->name) != 0) {
+            m_mem_unref(*c);
+        }
         *c = NULL;
     }
+
+    pthread_mutex_unlock(&mx);
     return ret;
+}
+
+m_ctx_t *check_ctx(const char *ctx_name) {
+    pthread_mutex_lock(&mx);
+    m_ctx_t *context = m_map_get(ctx, ctx_name);
+    pthread_mutex_unlock(&mx);
+    return context;
 }
 
 void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...) {
@@ -262,109 +301,135 @@ void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ..
 
 /** Public API **/
 
-_public_ int m_ctx_set_logger(m_log_cb logger) {
+_public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
+    M_PARAM_ASSERT(ctx_name);
+    M_PARAM_ASSERT(c);
+    M_PARAM_ASSERT(!*c);
+
+    if (check_ctx(ctx_name)) {
+        return -EEXIST;
+    }
+    return ctx_new(ctx_name, c, flags, userdata);
+}
+
+_public_ int m_ctx_deregister(m_ctx_t **c) {
+    M_PARAM_ASSERT(c && *c);
+
+    pthread_mutex_lock(&mx);
+    int ret = m_map_remove(ctx, (*c)->name);
+    pthread_mutex_unlock(&mx);
+    *c = NULL;
+    return ret;
+}
+
+_public_ int m_ctx_set_logger(m_ctx_t *c, m_log_cb logger) {
+    M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(logger);
     
-    ctx->logger = logger;
+    c->logger = logger;
     return 0;
 }
 
-_public_ int m_ctx_loop(void) {
-    return m_ctx_loop_events(M_CTX_DEFAULT_EVENTS);
+_public_ int m_ctx_loop(m_ctx_t *c) {
+    return m_ctx_loop_events(c, M_CTX_DEFAULT_EVENTS);
 }
 
-_public_ int m_ctx_quit(uint8_t quit_code) {
-    M_ASSERT(ctx->looping, "Context not looping.", -EINVAL);
+_public_ int m_ctx_quit(m_ctx_t *c, uint8_t quit_code) {
+    M_PARAM_ASSERT(c);
+    M_ASSERT(c->looping, "Context not looping.", -EINVAL);
        
-    return loop_quit(ctx, quit_code);
+    return loop_quit(c, quit_code);
 }
 
-_public_ int m_ctx_fd(void) {
-    return dup(poll_get_fd(&ctx->ppriv));
+_public_ int m_ctx_fd(const m_ctx_t *c) {
+    M_PARAM_ASSERT(c);
+
+    return dup(poll_get_fd(&c->ppriv));
 }
 
-_public_ int m_ctx_dispatch(void) {
-    if (!ctx->looping) {
+_public_ int m_ctx_dispatch(m_ctx_t *c) {
+    M_PARAM_ASSERT(c);
+
+    if (!c->looping) {
         /* Ok, start now */
-        return loop_start(ctx, M_CTX_DEFAULT_EVENTS);
+        return loop_start(c, M_CTX_DEFAULT_EVENTS);
     }
     
-    if (ctx->quit || ctx->stats.running_modules == 0) {
+    if (c->quit || c->stats.running_modules == 0) {
         /* We are stopping! */
-        return loop_stop(ctx);
+        return loop_stop(c);
     }
 
     /* Recv new events, no timeout */
-    return recv_events(ctx, 0);
+    return recv_events(c, 0);
 }
 
-_public_ int m_ctx_dump(void) {
-    ctx_logger(ctx, NULL, "{\n");
-    
-    ctx_logger(ctx, NULL, "\t\"Name\": \"%s\",\n", ctx->name);
-    if (ctx->fs_root && strlen(ctx->fs_root)) {
-        ctx_logger(ctx, NULL, "\t\t\"Fs_root\": \"%s\",\n", ctx->fs_root);
+_public_ int m_ctx_dump(const m_ctx_t *c) {
+    M_PARAM_ASSERT(c);
+
+    ctx_logger(c, NULL, "{\n");
+    ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
+    if (c->fs_root && strlen(c->fs_root)) {
+        ctx_logger(c, NULL, "\t\t\"Fs_root\": \"%s\",\n", c->fs_root);
     }
-    ctx_logger(ctx, NULL, "\t\"State\": {\n");
-    ctx_logger(ctx, NULL, "\t\t\"Quit\": %d,\n", ctx->quit);
-    ctx_logger(ctx, NULL, "\t\t\"Looping\": %d,\n", ctx->looping);
-    ctx_logger(ctx, NULL, "\t},\n");
+    ctx_logger(c, NULL, "\t\"State\": {\n");
+    ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
+    ctx_logger(c, NULL, "\t\t\"Looping\": %d,\n", c->looping);
+    ctx_logger(c, NULL, "\t},\n");
 
     uint64_t now;
     fetch_ms(&now, NULL);
-    uint64_t total_looping_time = now - ctx->stats.looping_start_time;
-    uint64_t total_busy_time = total_looping_time - ctx->stats.idle_time;
-    ctx_logger(ctx, NULL, "\t\"Stats\": {\n");
-    ctx_logger(ctx, NULL, "\t\t\"Looping_since\": %" PRIu64 ",\n", ctx->stats.looping_start_time);
-    ctx_logger(ctx, NULL, "\t\t\"Total_looping_time\": %" PRIu64 ",\n", total_looping_time);
-    ctx_logger(ctx, NULL, "\t\t\"Total_idle_time\": %" PRIu64 ",\n", ctx->stats.idle_time);
-    ctx_logger(ctx, NULL, "\t\t\"Total_busy_time\": %" PRIu64 ",\n", total_busy_time);
-    ctx_logger(ctx, NULL, "\t\t\"Recv_events\": %" PRIu64 ",\n", ctx->stats.recv_msgs);
-    ctx_logger(ctx, NULL, "\t\t\"Action_freq\": %Lf\n", (long double)ctx->stats.recv_msgs / total_looping_time);
-    ctx_logger(ctx, NULL, "\t\t\"Running_modules\": %" PRIu64 ",\n", ctx->stats.running_modules);
-    ctx_logger(ctx, NULL, "\t},\n");
+    uint64_t total_looping_time = now - c->stats.looping_start_time;
+    uint64_t total_busy_time = total_looping_time - c->stats.idle_time;
+    ctx_logger(c, NULL, "\t\"Stats\": {\n");
+    ctx_logger(c, NULL, "\t\t\"Looping_since\": %" PRIu64 ",\n", c->stats.looping_start_time);
+    ctx_logger(c, NULL, "\t\t\"Looping_time\": %" PRIu64 ",\n", total_looping_time);
+    ctx_logger(c, NULL, "\t\t\"Idle_time\": %" PRIu64 ",\n", c->stats.idle_time);
+    ctx_logger(c, NULL, "\t\t\"Busy_time\": %" PRIu64 ",\n", total_busy_time);
+    ctx_logger(c, NULL, "\t\t\"Recv_events\": %" PRIu64 ",\n", c->stats.recv_msgs);
+    ctx_logger(c, NULL, "\t\t\"Action_freq\": %lf\n", (double)c->stats.recv_msgs / total_looping_time);
+    ctx_logger(c, NULL, "\t\t\"Running_modules\": %" PRIu64 ",\n", c->stats.running_modules);
+    ctx_logger(c, NULL, "\t},\n");
 
-    ctx_logger(ctx, NULL, "\t\"Modules\": [\n");
+    ctx_logger(c, NULL, "\t\"Modules\": [\n");
     int i = 0;
-    m_itr_foreach(ctx->modules, {
+    m_itr_foreach(c->modules, {
         const char *mod_name = m_map_itr_get_key(itr);
         const m_mod_t *mod = m_itr_get(itr);
-        ctx_logger(ctx, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < m_map_len(ctx->modules) ? ',' : ' ');
+        ctx_logger(c, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < m_map_len(c->modules) ? ',' : ' ');
     });
-    ctx_logger(ctx, NULL, "\t]\n");
-    ctx_logger(ctx, NULL, "}\n");
+    ctx_logger(c, NULL, "\t]\n");
+    ctx_logger(c, NULL, "}\n");
     return 0;
 }
 
-_public_ _pure_ int m_ctx_stats(m_ctx_stats_t *stats) {
-    M_PARAM_ASSERT(ctx->looping);
+_public_ int m_ctx_stats(const m_ctx_t *c, m_ctx_stats_t *stats) {
+    M_PARAM_ASSERT(c);
+    M_PARAM_ASSERT(c->looping);
     M_PARAM_ASSERT(stats);
 
     uint64_t now;
     fetch_ms(&now, NULL);
 
-    stats->recv_msgs = ctx->stats.recv_msgs;
-    stats->num_modules = m_map_len(ctx->modules);
-    stats->running_modules = ctx->stats.running_modules;
-    stats->total_idle_time = ctx->stats.idle_time;
-    stats->total_looping_time = now - ctx->stats.looping_start_time;
+    stats->recv_msgs = c->stats.recv_msgs;
+    stats->num_modules = m_map_len(c->modules);
+    stats->running_modules = c->stats.running_modules;
+    stats->total_idle_time = c->stats.idle_time;
+    stats->total_looping_time = now - c->stats.looping_start_time;
 
     uint64_t active_time = stats->total_looping_time - stats->total_idle_time;
     stats->activity_freq = (double)active_time / stats->total_looping_time;
     return 0;
 }
 
-_public_ const char *m_ctx_get_name(void) {
-    return ctx->name;
+_public_ const char *m_ctx_name(const m_ctx_t *c) {
+    M_RET_ASSERT(c, NULL);
+
+    return c->name;
 }
 
-_public_ int m_ctx_set_name(const char *name) {
-    M_PARAM_ASSERT(name && strlen(name));
-    M_PARAM_ASSERT(!ctx->looping);
+_public_ const void *m_ctx_userdata(const m_ctx_t *c) {
+    M_RET_ASSERT(c, NULL);
 
-    if (ctx->name) {
-        memhook._free(ctx->name);
-    }
-    ctx->name = mem_strdup(name);
-    return 0;
+    return c->userdata;
 }
