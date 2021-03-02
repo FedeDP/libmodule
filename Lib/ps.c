@@ -178,7 +178,7 @@ int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_ps_types type
         sender->stats.sent_msgs++;
         fetch_ms(&sender->stats.last_seen, &sender->stats.action_ctr);
     }
-    ps_priv_t m = { { type, sender, topic, c->userdata }, 0, NULL };
+    ps_priv_t m = { { type, sender, topic, NULL }, 0, NULL };
     return tell_pubsub_msg(&m, recipient, c);
 }
 

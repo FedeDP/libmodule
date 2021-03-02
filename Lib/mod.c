@@ -378,7 +378,8 @@ int evaluate_module(void *data, const char *key, void *value) {
             m_src_thresh_t *alarm = &src->thresh_src.alarm;
 
             if (thr->activity_freq != 0) {
-                long double activity_freq = (long double) mod->stats.action_ctr / (curr_ms - mod->stats.registration_time);
+                uint64_t active_time = curr_ms - mod->stats.registration_time;
+                double activity_freq = (double) mod->stats.action_ctr / active_time;
                 if (activity_freq >= thr->activity_freq) {
                     alarm->activity_freq = activity_freq;
                 }
@@ -603,7 +604,7 @@ _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags
     M_PARAM_ASSERT(module_path);
     M_MOD_CTX(mod);
 
-    const int module_size = m_map_len(c->modules);
+    const ssize_t module_size = m_map_len(c->modules);
     
     void *handle = dlopen(module_path, RTLD_NOW);
     if (!handle) {
@@ -805,9 +806,6 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     M_MOD_ASSERT(mod);
     M_MOD_CTX(mod);
 
-    uint64_t curr_ms;
-    fetch_ms(&curr_ms, NULL);
-
     ctx_logger(c, mod, "{\n");
     ctx_logger(c, mod, "\t\"Name\": \"'%s\",\n", mod->name);
     ctx_logger(c, mod, "\t\"State\": %#x,\n", mod->state);
@@ -824,7 +822,11 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     ctx_logger(c, mod, "\t\t\"Recv_msgs\": %" PRIu64 ",\n", mod->stats.recv_msgs);
     ctx_logger(c, mod, "\t\t\"Last_seen\": %" PRIu64 ",\n", mod->stats.last_seen);
     ctx_logger(c, mod, "\t\t\"Num_actions\": %" PRIu64 ",\n", mod->stats.action_ctr);
-    ctx_logger(c, mod, "\t\t\"Action_freq\": %Lf\n", (long double)mod->stats.action_ctr / (curr_ms - mod->stats.registration_time));
+
+    uint64_t curr_ms;
+    fetch_ms(&curr_ms, NULL);
+    uint64_t active_time = curr_ms - mod->stats.registration_time;
+    ctx_logger(c, mod, "\t\t\"Action_freq\": %lf\n", (double)mod->stats.action_ctr / active_time);
     
     bool closed_stats = false;
     int i = 0;
