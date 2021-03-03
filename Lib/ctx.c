@@ -2,6 +2,10 @@
 #include "ctx.h"
 #include "fs_priv.h"
 
+/**************************************
+ * Code related to contexts handling. *
+ **************************************/
+
 static void ctx_dtor(void *data);
 static void default_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static int loop_start(m_ctx_t *c, int max_events);
@@ -135,7 +139,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     ps_priv_t *ps_msg;
                     /* Received on pubsub interface */
                     if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-                        M_DEBUG("Failed to read message: %s\n", strerror(errno));
+                        M_WARN("Failed to read message: %s\n", strerror(errno));
                     } else {
                         msg->ps_evt = &ps_msg->msg;
                         p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
@@ -218,7 +222,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
     } else if (err) {
         /* Quit and return < 0 only for real errors */
         if (err != EINTR && err != EAGAIN) {
-            fprintf(stderr, "Ctx '%s' loop error: %s.\n", c->name, strerror(err));
+            M_WARN("Ctx '%s' loop error: %s.\n", c->name, strerror(err));
             loop_quit(c, err);
             recved = -1; // error!
         }
@@ -369,6 +373,12 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
 
     ctx_logger(c, NULL, "{\n");
     ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
+    if (c->flags) {
+        ctx_logger(c, NULL, "\t\"Flags\": %x,\n", c->flags);
+    }
+    if (c->userdata) {
+        ctx_logger(c, NULL, "\t\"UP\": %p,\n", c->userdata);
+    }
     if (c->fs_root && strlen(c->fs_root)) {
         ctx_logger(c, NULL, "\t\t\"Fs_root\": \"%s\",\n", c->fs_root);
     }

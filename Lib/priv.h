@@ -214,6 +214,14 @@ void *m_map_peek(const m_map_t *m);
 /* Defined in mem.c; used internally as dtor cb for structs APIs userptr, when it is memory ref counted */
 void mem_dtor(void *src);
 
+/* Defined in src.c */
+extern const char *src_names[];
+int init_src(m_mod_t *mod, m_src_types t);
+int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
+                 m_src_flags flags, const void *userptr);
+int deregister_src(m_mod_t *mod, m_src_types type, void *src_data);
+int start_task(ev_src_t *src);
+
 /* Gglobal variables are defined in main.c */
 extern m_map_t *ctx;
 extern m_memhook_t memhook;

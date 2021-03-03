@@ -1,5 +1,9 @@
 #include "priv.h"
 
+/*******************************************
+ * Code related to generic priv utilities. *
+ *******************************************/
+
 static void evt_dtor(void *data) {
     m_evt_t *evt = (m_evt_t *)data;
     /* We use fd_evt as all messages share address inside union */

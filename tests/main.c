@@ -7,6 +7,7 @@
 #include "test_bst.h"
 #include "test_evt_ref.h"
 #include "test_perf.h"
+#include "test_mem.h"
 
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -185,7 +186,9 @@ int main(void) {
         cmocka_unit_test(test_evt_ref),
         
         /* Test poll plugin performance */
-        cmocka_unit_test(test_poll_perf)
+        cmocka_unit_test(test_poll_perf),
+
+        cmocka_unit_test(test_mem)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

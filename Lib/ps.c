@@ -1,7 +1,9 @@
 #include "mod.h"
 #include "poll_priv.h"
 
-/** Actor-like PubSub interface **/
+/******************************************
+ * Code related to Actor-like PubSub API. *
+ ******************************************/
 
 // PRIO_SIZE -> { lowest, low, norm, high, highest }
 #define M_SRC_PS_PRIO_SIZE       __builtin_ctz((M_SRC_PS_PRIO_HIGHEST << 1) / M_SRC_PS_PRIO_LOWEST)
@@ -243,16 +245,6 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
 
 /** Public API **/
 
-/* Must be unref through m_mem_unref() */
-_public_ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
-    M_RET_ASSERT(mod, NULL);
-    M_RET_ASSERT(name, NULL);
-    M_MOD_CTX(mod);
-
-    m_mod_t *m = m_map_get(c->modules, name);
-    return m_mem_ref(m);
-}
-
 _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
@@ -351,56 +343,4 @@ _public_ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     M_PARAM_ASSERT(m_mod_is(recipient, M_MOD_RUNNING));
 
     return tell_system_pubsub_msg(recipient, mod->ctx, M_PS_MOD_POISONPILL, mod, NULL);
-}
-
-_public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
-    M_MOD_ASSERT(mod);
-    M_PARAM_ASSERT(evt);
-    // Cannot stash FD evts: it would cause an infinite loop polling on it
-    M_PARAM_ASSERT(evt->type != M_SRC_TYPE_FD);
-    // Cannot stash system evts
-    M_PARAM_ASSERT(evt->type != M_SRC_TYPE_PS || evt->ps_evt->type == M_PS_USER);
-
-    m_mem_ref((void *)evt);
-    return m_queue_enqueue(mod->stashed, (void *)evt);
-}
-
-_public_ int m_mod_unstash(m_mod_t *mod) {
-    M_MOD_ASSERT(mod);
-
-    /*
-     * Peek it without dequeuing as dequeuing would call
-     * m_mem_unref thus invalidating ptr
-     */
-    m_evt_t *evt = m_queue_peek(mod->stashed);
-    if (evt) {
-        run_pubsub_cb(mod, evt, NULL);
-
-        /* Finally, remove it */
-        m_queue_dequeue(mod->stashed);
-    }
-    return 0;
-}
-
-_public_ int m_mod_unstashall(m_mod_t *mod) {
-    M_MOD_ASSERT(mod);
-
-    m_itr_foreach(mod->stashed, {
-        m_evt_t *evt = m_itr_get(itr);
-        /*
-         * Here evt has 1 ref; run_pubsub_cb() would drop it
-         * thus invalidating ptr.
-         * But m_queue_clear() still needs ptrs!
-         * Keep evts alive.
-         */
-        m_mem_ref(evt);
-        run_pubsub_cb(mod, evt, NULL);
-    });
-    /* Return number of events unstashed or error */
-    const int len = m_queue_len(mod->stashed);
-    int ret = m_queue_clear(mod->stashed);
-    if (ret == 0) {
-        ret = len;
-    }
-    return ret;
 }

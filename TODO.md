@@ -18,7 +18,7 @@
 - [x] add m_ctx_stats() API
 - [x] Add stats to m_ctx_dump
 - [x] Automatically leave context when no more modules are RUNNING in it
-- [ ] Use M_WARN macro where needed
+- [x] Use M_WARN macro where needed
 - [x] Add back multi ctx support in a simple way? ie:
   - [x] No ctx_easy API
   - [x] shipped weak main will only work in mod_easy (ie: single default ctx) -> m_map_peek(ctxmap)
@@ -28,7 +28,9 @@
   - [x] No broadcast between contexts!
   - [x] Only issue: using mod easy api but without provided main, how can users access default ctx?
 - [x] Add README under each example
-- [ ] Split event sources code from mod.c to src.c
+- [x] Split event sources code from mod.c to src.c
+- [ ] m_{mod,ctx}_dump API to take print funciton as param, to be called on each {key,value} pair
+- [x] Fix bug with m_mem_new() and memory alignment
 
 ### Reference-counted objects' life management
 

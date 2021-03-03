@@ -5,6 +5,10 @@
 #include "ctx.h"
 #include "priv.h"
 
+/***********************************************************
+ * Code related to main library ctor/dtor + main() symbol. *
+ ***********************************************************/
+
 m_map_t *ctx = NULL;
 m_memhook_t memhook = { malloc, calloc, free };
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
