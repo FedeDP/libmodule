@@ -153,7 +153,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     }
                     break;
                 case M_SRC_TYPE_TMR:
-                    msg->tmr_evt = m_mem_new(sizeof(*msg->sgn_evt), NULL);
+                    msg->tmr_evt = m_mem_new(sizeof(*msg->tmr_evt), NULL);
                     if (poll_consume_tmr(&c->ppriv, i, p,  msg->tmr_evt) == 0) {
                         msg->tmr_evt->ms = p->tmr_src.its.ms;
                     }
@@ -374,17 +374,17 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "{\n");
     ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
     if (c->flags) {
-        ctx_logger(c, NULL, "\t\"Flags\": %x,\n", c->flags);
+        ctx_logger(c, NULL, "\t\"Flags\": \"%#x\",\n", c->flags);
     }
     if (c->userdata) {
-        ctx_logger(c, NULL, "\t\"UP\": %p,\n", c->userdata);
+        ctx_logger(c, NULL, "\t\"UP\": \"%p\",\n", c->userdata);
     }
     if (c->fs_root && strlen(c->fs_root)) {
         ctx_logger(c, NULL, "\t\t\"Fs_root\": \"%s\",\n", c->fs_root);
     }
     ctx_logger(c, NULL, "\t\"State\": {\n");
     ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
-    ctx_logger(c, NULL, "\t\t\"Looping\": %d,\n", c->looping);
+    ctx_logger(c, NULL, "\t\t\"Looping\": %d\n", c->looping);
     ctx_logger(c, NULL, "\t},\n");
 
     uint64_t now;
@@ -397,8 +397,8 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "\t\t\"Idle_time\": %" PRIu64 ",\n", c->stats.idle_time);
     ctx_logger(c, NULL, "\t\t\"Busy_time\": %" PRIu64 ",\n", total_busy_time);
     ctx_logger(c, NULL, "\t\t\"Recv_events\": %" PRIu64 ",\n", c->stats.recv_msgs);
-    ctx_logger(c, NULL, "\t\t\"Action_freq\": %lf\n", (double)c->stats.recv_msgs / total_looping_time);
-    ctx_logger(c, NULL, "\t\t\"Running_modules\": %" PRIu64 ",\n", c->stats.running_modules);
+    ctx_logger(c, NULL, "\t\t\"Action_freq\": %lf,\n", (double)c->stats.recv_msgs / total_looping_time);
+    ctx_logger(c, NULL, "\t\t\"Running_modules\": %" PRIu64 "\n", c->stats.running_modules);
     ctx_logger(c, NULL, "\t},\n");
 
     ctx_logger(c, NULL, "\t\"Modules\": [\n");
@@ -406,7 +406,7 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     m_itr_foreach(c->modules, {
         const char *mod_name = m_map_itr_get_key(itr);
         const m_mod_t *mod = m_itr_get(itr);
-        ctx_logger(c, NULL, "\t\t\"%s\": %p%c\n", mod_name, mod, ++i < m_map_len(c->modules) ? ',' : ' ');
+        ctx_logger(c, NULL, "\t\t\"%s\"%c\n", mod_name, ++i < m_map_len(c->modules) ? ',' : ' ');
     });
     ctx_logger(c, NULL, "\t]\n");
     ctx_logger(c, NULL, "}\n");

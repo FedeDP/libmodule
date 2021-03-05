@@ -69,6 +69,7 @@ const char *m_mod_name(const m_mod_t *mod);
 
 /* Module state getter */
 bool m_mod_is(const m_mod_t *mod, m_mod_states st);
+m_mod_states m_mod_state(const m_mod_t *mod);
 
 /* Module state setters */
 int m_mod_start(m_mod_t *mod);

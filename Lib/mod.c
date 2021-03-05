@@ -434,10 +434,16 @@ _public_ const char *m_mod_name(const m_mod_t *mod_self) {
 
 /** Module state getters **/
 
-_public_ bool m_mod_is(const m_mod_t *mod_self, m_mod_states st) {
-    M_RET_ASSERT(mod_self, false);
+_public_ bool m_mod_is(const m_mod_t *mod, m_mod_states st) {
+    M_RET_ASSERT(mod, false);
 
-    return mod_self->state & st;
+    return mod->state & st;
+}
+
+_public_ m_mod_states m_mod_state(const m_mod_t *mod) {
+    M_PARAM_ASSERT(mod);
+
+    return mod->state;
 }
 
 _public_ int m_mod_dump(const m_mod_t *mod) {
@@ -446,12 +452,12 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
 
     ctx_logger(c, mod, "{\n");
     ctx_logger(c, mod, "\t\"Name\": \"'%s\",\n", mod->name);
-    ctx_logger(c, mod, "\t\"State\": %#x,\n", mod->state);
+    ctx_logger(c, mod, "\t\"State\": \"%#x\",\n", mod->state);
     if (mod->flags) {
-        ctx_logger(c, mod, "\t\"Flags\": %x,\n", mod->flags);
+        ctx_logger(c, mod, "\t\"Flags\": \"%#x\",\n", mod->flags);
     }
     if (mod->userdata) {
-        ctx_logger(c, mod, "\t\"UP\": %p,\n", mod->userdata);
+        ctx_logger(c, mod, "\t\"UP\": \"%p\",\n", mod->userdata);
     }
 
     ctx_logger(c, mod, "\t\"Stats\": {\n");
@@ -465,38 +471,47 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     fetch_ms(&curr_ms, NULL);
     uint64_t active_time = curr_ms - mod->stats.registration_time;
     ctx_logger(c, mod, "\t\t\"Action_freq\": %lf\n", (double)mod->stats.action_ctr / active_time);
-    
+
     bool closed_stats = false;
+    bool closed_subs = false;
     int i = 0;
     if (m_map_len(mod->subscriptions) > 0) {
         closed_stats = true;
         ctx_logger(c, mod, "\t},\n");
+
         ctx_logger(c, mod, "\t\"Subs\": [\n");
         m_itr_foreach(mod->subscriptions, {
             ev_src_t *sub = m_itr_get(itr);
-            if (i++ > 0) {
-                ctx_logger(c, mod, "\t},\n");
-            }
             ctx_logger(c, mod, "\t{\n");
-            ctx_logger(c, mod, "\t\t\"Topic\": \"%s\",\n", sub->ps_src.topic);
-            if (sub->userptr) {
-                ctx_logger(c, mod, "\t\t\"UP\": %p,\n", sub->userptr);
-            }
             if (sub->flags) {
-                ctx_logger(c, mod, "\t\t\"Flags\": %#x\n", sub->flags);
+                ctx_logger(c, mod, "\t\t\"Flags\": \"%#x\"\n", sub->flags);
             }
+            if (sub->userptr) {
+                ctx_logger(c, mod, "\t\t\"UP\": \"%p\",\n", sub->userptr);
+            }
+            ctx_logger(c, mod, "\t\t\"Topic\": \"%s\"\n", sub->ps_src.topic);
+            ctx_logger(c, mod, "\t}%c\n", ++i < m_map_len(mod->subscriptions) ? ',' : ' ');
         });
-        ctx_logger(c, mod, "\t}\n");
         ctx_logger(c, mod, "\t],\n");
     }
     
     /* Skip internal M_SRC_TYPE_PS */
+    size_t num_srcs = 0;
     for (int k = M_SRC_TYPE_FD; k < M_SRC_TYPE_END; k++) {
         if (m_bst_len(mod->srcs[k]) > 0) {
-            if (!closed_stats) {
+            /* Eventually close still opened structs */
+            if (!closed_stats || !closed_subs) {
                 ctx_logger(c, mod, "\t},\n");
                 closed_stats = true;
+                closed_subs = true;
             }
+
+            if (num_srcs) {
+                ctx_logger(c, mod, "\t],\n");
+            }
+
+            num_srcs++;
+
             ctx_logger(c, mod, "\t\"%s\": [\n", src_names[k]);
             i = 0;
             m_itr_foreach(mod->srcs[k], {
@@ -505,50 +520,53 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
                 if (i++ > 0) {
                     ctx_logger(c, mod, "\t},\n");
                 }
-                
+
                 ctx_logger(c, mod, "\t{\n");
+                if (t->flags) {
+                    ctx_logger(c, mod, "\t\t\"Flags\": \"%#x\",\n", t->flags);
+                }
+                if (t->userptr) {
+                    ctx_logger(c, mod, "\t\t\"UP\": \"%p\",\n", t->userptr);
+                }
                 switch (t->type) {
                 case M_SRC_TYPE_FD:
-                    ctx_logger(c, mod, "\t\t\"FD\": %d,\n", t->fd_src.fd);
+                    ctx_logger(c, mod, "\t\t\"FD\": %d\n", t->fd_src.fd);
                     break;
                 case M_SRC_TYPE_SGN:
-                    ctx_logger(c, mod, "\t\t\"SGN\": %d,\n", t->sgn_src.sgs.signo);
+                    ctx_logger(c, mod, "\t\t\"SGN\": %d\n", t->sgn_src.sgs.signo);
                     break;
                 case M_SRC_TYPE_TMR:
                     ctx_logger(c, mod, "\t\t\"TMR_MS\": %lu,\n", t->tmr_src.its.ms);
-                    ctx_logger(c, mod, "\t\t\"TMR_CID\": %d,\n", t->tmr_src.its.clock_id);
+                    ctx_logger(c, mod, "\t\t\"TMR_CID\": %d\n", t->tmr_src.its.clock_id);
                     break;
                 case M_SRC_TYPE_PATH:
                     ctx_logger(c, mod, "\t\t\"PATH\": \"%s\",\n", t->path_src.pt.path);
-                    ctx_logger(c, mod, "\t\t\"EV\": %#x,\n", t->path_src.pt.events);
+                    ctx_logger(c, mod, "\t\t\"EV\": \"%#x\"\n", t->path_src.pt.events);
                     break;
                 case M_SRC_TYPE_PID:
                     ctx_logger(c, mod, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);
-                    ctx_logger(c, mod, "\t\t\"EV\": %u,\n", t->pid_src.pid.events);
+                    ctx_logger(c, mod, "\t\t\"EV\": %u\n", t->pid_src.pid.events);
                     break;
                 case M_SRC_TYPE_TASK:
-                    ctx_logger(c, mod, "\t\t\"TID\": %d,\n", t->task_src.tid.tid);
+                    ctx_logger(c, mod, "\t\t\"TID\": %d\n", t->task_src.tid.tid);
                     break;
                 case M_SRC_TYPE_THRESH:
                     ctx_logger(c, mod, "\t\t\"INACTIVE_MS\": %d,\n", t->thresh_src.thr.inactive_ms);
-                    ctx_logger(c, mod, "\t\t\"ACTIVITY_FREQ\": %d,\n", t->thresh_src.thr.activity_freq);
+                    ctx_logger(c, mod, "\t\t\"ACTIVITY_FREQ\": %d\n", t->thresh_src.thr.activity_freq);
                     break;
                 default:
                     break;
                 }
-                if (t->userptr) {
-                    ctx_logger(c, mod, "\t\t\"UP\": %p,\n", t->userptr);
-                }
-                if (t->flags) {
-                    ctx_logger(c, mod, "\t\t\"Flags\": %#x\n", t->flags);
-                }
             });
             ctx_logger(c, mod, "\t}\n");
-            ctx_logger(c, mod, "\t]\n");
         }
     }
-    
-    if (!closed_stats) {
+
+    /* Eventually close srcs or subs or stats */
+    if (num_srcs) {
+        ctx_logger(c, mod, "\t]\n");
+    }
+    if (!closed_stats || !closed_subs) {
         ctx_logger(c, mod, "\t}\n");
     }
     

@@ -29,7 +29,6 @@
   - [x] Only issue: using mod easy api but without provided main, how can users access default ctx?
 - [x] Add README under each example
 - [x] Split event sources code from mod.c to src.c
-- [ ] m_{mod,ctx}_dump API to take print funciton as param, to be called on each {key,value} pair
 - [x] Fix bug with m_mem_new() and memory alignment
 
 ### Reference-counted objects' life management
@@ -407,7 +406,7 @@ It would allows to check if same node already exists on insert, without losing t
 
 ## 6.1.0 (7.0.0?)
 
-### Thread-safe
+### Thread-safe (?)
 
 https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 
@@ -437,10 +436,4 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 
 ### Generic
 
-- [ ] Add a m_mod_set_compact_time(timerspec); then messages are kept on hold for timerspec time before being flushed to module
-- [ ] Add a m_mod_set_batch_size(size) to batch events and flush them together
-- [ ] on_evt callback to take "const m_queue_t *const evts"
-- [ ] when calling run_pubsub_cb(), just add the evt to module queue, 
-  then only if compact_time or batch size are satisfied, actually call the user hook
-- [ ] when unstashing or flushing ps msgs, do not account for compaction time nor batch size  
 - [ ] Fix m_src_flags with 64b values (right now there is no value over 32b thus it is not a real issue)
