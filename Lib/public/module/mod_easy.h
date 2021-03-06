@@ -23,6 +23,7 @@
 #define m_m_ctx()                                 m_mod_ctx(m_m_self)
 
 #define m_m_is(state)                             m_mod_is(m_m_self, state)
+#define m_m_state()                               m_mod_state(m_m_self)
 #define m_m_dump()                                m_mod_dump(m_m_self)
 #define m_m_stats(stats)                          m_mod_stats(m_m_self, stats)
 
