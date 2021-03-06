@@ -147,7 +147,7 @@ int evaluate_module(void *data, const char *key, void *value) {
 
     /* Check if module should be started */
     if (m_mod_is(mod, M_MOD_IDLE) && 
-        (!mod->hook.on_eval || mod->hook.on_eval())) {
+        (!mod->hook.on_eval || mod->hook.on_eval(mod))) {
         
         start(mod, true);
     }
@@ -178,7 +178,7 @@ int start(m_mod_t *mod, bool starting) {
     c->stats.running_modules++;
 
     /* Call module init() callback only if module is being (re)started */
-    if (!starting || !mod->hook.on_start || mod->hook.on_start()) {
+    if (!starting || !mod->hook.on_start || mod->hook.on_start(mod)) {
         M_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
         tell_system_pubsub_msg(NULL, c, M_PS_MOD_STARTED, mod, NULL);
         return 0;
@@ -211,7 +211,7 @@ int stop(m_mod_t *mod, bool stopping) {
     if (stopping) {
         reset_module(mod);
         if (mod->hook.on_stop) {
-            mod->hook.on_stop();
+            mod->hook.on_stop(mod);
         }
     }
     
@@ -318,7 +318,7 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     
     M_DEBUG("Deregistering module '%s'.\n", m->name);
     
-    /* Keep module alive until destroy() callback is called */
+    /* Keep module alive until everything is correctly destroyed */
     M_MEM_LOCK(m, {
         /* Stop module */
         stop(m, true);
@@ -329,12 +329,8 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
         
         /* Free FS internal data */
         fs_cleanup(m);
-        
-        /*
-        * Call destroy once self is NULL and module has been removed from context;
-        * ie: no more libmodule operations can be called on this handler 
-        * neither it can be ref'd through module_ref.
-        */
+
+        /* Ok; now user mod handler is NULL */
         *mod = NULL;
     });
 

@@ -7,9 +7,9 @@
 #include <errno.h>
 #include <string.h>
 
-static bool init_false(void);
-static void recv(const m_evt_t *msg);
-static void recv_ready(const m_evt_t *msg);
+static bool init_false(m_mod_t *mod);
+static void recv(m_mod_t *mod, const m_evt_t *msg);
+static void recv_ready(m_mod_t *mod, const m_evt_t *msg);
 
 static int ctr;
 
@@ -436,7 +436,7 @@ void test_mod_broadcast(void **state) {
     assert_true(ret == 0);
 }
 
-static bool init_false(void) {
+static bool init_false(m_mod_t *mod) {
     return false;
 }
 
@@ -446,7 +446,7 @@ static bool init_false(void) {
  * Then, set new behavior and unstash everything.
  * Check that all stashed messages are received.
  */
-static void recv(const m_evt_t *msg) {
+static void recv(m_mod_t *mod, const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
         ctr++;
         int ret = m_mod_stash(mod, msg);
@@ -461,7 +461,7 @@ static void recv(const m_evt_t *msg) {
     }
 }
 
-static void recv_ready(const m_evt_t *msg) {
+static void recv_ready(m_mod_t *mod, const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
         ctr--;
         if (!strcmp((char *) msg->ps_evt->data, "hi3!")) {

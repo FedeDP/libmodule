@@ -6,8 +6,7 @@
 
 #define MAX_LEN 5000
 
-static bool init(void);
-static void my_recv(const m_evt_t *msg);
+static void my_recv(m_mod_t *mod, const m_evt_t *msg);
 
 static m_mod_t *mod;
 static int ctr;
@@ -24,7 +23,7 @@ void test_poll_perf(void **state) {
     m_src_thresh_t thresh = { .activity_freq = 10.0 };
     m_src_thresh_t alarm = {0};
         
-    m_mod_hook_t hook = {init, NULL, my_recv, NULL };
+    m_mod_hook_t hook = { .on_evt = my_recv };
     ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
@@ -66,7 +65,7 @@ static bool init(void) {
     return true;
 }
 
-static void my_recv(const m_evt_t *msg) {    
+static void my_recv(m_mod_t *mod, const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER && ++ctr == MAX_LEN) {
         m_ctx_quit(test_ctx, 0);
     } else if (msg->type == M_SRC_TYPE_THRESH) {

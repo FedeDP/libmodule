@@ -20,11 +20,11 @@
  * ctors order:
  * 0) global m_pre_start(), usefult to set your own memhook if desired
  * 1) internal libmodule_init()
- * 2) each m_m_pre_start() (only mod_easy API)
- * 3) each m_m_ctor() (only mod_easy API)
+ * 2) each m_mod_pre_start() (only mod_easy API)
+ * 3) each m_mod_ctor() (only mod_easy API)
  *
  * dtors order:
- * 1) each m_m_dtor() (only mod_easy API)
+ * 1) each m_mod_dtor() (only mod_easy API)
  * 0) internal libmodule_deinit()
  */
 #define _m_ctor0_         __attribute__((constructor (110)))
@@ -177,7 +177,6 @@ typedef struct {
 
 /* Libmodule receive() main message type */
 typedef struct {
-    const m_mod_t *self;                            // Self reference. Mostly useful when 2+ modules share same receive() callback
     m_src_types type;                               // Event type
     union {                                         // Events
         m_evt_fd_t      *fd_evt;

@@ -30,6 +30,9 @@
 - [x] Add README under each example
 - [x] Split event sources code from mod.c to src.c
 - [x] Fix bug with m_mem_new() and memory alignment
+- [x] Pass m_mod_t as first param to userhook callbacks? (drop m_evt_t self ptr)
+- [ ] Set ZOMBIE mod state before calling stop() inside m_mod_deregister() ?
+- [x] Drop easy API? (ie: just leave M_MOD() macro to automatically manage module lifecycle)
 
 ### Reference-counted objects' life management
 
@@ -173,10 +176,10 @@ Signature: Module_register_src(int/char*, uint flags, void userptr) -> Flags: FD
 - - [x] Rename init/deinit/check etc etc to on_start(), on_stop(), on_event(), on_eval() etc etc...
 - - [x] Rename commons.h.in to cmn.h.in
 - - [x] Rename mod_states to m_mod_states
-- - [x] Use M_M() macro instead of M_M? More coherent with easy API
+- - [x] Use M_MOD() macro instead of M_MOD? More coherent with easy API
 - - [x] use m_m_ prefix for callbacks?
 - [x] Rename pubsub.c to ps.c
-- [x] Rename MODULE() to M_M()
+- [x] Rename MODULE() to M_MOD()
 - [x] Rename MODULE_CTX() to M_MOD_FULL() and take additional flags parameter
 - [x] Rename module_cmn.h to commons.h
 - [x] Rename complex API to m_mod/ctx_ -> "Easy" API instead "m_m_" and "m_c_"
@@ -437,3 +440,4 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 ### Generic
 
 - [ ] Fix m_src_flags with 64b values (right now there is no value over 32b thus it is not a real issue)
+- [ ] Expand fs_create usefulness (eg: automatically register some msg...whatever); right now it registers modules that do nothing. Maybe try to m_mod_load() the created file?

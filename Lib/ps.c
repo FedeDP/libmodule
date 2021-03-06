@@ -21,7 +21,7 @@ static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c);
 static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic, 
                     const void *message, m_ps_flags flags);
 
-extern int fs_notify(const m_evt_t *msg);
+extern int fs_notify(m_mod_t *mod, const m_evt_t *msg);
 
 static void subscribtions_dtor(void *data) {
     ev_src_t *sub = (ev_src_t *)data;
@@ -220,7 +220,6 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
         cb = mod->hook.on_evt;
     }
     
-    msg->self = mod;
     if (src) {
         /*
          * if src == NULL, do not touch msg->userdata:
@@ -231,10 +230,10 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
     }
     
     /* Notify underlying fuse fs */
-    fs_notify(msg);
+    fs_notify(mod, msg);
         
     /* Finally call user callback */
-    cb(msg);
+    cb(mod, msg);
 
     /* Unref the message */
     m_mem_unref(msg);

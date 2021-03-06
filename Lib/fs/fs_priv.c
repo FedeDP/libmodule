@@ -60,8 +60,7 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
 /* Internal functions */
 static void client_dtor(void *data);
 static void fs_logger(const m_mod_t *mod, const char *fmt, va_list args);
-static bool init(void);
-static void receive(const m_evt_t *const msg);
+static void receive(m_mod_t *self, const m_evt_t *const msg);
 static void fs_wakeup_clients(fs_priv_t *fp, bool leaving);
 
 static const struct fuse_operations operations = {
@@ -229,7 +228,7 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 }
 
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    const m_mod_hook_t fuse_hook = {init, NULL, receive, NULL };
+    const m_mod_hook_t fuse_hook = {.on_evt = receive };
     if (strlen(path) > 1) {
         FS_CTX();
         m_mod_t *mod = NULL;
@@ -318,11 +317,7 @@ static void fs_logger(const m_mod_t *mod, const char *fmt, va_list args) {
     }
 }
 
-static bool init(void) {
-    return true;
-}
-
-static void receive(const m_evt_t *const msg) {
+static void receive(m_mod_t *self, const m_evt_t *const msg) {
     
 }
 
@@ -385,8 +380,7 @@ int fs_process(m_ctx_t *c) {
     return ret;
 }
 
-int fs_notify(const m_evt_t *msg) {
-    m_mod_t *mod = (m_mod_t *)msg->self;
+int fs_notify(m_mod_t *mod, const m_evt_t *msg) {
     if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_CTX_STOPPED) {

@@ -4,8 +4,7 @@
 #include <module/mem.h>
 #include <string.h>
 
-static bool init(void);
-static void my_recv(const m_evt_t *const msg);
+static void my_recv(m_mod_t *mod, const m_evt_t *const msg);
 
 static m_mod_t *mod = NULL;
 static m_evt_t *ref;
@@ -18,7 +17,7 @@ void test_evt_ref(void **state) {
     assert_true(ret == 0);
     assert_non_null(test_ctx);
 
-    m_mod_hook_t hook = {init, NULL, my_recv, NULL };
+    m_mod_hook_t hook = { .on_evt = my_recv };
     ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(mod);
@@ -37,11 +36,7 @@ void test_evt_ref(void **state) {
     m_mod_deregister(&mod);
 }
 
-static bool init(void) {
-    return true;
-}
-
-static void my_recv(const m_evt_t *const msg) {  
+static void my_recv(m_mod_t *mod, const m_evt_t *const msg) {
     if (msg->type == M_SRC_TYPE_PS &&
         msg->ps_evt->type == M_PS_USER) {
 

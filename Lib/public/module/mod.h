@@ -30,10 +30,10 @@ typedef enum {
 } m_mod_flags;
 
 /* Callbacks typedefs */
-typedef bool (*m_start_cb)(void);
-typedef bool (*m_eval_cb)(void);
-typedef void (*m_evt_cb)(const m_evt_t *const msg);
-typedef void (*m_stop_cb)(void);
+typedef bool (*m_start_cb)(m_mod_t *self);
+typedef bool (*m_eval_cb)(m_mod_t *self);
+typedef void (*m_evt_cb)(m_mod_t *self, const m_evt_t *const msg);
+typedef void (*m_stop_cb)(m_mod_t *self);
 
 /* Struct that holds user defined callbacks */
 typedef struct {
