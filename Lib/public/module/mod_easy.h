@@ -15,3 +15,4 @@
     } \
     static void _m_dtor1_ m_mod_dtor(void) { m_mod_deregister(&m_mod_self); } \
     static void _m_ctor2_ m_mod_pre_start(void)
+
