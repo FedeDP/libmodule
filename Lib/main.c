@@ -1,7 +1,4 @@
 #include <assert.h>
-#ifdef WITH_FS
-    #include <fs.h>
-#endif
 #include "ctx.h"
 #include "priv.h"
 
