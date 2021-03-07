@@ -135,11 +135,7 @@ static int threshcmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
     const m_src_thresh_t *thr = (const m_src_thresh_t *)my_data;
 
-    long double my_val = (long double)thr->activity_freq
-                         + (long double)thr->inactive_ms;
-    long double their_val = (long double)src->thresh_src.thr.activity_freq
-                            + (long double)src->thresh_src.thr.inactive_ms;
-    return my_val - their_val;
+    return thr->id - src->thresh_src.thr.id;
 }
 
 /** Private API **/

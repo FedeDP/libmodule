@@ -109,20 +109,20 @@ typedef struct {
 } m_src_path_t;
 
 typedef struct {
-    pid_t pid;              // Desired process id
+    pid_t pid;              // Process id to be watched
     unsigned int events;    // Desired events. Unused on linux: only process exit is supported
 } m_src_pid_t;
 
 typedef struct {
-    unsigned int tid;       // Desired thread id
+    unsigned int tid;       // Unique id
     int (*fn)(void *);      // Function to be run on thread
     m_thpool_t *thpool;     // optional threadpool on which job should run
 } m_src_task_t;
 
 typedef struct {
-    unsigned int id;
-    uint64_t inactive_ms;
-    double activity_freq;
+    unsigned int id;        // Unique id
+    uint64_t inactive_ms;   // if != 0 -> if module is inactive for longer than this, an alarm will be received
+    double activity_freq;   // if != 0 -> if module's activity is higher than this, an alarm will be received
 } m_src_thresh_t;
 
 /** Libmodule output messages received in receive() callback **/
