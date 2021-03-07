@@ -317,7 +317,7 @@ _public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags
 }
 
 _public_ int m_ctx_deregister(m_ctx_t **c) {
-    M_PARAM_ASSERT(c && *c);
+    M_PARAM_ASSERT(c && *c && !(*c)->looping);
 
     pthread_mutex_lock(&mx);
     int ret = m_map_remove(ctx, (*c)->name);
