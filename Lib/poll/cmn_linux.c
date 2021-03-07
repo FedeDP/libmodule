@@ -56,17 +56,13 @@ static void create_eventfd(ev_src_t *tmp) {
     tmp->task_src.f.fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 }
 
-int poll_notify_task(poll_priv_t *priv, ev_src_t *src) {
+int poll_notify_userevent(poll_priv_t *priv, ev_src_t *src) {
     uint64_t u = 1;
+    /* task_src and thresh_src share memory layout, thus using task_src.f.fd is ok */
     if (write(src->task_src.f.fd, &u, sizeof(uint64_t)) == sizeof(uint64_t)) {
         return 0;
     }
     return -errno;
-}
-
-int poll_notify_thresh(poll_priv_t *priv, ev_src_t *src) {
-    // Inside an union: src->task_src.f.fd and src->thresh_src.f.fd share same memory
-    return poll_notify_task(priv, src);
 }
 
 void create_priv_fd(ev_src_t *tmp) {

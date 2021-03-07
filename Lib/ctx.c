@@ -175,7 +175,6 @@ static int recv_events(m_ctx_t *c, int timeout) {
                 case M_SRC_TYPE_THRESH:
                     msg->thresh_evt = m_mem_new(sizeof(*msg->thresh_evt), NULL);
                     if (poll_consume_thresh(&c->ppriv, i, p, msg->thresh_evt) == 0) {
-                        msg->thresh_evt->id = p->thresh_src.thr.id;
                         msg->thresh_evt->inactive_ms = p->thresh_src.alarm.inactive_ms;
                         msg->thresh_evt->activity_freq = p->thresh_src.alarm.activity_freq;
                     }

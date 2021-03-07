@@ -140,7 +140,7 @@ int evaluate_module(void *data, const char *key, void *value) {
                 }
             }
             if (alarm->activity_freq != 0 || alarm->inactive_ms != 0) {
-                poll_notify_thresh(&mod->ctx->ppriv, src);
+                poll_notify_userevent(&mod->ctx->ppriv, src);
             }
         })
     }

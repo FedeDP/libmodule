@@ -114,13 +114,12 @@ typedef struct {
 } m_src_pid_t;
 
 typedef struct {
-    unsigned int tid;       // Unique id
+    int tid;                // Unique task id
     int (*fn)(void *);      // Function to be run on thread
     m_thpool_t *thpool;     // optional threadpool on which job should run
 } m_src_task_t;
 
 typedef struct {
-    unsigned int id;        // Unique id
     uint64_t inactive_ms;   // if != 0 -> if module is inactive for longer than this, an alarm will be received
     double activity_freq;   // if != 0 -> if module's activity is higher than this, an alarm will be received
 } m_src_thresh_t;
