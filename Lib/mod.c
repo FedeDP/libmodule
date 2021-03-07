@@ -317,22 +317,19 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     }
     
     M_DEBUG("Deregistering module '%s'.\n", m->name);
-    
-    /* Keep module alive until everything is correctly destroyed */
-    M_MEM_LOCK(m, {
-        /* Stop module */
-        stop(m, true);
-        m->state = M_MOD_ZOMBIE;
-        
-        /* Remove the module from the context */
-        m_map_remove(c->modules, m->name);
-        
-        /* Free FS internal data */
-        fs_cleanup(m);
 
-        /* Ok; now user mod handler is NULL */
-        *mod = NULL;
-    });
+    /* Stop module */
+    stop(m, true);
+    m->state = M_MOD_ZOMBIE;
+
+    /* Free FS internal data */
+    fs_cleanup(m);
+        
+    /* Remove the module from the context */
+    m_map_remove(c->modules, m->name);
+
+    /* Ok; now user mod handler is NULL */
+    *mod = NULL;
 
     /* Destroy context if needed */
     if (m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {

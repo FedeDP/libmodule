@@ -42,8 +42,6 @@ static int loop_start(m_ctx_t *c, int max_events) {
     c->ppriv.max_events = max_events;
     int ret = poll_init(&c->ppriv);
     if (ret == 0) {
-        m_mem_ref(c); // Ensure ctx keeps existing while we loop
-
         /* Initialize fuse fs if requested */
         if (c->fs_root && strlen(c->fs_root)) {
             int fs_ret = fs_init(c);
@@ -83,10 +81,7 @@ static uint8_t loop_stop(m_ctx_t *c) {
     c->stats.recv_msgs = 0;
     c->stats.idle_time = 0;
 
-    int ret = c->quit_code;
-
-    m_mem_unref(c);
-    return ret;
+    return c->quit_code;
 }
 
 static int loop_quit(m_ctx_t *c, uint8_t quit_code) {

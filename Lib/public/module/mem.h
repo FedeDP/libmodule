@@ -5,12 +5,6 @@
 #endif
 #include "cmn.h"
 
-/* Keep a mem ref'd object alive untile end of fn */
-#define M_MEM_LOCK(ptr, fn) \
-    m_mem_ref(ptr); \
-    fn; \
-    m_mem_unref(ptr);
-
 typedef void (*m_ref_dtor)(void *);
 
 void *m_mem_new(size_t size, m_ref_dtor dtor);

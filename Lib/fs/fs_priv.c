@@ -249,6 +249,7 @@ static int fs_poll(const char *path, struct fuse_file_info *fi,
             if (cl->in_evt == 1) {
                 *reventsp |= POLLIN;
             } else {
+                // Module has been deregistered
                 *reventsp |= POLLERR;
             }
             fuse_pollhandle_destroy(ph);
