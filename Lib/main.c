@@ -18,33 +18,7 @@ _public_ _m_ctor0_ _weak_ void m_pre_start(void) {
 }
 
 _public_ _weak_ void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
-    c->name = argv[0];
-    bool error = false;
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--m.ctxname") == 0) {
-            if (i + 1 < argc) {
-                c->name = argv[++i];
-            } else {
-                error = true;
-            }
-        }
-#ifdef WITH_FS
-        else if (strcmp(argv[i], "--m.fsroot") == 0) {
-            if (i + 1 < argc) {
-                m_ctx_fs_set_root(c, argv[++i]);
-            } else {
-                error = true;
-            }
-        }
-#endif
-        else {
-            error = true;
-        }
-        if (error) {
-            fprintf(stderr, "failed to parse '%s' arg.\n", argv[i]);
-            exit(EXIT_FAILURE);
-        }
-    }
+    M_DEBUG("Pre-looping libmodule easy API.");
 }
 
 /*

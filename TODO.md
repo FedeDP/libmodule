@@ -4,7 +4,6 @@
 
 - [x] drop multi ctx support
 - [x] offer a single default ctx (no api to change / register it) always up
-- [x] improve main? Eg some default flags to change some ctx settings? (eg: enable fuse fs, change fuse fs root...)
 - [x] Add a weak m_ctx_pre_loop() symbol called by weak main, to allow users to customize eg: parsing cmdline flags or whatever,
   even when using default main
 - [x] drop m_ps_ flag for broadcast to all contexts
