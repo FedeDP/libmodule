@@ -64,3 +64,4 @@ docs/_build
 .idea/
 cmake-build-debug/
 cmake-build-release/
+venv/

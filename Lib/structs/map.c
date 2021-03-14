@@ -178,25 +178,23 @@ static int hashmap_put(m_map_t *m, const char *key, void *value) {
         }
     }
     
-    bool insert = false;
-    if (!entry->key) {
+    if (entry->key) {
+        if (m->flags & M_MAP_VAL_ALLOW_UPDATE) {
+            if (m->dtor && entry->data != value) {
+                /* Destroy old value if needed */
+                m->dtor(entry->data);
+            }
+        } else {
+            /* No update allowed */
+            return -EPERM;
+        }
+    }  else {
         entry->key = key;
         m->length++;
-        insert = true;
-    } 
-    
-    if (m->flags & M_MAP_VAL_ALLOW_UPDATE) {
-        if (m->dtor && entry->data != value) {
-            /* Destroy old value if needed */
-            m->dtor(entry->data);
-        }
-        insert = true;
     }
-    
-    if (insert) {
-        entry->data = value;
-        m->last_insert = entry;
-    }
+
+    entry->data = value;
+    m->last_insert = entry;
     return 0;
 }
 

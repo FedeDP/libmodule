@@ -126,7 +126,7 @@ typedef struct {
     const void *userptr;
 } ev_src_t;
 
-/* Struct that holds pubsub messaging, private. It keeps reference count */
+/* Struct that holds pubsub messaging, private */
 typedef struct {
     m_evt_ps_t msg;
     m_ps_flags flags;

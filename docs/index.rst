@@ -11,10 +11,9 @@ Welcome to libmodule's documentation!
    :caption: Contents:
 
    src/concepts
-   src/data_structures
    src/callbacks
    src/lifecycle
-   src/memory
+   src/easy
    src/pubsub
    src/module
    src/modules

@@ -62,7 +62,7 @@ typedef enum {
     M_SRC_TYPE_PATH,  // Path Source
     M_SRC_TYPE_PID,   // PID Source
     M_SRC_TYPE_TASK,  // Task source -> M_SRC_ONESHOT flag is forced
-    M_SRC_TYPE_THRESH, // Threshold source -> M_SRC_ONESHOT flag is forced
+    M_SRC_TYPE_THRESH,// Threshold source -> M_SRC_ONESHOT flag is forced
     M_SRC_TYPE_END    // End of supported sources
 } m_src_types;
 

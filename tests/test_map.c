@@ -3,6 +3,7 @@
 
 static m_map_t *my_map;
 static int val = 5;
+static int updated_val = 45;
 static int count;
 
 void test_map_put(void **state) {
@@ -12,7 +13,7 @@ void test_map_put(void **state) {
     int ret = m_map_put(my_map, "key", &val);
     assert_false(ret == 0);
     
-    my_map = m_map_new(0, NULL);
+    my_map = m_map_new(M_MAP_VAL_ALLOW_UPDATE, NULL);
     
     /* NULL value */
     ret = m_map_put(my_map, "key", NULL);
@@ -26,12 +27,17 @@ void test_map_put(void **state) {
     assert_true(ret == 0);
     assert_true(m_map_has_key(my_map, "key"));
     assert_int_equal(m_map_len(my_map), 1);
-    
+
     /* Update val; check that map size was not increased */
-    ret = m_map_put(my_map, "key", &val);
+    ret = m_map_put(my_map, "key", &updated_val);
     assert_true(ret == 0);
     assert_int_equal(m_map_len(my_map), 1);
-    
+
+    /* Check that value was updated - M_MAP_VAL_ALLOW_UPDATE flag was passed */
+    int *v = m_map_get(my_map, "key");
+    assert_non_null(v);
+    assert_int_equal(*v, updated_val);
+
     ret = m_map_put(my_map, "key2", &val);
     assert_true(ret == 0);
     assert_true(m_map_has_key(my_map, "key2"));
@@ -54,7 +60,7 @@ void test_map_get(void **state) {
     
     value = m_map_get(my_map, "key");
     assert_non_null(value);
-    assert_int_equal(*value, 5);
+    assert_int_equal(*value, updated_val);
 }
 
 void test_map_length(void **state) {
