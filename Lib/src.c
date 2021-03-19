@@ -86,7 +86,7 @@ static void *task_thread(void *data) {
     M_MOD_CTX(src->mod);
     src->task_src.retval = src->task_src.tid.fn((void *)src->userptr);
     poll_notify_userevent(&c->ppriv, src);
-    pthread_exit(NULL);
+    return NULL;
 }
 
 static int fdcmp(void *my_data, void *node_data) {

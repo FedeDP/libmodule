@@ -245,6 +245,13 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Drop max_tasks param in m_thpool_new: users can use m_thpool_length() before calling m_thpool_add()
 - [x] Drop bool wait_all flag in m_thpool_wait; by default, any task is waited. If user wish to wait only current tasks, they should call m_thpool_clear() before
 
+- [x] Drop m_thpool_wait() and just wait if pool is joinable in m_thpool_free()
+- [x] Set pool->shutdown even if threads are detached (maybe pool->shutdown -> SHUTDOWN_WAIT, SHUTDOWN_NOWAIT)
+  - SHUTDOWN_WAIT -> waits all remaining jobs
+  - SHUTDOWN_NOWAIT -> just waits for currently running jobs
+
+- [ ] add a way to start threads on-demand 
+
 ### DOC
 
 - [ ] rewrite from scratch in markdown!

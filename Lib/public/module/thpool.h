@@ -15,5 +15,4 @@ int m_thpool_add(m_thpool_t *pool, m_thpool_task task, void *arg);
 bool m_thpool_joinable(m_thpool_t *pool);
 ssize_t m_thpool_length(m_thpool_t *pool);
 ssize_t m_thpool_clear(m_thpool_t *pool);
-int m_thpool_wait(m_thpool_t *pool);
-int m_thpool_free(m_thpool_t **pool);
+int m_thpool_free(m_thpool_t **pool, bool wait_all);

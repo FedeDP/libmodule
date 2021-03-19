@@ -169,7 +169,6 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     msg->task_evt = m_mem_new(sizeof(*msg->task_evt), NULL);
                     if (poll_consume_task(&c->ppriv, i, p, msg->task_evt) == 0) {
                         msg->task_evt->tid = p->task_src.tid.tid;
-                        pthread_join(p->task_src.th, NULL);
                     }
                     break;
                 case M_SRC_TYPE_THRESH:
