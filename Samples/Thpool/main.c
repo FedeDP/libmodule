@@ -9,7 +9,7 @@ static void *print(void *udata);
 
 int main() {
     /* Create 8 threads, with unlimited number of jobs */
-    m_thpool_t *pool = m_thpool_new(NUM_THREADS, NULL);
+    m_thpool_t *pool = m_thpool_new(NUM_THREADS, 0);
     if (pool) {
         for (int i = 0; i < NUM_JOBS; i++) {
             char name[50] = {0};

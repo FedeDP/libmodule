@@ -6,6 +6,7 @@
  */
 
 #include "priv.h"
+#include <stdatomic.h>
 
 #define M_THREADS_ASSERT(pool, ret) \
     M_RET_ASSERT(pool->shutdown == SHUTDOWN_NO, -EPERM); \
@@ -31,18 +32,21 @@ typedef struct {
 } thpool_task_t;
 
 struct _thpool {
-    uint8_t thread_count;           /* Nobody writes this but us during thpool_new. No need to use an atomic */
+    uint8_t max_threads;            /* Nobody writes this but us during thpool_new. No need to use an atomic */
     thpool_inited_t init_state;     /* Nobody writes this but us during thpool_new. No need to use an atomic */
     thpool_shutdown_t shutdown;     /* Always used behind a mutex */
-    bool joinable;                  /* Nobody writes this but us during thpool_new. No need to use an atomic */
     pthread_mutex_t lock;
     pthread_cond_t notify;
-    pthread_t *threads;
+    m_list_t *threads;              /* Always used behind a mutex */
     m_queue_t *tasks;               /* Always used behind a mutex */
+    atomic_uint running_tasks;
+    m_thpool_flags flags;           /* Nobody writes this but us during thpool_new. No need to use an atomic */
 };
 
 static void *thpool_thread(void *thpool);
 static int wait_pool(m_thpool_t *pool, thpool_shutdown_t shutdown);
+static inline bool has_space(m_thpool_t *pool);
+static int add_threads(m_thpool_t *pool, int num);
 
 static void *thpool_thread(void *thpool) {
     m_thpool_t *pool = (m_thpool_t *)thpool;
@@ -73,8 +77,10 @@ static void *thpool_thread(void *thpool) {
         pthread_mutex_unlock(&(pool->lock));
 
         /* Actually call the task fn and then unref task */
+        pool->running_tasks++;
         task->fn(task->arg);
         memhook._free(task);
+        pool->running_tasks--;
     }
     
     pthread_mutex_unlock(&(pool->lock));
@@ -92,11 +98,12 @@ static int wait_pool(m_thpool_t *pool, thpool_shutdown_t shutdown) {
     /* Wake up all worker threads and unlock mutex */
     ret = pthread_cond_broadcast(&pool->notify) + pthread_mutex_unlock(&pool->lock);
     if (ret == 0) {
-        if (pool->joinable) {
+        if (!(pool->flags & M_THPOOL_DETACHED)) {
             /* Join all worker threads */
-            for (int i = 0; i < pool->thread_count; i++) {
-                ret += pthread_join(pool->threads[i], NULL);
-            }
+            m_itr_foreach(pool->threads, {
+                pthread_t *th = m_itr_get(itr);
+                ret += pthread_join(*th, NULL);
+            });
         }
         if (ret == 0) {
             /* There are no active threads anymore */
@@ -106,14 +113,40 @@ static int wait_pool(m_thpool_t *pool, thpool_shutdown_t shutdown) {
     return ret;
 }
 
-_public_ m_thpool_t *m_thpool_new(uint8_t thread_count, const pthread_attr_t *attrs) {
+static inline bool has_space(m_thpool_t *pool) {
+    return pool->running_tasks < m_list_len(pool->threads);
+}
+
+static int add_threads(m_thpool_t *pool, int num) {
+    /* Start worker threads */
+    pthread_attr_t tattr;
+    pthread_attr_init(&tattr);
+    if (pool->flags & M_THPOOL_DETACHED) {
+        pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+    }
+    int err = 0;
+    for (int i = 0; i < num && err == 0; i++) {
+        pthread_t *th = memhook._calloc(1, sizeof(pthread_t));
+        err = pthread_create(th, &tattr, thpool_thread, (void *) pool);
+        if (err == 0) {
+            m_list_insert(pool->threads, th);
+        } else {
+            memhook._free(th);
+        }
+    }
+    pthread_attr_destroy(&tattr);
+    return err;
+}
+
+_public_ m_thpool_t *m_thpool_new(uint8_t thread_count, m_thpool_flags flags) {
     M_RET_ASSERT(thread_count > 0, NULL);
     
     m_thpool_t *pool = memhook._calloc(1, sizeof(m_thpool_t));
     M_RET_ASSERT(pool, NULL);
-    
+
+    int err = -ENOMEM;
     do {
-        pool->threads = memhook._calloc(thread_count, sizeof(pthread_t));
+        pool->threads = m_list_new(NULL, memhook._free);
         if (!pool->threads) {
             break;
         }
@@ -135,33 +168,22 @@ _public_ m_thpool_t *m_thpool_new(uint8_t thread_count, const pthread_attr_t *at
             break;
         }
         pool->init_state |= INITED_COND;
-        
-        /* Start worker threads */
-        for (int i = 0; i < thread_count; i++) {
-            if (pthread_create(&(pool->threads[i]), attrs,
-                thpool_thread, (void*)pool) == 0) {
-                
-                pool->thread_count++;
-            } else {
-                break;
-            }
-        }
-        
-        if (pool->thread_count == thread_count) {
-            pool->init_state |= INITED_STARTED;
-            if (attrs) {
-                int detached_state;
-                pthread_attr_getdetachstate(attrs, &detached_state);
-                pool->joinable = detached_state == PTHREAD_CREATE_JOINABLE;
-            } else {
-                pool->joinable = true;
-            }
+
+        pool->max_threads = thread_count;
+        pool->flags = flags;
+
+        err = 0;
+        if (!(flags & M_THPOOL_LAZY)) {
+            /* Start worker threads */
+            err = add_threads(pool, thread_count);
         }
     } while (false);
     
     /* Something went wrong; destroy */
-    if (!(pool->init_state & INITED_STARTED)) {
+    if (err != 0) {
         m_thpool_free(&pool, false);
+    } else {
+        pool->init_state |= INITED_STARTED;
     }
     return pool;
 }
@@ -175,7 +197,22 @@ _public_ int m_thpool_add(m_thpool_t *pool, m_thpool_task task, void *arg) {
     if (ret) {
         return ret;
     }
-        
+
+    /*
+     * Lazy thread algorithm:
+     * * IF number of currently running tasks is >= number of available threads,
+     * * AND number of available threads is below max_threads,
+     * THEN create a new thread were eventually new task will run.
+     */
+    if (pool->flags & M_THPOOL_LAZY) {
+        if (!has_space(pool) && m_list_len(pool->threads) < pool->max_threads) {
+            ret = add_threads(pool, 1);
+            if (ret) {
+                return ret;
+            }
+        }
+    }
+
     /* Add task to queue */
     thpool_task_t *new_task = memhook._calloc(1, sizeof(thpool_task_t));
     new_task->fn = task;
@@ -190,13 +227,7 @@ _public_ int m_thpool_add(m_thpool_t *pool, m_thpool_task task, void *arg) {
     return unlock_ret;
 }
 
-_public_ bool m_thpool_joinable(m_thpool_t *pool) {
-    M_RET_ASSERT(pool, false);
-    M_THREADS_ASSERT(pool, false);
-    
-    return pool->joinable;
-}
-
+/* Returns number of enqueued tasks */
 _public_ ssize_t m_thpool_length(m_thpool_t *pool) {
     M_PARAM_ASSERT(pool);
     M_THREADS_ASSERT(pool, -EPERM);
@@ -261,7 +292,7 @@ _public_ int m_thpool_free(m_thpool_t **pool, bool wait_all) {
             ret = m_queue_free(&p->tasks);
             break;
         case INITED_THREADS:
-            memhook._free(p->threads);
+            m_list_free(&p->threads);
             break;
         default:
             break;

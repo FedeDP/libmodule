@@ -191,7 +191,10 @@ int main(void) {
 
         cmocka_unit_test(test_mem),
 
+        /* Test thpool API */
         cmocka_unit_test(test_thpool),
+        cmocka_unit_test(test_thpool_lazy),
+        cmocka_unit_test(test_thpool_weird_conditions),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -250,7 +250,7 @@ It would allows to check if same node already exists on insert, without losing t
   - SHUTDOWN_WAIT -> waits all remaining jobs
   - SHUTDOWN_NOWAIT -> just waits for currently running jobs
 
-- [ ] add a way to start threads on-demand 
+- [x] add a way to start threads on-demand 
 
 ### DOC
 
