@@ -365,7 +365,7 @@ _public_ void *m_map_get(const m_map_t *m, const char *key) {
     return entry->data;
 }
 
-_public_ bool m_map_has_key(const m_map_t *m, const char *key) {
+_public_ bool m_map_contains(const m_map_t *m, const char *key) {
     return m_map_get(m, key) != NULL;
 }
 

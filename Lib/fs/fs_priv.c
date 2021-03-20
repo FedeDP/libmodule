@@ -93,7 +93,7 @@ static int fs_getattr(const char *path, struct stat *stbuf,
         stbuf->st_nlink = m_map_len(c->modules);
         return 0;
     } 
-    if (strlen(path) > 1 && m_map_has_key(c->modules, path + 1)) {
+    if (strlen(path) > 1 && m_map_contains(c->modules, path + 1)) {
         stbuf->st_mode = S_IFREG | 0444;
         stbuf->st_nlink = 1;
         stbuf->st_size = 1024; // non-zero size

@@ -331,7 +331,7 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     /* Ok; now user mod handler is NULL */
     *mod = NULL;
 
-    /* Destroy context if needed */
+    /* Destroy context if it has no more modules in it and is not a persistent ctx */
     if (m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
         return m_ctx_deregister(&c);
     }

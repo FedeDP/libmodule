@@ -186,12 +186,20 @@ static int recv_events(m_ctx_t *c, int timeout) {
             err = errno; // Store any errno happend while consuming events
 
             if (err == 0) {
-                recved++;
-                if (msg->type != M_SRC_TYPE_PS || msg->ps_evt->type != M_PS_MOD_POISONPILL) {
-                    run_pubsub_cb(mod, msg, p);
-                } else {
-                    M_DEBUG("PoisonPilling '%s'.\n", mod->name);
-                    stop(mod, true);
+                /*
+                 * All messages share same address inside union.
+                 * In this case, check that any message was actually received,
+                 * and it was from a know source type.
+                 * It should never happen though.
+                 */
+                if (msg->fd_evt) {
+                    recved++;
+                    if (msg->type != M_SRC_TYPE_PS || msg->ps_evt->type != M_PS_MOD_POISONPILL) {
+                        run_pubsub_cb(mod, msg, p);
+                    } else {
+                        M_DEBUG("PoisonPilling '%s'.\n", mod->name);
+                        stop(mod, true);
+                    }
                 }
                 
                 /* Remove it if it was a oneshot event */

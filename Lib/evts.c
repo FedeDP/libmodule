@@ -50,16 +50,9 @@ _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
 _public_ int m_mod_unstash(m_mod_t *mod) {
     M_MOD_ASSERT(mod);
 
-    /*
-     * Peek it without dequeuing as dequeuing would call
-     * m_mem_unref thus invalidating ptr
-     */
-    m_evt_t *evt = m_queue_peek(mod->stashed);
+    m_evt_t *evt = m_queue_dequeue(mod->stashed);
     if (evt) {
         run_pubsub_cb(mod, evt, NULL);
-
-        /* Finally, remove it */
-        m_queue_dequeue(mod->stashed);
     }
     return 0;
 }

@@ -338,7 +338,8 @@ _public_ int m_mod_src_register_task(m_mod_t *mod, const m_src_task_t *tid, m_sr
 _public_ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid) {
     M_PARAM_ASSERT(tid);
 
-    return deregister_src(mod, M_SRC_TYPE_TASK, (void *)tid);
+    /* Tasks cannot be deregistered */
+    return -EPERM;
 }
 
 _public_ int m_mod_src_register_thresh(m_mod_t *mod, const m_src_thresh_t *thr, m_src_flags flags, const void *userptr) {

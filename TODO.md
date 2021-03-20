@@ -236,9 +236,12 @@ It would allows to check if same node already exists on insert, without losing t
 ### New thpool API
 
 - [x] Add a new TYPE_TASK source that will run a task asynchronously and at end notify user through receive() callback
-- [x] m_module_deregister_task() should pthread_cancel() the thread
-- [x] fix m_module_deregister_task -> ALWAYS CREATE THREADS DETACHED
-
+- [x] m_module_deregister_task -> ALWAYS CREATE THREADS DETACHED; thread will continuous its task but you won't be notified when it ends
+- [ ] Use a context local LAZY thpool instead of taking it from user or creating new threads (?)
+- [x] fix m_mod_deregister_task() -> easy solution: TASK src cannot be deregistered, ie: return -EPERM
+- [ ] task_thread should own a ref on context (and release it if ctx.c) 
+- [ ] Loop_start/stop to keep a reference on context? 
+  
 - [x] Add a th_pool implementation, public API
 - [x] Allow to pass m_thpool_t in mod_task_t structure; if !NULL, simply schedule the job on the pool
 - [x] add thpool example

@@ -35,7 +35,7 @@ int m_map_itr_set_data(const m_map_itr_t *itr, void *value);
 int m_map_iterate(m_map_t *m, m_map_cb fn, void *userptr);
 int m_map_put(m_map_t *m, const char *key, void *value);
 void *m_map_get(const m_map_t *m, const char *key);
-bool m_map_has_key(const m_map_t *m, const char *key);
+bool m_map_contains(const m_map_t *m, const char *key);
 int m_map_remove(m_map_t *m, const char *key);
 int m_map_clear(m_map_t *m);
 int m_map_free(m_map_t **m);

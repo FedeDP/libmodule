@@ -25,7 +25,7 @@ void test_map_put(void **state) {
     
     ret = m_map_put(my_map, "key", &val);
     assert_true(ret == 0);
-    assert_true(m_map_has_key(my_map, "key"));
+    assert_true(m_map_contains(my_map, "key"));
     assert_int_equal(m_map_len(my_map), 1);
 
     /* Update val; check that map size was not increased */
@@ -40,7 +40,7 @@ void test_map_put(void **state) {
 
     ret = m_map_put(my_map, "key2", &val);
     assert_true(ret == 0);
-    assert_true(m_map_has_key(my_map, "key2"));
+    assert_true(m_map_contains(my_map, "key2"));
 }
 
 void test_map_get(void **state) {
@@ -172,7 +172,7 @@ void test_map_stress(void **state) {
         snprintf(key, sizeof(key), "key%d", i);
         ret = m_map_put(my_map, key, "top");
         assert_true(ret == 0);
-        assert_true(m_map_has_key(my_map, key));
+        assert_true(m_map_contains(my_map, key));
     }
     assert_int_equal(m_map_len(my_map), size);
     
