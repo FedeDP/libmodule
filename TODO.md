@@ -305,7 +305,8 @@ It would allows to check if same node already exists on insert, without losing t
 - - [x] M_MOD_DENY_PUB
 - - [x] M_MOD_DENY_SUB
 - - [x] M_MOD_DENY_LOAD
-
+- - [x] M_MOD_DENY_CTX
+  
 ### Stash API
 
 - [x] Add a module_stash/unstash (all) API for PS messaging? Each module has a queue and ps messages are enqueued; only for msg->type != FD_MSG!

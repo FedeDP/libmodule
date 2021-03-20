@@ -433,13 +433,14 @@ int fs_end(m_ctx_t *c) {
 
 _public_ const char *m_ctx_fs_get_root(const m_ctx_t *c) {
     M_RET_ASSERT(c, NULL);
+    M_RET_ASSERT(c->state != M_CTX_ZOMBIE, NULL);
 
     return c->fs_root;
 }
 
 _public_ int m_ctx_fs_set_root(m_ctx_t *c, const char *path) {
-    M_PARAM_ASSERT(c);
-    M_RET_ASSERT(!c->looping, -EPERM);
+    M_CTX_ASSERT(c);
+    M_RET_ASSERT(c->state == M_CTX_IDLE, -EPERM);
     M_PARAM_ASSERT(path && strlen(path));
 
     if (c->fs_root) {

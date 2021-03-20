@@ -313,7 +313,7 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     m_mod_t *m = *mod;
     M_MOD_CTX(m);
 
-    if ((m->flags & M_MOD_PERSIST) && c->looping) {
+    if ((m->flags & M_MOD_PERSIST) && c->state == M_CTX_LOOPING) {
         return -EPERM;
     }
     
@@ -336,7 +336,7 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
      * Destroy context if it is not looping and
      * it has no more modules in it and is not a persistent ctx
      */
-    if (!c->looping && m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
+    if (c->state == M_CTX_IDLE && m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
         m_ctx_deregister(&c);
     }
     return 0;

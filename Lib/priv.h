@@ -33,6 +33,10 @@
 #define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM)
 #define M_PARAM_ASSERT(cond)        M_RET_ASSERT(cond, -EINVAL)
 
+#define M_CTX_ASSERT(c) \
+    M_PARAM_ASSERT(c); \
+    M_RET_ASSERT(c->state != M_CTX_ZOMBIE, -EACCES)
+
 #define M_MOD_ASSERT(mod) \
     M_PARAM_ASSERT(mod); \
     M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), -EACCES)
@@ -153,6 +157,13 @@ typedef struct {
     uint64_t running_modules;
 } ctx_stats_t;
 
+/* Ctx states */
+typedef enum {
+    M_CTX_IDLE,
+    M_CTX_LOOPING,
+    M_CTX_ZOMBIE,
+} m_ctx_states;
+
 /* Struct that holds data for each module */
 /*
  * MEM-REFS for mod:
@@ -189,7 +200,7 @@ struct _mod {
  */
 struct _ctx {
     const char *name;
-    bool looping;                           // Whether context is looping
+    m_ctx_states state;
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
     m_log_cb logger;                        // Context's log callback

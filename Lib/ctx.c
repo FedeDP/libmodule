@@ -51,7 +51,7 @@ static int loop_start(m_ctx_t *c, int max_events) {
         }
 
         fetch_ms(&c->stats.looping_start_time, NULL);
-        c->looping = true;
+        c->state = M_CTX_LOOPING;
         c->quit = false;
         c->quit_code = 0;
         
@@ -80,7 +80,7 @@ static uint8_t loop_stop(m_ctx_t *c) {
     m_thpool_free(&c->thpool, false);
 
     c->ppriv.max_events = 0;
-    c->looping = false;
+    c->state = M_CTX_IDLE;
     c->stats.looping_start_time = 0;
     c->stats.recv_msgs = 0;
     c->stats.idle_time = 0;
@@ -255,9 +255,9 @@ static int recv_events(m_ctx_t *c, int timeout) {
 }
 
 static int m_ctx_loop_events(m_ctx_t *c, int max_events) {
-    M_PARAM_ASSERT(c);
+    M_CTX_ASSERT(c);
     M_PARAM_ASSERT(max_events > 0);
-    M_ASSERT(!c->looping, "Context already looping.", -EINVAL);
+    M_ASSERT(c->state == M_CTX_IDLE, "Context already looping.", -EINVAL);
 
     int ret = loop_start(c, max_events);
     if (ret == 0) {
@@ -339,7 +339,9 @@ _public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags
 }
 
 _public_ int m_ctx_deregister(m_ctx_t **c) {
-    M_PARAM_ASSERT(c && *c && !(*c)->looping);
+    M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);
+
+    (*c)->state = M_CTX_ZOMBIE;
 
     pthread_mutex_lock(&mx);
     int ret = m_map_remove(ctx, (*c)->name);
@@ -349,7 +351,7 @@ _public_ int m_ctx_deregister(m_ctx_t **c) {
 }
 
 _public_ int m_ctx_set_logger(m_ctx_t *c, m_log_cb logger) {
-    M_PARAM_ASSERT(c);
+    M_CTX_ASSERT(c);
     M_PARAM_ASSERT(logger);
     
     c->logger = logger;
@@ -361,22 +363,22 @@ _public_ int m_ctx_loop(m_ctx_t *c) {
 }
 
 _public_ int m_ctx_quit(m_ctx_t *c, uint8_t quit_code) {
-    M_PARAM_ASSERT(c);
-    M_ASSERT(c->looping, "Context not looping.", -EINVAL);
+    M_CTX_ASSERT(c);
+    M_ASSERT(c->state == M_CTX_LOOPING, "Context not looping.", -EINVAL);
        
     return loop_quit(c, quit_code);
 }
 
 _public_ int m_ctx_fd(const m_ctx_t *c) {
-    M_PARAM_ASSERT(c);
+    M_CTX_ASSERT(c);
 
     return dup(poll_get_fd(&c->ppriv));
 }
 
 _public_ int m_ctx_dispatch(m_ctx_t *c) {
-    M_PARAM_ASSERT(c);
+    M_CTX_ASSERT(c);
 
-    if (!c->looping) {
+    if (c->state == M_CTX_IDLE) {
         /* Ok, start now */
         return loop_start(c, M_CTX_DEFAULT_EVENTS);
     }
@@ -391,7 +393,7 @@ _public_ int m_ctx_dispatch(m_ctx_t *c) {
 }
 
 _public_ int m_ctx_dump(const m_ctx_t *c) {
-    M_PARAM_ASSERT(c);
+    M_CTX_ASSERT(c);
 
     ctx_logger(c, NULL, "{\n");
     ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
@@ -406,7 +408,7 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     }
     ctx_logger(c, NULL, "\t\"State\": {\n");
     ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
-    ctx_logger(c, NULL, "\t\t\"Looping\": %d\n", c->looping);
+    ctx_logger(c, NULL, "\t\t\"Looping\": %d\n", c->state == M_CTX_LOOPING);
     ctx_logger(c, NULL, "\t},\n");
 
     uint64_t now;
@@ -436,8 +438,8 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
 }
 
 _public_ int m_ctx_stats(const m_ctx_t *c, m_ctx_stats_t *stats) {
-    M_PARAM_ASSERT(c);
-    M_PARAM_ASSERT(c->looping);
+    M_CTX_ASSERT(c);
+    M_PARAM_ASSERT(c->state == M_CTX_LOOPING);
     M_PARAM_ASSERT(stats);
 
     uint64_t now;
@@ -456,12 +458,14 @@ _public_ int m_ctx_stats(const m_ctx_t *c, m_ctx_stats_t *stats) {
 
 _public_ const char *m_ctx_name(const m_ctx_t *c) {
     M_RET_ASSERT(c, NULL);
+    M_RET_ASSERT(c->state != M_CTX_ZOMBIE, NULL);
 
     return c->name;
 }
 
 _public_ const void *m_ctx_userdata(const m_ctx_t *c) {
     M_RET_ASSERT(c, NULL);
+    M_RET_ASSERT(c->state != M_CTX_ZOMBIE, NULL);
 
     return c->userdata;
 }
