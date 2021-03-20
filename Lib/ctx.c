@@ -75,6 +75,10 @@ static uint8_t loop_stop(m_ctx_t *c) {
     fs_end(c);
 
     poll_clear(&c->ppriv);
+
+    /* Destroy thpool eventually waiting on currently running tasks */
+    m_thpool_free(&c->thpool, false);
+
     c->ppriv.max_events = 0;
     c->looping = false;
     c->stats.looping_start_time = 0;

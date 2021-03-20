@@ -199,6 +199,7 @@ struct _ctx {
     char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
     ctx_stats_t stats;                      // Context' stats
+    m_thpool_t  *thpool;                    // thpool for M_SRC_TYPE_TASK srcs
     const void *userdata;                   // Context's user defined data
 };
 
@@ -235,7 +236,7 @@ int init_src(m_mod_t *mod, m_src_types t);
 int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
                  m_src_flags flags, const void *userptr);
 int deregister_src(m_mod_t *mod, m_src_types type, void *src_data);
-int start_task(ev_src_t *src);
+int start_task(m_ctx_t *c, ev_src_t *src);
 
 /* Gglobal variables are defined in main.c */
 extern m_map_t *ctx;

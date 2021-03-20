@@ -239,9 +239,9 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [x] Add a new TYPE_TASK source that will run a task asynchronously and at end notify user through receive() callback
 - [x] m_module_deregister_task -> ALWAYS CREATE THREADS DETACHED; thread will continuous its task but you won't be notified when it ends
-- [ ] Use a context local LAZY thpool instead of taking it from user or creating new threads (?)
+- [x] Use a context local LAZY thpool instead of taking it from user or creating new threads (?)
 - [x] fix m_mod_deregister_task() -> easy solution: TASK src cannot be deregistered, ie: return -EPERM
-- [ ] loop_stop will wait for all tasks to complete
+- [x] loop_stop will wait for all tasks to complete
   
 - [x] Add a th_pool implementation, public API
 - [x] Allow to pass m_thpool_t in mod_task_t structure; if !NULL, simply schedule the job on the pool
@@ -266,6 +266,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document m_ctx_pre_loop()!
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
+- [ ] Document loop_stop() behaviour (it waits on any tasks to complete before leaving, thus it is a blocking function when any SRC_TASK is still running)
 
 ### Remaining fixes/Improvements
 
@@ -299,6 +300,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] Make module on_evt callback only mandatory cb
 
 ### Module permissions management
+
 - [x] Add some permission management to modules, through m_mod_flags, eg:
 - - [x] M_MOD_DENY_PUB
 - - [x] M_MOD_DENY_SUB

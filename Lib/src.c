@@ -4,6 +4,8 @@
  * Code related to event sources. *
  **********************************/
 
+#define M_TASK_MAX_THREADS 16
+
 static void src_priv_dtor(void *data);
 static void *task_thread(void *data);
 
@@ -231,7 +233,7 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
 
             /* For type task: create task thread */
             if (ret == 0 && src->type == M_SRC_TYPE_TASK) {
-                ret = start_task(src);
+                ret = start_task(c, src);
             }
         }
         return !ret ? 0 : -errno;
@@ -250,18 +252,12 @@ int deregister_src(m_mod_t *mod, m_src_types type, void *src_data) {
     return ret;
 }
 
-int start_task(ev_src_t *src) {
-    if (src->task_src.tid.thpool) {
-        return m_thpool_add(src->task_src.tid.thpool, task_thread, src);
+int start_task(m_ctx_t *c, ev_src_t *src) {
+    if (!c->thpool) {
+        c->thpool = m_thpool_new(M_TASK_MAX_THREADS, M_THPOOL_LAZY);
     }
-
-    /* Create detached */
-    pthread_attr_t tattr;
-    pthread_attr_init(&tattr);
-    pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
-    int ret = pthread_create(&src->task_src.th, &tattr, task_thread, src);
-    pthread_attr_destroy(&tattr);
-    return ret;
+    M_ALLOC_ASSERT(c->thpool);
+    return m_thpool_add(c->thpool, task_thread, src);
 }
 
 /** Public API **/

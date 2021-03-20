@@ -114,9 +114,8 @@ typedef struct {
 } m_src_pid_t;
 
 typedef struct {
-    int tid;                // Unique task id
+    int tid;                // Unique task id; it allows to run multiple times the same fn
     int (*fn)(void *);      // Function to be run on thread
-    m_thpool_t *thpool;     // optional threadpool on which job should run
 } m_src_task_t;
 
 typedef struct {

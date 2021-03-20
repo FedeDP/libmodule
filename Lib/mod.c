@@ -91,7 +91,7 @@ static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
                 
                 /* For type task: create task thread now */
                 if (ret == 0 && t->type == M_SRC_TYPE_TASK && flag == ADD) {
-                    ret = start_task(t);
+                    ret = start_task(c, t);
                 }
             }
         });
