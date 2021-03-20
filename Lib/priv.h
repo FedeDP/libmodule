@@ -154,6 +154,15 @@ typedef struct {
 } ctx_stats_t;
 
 /* Struct that holds data for each module */
+/*
+ * MEM-REFS for mod:
+ * + 1 because it is registered
+ * + 1 for each m_mod_ref() called on it
+ * + 1 for each PS message sent (ie: message's sender is a new reference for sender)
+ * + 1 for each fs open() call on it
+ * Moreover, a reference is held while retrieving an event for the module and calling its on_evt() cb,
+ * to avoid user calling m_mod_deregister() and invalidating our pointer.
+ */
 struct _mod {
     m_mod_states state;                     // module's state
     m_mod_flags flags;                      // Module's flags
@@ -172,6 +181,12 @@ struct _mod {
 };
 
 /* Struct that holds data for main context */
+/*
+ * MEM-REFS for ctx:
+ * + 1 because it is registered
+ * + 1 for each module registered in the context
+ *      (thus it won't be actually destroyed until any module is inside it)
+ */
 struct _ctx {
     const char *name;
     bool looping;                           // Whether context is looping

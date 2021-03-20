@@ -88,10 +88,8 @@ static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub) {
     ps_priv_t *m = m_mem_new(sizeof(ps_priv_t), ps_msg_dtor);
     if (m) {        
         memcpy(m, msg, sizeof(ps_priv_t));
-        if (m->msg.sender) {
-            m_mem_ref((void *)m->msg.sender); // keep module alive until message is dispatched
-        }
-        m->sub = m_mem_ref(sub);        
+        m->msg.sender = m_mem_ref((void *)m->msg.sender); // keep module alive until message is dispatched
+        m->sub = m_mem_ref(sub);
     }
     return m;
 }

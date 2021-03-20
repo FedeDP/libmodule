@@ -10,3 +10,4 @@ void test_ctx_dump(void **state);
 void test_ctx_quit_no_loop(void **state);
 void test_ctx_loop(void **state);
 void test_ctx_dispatch(void **state);
+void test_ctx_mod_deregister_during_loop(void **state);

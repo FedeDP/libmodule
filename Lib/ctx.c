@@ -81,7 +81,18 @@ static uint8_t loop_stop(m_ctx_t *c) {
     c->stats.recv_msgs = 0;
     c->stats.idle_time = 0;
 
-    return c->quit_code;
+    int ret = c->quit_code;
+
+    /*
+     * ctx cannot be deregistered while looping,
+     * thus even if all modules were deregistered during the loop,
+     * and last module's tried to call m_ctx_deregister(), it returned -EPERM.
+     * Gracefully deregister it now.
+     */
+    if (m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
+        m_ctx_deregister(&c);
+    }
+    return ret;
 }
 
 static int loop_quit(m_ctx_t *c, uint8_t quit_code) {
@@ -120,7 +131,12 @@ static int recv_events(m_ctx_t *c, int timeout) {
         }
         
         if (p && p->mod) {
-            m_mod_t *mod = p->mod;
+            /*
+             * Keep a reference on mod, to avoid that
+             * a m_mod_deregister() call by user callback
+             * invalidates our pointer.
+             */
+            m_mod_t *mod = m_mem_ref(p->mod);
             m_evt_t *msg = new_evt(p->type);
             if (msg) {
                 M_DEBUG("'%s' received %u type msg.\n", mod->name, msg->type);
@@ -211,6 +227,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     }
                 }
             }
+            m_mem_unref(mod);
         } else {
             /* Forward error to below handling code */
             err = EAGAIN;

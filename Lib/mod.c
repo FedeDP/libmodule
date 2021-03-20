@@ -146,9 +146,9 @@ int evaluate_module(void *data, const char *key, void *value) {
     }
 
     /* Check if module should be started */
-    if (m_mod_is(mod, M_MOD_IDLE) && 
+    if (m_mod_is(mod, M_MOD_IDLE) &&
         (!mod->hook.on_eval || mod->hook.on_eval(mod))) {
-        
+
         start(mod, true);
     }
     return 0;
@@ -177,14 +177,14 @@ int start(m_mod_t *mod, bool starting) {
     mod->state = M_MOD_RUNNING;
     c->stats.running_modules++;
 
-    /* Call module init() callback only if module is being (re)started */
+    /* Call module on_start() callback only if module is being (re)started */
     if (!starting || !mod->hook.on_start || mod->hook.on_start(mod)) {
         M_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
         tell_system_pubsub_msg(NULL, c, M_PS_MOD_STARTED, mod, NULL);
         return 0;
     }
 
-    /* If init() returns false, we need to stop this module right away */
+    /* If on_start() returns false, we need to stop this module right away */
     stop(mod, true);
     return 0;
 }
@@ -206,7 +206,7 @@ int stop(m_mod_t *mod, bool stopping) {
      * Read-end is already closed by manage_fds().
      * Moreover, its subscriptions are cleared.
      * 
-     * Finally, deinit() callback is called.
+     * Finally, on_stop() callback is called.
      */
     if (stopping) {
         reset_module(mod);
@@ -312,6 +312,7 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
 
     m_mod_t *m = *mod;
     M_MOD_CTX(m);
+
     if ((m->flags & M_MOD_PERSIST) && c->looping) {
         return -EPERM;
     }
@@ -331,9 +332,12 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     /* Ok; now user mod handler is NULL */
     *mod = NULL;
 
-    /* Destroy context if it has no more modules in it and is not a persistent ctx */
-    if (m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
-        return m_ctx_deregister(&c);
+    /*
+     * Destroy context if it is not looping and
+     * it has no more modules in it and is not a persistent ctx
+     */
+    if (!c->looping && m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
+        m_ctx_deregister(&c);
     }
     return 0;
 }

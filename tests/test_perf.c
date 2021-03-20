@@ -61,10 +61,6 @@ void test_poll_perf(void **state) {
     m_mod_deregister(&mod);
 }
 
-static bool init(void) {
-    return true;
-}
-
 static void my_recv(m_mod_t *mod, const m_evt_t *msg) {
     if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER && ++ctr == MAX_LEN) {
         m_ctx_quit(test_ctx, 0);

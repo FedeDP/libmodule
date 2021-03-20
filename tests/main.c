@@ -136,6 +136,14 @@ int main(void) {
         /* Test modules_ API: it should fail now */
         cmocka_unit_test(test_ctx_quit_no_loop), // here context is already destroyed
 
+        /*
+         * Test that calling m_mod_deregister() inside on_evt() user callback
+         * on current module won't cause any problem.
+         * Moreover, test that if all modules in a context are deregistered,
+         * the context gets automatically deregistered too, even if it was looping.
+         */
+        cmocka_unit_test(test_ctx_mod_deregister_during_loop),
+
         /* Test Map API */
         cmocka_unit_test(test_map_put),
         cmocka_unit_test(test_map_get),

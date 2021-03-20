@@ -52,6 +52,8 @@
 
 - [x] add m_mem_size() API
 
+- [x] user callbacks (on_start/on_stop/on_evt/on_eval) should check that mod was not deregistered after the call
+
 ### liburing
 
 - [x] Introduce an uring poll plugin
@@ -239,8 +241,7 @@ It would allows to check if same node already exists on insert, without losing t
 - [x] m_module_deregister_task -> ALWAYS CREATE THREADS DETACHED; thread will continuous its task but you won't be notified when it ends
 - [ ] Use a context local LAZY thpool instead of taking it from user or creating new threads (?)
 - [x] fix m_mod_deregister_task() -> easy solution: TASK src cannot be deregistered, ie: return -EPERM
-- [ ] task_thread should own a ref on context (and release it if ctx.c) 
-- [ ] Loop_start/stop to keep a reference on context? 
+- [ ] loop_stop will wait for all tasks to complete
   
 - [x] Add a th_pool implementation, public API
 - [x] Allow to pass m_thpool_t in mod_task_t structure; if !NULL, simply schedule the job on the pool
@@ -257,9 +258,9 @@ It would allows to check if same node already exists on insert, without losing t
 
 ### DOC
 
-- [ ] rewrite from scratch in markdown!
 - [ ] Fully rewrite documentation per-namespace
 - [ ] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
+- [ ] Document that m_{mod,ctx}_deregister() should not be called inside user hook { on_start(), on_stop(), on_eval() } functions; m_mod_deregister() can be used from on_evt() though.  
 - [ ] Add build options doc
 - [ ] Document multiple ps_flags in subscribe() (ie: we only account for lowest priority value)  
 - [ ] document m_evt_t memref'd behaviour!!!

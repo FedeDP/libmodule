@@ -97,3 +97,29 @@ void test_ctx_dispatch(void **state) {
     ret = m_ctx_dispatch(test_ctx);
     assert_true(ret == 0); // loop stopped with exit code 0
 }
+
+static void my_recv(m_mod_t *mod, const m_evt_t *msg) {
+    if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_CTX_STARTED) {
+        m_mod_deregister(&mod);
+    }
+}
+
+void test_ctx_mod_deregister_during_loop(void **state) {
+    (void) state; /* unused */
+
+    test_ctx = NULL;
+
+    int ret = m_ctx_register("test", &test_ctx, 0, NULL);
+    assert_true(ret == 0);
+    assert_non_null(test_ctx);
+
+    m_mod_hook_t hook = { .on_evt = my_recv };
+    m_mod_t *mod = NULL;
+    ret = m_mod_register("testName", test_ctx, &mod, &hook, 0, NULL);
+    assert_true(ret == 0);
+    assert_non_null(mod);
+    assert_true(m_mod_is(mod, M_MOD_IDLE));
+
+    ret = m_ctx_loop(test_ctx);
+    assert_int_equal(ret, 0);
+}
