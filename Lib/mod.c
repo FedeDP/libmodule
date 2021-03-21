@@ -371,7 +371,7 @@ _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags
     
     /* Store a reference to new module if requested */
     if (ref != NULL) {
-        *ref = new_mod;
+        *ref = m_mem_ref(new_mod);
     }
     return 0;
 }

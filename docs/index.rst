@@ -15,8 +15,8 @@ Welcome to libmodule's documentation!
    src/lifecycle
    src/easy
    src/pubsub
-   src/module
-   src/modules
+   src/mod
+   src/ctx
    src/map
    src/stack
    src/queue

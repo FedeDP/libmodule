@@ -2,13 +2,13 @@
 
    <br />
 
-Easy API
-========
+Mod Easy API
+============
 
 MOD macro
 =========
 
-Libmodule easy API allows simple single-context applications developing. |br|
+Libmodule easy API allows simple single-context applications developing. It can be found in <module/mod_easy.h> header. |br|
 It offers a
 
 .. code::
@@ -37,7 +37,7 @@ Provided Main
 
 Libmodule offers a weak, thus overridable, default main symbol that just loops on default ctx. |br|
 To further customize it, a weak m_ctx_pre_loop() function is also available, called by default main. |br|
-You can use this function to eg: parse argv parameters or read some config values. |br|
+You can define this function to eg: parse argv parameters or read some config values. |br|
 
 .. c:function:: m_ctx_pre_loop(c, argc, argv)
 

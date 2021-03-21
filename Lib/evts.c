@@ -14,11 +14,11 @@ _public_ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
     return m_mem_ref(m);
 }
 
-_public_ int m_mod_become(m_mod_t *mod, m_evt_cb new_recv) {
-    M_PARAM_ASSERT(new_recv);
+_public_ int m_mod_become(m_mod_t *mod, m_evt_cb new_on_evt) {
+    M_PARAM_ASSERT(new_on_evt);
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
 
-    int ret = m_stack_push(mod->recvs, new_recv);
+    int ret = m_stack_push(mod->recvs, new_on_evt);
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     }
@@ -40,8 +40,6 @@ _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
     M_PARAM_ASSERT(evt);
     // Cannot stash FD evts: it would cause an infinite loop polling on it
     M_PARAM_ASSERT(evt->type != M_SRC_TYPE_FD);
-    // Cannot stash system evts
-    M_PARAM_ASSERT(evt->type != M_SRC_TYPE_PS || evt->ps_evt->type == M_PS_USER);
 
     m_mem_ref((void *)evt);
     return m_queue_enqueue(mod->stashed, (void *)evt);

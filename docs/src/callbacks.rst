@@ -47,7 +47,7 @@ Leaving other callbacks as NULL means starting module right away with no further
 
   Poll callback, called when any event is ready to be received by a module. |br|
   Use evt->type to establish which event source triggered the event. |br|
-  Note that evt is memory-ref'd. Thus, if you want to keep a message alive, you need to m_mem_ref() it. |br|
+  Note that evt is memory-ref'd. Thus, if you want to keep a message alive, you are able to m_mem_ref() it. |br|
   Remember to unref it when done or you will cause a leak. |br|
 
   :param: :c:type:`m_mod_t *` mod: pointer to module.
