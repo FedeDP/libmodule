@@ -442,6 +442,12 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 - [ ] Basic flow: normally start program and when start looping, before actually polling, flush all messages loaded from file/db
 - [ ] Then, if "--m.store" is enabled, store any message received while looping
 
+### Remote API
+
+- [ ] M_MOD_REMOTE_SRV(name, port, certificate) to create a remote module that listens on port X eventually with key Y 
+- [ ] M_MOD_REMOTE_CL(name, ip:port, certificate) to create a module that wraps a remote module and acts as a router
+- [ ] Use https://github.com/babelouest/ulfius ? (can a fd can be fetched from it and polled async in a context's loop (as an additional module fd)?)
+
 ### Submodules
 
 - [ ] M_SUBM(B, A) checks if A is registered, then registers B and calls m_mod_bind_to(A);
