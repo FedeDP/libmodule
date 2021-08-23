@@ -210,7 +210,7 @@ struct _ctx {
     char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
     ctx_stats_t stats;                      // Context' stats
-    m_thpool_t  *thpool;                    // thpool for M_SRC_TYPE_TASK srcs
+    m_thpool_t  *thpool;                    // thpool for M_SRC_TYPE_TASK srcs; lazily created
     const void *userdata;                   // Context's user defined data
 };
 

@@ -11,6 +11,7 @@ static int _pipe(m_mod_t *mod);
 static int init_pubsub_fd(m_mod_t *mod);
 static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop);
 static void reset_module(m_mod_t *mod);
+static int close_dl_handle(m_mod_t *mod);
 
 extern int fs_cleanup(m_mod_t *mod);
 
@@ -26,7 +27,10 @@ static void module_dtor(void *data) {
             m_bst_free(&mod->srcs[i]);
         }
         
-        memhook._free((void *)mod->local_path);
+        if (mod->local_path) {
+            close_dl_handle(mod);
+            memhook._free((void *)mod->local_path);
+        }
         
         if (mod->flags & M_MOD_NAME_AUTOFREE) {
             memhook._free((void *)mod->name);
@@ -108,6 +112,15 @@ static void reset_module(m_mod_t *mod) {
     m_map_clear(mod->subscriptions);
     m_stack_clear(mod->recvs);
     m_queue_clear(mod->stashed);
+}
+
+static int close_dl_handle(m_mod_t *mod) {
+    void *handle = dlopen(mod->local_path, RTLD_NOLOAD);
+    if (handle) {
+        dlclose(handle);
+        return 0;
+    }
+    return -EINVAL;
 }
 
 /** Private API **/
@@ -352,7 +365,7 @@ _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags
     void *handle = dlopen(module_path, RTLD_NOW);
     if (!handle) {
         M_DEBUG("Dlopen failed with error: %s\n", dlerror());
-        return -errno;
+        return -EINVAL;
     }
     
     /* 
@@ -360,7 +373,7 @@ _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags
      * by looking at requested ctx number of modules
      */
     if (module_size == m_map_len(c->modules)) {
-        dlclose(handle);
+        m_mod_unload(mod, module_path);
         return -EPERM;
     }
     
@@ -381,25 +394,19 @@ _public_ int m_mod_unload(const m_mod_t *mod, const char *module_path) {
     M_PARAM_ASSERT(module_path);
     M_MOD_CTX(mod);
 
-    /* Check if desired module is actually loaded in context */
-    bool found = false;
+    m_mod_t *target_mod = NULL;
+    /* Check if desired module is actually loaded in mod's context */
     m_itr_foreach(c->modules, {
         m_mod_t *m = m_itr_get(itr);
         if (m->local_path && !strcmp(m->local_path, module_path)) {
-            found = true;
+            target_mod = m;
             memhook._free(itr);
             break;
         }
     });
-    
-    if (found) {
-        void *handle = dlopen(module_path, RTLD_NOLOAD);
-        if (handle) {
-            dlclose(handle);
-            return 0;
-        }
-        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
-        return -errno;
+
+    if (target_mod) {
+        return m_mod_deregister(&target_mod);
     }
     M_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, c->name);
     return -ENODEV;

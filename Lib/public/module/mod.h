@@ -23,6 +23,7 @@ typedef enum {
     M_MOD_ALLOW_REPLACE     = 0x04,         // Can module be replaced by another module with same name?
     M_MOD_PERSIST           = 0x08,         // Module cannot be deregistered by direct call to m_mod_deregister (or by FS delete) while its context is looping
     M_MOD_USERDATA_AUTOFREE = 0x10,         // Automatically free module userdata upon deregister
+    M_MOD_LOOPING_CTX       = 0x20,         // Atuomatically deregister the module when its ctx stops looping
     M_MOD_DENY_CTX          = M_MOD_PERM(0x01), // Deny access to module's ctx through m_mod_ctx() (it means the module won't be able to call ctx API)
     M_MOD_DENY_LOAD         = M_MOD_PERM(0x02), // Deny access to m_mod_(un)load()
     M_MOD_DENY_PUB          = M_MOD_PERM(0x04), // Deny access to module's publishing functions: m_mod_ps_{tell,publish,broadcast,poisonpill}

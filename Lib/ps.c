@@ -186,7 +186,8 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
     ps_priv_t *mm = NULL;
 
-    while (read(mod->pubsub_fd[0], &mm, sizeof(ps_priv_t *)) == sizeof(ps_priv_t *)) {
+    while (mod->pubsub_fd[0] != -1 &&
+        read(mod->pubsub_fd[0], &mm, sizeof(ps_priv_t *)) == sizeof(ps_priv_t *)) {
         /*
          * Actually tell msg ONLY if we are not deregistering module,
          * ie: we are stopping looping on the context.

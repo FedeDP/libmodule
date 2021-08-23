@@ -38,6 +38,15 @@ static void default_logger(const m_mod_t *mod, const char *fmt, va_list args) {
     vprintf(fmt, args);
 }
 
+static int on_loop_stop(void *data, const char *key, void *value) {
+    m_mod_t *mod = (m_mod_t *)value;
+    int ret = flush_pubsub_msgs(data, key, value);
+    if (mod->flags & M_MOD_LOOPING_CTX) {
+        m_mod_deregister(&mod);
+    }
+    return ret;
+}
+
 static int loop_start(m_ctx_t *c, int max_events) {
     c->ppriv.max_events = max_events;
     int ret = poll_init(&c->ppriv);
@@ -65,11 +74,20 @@ static int loop_start(m_ctx_t *c, int max_events) {
 }
 
 static uint8_t loop_stop(m_ctx_t *c) {
+    c->state = M_CTX_IDLE;
+    
     /* Tell every module that loop is stopped */
     tell_system_pubsub_msg(NULL, c, M_PS_CTX_STOPPED, NULL, NULL);
 
+    /*
+     * Avoid on_loop_stop() destroying the being-stopped ctx 
+     * if all modules where registered with M_MOD_LOOPING_CTX flag 
+     */
+    const bool clear_persist_bit = !(c->flags & M_CTX_PERSIST);
+    c->flags |= M_CTX_PERSIST;
+    
     /* Flush pubsub msg to avoid memleaks */
-    m_map_iterate(c->modules, flush_pubsub_msgs, NULL);
+    m_map_iterate(c->modules, on_loop_stop, NULL);
     
     /* Destroy FS */
     fs_end(c);
@@ -80,13 +98,16 @@ static uint8_t loop_stop(m_ctx_t *c) {
     m_thpool_free(&c->thpool, false);
 
     c->ppriv.max_events = 0;
-    c->state = M_CTX_IDLE;
     c->stats.looping_start_time = 0;
     c->stats.recv_msgs = 0;
     c->stats.idle_time = 0;
 
     int ret = c->quit_code;
 
+    if (clear_persist_bit) {
+        c->flags &= ~M_CTX_PERSIST;
+    }
+    
     /*
      * ctx cannot be deregistered while looping,
      * thus even if all modules were deregistered during the loop,
@@ -203,8 +224,9 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     break;
                 }
             }
-            err = errno; // Store any errno happend while consuming events
-
+            err = errno; // Store any errno that happened while consuming events
+            bool msg_consumed = false;
+            
             if (err == 0) {
                 /*
                  * All messages share same address inside union.
@@ -216,6 +238,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     recved++;
                     if (msg->type != M_SRC_TYPE_PS || msg->ps_evt->type != M_PS_MOD_POISONPILL) {
                         run_pubsub_cb(mod, msg, p);
+                        msg_consumed = true;
                     } else {
                         M_DEBUG("PoisonPilling '%s'.\n", mod->name);
                         stop(mod, true);
@@ -230,6 +253,14 @@ static int recv_events(m_ctx_t *c, int timeout) {
                         m_map_remove(mod->subscriptions, p->ps_src.topic);
                     }
                 }
+            }
+            if (!msg_consumed) {
+                /*
+                 * Unref the message if it wasn't consumed 
+                 * by user callback to avoid memleaks,
+                 * otherwise it was unref'd in run_pubsub_cb()
+                 */
+                m_mem_unref(msg);
             }
             m_mem_unref(mod);
         } else {
