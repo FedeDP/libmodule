@@ -8,6 +8,7 @@
 
 static void ctx_dtor(void *data);
 static void default_logger(const m_mod_t *mod, const char *fmt, va_list args);
+static int on_loop_stop(void *data, const char *key, void *value);
 static int loop_start(m_ctx_t *c, int max_events);
 static uint8_t loop_stop(m_ctx_t *c);
 static inline int loop_quit(m_ctx_t *c, uint8_t quit_code);
