@@ -26,7 +26,11 @@ _public_ _weak_ void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
  * All it does is looping on default ctx.
  */
 _public_ _weak_ int main(int argc, char *argv[]) {
-    m_ctx_t *c = m_map_peek(ctx);
+    m_ctx_t *c = m_map_get(ctx, M_CTX_DEFAULT);
+    if (!c) {
+        fprintf(stderr, "No context available.");
+        return EXIT_FAILURE;
+    }
     m_ctx_pre_loop(c, argc, argv);
     return m_ctx_loop(c);
 }

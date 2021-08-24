@@ -2,14 +2,6 @@
 #include <poll.h>
 
 /*
- * As in this example we are using easy API without
- * using provided main, we need to fetch ctx on which loop
- * by ourselves.
- * Ie: expose a function from any module that just returns m_m_ctx().
- */
-extern m_ctx_t *get_ctx();
-
-/*
  * This function is automatically called before registering any module.
  * Use this function to eg: parse config needed to decide
  * whether to start some module.
@@ -24,12 +16,12 @@ int main(int argc, char *argv[]) {
     int ret = 0;
     
     /* Initial dispatch */
-    if (m_ctx_dispatch(get_ctx()) != 0) {
+    if (m_ctx_dispatch(NULL) != 0) {
         return 1;
     }
 
     /* Get context fd */
-    int fd = m_ctx_fd(get_ctx());
+    int fd = m_ctx_fd(NULL);
     if (fd < 0) {
         return 1;
     }
@@ -42,7 +34,7 @@ int main(int argc, char *argv[]) {
         ret = poll(&fds, 1, -1);
         if (ret > 0) {
             if (fds.revents & POLLIN) {
-                ret = m_ctx_dispatch(get_ctx());
+                ret = m_ctx_dispatch(NULL);
                 if (ret < 0) {
                     printf("Loop: error happened.\n");
                 } else if (ret > 0) {

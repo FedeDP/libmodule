@@ -6,15 +6,11 @@
 #include <ctype.h>
 #include <signal.h>
 
-static m_mod_t *doggo, *self;
+static m_mod_t *doggo;
 
 M_MOD("Pippo");
 
 static int myData = 5;
-
-m_ctx_t *get_ctx() {
-    return m_mod_ctx(self);
-}
 
 static void m_mod_on_evt_ready(m_mod_t *mod, const m_evt_t *msg);
 
@@ -28,7 +24,6 @@ static bool m_mod_on_start(m_mod_t *mod) {
     
     /* Get Doggo reference */
     doggo = m_mod_ref(mod, "Doggo");
-    self = mod;
     return true;
 }
 

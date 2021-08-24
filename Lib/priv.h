@@ -33,8 +33,10 @@
 #define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM)
 #define M_PARAM_ASSERT(cond)        M_RET_ASSERT(cond, -EINVAL)
 
+#define M_CTX_NON_NULL_OR_DEFAULT(c) if (!c) { c = check_ctx(M_CTX_DEFAULT); } M_PARAM_ASSERT(c);
+
 #define M_CTX_ASSERT(c) \
-    M_PARAM_ASSERT(c); \
+    M_CTX_NON_NULL_OR_DEFAULT(c); \
     M_RET_ASSERT(c->state != M_CTX_ZOMBIE, -EACCES)
 
 #define M_MOD_ASSERT(mod) \

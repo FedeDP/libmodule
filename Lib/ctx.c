@@ -461,7 +461,6 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     int i = 0;
     m_itr_foreach(c->modules, {
         const char *mod_name = m_map_itr_get_key(itr);
-        const m_mod_t *mod = m_itr_get(itr);
         ctx_logger(c, NULL, "\t\t\"%s\"%c\n", mod_name, ++i < m_map_len(c->modules) ? ',' : ' ');
     });
     ctx_logger(c, NULL, "\t]\n");
@@ -489,6 +488,10 @@ _public_ int m_ctx_stats(const m_ctx_t *c, m_ctx_stats_t *stats) {
 }
 
 _public_ const char *m_ctx_name(const m_ctx_t *c) {
+    if (!c) { 
+        c = check_ctx(M_CTX_DEFAULT); 
+    }
+    
     M_RET_ASSERT(c, NULL);
     M_RET_ASSERT(c->state != M_CTX_ZOMBIE, NULL);
 
@@ -496,6 +499,10 @@ _public_ const char *m_ctx_name(const m_ctx_t *c) {
 }
 
 _public_ const void *m_ctx_userdata(const m_ctx_t *c) {
+    if (!c) { 
+        c = check_ctx(M_CTX_DEFAULT); 
+    }
+    
     M_RET_ASSERT(c, NULL);
     M_RET_ASSERT(c->state != M_CTX_ZOMBIE, NULL);
 

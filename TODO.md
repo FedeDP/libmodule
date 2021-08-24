@@ -37,6 +37,7 @@
 - [x] Add a m_mod flag to automatically deregister a module when its context stops looping
 - [x] Drop m_mod_dtor() from mod_easy api and make m_mod_self static inside m_mod_ctor
 - [ ] better name for M_MOD_LOOPING_CTX ?
+- [x] All ctx api should allow for NULL ctx, and just fallback at default provided ctx (if found, else error)
 
 ### Reference-counted objects' life management
 
