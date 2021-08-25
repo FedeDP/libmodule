@@ -37,7 +37,7 @@
 - [x] Drop m_mod_dtor() from mod_easy api and make m_mod_self static inside m_mod_ctor
 - [x] better name for M_MOD_LOOPING_CTX ?
 - [x] All ctx api should allow for NULL ctx, and just fallback at default provided ctx (if found, else error)
-- [ ] Allow to update some module flags? (Eg: PERSIST,ALLOW_REPLACE,BIND_LOOPING_CTX)
+- [x] Allow to update some module flags? (Eg: PERSIST,ALLOW_REPLACE,BIND_LOOPING_CTX)
 - [x] Add a m_ctx_post_loop() weak symbol matching m_ctx_pre_loop
 
 ### Reference-counted objects' life management
