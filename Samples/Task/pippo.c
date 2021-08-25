@@ -13,8 +13,13 @@ void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
     printf("Task example starting.\n");
 }
 
-static void m_mod_pre_start(void) {
+/* Hook on m_ctx_post_loop() weak symbol */
+void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
+    printf("Task example ended.\n");
+}
 
+static void m_mod_on_boot(void) {
+    printf("Booting task example.\n");
 }
 
 static bool m_mod_on_start(m_mod_t *mod) {

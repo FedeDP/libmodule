@@ -7,7 +7,7 @@
  * whether to start some module.
  * There is no need to explicitly call it.
  */
-void m_pre_start() {
+void m_on_boot(void) {
     printf("Poll_Sample -> Started Libmodule %d.%d.%d\n", LIBMODULE_VERSION_MAJ, LIBMODULE_VERSION_MIN, LIBMODULE_VERSION_PAT);
     printf("Press 'c' to start playing with your own doggo...\n");
 }

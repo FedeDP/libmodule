@@ -9,7 +9,7 @@ M_MOD("Test");
  * This function is automatically called before registering the module. 
  * Use this to set some  global state needed eg: in check() function 
  */
-static void m_mod_pre_start(void) {
+static void m_mod_on_boot(void) {
 }
 
 /*

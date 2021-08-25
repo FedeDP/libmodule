@@ -9,7 +9,7 @@ extern void create_modules(m_ctx_t *c, m_mod_t **modA, m_mod_t **modB);
  * whether to start some module.
  * There is no need to explicitly call it.
  */
-void m_pre_start() {
+void m_on_boot(void) {
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 

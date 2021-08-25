@@ -8,7 +8,7 @@ static const m_mod_t *new_mod;
 
 M_MOD("Doggo");
 
-static void m_mod_pre_start(void) {
+static void m_mod_on_boot(void) {
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 

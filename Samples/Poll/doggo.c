@@ -5,7 +5,7 @@ static void m_mod_on_evt_sleeping(m_mod_t *mod, const m_evt_t *msg);
 
 M_MOD("Doggo");
 
-static void m_mod_pre_start(void) {
+static void m_mod_on_boot(void) {
 
 }
 

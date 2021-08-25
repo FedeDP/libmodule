@@ -10,12 +10,16 @@ m_map_t *ctx = NULL;
 m_memhook_t memhook = { malloc, calloc, free };
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
 
-_public_ _m_ctor0_ _weak_ void m_pre_start(void) {
-    M_DEBUG("Pre-starting libmodule.\n");
+_public_ _m_ctor0_ _weak_ void m_on_boot(void) {
+    M_DEBUG("Booting libmodule.\n");
 }
 
 _public_ _weak_ void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
     M_DEBUG("Pre-looping libmodule easy API.");
+}
+
+_public_ _weak_ void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
+    M_DEBUG("Post-looping libmodule easy API.");
 }
 
 /*
@@ -32,7 +36,9 @@ _public_ _weak_ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     m_ctx_pre_loop(c, argc, argv);
-    return m_ctx_loop(c);
+    const int ret = m_ctx_loop(c);
+    m_ctx_post_loop(c, argc, argv);
+    return ret;
 }
 
 static _m_ctor1_ void libmodule_init(void) {
