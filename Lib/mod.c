@@ -7,7 +7,7 @@
  ***************************************/
 
 /* Check if provided m_mod_flags is made of modifiable flags only */
-#define M_MOD_FL_IS_ONLY_MODIFIABLE(fl) fl != 0 && __builtin_ctz(fl) > 8
+#define M_MOD_FL_IS_ONLY_MODIFIABLE(fl) fl == 0 || __builtin_ctz(fl) > 8
 
 static void module_dtor(void *data);
 static int _pipe(m_mod_t *mod);
@@ -455,10 +455,11 @@ _public_ m_mod_flags m_mod_get_flags(const m_mod_t *mod_self) {
 _public_ int m_mod_set_flags(m_mod_t *mod_self, m_mod_flags flags) {
     M_MOD_ASSERT(mod_self);
     M_RET_ASSERT(M_MOD_FL_IS_ONLY_MODIFIABLE(flags), -EPERM);
-    
+
     /* Store unmodifiable part */
-    const int unmodifiable_mask = 1 << 8;
-    m_mod_flags unmodifiable = mod_self->flags & ~unmodifiable_mask;
+    const int unmodifiable_mask = (1 << 8) - 1;
+    m_mod_flags unmodifiable = mod_self->flags & unmodifiable_mask;
+
     /* Upgrade flags */
     mod_self->flags = flags;
     /* Add unmodifiable part */
