@@ -454,7 +454,7 @@ _public_ m_mod_flags m_mod_get_flags(const m_mod_t *mod_self) {
 
 _public_ int m_mod_set_flags(m_mod_t *mod_self, m_mod_flags flags) {
     M_MOD_ASSERT(mod_self);
-    M_RET_ASSERT(M_MOD_FL_IS_ONLY_MODIFIABLE(flags), -EINVAL);
+    M_RET_ASSERT(M_MOD_FL_IS_ONLY_MODIFIABLE(flags), -EPERM);
     
     /* Store unmodifiable part */
     const int unmodifiable_mask = 1 << 8;
@@ -468,7 +468,7 @@ _public_ int m_mod_set_flags(m_mod_t *mod_self, m_mod_flags flags) {
 
 _public_ int m_mod_add_flags(m_mod_t *mod_self, m_mod_flags flags) {
     M_MOD_ASSERT(mod_self);
-    M_RET_ASSERT(M_MOD_FL_IS_ONLY_MODIFIABLE(flags), -EINVAL);
+    M_RET_ASSERT(M_MOD_FL_IS_ONLY_MODIFIABLE(flags), -EPERM);
     
     mod_self->flags |= flags;
     return 0;
