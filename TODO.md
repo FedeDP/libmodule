@@ -437,7 +437,9 @@ It would allows to check if same node already exists on insert, without losing t
 
 ### Libfuse
 
-- [ ] Expand fs_create usefulness (eg: automatically register some msg...whatever); right now it registers modules that do nothing. Maybe try to m_mod_load() the created file?
+- [ ] Expand fs_create usefulness (eg: automatically register some src...whatever); right now it registers modules that do nothing, just sitting idle. 
+Maybe try to compile and m_mod_load() the created file?
+Or embed a lua vm and parse the created file as a lua script?
 
 ### Thread-safe (?)
 
