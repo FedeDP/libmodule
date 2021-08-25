@@ -15,7 +15,7 @@ static inline int loop_quit(m_ctx_t *c, uint8_t quit_code);
 static int recv_events(m_ctx_t *c, int timeout);
 static int m_ctx_loop_events(m_ctx_t *c, int max_events);
 
-static m_ctx_t *default_ctx;
+m_ctx_t *default_ctx;
 
 static void ctx_dtor(void *data) {
     M_DEBUG("Destroying context.\n");

@@ -228,10 +228,10 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 }
 
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    const m_mod_hook_t fuse_hook = {.on_evt = receive };
     if (strlen(path) > 1) {
         FS_CTX();
         m_mod_t *mod = NULL;
+        const m_mod_hook_t fuse_hook = {.on_evt = receive };
         if (m_mod_register(path + 1, c, &mod, &fuse_hook, M_MOD_NAME_DUP, NULL) == 0) {
             return 0;
         }
@@ -274,18 +274,18 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
     }
     
     switch (cmd) {
-        case MOD_STATE:
+        case M_MOD_FS_STATE:
             *(m_mod_states *)data = mod->state;
             return 0;
-        case MOD_START:
+        case M_MOD_FS_START:
             return m_mod_start(mod);
-        case MOD_STOP:
+        case M_MOD_FS_STOP:
             return m_mod_stop(mod);
-        case MOD_RESUME:
+        case M_MOD_FS_RESUME:
             return m_mod_resume(mod);
-        case MOD_PAUSE:
+        case M_MOD_FS_PAUSE:
             return m_mod_pause(mod);
-        case MOD_STATS:
+        case M_MOD_FS_STATS:
             return m_mod_stats(mod, data);
         default:
             break;

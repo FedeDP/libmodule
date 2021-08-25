@@ -428,6 +428,12 @@ It would allows to check if same node already exists on insert, without losing t
 
 ## 6.1.0 (7.0.0?)
 
+### Liburing
+- [ ] Follow progress and possibly make some fixes
+- [ ] Fix examples: 
+  - [ ] Easy sample goes mad with STDIN_FILENO registered (it requires "enter" to be pressed before receiving any event)
+  - [ ] Poll sample does not work
+
 ### Thread-safe (?)
 
 https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html

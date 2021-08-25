@@ -255,3 +255,4 @@ int start_task(m_ctx_t *c, ev_src_t *src);
 extern m_map_t *ctx;
 extern m_memhook_t memhook;
 extern pthread_mutex_t mx;
+extern m_ctx_t *default_ctx;
