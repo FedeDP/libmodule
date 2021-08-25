@@ -30,14 +30,14 @@
 - [x] Split event sources code from mod.c to src.c
 - [x] Fix bug with m_mem_new() and memory alignment
 - [x] Pass m_mod_t as first param to userhook callbacks? (drop m_evt_t self ptr)
-- [ ] Set ZOMBIE mod state before calling stop() inside m_mod_deregister() ?
 - [x] Drop easy API? (ie: just leave M_MOD() macro to automatically manage module lifecycle)
 - [ ] Rename m_mod_prestart() in something more meaningful, like m_mod_on_boot() or something like that
 - [ ] Same goes for m_prestart()
 - [x] Add a m_mod flag to automatically deregister a module when its context stops looping
 - [x] Drop m_mod_dtor() from mod_easy api and make m_mod_self static inside m_mod_ctor
-- [ ] better name for M_MOD_LOOPING_CTX ?
+- [x] better name for M_MOD_LOOPING_CTX ?
 - [x] All ctx api should allow for NULL ctx, and just fallback at default provided ctx (if found, else error)
+- [ ] Allow to update some module flags? (Eg: PERSIST,ALLOW_REPLACE,BIND_LOOPING_CTX)
 
 ### Reference-counted objects' life management
 

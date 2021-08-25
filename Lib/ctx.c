@@ -42,7 +42,7 @@ static void default_logger(const m_mod_t *mod, const char *fmt, va_list args) {
 static int on_loop_stop(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
     int ret = flush_pubsub_msgs(data, key, value);
-    if (mod->flags & M_MOD_LOOPING_CTX) {
+    if (mod->flags & M_MOD_BIND_LOOPING_CTX) {
         m_mod_deregister(&mod);
     }
     return ret;
