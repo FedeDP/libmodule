@@ -429,10 +429,15 @@ It would allows to check if same node already exists on insert, without losing t
 ## 6.1.0 (7.0.0?)
 
 ### Liburing
+
 - [ ] Follow progress and possibly make some fixes
 - [ ] Fix examples: 
   - [ ] Easy sample goes mad with STDIN_FILENO registered (it requires "enter" to be pressed before receiving any event)
   - [ ] Poll sample does not work
+
+### Libfuse
+
+- [ ] Expand fs_create usefulness (eg: automatically register some msg...whatever); right now it registers modules that do nothing. Maybe try to m_mod_load() the created file?
 
 ### Thread-safe (?)
 
@@ -471,4 +476,3 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 ### Generic
 
 - [ ] Fix m_src_flags with 64b values (right now there is no value over 32b thus it is not a real issue)
-- [ ] Expand fs_create usefulness (eg: automatically register some msg...whatever); right now it registers modules that do nothing. Maybe try to m_mod_load() the created file?
