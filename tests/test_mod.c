@@ -241,29 +241,6 @@ void test_mod_unbecome(void **state) {
     assert_false(ret == 0);
 }
 
-void test_mod_flags(void **state) {
-    (void) state; /* unused */
-    
-    /* Module was registered with 0 flags */
-    m_mod_flags flags = m_mod_get_flags(mod);
-    assert_true(flags == 0);
-    
-    int ret = m_mod_set_flags(mod, M_MOD_PERSIST | M_MOD_BIND_LOOPING_CTX);
-    assert_true(ret == 0);
-    
-    flags = m_mod_get_flags(mod);
-    assert_true(flags == (M_MOD_PERSIST | M_MOD_BIND_LOOPING_CTX));
-    
-    ret = m_mod_add_flags(mod, M_MOD_NAME_AUTOFREE);
-    assert_false(ret == 0);
-    
-    ret = m_mod_set_flags(mod, 0);
-    assert_true(ret == 0);
-    
-    flags = m_mod_get_flags(mod);
-    assert_true(flags == 0);
-}
-
 void test_mod_add_wrong_fd(void **state) {
     (void) state; /* unused */
     

@@ -26,7 +26,6 @@ void test_mod_become_NULL_func(void **state);
 void test_mod_become(void **state);
 void test_mod_unbecome_NULL_self(void **state);
 void test_mod_unbecome(void **state);
-void test_mod_flags(void **state);
 void test_mod_add_wrong_fd(void **state);
 void test_mod_add_fd_NULL_self(void **state);
 void test_mod_add_fd(void **state);

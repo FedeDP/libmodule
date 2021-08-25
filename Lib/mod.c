@@ -6,9 +6,6 @@
  * Code related to generic module API. *
  ***************************************/
 
-/* Check if provided m_mod_flags is made of modifiable flags only */
-#define M_MOD_FL_IS_ONLY_MODIFIABLE(fl) fl == 0 || __builtin_ctz(fl) > 8
-
 static void module_dtor(void *data);
 static int _pipe(m_mod_t *mod);
 static int init_pubsub_fd(m_mod_t *mod);
@@ -358,8 +355,13 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     return 0;
 }
 
+/* Flags is ORed with loaded module's actual flags */
 _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags flags, m_mod_t **ref) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_LOAD);
+    /*
+     * Caller may not alter first 8bits of newly loaded module's flags;
+     */
+    M_PARAM_ASSERT(flags == 0 || (__builtin_ctz(flags) >= 8))
     M_PARAM_ASSERT(module_path);
     M_MOD_CTX(mod);
 
@@ -426,14 +428,7 @@ _public_ __attribute__((format (printf, 2, 3))) int m_mod_log(const m_mod_t *mod
     return 0;
 }
 
-_public_ int m_mod_set_userdata(m_mod_t *mod, const void *userdata) {
-    M_MOD_ASSERT(mod);
-    
-    mod->userdata = userdata;
-    return 0;
-}
-
-_public_ const void *m_mod_get_userdata(const m_mod_t *mod) {
+_public_ const void *m_mod_userdata(const m_mod_t *mod) {
     M_RET_ASSERT(mod, NULL);
     M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), NULL);
     
@@ -444,35 +439,6 @@ _public_ const char *m_mod_name(const m_mod_t *mod_self) {
     M_RET_ASSERT(mod_self, NULL);
 
     return mod_self->name;
-}
-
-_public_ m_mod_flags m_mod_get_flags(const m_mod_t *mod_self) {
-    M_MOD_ASSERT(mod_self);
-    
-    return mod_self->flags;
-}
-
-_public_ int m_mod_set_flags(m_mod_t *mod_self, m_mod_flags flags) {
-    M_MOD_ASSERT(mod_self);
-    M_RET_ASSERT(M_MOD_FL_IS_ONLY_MODIFIABLE(flags), -EPERM);
-
-    /* Store unmodifiable part */
-    const int unmodifiable_mask = (1 << 8) - 1;
-    m_mod_flags unmodifiable = mod_self->flags & unmodifiable_mask;
-
-    /* Upgrade flags */
-    mod_self->flags = flags;
-    /* Add unmodifiable part */
-    mod_self->flags |= unmodifiable;
-    return 0;
-}
-
-_public_ int m_mod_add_flags(m_mod_t *mod_self, m_mod_flags flags) {
-    M_MOD_ASSERT(mod_self);
-    M_RET_ASSERT(M_MOD_FL_IS_ONLY_MODIFIABLE(flags), -EPERM);
-    
-    mod_self->flags |= flags;
-    return 0;
 }
 
 /** Module state getters **/

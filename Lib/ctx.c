@@ -15,6 +15,8 @@ static inline int loop_quit(m_ctx_t *c, uint8_t quit_code);
 static int recv_events(m_ctx_t *c, int timeout);
 static int m_ctx_loop_events(m_ctx_t *c, int max_events);
 
+static m_ctx_t *default_ctx;
+
 static void ctx_dtor(void *data) {
     M_DEBUG("Destroying context.\n");
     m_ctx_t *context = (m_ctx_t *)data;
@@ -337,6 +339,9 @@ int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *us
             m_mem_unref(*c);
         }
         *c = NULL;
+    } else if (!strcmp(ctx_name, M_CTX_DEFAULT)) {
+        /* Store default ctx, used by ctx API with NULL param */
+        default_ctx = *c;
     }
 
     pthread_mutex_unlock(&mx);
@@ -361,6 +366,7 @@ void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ..
 
 _public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
     M_PARAM_ASSERT(ctx_name);
+    M_ASSERT(strcmp(ctx_name, M_CTX_DEFAULT), "Reserved ctx name.", -EINVAL);
     M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(!*c);
 

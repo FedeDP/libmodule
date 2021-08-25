@@ -17,18 +17,17 @@ typedef enum {
 
 /* 
  * Modules flags, leave upper 16b for module permissions management;
- * Upper 24bits are flags modifiable even after module registration;
- * First 8 bits are constant flags, ie: they cannot be touched once module is registered.
+ * First 8 bits and perms bits are constant flags, ie: they cannot be touched once module is registered.
+ * Second 8bits are modifiable after module has been registered through m_mod_{add,set}_flags api
  */
-#define M_MOD_FL_MODIFIABLE(val)   val << 8
 #define M_MOD_FL_PERM(val)         val << 16
 typedef enum {
     M_MOD_NAME_DUP          = 0x01,         // Should module's name be strdupped? (force M_MOD_NAME_AUTOFREE flag)
     M_MOD_NAME_AUTOFREE     = 0x02,         // Should module's name be autofreed?
-    M_MOD_ALLOW_REPLACE     = M_MOD_FL_MODIFIABLE(0x01),         // Can module be replaced by another module with same name?
-    M_MOD_PERSIST           = M_MOD_FL_MODIFIABLE(0x02),         // Module cannot be deregistered by direct call to m_mod_deregister (or by FS delete) while its context is looping
-    M_MOD_USERDATA_AUTOFREE = M_MOD_FL_MODIFIABLE(0x03),         // Automatically free module userdata upon deregister
-    M_MOD_BIND_LOOPING_CTX  = M_MOD_FL_MODIFIABLE(0x04),         // Automatically deregister the module when its ctx stops looping
+    M_MOD_ALLOW_REPLACE     = 0x04,         // Can module be replaced by another module with same name?
+    M_MOD_PERSIST           = 0x08,         // Module cannot be deregistered by direct call to m_mod_deregister (or by FS delete) while its context is looping
+    M_MOD_USERDATA_AUTOFREE = 0x10,         // Automatically free module userdata upon deregister
+    M_MOD_BIND_LOOPING_CTX  = 0x20,         // Automatically deregister the module when its ctx stops looping
     M_MOD_DENY_CTX          = M_MOD_FL_PERM(0x01), // Deny access to module's ctx through m_mod_ctx() (it means the module won't be able to call ctx API)
     M_MOD_DENY_LOAD         = M_MOD_FL_PERM(0x02), // Deny access to m_mod_(un)load()
     M_MOD_DENY_PUB          = M_MOD_FL_PERM(0x04), // Deny access to module's publishing functions: m_mod_ps_{tell,publish,broadcast,poisonpill}
@@ -88,14 +87,7 @@ int m_mod_log(const m_mod_t *mod, const char *fmt, ...);
 int m_mod_dump(const m_mod_t *mod);
 int m_mod_stats(const m_mod_t *mod, m_mod_stats_t *stats);
 
-/* Userdata related functions */
-int m_mod_set_userdata(m_mod_t *mod, const void *userdata);
-const void *m_mod_get_userdata(const m_mod_t *mod);
-
-/* Module flags related functions */
-m_mod_flags m_mod_get_flags(const m_mod_t *mod_self);
-int m_mod_set_flags(m_mod_t *mod_self, m_mod_flags flags);
-int m_mod_add_flags(m_mod_t *mod_self, m_mod_flags flags);
+const void *m_mod_userdata(const m_mod_t *mod);
 
 m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name);
 

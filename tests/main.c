@@ -72,9 +72,6 @@ int main(void) {
         cmocka_unit_test(test_mod_unbecome_NULL_self),
         cmocka_unit_test(test_mod_unbecome),
         
-        /* Test module flags */
-        cmocka_unit_test(test_mod_flags),
-        
         /* Test fd add/rm */
         cmocka_unit_test(test_mod_add_wrong_fd),
         cmocka_unit_test(test_mod_add_fd_NULL_self),
