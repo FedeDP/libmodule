@@ -45,8 +45,6 @@ Maybe try to m_mod_load() the newly created file?
 
 - [x] Fix m_mod_load() in case of new module being registered in a different ctx...
 
-- [ ] Rename m_itr_foreach() internal params (eg: idx -> m_itr_idx, itr -> m_itr...) + add a m_itr_quit bool value to quit the loop cleaning itr
-
 ### Reference-counted objects' life management
 
 - [x] Keep objects alive as long as someone references them
