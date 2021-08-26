@@ -60,7 +60,6 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
 /* Internal functions */
 static void client_dtor(void *data);
 static void fs_logger(const m_mod_t *mod, const char *fmt, va_list args);
-static void receive(m_mod_t *self, const m_evt_t *const msg);
 static void fs_wakeup_clients(fs_priv_t *fp, bool leaving);
 
 static const struct fuse_operations operations = {
@@ -230,12 +229,7 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     if (strlen(path) > 1) {
         FS_CTX();
-        m_mod_t *mod = NULL;
-        const m_mod_hook_t fuse_hook = {.on_evt = receive };
-        if (m_mod_register(path + 1, c, &mod, &fuse_hook, M_MOD_NAME_DUP, NULL) == 0) {
-            return 0;
-        }
-        return -EPERM;
+        return open_dl_handle(c, path + 1, NULL, 0);
     }
     return -ENOENT;
 }
@@ -316,10 +310,6 @@ static void fs_logger(const m_mod_t *mod, const char *fmt, va_list args) {
          */
         cl->write_len += vsnprintf(cl->read_buf + cl->write_len, cl->read_len - cl->write_len, fmt, args);
     }
-}
-
-static void receive(m_mod_t *self, const m_evt_t *const msg) {
-    
 }
 
 static void fs_wakeup_clients(fs_priv_t *fp, bool leaving) {

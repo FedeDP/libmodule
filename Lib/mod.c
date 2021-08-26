@@ -11,7 +11,6 @@ static int _pipe(m_mod_t *mod);
 static int init_pubsub_fd(m_mod_t *mod);
 static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop);
 static void reset_module(m_mod_t *mod);
-static int close_dl_handle(m_mod_t *mod);
 
 extern int fs_cleanup(m_mod_t *mod);
 
@@ -27,9 +26,8 @@ static void module_dtor(void *data) {
             m_bst_free(&mod->srcs[i]);
         }
         
-        if (mod->local_path) {
-            close_dl_handle(mod);
-            memhook._free((void *)mod->local_path);
+        if (mod->dlhandle) {
+            dlclose(mod->dlhandle);
         }
         
         if (mod->flags & M_MOD_NAME_AUTOFREE) {
@@ -112,15 +110,6 @@ static void reset_module(m_mod_t *mod) {
     m_map_clear(mod->subscriptions);
     m_stack_clear(mod->recvs);
     m_queue_clear(mod->stashed);
-}
-
-static int close_dl_handle(m_mod_t *mod) {
-    void *handle = dlopen(mod->local_path, RTLD_NOLOAD);
-    if (handle) {
-        dlclose(handle);
-        return 0;
-    }
-    return -EINVAL;
 }
 
 /** Private API **/
@@ -231,6 +220,89 @@ int stop(m_mod_t *mod, bool stopping) {
     M_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
     
     tell_system_pubsub_msg(NULL, c, M_PS_MOD_STOPPED, mod, NULL);
+    return 0;
+}
+
+int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **mod, m_mod_flags flags) {
+    const ssize_t module_size = m_map_len(c->modules);
+    
+    void *handle = dlopen(module_path, RTLD_NOW);
+    if (!handle) {
+        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
+        return -EINVAL;
+    }
+    
+    /* 
+     * Check that requested module has been created in requested ctx, 
+     * by looking at requested ctx number of modules.
+     * 
+     * This is quite cumbersome because, if module was registered in another ctx,
+     * we cannot be sure no other modules were registered in the meantime,
+     * thus m_map_peek() is not sufficient.
+     * 
+     * We are sure that a registered module will at least register its on_evt callback;
+     * thus, let's use that pointer to find out whether we are looking at the correct module.
+     * 
+     * TODO: what if multiple modules were registered from within the linked file?
+     * TODO: what if a module was registered in the right context BUT some other module
+     * was registered in other contexts??
+     */
+    if (module_size == m_map_len(c->modules)) {
+        pthread_mutex_lock(&mx);
+        m_mod_t *found_mod = NULL;
+        m_itr_foreach(ctx, {
+            m_ctx_t *c = m_itr_get(itr);
+            m_itr_foreach(c->modules, {
+                m_mod_t *mod = m_itr_get(itr);
+                Dl_info info = {0};
+                if (dladdr(mod->hook.on_evt, &info) != 0) {
+                    if (!strcmp(info.dli_fname, module_path)) {
+                        found_mod = mod;
+                        free(itr);
+                        break;
+                    }
+                }
+            })
+            if (found_mod) {
+                free(itr);
+                break;
+            }
+        })
+        pthread_mutex_unlock(&mx);
+
+        if (found_mod) {
+            /*
+             * Force dlhandle to be released while deregistering
+             * and force module to be actually deregistered 
+             * even if its ctx is looping,
+             * by dropping M_MOD_PERSIST flag.
+             * 
+             * Out of mutex to avoid deadlock in case 
+             * the module is the only module in its context,
+             * thus leading to context being destroyed,
+             * accessing global map (behind mx mutext)
+             */
+            found_mod->dlhandle = handle;
+            found_mod->flags &= ~M_MOD_PERSIST;
+
+            // NOTE: not thread safe; better than nothing i guess.
+            m_mod_deregister(&found_mod);
+        }
+        return -EPERM;
+    }
+    
+    /* Take most recently loaded module */
+    m_mod_t *new_mod = NULL;
+    new_mod = m_map_peek(c->modules);
+    new_mod->dlhandle = handle;
+    /* Keep flags if -1 was passed */
+    if (flags != -1) {
+        new_mod->flags = flags;
+    }
+    
+    if (mod) {
+        *mod = m_mem_ref(new_mod);
+    }
     return 0;
 }
 
@@ -355,43 +427,17 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     return 0;
 }
 
-/* Flags is ORed with loaded module's actual flags */
+/* Only constant flags are kept */
 _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags flags, m_mod_t **ref) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_LOAD);
     /*
      * Caller may not alter first 8bits of newly loaded module's flags;
      */
-    M_PARAM_ASSERT(flags == 0 || (__builtin_ctz(flags) >= 8))
+    M_PARAM_ASSERT(flags == -1 || flags == 0 || (__builtin_ctz(flags) >= 8))
     M_PARAM_ASSERT(module_path);
     M_MOD_CTX(mod);
 
-    const ssize_t module_size = m_map_len(c->modules);
-    
-    void *handle = dlopen(module_path, RTLD_NOW);
-    if (!handle) {
-        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
-        return -EINVAL;
-    }
-    
-    /* 
-     * Check that requested module has been created in requested ctx, 
-     * by looking at requested ctx number of modules
-     */
-    if (module_size == m_map_len(c->modules)) {
-        m_mod_unload(mod, module_path);
-        return -EPERM;
-    }
-    
-    /* Take most recently loaded module */
-    m_mod_t *new_mod = m_map_peek(c->modules);
-    new_mod->local_path = mem_strdup(module_path);
-    new_mod->flags |= flags;
-    
-    /* Store a reference to new module if requested */
-    if (ref != NULL) {
-        *ref = m_mem_ref(new_mod);
-    }
-    return 0;
+    return open_dl_handle(c, module_path, ref, flags);
 }
 
 _public_ int m_mod_unload(const m_mod_t *mod, const char *module_path) {
@@ -399,11 +445,16 @@ _public_ int m_mod_unload(const m_mod_t *mod, const char *module_path) {
     M_PARAM_ASSERT(module_path);
     M_MOD_CTX(mod);
 
+    void *handle = dlopen(module_path, RTLD_NOLOAD | RTLD_LAZY);
+    if (!handle) {
+        return -EINVAL;
+    }
+    
     m_mod_t *target_mod = NULL;
     /* Check if desired module is actually loaded in mod's context */
     m_itr_foreach(c->modules, {
         m_mod_t *m = m_itr_get(itr);
-        if (m->local_path && !strcmp(m->local_path, module_path)) {
+        if (m->dlhandle && handle == m->dlhandle) {
             target_mod = m;
             memhook._free(itr);
             break;

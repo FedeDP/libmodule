@@ -17,17 +17,18 @@ typedef enum {
 
 /* 
  * Modules flags, leave upper 16b for module permissions management;
- * First 8 bits and perms bits are constant flags, ie: they cannot be touched once module is registered.
- * Second 8bits are modifiable after module has been registered through m_mod_{add,set}_flags api
+ * First 8 bits are constant flags.
+ * There is still no API to update set flags though.
  */
 #define M_MOD_FL_PERM(val)         val << 16
+#define M_MOD_FL_MODIFIABLE(val)   val << 8
 typedef enum {
     M_MOD_NAME_DUP          = 0x01,         // Should module's name be strdupped? (force M_MOD_NAME_AUTOFREE flag)
     M_MOD_NAME_AUTOFREE     = 0x02,         // Should module's name be autofreed?
-    M_MOD_ALLOW_REPLACE     = 0x04,         // Can module be replaced by another module with same name?
-    M_MOD_PERSIST           = 0x08,         // Module cannot be deregistered by direct call to m_mod_deregister (or by FS delete) while its context is looping
-    M_MOD_USERDATA_AUTOFREE = 0x10,         // Automatically free module userdata upon deregister
-    M_MOD_BIND_LOOPING_CTX  = 0x20,         // Automatically deregister the module when its ctx stops looping
+    M_MOD_ALLOW_REPLACE     = M_MOD_FL_MODIFIABLE(0x01),         // Can module be replaced by another module with same name?
+    M_MOD_PERSIST           = M_MOD_FL_MODIFIABLE(0x02),         // Module cannot be deregistered by direct call to m_mod_deregister (or by FS delete) while its context is looping
+    M_MOD_USERDATA_AUTOFREE = M_MOD_FL_MODIFIABLE(0x04),         // Automatically free module userdata upon deregister
+    M_MOD_BIND_LOOPING_CTX  = M_MOD_FL_MODIFIABLE(0x08),         // Automatically deregister the module when its ctx stops looping
     M_MOD_DENY_CTX          = M_MOD_FL_PERM(0x01), // Deny access to module's ctx through m_mod_ctx() (it means the module won't be able to call ctx API)
     M_MOD_DENY_LOAD         = M_MOD_FL_PERM(0x02), // Deny access to m_mod_(un)load()
     M_MOD_DENY_PUB          = M_MOD_FL_PERM(0x04), // Deny access to module's publishing functions: m_mod_ps_{tell,publish,broadcast,poisonpill}

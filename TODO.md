@@ -39,6 +39,14 @@
 - [x] All ctx api should allow for NULL ctx, and just fallback at default provided ctx (if found, else error)
 - [x] Add a m_ctx_post_loop() weak symbol matching m_ctx_pre_loop
 
+- [x] Expand fs_create usefulness (eg: automatically register some src...whatever); right now it registers modules that do nothing, just sitting idle. 
+Maybe try to m_mod_load() the newly created file?
+- [ ] Test!!
+
+- [x] Fix m_mod_load() in case of new module being registered in a different ctx...
+
+- [ ] Rename m_itr_foreach() internal params (eg: idx -> m_itr_idx, itr -> m_itr...) + add a m_itr_quit bool value to quit the loop cleaning itr
+
 ### Reference-counted objects' life management
 
 - [x] Keep objects alive as long as someone references them
@@ -434,12 +442,6 @@ It would allows to check if same node already exists on insert, without losing t
 - [ ] Fix examples: 
   - [ ] Easy sample goes mad with STDIN_FILENO registered (it requires "enter" to be pressed before receiving any event)
   - [ ] Poll sample does not work
-
-### Libfuse
-
-- [ ] Expand fs_create usefulness (eg: automatically register some src...whatever); right now it registers modules that do nothing, just sitting idle. 
-Maybe try to compile and m_mod_load() the created file?
-Or embed a lua vm and parse the created file as a lua script?
 
 ### Thread-safe (?)
 

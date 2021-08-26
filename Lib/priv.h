@@ -186,7 +186,7 @@ struct _mod {
     const void *userdata;                   // module's user defined data
     void *fs;                               // FS module priv data. NULL if unsupported
     const char *name;                       // module's name
-    const char *local_path;                 // For runtime loaded modules: path of module
+    void *dlhandle;                         // For runtime loaded modules
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     m_queue_t *stashed;                     // module's stashed messages
@@ -220,6 +220,7 @@ struct _ctx {
 int evaluate_module(void *data, const char *key, void *value);
 int start(m_mod_t *mod, bool starting);
 int stop(m_mod_t *mod, bool stopping);
+int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **mod, m_mod_flags flags);
 
 /* Defined in ctx.c */
 int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
