@@ -15,11 +15,11 @@ _public_ _m_ctor0_ _weak_ void m_on_boot(void) {
 }
 
 _public_ _weak_ void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
-    M_DEBUG("Pre-looping libmodule easy API.");
+    M_DEBUG("Pre-looping libmodule easy API.\n");
 }
 
 _public_ _weak_ void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
-    M_DEBUG("Post-looping libmodule easy API.");
+    M_DEBUG("Post-looping libmodule easy API.\n");
 }
 
 /*
@@ -29,10 +29,11 @@ _public_ _weak_ void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
  *
  * All it does is looping on default ctx.
  */
+
 _public_ _weak_ int main(int argc, char *argv[]) {
     m_ctx_t *c = m_map_get(ctx, M_CTX_DEFAULT);
     if (!c) {
-        fprintf(stderr, "No context available.");
+        fprintf(stderr, "No context available.\n");
         return EXIT_FAILURE;
     }
     m_ctx_pre_loop(c, argc, argv);
