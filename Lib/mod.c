@@ -14,6 +14,9 @@ static void reset_module(m_mod_t *mod);
 
 extern int fs_cleanup(m_mod_t *mod);
 
+/* Allowed ctx to load external shared object */
+static m_ctx_t *allowed_ctx;
+
 static void module_dtor(void *data) {
     m_mod_t *mod = (m_mod_t *)data;
     if (mod) {
@@ -226,68 +229,20 @@ int stop(m_mod_t *mod, bool stopping) {
 int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **mod, m_mod_flags flags) {
     const ssize_t module_size = m_map_len(c->modules);
     
+    /* Set the only allowed ctx for m_mod_register() to passed ctx */
+    pthread_mutex_lock(&load_mx);
+    allowed_ctx = c;
     void *handle = dlopen(module_path, RTLD_NOW);
     if (!handle) {
         M_DEBUG("Dlopen failed with error: %s\n", dlerror());
         return -EINVAL;
     }
+    allowed_ctx = NULL;
+    pthread_mutex_unlock(&load_mx);
     
-    /* 
-     * Check that requested module has been created in requested ctx, 
-     * by looking at requested ctx number of modules.
-     * 
-     * This is quite cumbersome because, if module was registered in another ctx,
-     * we cannot be sure no other modules were registered in the meantime,
-     * thus m_map_peek() is not sufficient.
-     * 
-     * We are sure that a registered module will at least register its on_evt callback;
-     * thus, let's use that pointer to find out whether we are looking at the correct module.
-     * 
-     * TODO: what if multiple modules were registered from within the linked file?
-     * TODO: what if a module was registered in the right context BUT some other module
-     * was registered in other contexts??
-     */
     if (module_size == m_map_len(c->modules)) {
-        pthread_mutex_lock(&mx);
-        m_mod_t *found_mod = NULL;
-        m_itr_foreach(ctx, {
-            m_ctx_t *c = m_itr_get(itr);
-            m_itr_foreach(c->modules, {
-                m_mod_t *mod = m_itr_get(itr);
-                Dl_info info = {0};
-                if (dladdr(mod->hook.on_evt, &info) != 0) {
-                    if (!strcmp(info.dli_fname, module_path)) {
-                        found_mod = mod;
-                        free(itr);
-                        break;
-                    }
-                }
-            })
-            if (found_mod) {
-                free(itr);
-                break;
-            }
-        })
-        pthread_mutex_unlock(&mx);
-
-        if (found_mod) {
-            /*
-             * Force dlhandle to be released while deregistering
-             * and force module to be actually deregistered 
-             * even if its ctx is looping,
-             * by dropping M_MOD_PERSIST flag.
-             * 
-             * Out of mutex to avoid deadlock in case 
-             * the module is the only module in its context,
-             * thus leading to context being destroyed,
-             * accessing global map (behind mx mutext)
-             */
-            found_mod->dlhandle = handle;
-            found_mod->flags &= ~M_MOD_PERSIST;
-
-            // NOTE: not thread safe; better than nothing i guess.
-            m_mod_deregister(&found_mod);
-        }
+        // No modules were loaded in this context (thus in any context); error.
+        dlclose(handle);
         return -EPERM;
     }
     
@@ -299,6 +254,8 @@ int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **mod, m_mod_fla
     if (flags != -1) {
         new_mod->flags = flags;
     }
+    /* Enforce M_MOD_BIND_LOOPING_CTX flag */
+    new_mod->flags |= M_MOD_BIND_LOOPING_CTX;
     
     if (mod) {
         *mod = m_mem_ref(new_mod);
@@ -325,6 +282,27 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const 
         }
     }
     M_ALLOC_ASSERT(c);
+    
+    /* 
+     * Allowed_ctx is set while loading a module from a shared object.
+     * Force only modules being registered for the requested ctx and disallow others.
+     * 
+     * While this may reject normal m_mod_register() called by other contexts, 
+     * while any context is loading a module from a shared object,
+     * this is by far the safest and less problematic way to deal with the problem.
+     * 
+     * Note that there is no way to properly distinguish between the 2 cases, ie:
+     * * m_mod_register() called by another context
+     * * m_mod_register() called by a being-loaded module on a wrong context
+     * 
+     * EAGAIN is returned to let other contexts know that they can
+     * retry the call and it will most probably be successful.
+     */
+    if (allowed_ctx && c != allowed_ctx) {
+        M_DEBUG("Ctx not allowed; only allowed ctx: '%s'.\n"
+        "Some other ctx is loading a module from a shared object?", allowed_ctx->name);
+        return -EAGAIN;
+    }
 
     int ret;
     m_mod_t *old_mod = m_map_get(c->modules, name);

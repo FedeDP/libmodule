@@ -9,6 +9,7 @@
 m_map_t *ctx = NULL;
 m_memhook_t memhook = { malloc, calloc, free };
 pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t load_mx = PTHREAD_MUTEX_INITIALIZER;
 
 _public_ _m_ctor0_ _weak_ void m_on_boot(void) {
     M_DEBUG("Booting libmodule.\n");
@@ -47,12 +48,14 @@ static _m_ctor1_ void libmodule_init(void) {
     ctx = m_map_new(0, mem_dtor);
     assert(ctx != NULL);
     pthread_mutex_init(&mx, NULL);
+    pthread_mutex_init(&load_mx, NULL);
 }
 
 static _m_dtor0_ void libmodule_deinit(void) {
     M_DEBUG("Destroying libmodule.\n");
     m_map_free(&ctx);
     pthread_mutex_destroy(&mx);
+    pthread_mutex_destroy(&load_mx);
 }
 
 /** Public API **/

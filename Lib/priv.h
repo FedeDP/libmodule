@@ -19,12 +19,12 @@
 #define M_CTX_DEFAULT  "libmodule"
 
 #ifndef NDEBUG
-    #define M_DEBUG printf("| D | %s@%s:%d | ", M_CTX_DEFAULT, __func__, __LINE__); printf
+    #define M_DEBUG printf("| D | %s:%d | ", __func__, __LINE__); printf
 #else
     #define M_DEBUG (void)
 #endif
 
-#define M_WARN printf("| W | %s@%s:%d | ", M_CTX_DEFAULT, __func__, __LINE__); printf
+#define M_WARN printf("| W | %s:%d | ", __func__, __LINE__); printf
 
 #define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
 
@@ -255,5 +255,6 @@ int start_task(m_ctx_t *c, ev_src_t *src);
 /* Gglobal variables are defined in main.c */
 extern m_map_t *ctx;
 extern m_memhook_t memhook;
-extern pthread_mutex_t mx;
+extern pthread_mutex_t mx;          // Used to access/modify global ctx map
+extern pthread_mutex_t load_mx;     // Used to enforce a single call to m_mod_load() contemporary
 extern m_ctx_t *default_ctx;
