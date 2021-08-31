@@ -294,7 +294,12 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const 
      * Note that there is no way to properly distinguish between the 2 cases, ie:
      * * m_mod_register() called by another context
      * * m_mod_register() called by a being-loaded module on a wrong context
-     * 
+     *
+     * Note also that we don't really care whether allowed_ctx is atomic or not;
+     * worst case scenario is that we are reading allowed_ctx here while
+     * an m_mod_load() updates its value; BUT if we were already in m_mod_register,
+     * it means this was not called by a module being loaded, thus we shouldn't care nor limit this call.
+     *
      * EAGAIN is returned to let other contexts know that they can
      * retry the call and it will most probably be successful.
      */

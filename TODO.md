@@ -45,6 +45,10 @@ Maybe try to m_mod_load() the newly created file?
 
 - [x] Fix m_mod_load() in case of new module being registered in a different ctx...
 
+- [ ] New api m_mod_set_ratelimit that uses a tokenbucket (each time a mod API is called a token is burnt. Each module has also a timer to refill the bucket.) https://github.com/osrg/openvswitch/blob/master/lib/token-bucket.c
+- [ ] Add a m_ctx_length() api
+- [ ] Add a m_mod_src_length() api
+
 ### Reference-counted objects' life management
 
 - [x] Keep objects alive as long as someone references them
