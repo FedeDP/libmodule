@@ -51,9 +51,10 @@
 
 #define M_MOD_CTX(mod)    m_ctx_t *c = mod->ctx;
     
-#define M_MEM_LOCK(mem, func)   m_mem_ref(mem); \
-                                func; \
-                                m_mem_unref(mem);
+#define M_MEM_LOCK(mem, func) \
+    m_mem_ref(mem); \
+    func; \
+    m_mem_unref(mem);
 
 /* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
@@ -239,6 +240,7 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src);
 char *mem_strdup(const char *s);
 void fetch_ms(uint64_t *val, uint64_t *ctr);
 m_evt_t *new_evt(m_src_types type);
+bool str_not_empty(const char *str);
 
 /* Defined in map.c */
 void *m_map_peek(const m_map_t *m);

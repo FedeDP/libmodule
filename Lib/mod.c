@@ -379,7 +379,7 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
              * it has no more modules in it and is not a persistent ctx
              */
             if (c->state == M_CTX_IDLE && m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
-                return m_ctx_deregister(&c);
+                ret = m_ctx_deregister(&c);
             }
         }
     });

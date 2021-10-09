@@ -33,7 +33,8 @@ void test_evt_ref(void **state) {
     ref = m_mem_unref(ref);
     assert_null(ref);
     
-    m_mod_deregister(&mod);
+    ret = m_mod_deregister(&mod);
+    assert_int_equal(ret, 0);
 }
 
 static void my_recv(m_mod_t *mod, const m_evt_t *const msg) {

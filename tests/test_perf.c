@@ -58,7 +58,8 @@ void test_poll_perf(void **state) {
     assert_true(alarm.activity_freq > 0);
     printf("Was warned as activity was beyond thresh: %.2lf > %.2lf.\n", alarm.activity_freq, thresh.activity_freq);
 
-    m_mod_deregister(&mod);
+    ret = m_mod_deregister(&mod);
+    assert_int_equal(ret, 0);
 }
 
 static void my_recv(m_mod_t *mod, const m_evt_t *msg) {

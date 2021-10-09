@@ -46,7 +46,7 @@ static int loop_start(m_ctx_t *c, int max_events) {
     int ret = poll_init(&c->ppriv);
     if (ret == 0) {
         /* Initialize fuse fs if requested */
-        if (c->fs_root && strlen(c->fs_root)) {
+        if (str_not_empty(c->fs_root)) {
             int fs_ret = fs_init(c);
             if (fs_ret != 0) {
                 M_WARN("Failed to initialize fuse fs: %s\n", strerror(-fs_ret));
@@ -447,7 +447,7 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     if (c->userdata) {
         ctx_logger(c, NULL, "\t\"UP\": \"%p\",\n", c->userdata);
     }
-    if (c->fs_root && strlen(c->fs_root)) {
+    if (str_not_empty(c->fs_root)) {
         ctx_logger(c, NULL, "\t\t\"Fs_root\": \"%s\",\n", c->fs_root);
     }
     ctx_logger(c, NULL, "\t\"State\": {\n");

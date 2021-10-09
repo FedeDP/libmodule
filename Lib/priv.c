@@ -45,3 +45,7 @@ m_evt_t *new_evt(m_src_types type) {
     }
     return msg;
 }
+
+bool str_not_empty(const char *str) {
+    return str && str[0] != '\0';
+}

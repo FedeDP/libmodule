@@ -300,7 +300,7 @@ _public_ int m_mod_src_deregister_sgn(m_mod_t *mod, const m_src_sgn_t *sgs) {
 
 _public_ int m_mod_src_register_path(m_mod_t *mod, const m_src_path_t *pt, m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(pt);
-    M_PARAM_ASSERT(pt->path && strlen(pt->path));
+    M_PARAM_ASSERT(str_not_empty(pt->path));
     M_PARAM_ASSERT(pt->events > 0);
 
     return register_src(mod, M_SRC_TYPE_PATH, pt, flags, userptr);
@@ -308,7 +308,7 @@ _public_ int m_mod_src_register_path(m_mod_t *mod, const m_src_path_t *pt, m_src
 
 _public_ int m_mod_src_deregister_path(m_mod_t *mod, const m_src_path_t *pt) {
     M_PARAM_ASSERT(pt);
-    M_PARAM_ASSERT(pt->path && strlen(pt->path));
+    M_PARAM_ASSERT(str_not_empty(pt->path));
 
     return deregister_src(mod, M_SRC_TYPE_PATH, (void *)pt);
 }

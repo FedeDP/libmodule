@@ -92,7 +92,7 @@ static int fs_getattr(const char *path, struct stat *stbuf,
         stbuf->st_nlink = m_map_len(c->modules);
         return 0;
     } 
-    if (strlen(path) > 1 && m_map_contains(c->modules, path + 1)) {
+    if (str_not_empty(path) && m_map_contains(c->modules, path + 1)) {
         stbuf->st_mode = S_IFREG | 0444;
         stbuf->st_nlink = 1;
         stbuf->st_size = 1024; // non-zero size
@@ -104,7 +104,7 @@ static int fs_getattr(const char *path, struct stat *stbuf,
 static int fs_open(const char *path, struct fuse_file_info *fi) {
     FS_CTX();
     
-    if (strlen(path) > 1) {
+    if (str_not_empty(path)) {
         m_mod_t *mod = m_map_get(c->modules, path + 1);
         if (mod) {
             fs_client_t *cl = memhook._calloc(1, sizeof(fs_client_t));
@@ -210,7 +210,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
 
 static int fs_unlink(const char *path) {
     FS_CTX();
-    if (strlen(path) > 1) {
+    if (str_not_empty(path)) {
         m_mod_t *mod = m_map_get(c->modules, path + 1);
         if (mod) {
             if (m_mod_deregister(&mod) == 0) {
@@ -227,7 +227,7 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 }
 
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    if (strlen(path) > 1) {
+    if (str_not_empty(path)) {
         FS_CTX();
         return open_dl_handle(c, path + 1, NULL, 0);
     }
@@ -431,7 +431,7 @@ _public_ const char *m_ctx_fs_get_root(const m_ctx_t *c) {
 _public_ int m_ctx_fs_set_root(m_ctx_t *c, const char *path) {
     M_CTX_ASSERT(c);
     M_RET_ASSERT(c->state == M_CTX_IDLE, -EPERM);
-    M_PARAM_ASSERT(path && strlen(path));
+    M_PARAM_ASSERT(str_not_empty(path));
 
     if (c->fs_root) {
         memhook._free(c->fs_root);
