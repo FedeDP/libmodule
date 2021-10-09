@@ -57,7 +57,7 @@ m_plugin_on_eval()
 
 - [x] Keep a map of dlhandles object, with key module_path? and dlclose as dtor func? (in ctx!)
 - [x] then, move back #include <dlfcn.h> from priv.h to plugin.c
-- [ ] Fix sigsegv
+- [x] Fix sigsegv
 
 - [ ] add a plugin_GO api?
 
