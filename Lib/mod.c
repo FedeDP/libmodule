@@ -14,9 +14,6 @@ static void reset_module(m_mod_t *mod);
 
 extern int fs_cleanup(m_mod_t *mod);
 
-/* Allowed ctx to load external shared object */
-static m_ctx_t *allowed_ctx;
-
 static void module_dtor(void *data) {
     m_mod_t *mod = (m_mod_t *)data;
     if (mod) {
@@ -226,41 +223,41 @@ int stop(m_mod_t *mod, bool stopping) {
     return 0;
 }
 
-int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **mod, m_mod_flags flags) {
-    const ssize_t module_size = m_map_len(c->modules);
-    
+int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **ref, m_mod_flags flags) {
     /* Set the only allowed ctx for m_mod_register() to passed ctx */
-    pthread_mutex_lock(&load_mx);
-    allowed_ctx = c;
     void *handle = dlopen(module_path, RTLD_NOW);
     if (!handle) {
         M_DEBUG("Dlopen failed with error: %s\n", dlerror());
         return -EINVAL;
     }
-    allowed_ctx = NULL;
-    pthread_mutex_unlock(&load_mx);
     
-    if (module_size == m_map_len(c->modules)) {
-        // No modules were loaded in this context (thus in any context); error.
-        dlclose(handle);
-        return -EPERM;
+    /* Search for required symbols */
+    m_mod_hook_t hook = {0};
+    hook.on_eval = dlsym(handle, "m_plugin_on_eval");
+    hook.on_start = dlsym(handle, "m_plugin_on_start");
+    hook.on_stop = dlsym(handle, "m_plugin_on_stop");
+    hook.on_evt = dlsym(handle, "m_plugin_on_evt");
+    const char *plugin_name = dlsym(handle, "m_plugin_name");
+    
+    if (!hook.on_evt) {
+        M_DEBUG("Mandatory m_plugin_on_evt() symbol missing.\n");
+        return -EBADF;
     }
     
-    /* Take most recently loaded module */
+    if (!plugin_name) {
+        plugin_name = basename(module_path);
+        flags |= M_MOD_NAME_DUP;
+    }
+    
     m_mod_t *new_mod = NULL;
-    new_mod = m_map_peek(c->modules);
-    new_mod->dlhandle = handle;
-    /* Keep flags if -1 was passed */
-    if (flags != -1) {
-        new_mod->flags = flags;
+    int ret = m_mod_register(plugin_name, c, &new_mod, &hook, flags, NULL);
+    if (ret == 0) {
+        new_mod->dlhandle = handle;
+        if (ref) {
+            *ref = m_mem_ref(new_mod);
+        }
     }
-    /* Enforce M_MOD_BIND_LOOPING_CTX flag */
-    new_mod->flags |= M_MOD_BIND_LOOPING_CTX;
-    
-    if (mod) {
-        *mod = m_mem_ref(new_mod);
-    }
-    return 0;
+    return ret;
 }
 
 /** Public API **/
@@ -273,41 +270,15 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const 
     M_PARAM_ASSERT(hook);
     /* Mandatory callback */
     M_PARAM_ASSERT(hook->on_evt);
-
+    
     /* NULL ctx means using default ctx */
     if (!c) {
-        c = check_ctx(M_CTX_DEFAULT);
+        c = default_ctx;
         if (!c) {
             ctx_new(M_CTX_DEFAULT, &c, 0, NULL);
         }
     }
     M_ALLOC_ASSERT(c);
-    
-    /* 
-     * Allowed_ctx is set while loading a module from a shared object.
-     * Force only modules being registered for the requested ctx and disallow others.
-     * 
-     * While this may reject normal m_mod_register() called by other contexts, 
-     * while any context is loading a module from a shared object,
-     * this is by far the safest and less problematic way to deal with the problem.
-     * 
-     * Note that there is no way to properly distinguish between the 2 cases, ie:
-     * * m_mod_register() called by another context
-     * * m_mod_register() called by a being-loaded module on a wrong context
-     *
-     * Note also that we don't really care whether allowed_ctx is atomic or not;
-     * worst case scenario is that we are reading allowed_ctx here while
-     * an m_mod_load() updates its value; BUT if we were already in m_mod_register,
-     * it means this was not called by a module being loaded, thus we shouldn't care nor limit this call.
-     *
-     * EAGAIN is returned to let other contexts know that they can
-     * retry the call and it will most probably be successful.
-     */
-    if (allowed_ctx && c != allowed_ctx) {
-        M_DEBUG("Ctx not allowed; only allowed ctx: '%s'.\n"
-        "Some other ctx is loading a module from a shared object?", allowed_ctx->name);
-        return -EAGAIN;
-    }
 
     int ret;
     m_mod_t *old_mod = m_map_get(c->modules, name);
@@ -387,36 +358,37 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     
     M_DEBUG("Deregistering module '%s'.\n", m->name);
 
-    /* Stop module */
-    stop(m, true);
-    m->state = M_MOD_ZOMBIE;
-
-    /* Free FS internal data */
-    fs_cleanup(m);
+    int ret = 0;
+    M_MEM_LOCK(m, {
+        /* Remove the module from the context */
+        ret = m_map_remove(c->modules, m->name);
         
-    /* Remove the module from the context */
-    m_map_remove(c->modules, m->name);
-
-    /* Ok; now user mod handler is NULL */
-    *mod = NULL;
-
-    /*
-     * Destroy context if it is not looping and
-     * it has no more modules in it and is not a persistent ctx
-     */
-    if (c->state == M_CTX_IDLE && m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
-        m_ctx_deregister(&c);
-    }
-    return 0;
+        if (ret == 0) {
+            /* Stop module */
+            stop(m, true);
+            m->state = M_MOD_ZOMBIE;
+            
+            /* Free FS internal data */
+            fs_cleanup(m);
+            
+            /* Ok; now user mod handler is NULL */
+            *mod = NULL;
+            
+            /*
+             * Destroy context if it is not looping and
+             * it has no more modules in it and is not a persistent ctx
+             */
+            if (c->state == M_CTX_IDLE && m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
+                return m_ctx_deregister(&c);
+            }
+        }
+    });
+    return ret;
 }
 
 /* Only constant flags are kept */
 _public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags flags, m_mod_t **ref) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_LOAD);
-    /*
-     * Caller may not alter first 8bits of newly loaded module's flags;
-     */
-    M_PARAM_ASSERT(flags == -1 || flags == 0 || (__builtin_ctz(flags) >= 8))
     M_PARAM_ASSERT(module_path);
     M_MOD_CTX(mod);
 

@@ -33,10 +33,8 @@
 #define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM)
 #define M_PARAM_ASSERT(cond)        M_RET_ASSERT(cond, -EINVAL)
 
-#define M_CTX_NON_NULL_OR_DEFAULT(c) if (!c) { c = default_ctx; } M_PARAM_ASSERT(c);
-
 #define M_CTX_ASSERT(c) \
-    M_CTX_NON_NULL_OR_DEFAULT(c); \
+    M_PARAM_ASSERT(c); \
     M_RET_ASSERT(c->state != M_CTX_ZOMBIE, -EACCES)
 
 #define M_MOD_ASSERT(mod) \
@@ -52,6 +50,10 @@
     M_RET_ASSERT(m_mod_is(mod, state), -EACCES)
 
 #define M_MOD_CTX(mod)    m_ctx_t *c = mod->ctx;
+    
+#define M_MEM_LOCK(mem, func)   m_mem_ref(mem); \
+                                func; \
+                                m_mem_unref(mem);
 
 /* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
@@ -256,5 +258,4 @@ int start_task(m_ctx_t *c, ev_src_t *src);
 extern m_map_t *ctx;
 extern m_memhook_t memhook;
 extern pthread_mutex_t mx;          // Used to access/modify global ctx map
-extern pthread_mutex_t load_mx;     // Used to enforce a single call to m_mod_load() contemporary
 extern m_ctx_t *default_ctx;

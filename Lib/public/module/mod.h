@@ -28,7 +28,6 @@ typedef enum {
     M_MOD_ALLOW_REPLACE     = M_MOD_FL_MODIFIABLE(0x01),         // Can module be replaced by another module with same name?
     M_MOD_PERSIST           = M_MOD_FL_MODIFIABLE(0x02),         // Module cannot be deregistered by direct call to m_mod_deregister (or by FS delete) while its context is looping
     M_MOD_USERDATA_AUTOFREE = M_MOD_FL_MODIFIABLE(0x04),         // Automatically free module userdata upon deregister
-    M_MOD_BIND_LOOPING_CTX  = M_MOD_FL_MODIFIABLE(0x08),         // Automatically deregister the module when its ctx stops looping
     M_MOD_DENY_CTX          = M_MOD_FL_PERM(0x01), // Deny access to module's ctx through m_mod_ctx() (it means the module won't be able to call ctx API)
     M_MOD_DENY_LOAD         = M_MOD_FL_PERM(0x02), // Deny access to m_mod_(un)load()
     M_MOD_DENY_PUB          = M_MOD_FL_PERM(0x04), // Deny access to module's publishing functions: m_mod_ps_{tell,publish,broadcast,poisonpill}
@@ -109,6 +108,9 @@ int m_mod_unstash(m_mod_t *mod);
 int m_mod_unstashall(m_mod_t *mod);
 
 /* Event Sources management */
+
+ssize_t m_mod_src_len(m_mod_t *mod, m_src_types type);
+
 int m_mod_src_register_fd(m_mod_t *mod, int fd, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_fd(m_mod_t *mod, int fd);
 

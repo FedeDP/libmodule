@@ -41,13 +41,54 @@
 
 - [x] Expand fs_create usefulness (eg: automatically register some src...whatever); right now it registers modules that do nothing, just sitting idle. 
 Maybe try to m_mod_load() the newly created file?
-- [ ] Test!!
 
-- [x] Fix m_mod_load() in case of new module being registered in a different ctx...
 
-- [ ] New api m_mod_set_ratelimit that uses a tokenbucket (each time a mod API is called a token is burnt. Each module has also a timer to refill the bucket.) https://github.com/osrg/openvswitch/blob/master/lib/token-bucket.c
-- [ ] Add a m_ctx_length() api
-- [ ] Add a m_mod_src_length() api
+### Last changes
+
+#### Plugin API
+
+- [x] create a plugin.h interface declaring the plugin api
+- [x] create a plugin_C.h with just a M_PLUGIN() macro that declares plugin API, eg:
+M_PLUGIN_NAME = "name"
+m_plugin_on_start()
+m_plugin_on_eval()
+
+- [x] m_mod_load() call dlopen and dlsym to look for predefined symbols, then eventually register the module in the context of the calling module
+
+- [ ] Keep a map of dlhandles object, with key module_path? and dlclose as dtor func?
+
+- [ ] Move m_mod_load() to m_ctx_load() ?
+
+- [ ] add a plugin_GO api?
+
+#### Generic
+
+- [x] drop M_MOD_BIND_RUNNING_CTX: when a ctx is deregistered, all its modules must be deregistered too
+
+- [x] Add a m_ctx_len() api
+- [x] Add a m_mod_src_len() api
+- [ ] Add tests!
+
+- [x] m_ctx_default() api that returns default ctx if any, or NULL
+- [x] default main will use the new api and automatically deregister the ctx before leaving.
+- [x] ctx API will always require a valid ctx now
+
+- [ ] move various M_MOD_ASSERT() in mod.c and M_CTX_ASSERT in ctx.c
+- [x] plugin.h and plugin_C.h pragma once
+- [x] M__MOD() macro use NULL as ctx
+- [ ] drop m_mod_t**  param from m_mod_register: it returns a mod that is not a real reference (as the module is owned by ctx thus can become a pointer to freed memory if used after ctx is deregistered)
+- [ ] threat it as a ref, ie: if not null, store a reference to the new module 
+• check that even without deregistering default module, libmodule_dtor() will correctly free all resources (NOPE, each module owns a reference on ctx!)
+- [x] m_plugin interface: m_plugin_name optional, otherwise use basename(module_path)
+- [ ] moreover, rename m_mod_load to m_plugin_load and move it to plugin.c
+- [x] finally in plugin.h explicit mandatory callback (only on_evt)
+
+- [ ] Check that CTX FS has a reference on loaded plugins... de reference them when they are unloaded/at end of FS 
+- [ ] return error for wrong plugin loaded in FS 
+
+- [ ] Map optimization: when checking the chain, check only that name != NULL?
+
+- [ ] Api optimization: never use strlen, just check that x[0] != 0
 
 ### Reference-counted objects' life management
 

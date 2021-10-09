@@ -349,3 +349,24 @@ _public_ int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr
 
     return deregister_src(mod, M_SRC_TYPE_THRESH, (void *)thr);
 }
+
+_public_ ssize_t m_mod_src_len(m_mod_t *mod, m_src_types type) {
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(type >= M_SRC_TYPE_PS && type <= M_SRC_TYPE_END);
+    
+    ssize_t len = 0;
+    m_src_types itr_type = type;
+    do {
+        switch (itr_type) {
+        case M_SRC_TYPE_END:
+            break;
+        case M_SRC_TYPE_PS:
+            len += m_map_len(mod->subscriptions);
+            break;
+        default:
+            len += m_bst_len(mod->srcs[itr_type]);
+            break;
+        }
+    } while (--itr_type >= M_SRC_TYPE_PS && type == M_SRC_TYPE_END);
+    return len;
+}

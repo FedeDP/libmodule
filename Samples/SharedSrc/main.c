@@ -32,11 +32,8 @@ int main(int argc, char *argv[]) {
     m_ctx_loop(c);
     
     /*
-     * Finally, destroy our modules.
-     * As context had no M_CTX_PERSIST flag,
-     * it will be automatically destroyed when it has no module in it.
+     * Finally, destroy the context, thus destroying its modules too.
      */
-    m_mod_deregister(&modA);
-    m_mod_deregister(&modB);
+    m_ctx_deregister(&c);
     return 0;
 }
