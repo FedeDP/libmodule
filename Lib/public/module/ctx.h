@@ -8,10 +8,10 @@
 
 /* Context flags */
 typedef enum {
-    M_CTX_NAME_DUP          = 0x01,         // Should ctx's name be strdupped? (only if a ctx is created during a register)
-    M_CTX_NAME_AUTOFREE     = 0x02,         // Should ctx's name be autofreed? (only if a ctx is created during a register)
-    M_CTX_PERSIST           = 0x04,         // Prevent ctx automatic destroying when there are no modules in it anymore. With this option, context is kept alive until m_ctx_deregister() is called.
-    M_CTX_USERDATA_AUTOFREE = 0x08          // Automatically free ctx userdata upon deregister
+    M_CTX_NAME_DUP          = 1 << 0,         // Should ctx's name be strdupped? (only if a ctx is created during a register)
+    M_CTX_NAME_AUTOFREE     = 1 << 1,         // Should ctx's name be autofreed? (only if a ctx is created during a register)
+    M_CTX_PERSIST           = 1 << 2,         // Prevent ctx automatic destroying when there are no modules in it anymore. With this option, context is kept alive until m_ctx_deregister() is called.
+    M_CTX_USERDATA_AUTOFREE = 1 << 3          // Automatically free ctx userdata upon deregister
 } m_ctx_flags;
 
 typedef struct {

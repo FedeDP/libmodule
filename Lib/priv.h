@@ -5,6 +5,7 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h> // PRIu64
+#include <dlfcn.h> // dlopen
 #include "mem.h"
 #include "thpool.h"
 #include "itr.h"
@@ -173,7 +174,7 @@ typedef enum {
 /*
  * MEM-REFS for mod:
  * + 1 because it is registered
- * + 1 for each m_mod_ref() called on it
+ * + 1 for each m_mod_ref() called on it (included m_mod_register() mod_ref != NULL!)
  * + 1 for each PS message sent (ie: message's sender is a new reference for sender)
  * + 1 for each fs open() call on it
  * Moreover, a reference is held while retrieving an event for the module and calling its on_evt() cb,

@@ -1,10 +1,9 @@
 #include <module/mod_easy.h>
+#include <module/plugin.h>
 #include <module/ctx.h> 
 #include <string.h>
 
 static void m_mod_on_evt_sleeping(m_mod_t *mod, const m_evt_t *msg);
-
-static const m_mod_t *new_mod;
 
 M_MOD("Doggo");
 
@@ -45,7 +44,7 @@ static void m_mod_on_evt(m_mod_t *mod, const m_evt_t *msg) {
                 m_mod_log(mod, "ZzzZzz...\n");
                 
                 /* Test runtime module loading; loaded module won't have direct access to CTX */
-                m_mod_load(mod, "./libtestmod.so", M_MOD_DENY_CTX, NULL);
+                m_plugin_load(m_mod_ctx(mod), "./libtestmod.so", M_MOD_DENY_CTX, NULL);
             } else if (!strcmp((char *)msg->ps_evt->data, "ByeBye")) {
                 m_mod_log(mod, "Sob...\n");
             } else if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
@@ -73,14 +72,13 @@ static void m_mod_on_evt_sleeping(m_mod_t *mod, const m_evt_t *msg) {
             if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
                 m_mod_unbecome(mod);
                 m_mod_log(mod, "Yawn...\n");
-                m_mod_unload(mod, "./libtestmod.so");
+                m_plugin_unload(m_mod_ctx(mod), "./libtestmod.so");
             } else {
                 m_mod_log(mod, "ZzzZzz...\n");
             }
         } else if (msg->ps_evt->type == M_PS_MOD_STARTED) {
-            new_mod = msg->ps_evt->sender;
             /* A new module has been started */
-            const char *name = m_mod_name(new_mod);
+            const char *name = m_mod_name(msg->ps_evt->sender);
             m_mod_log(mod, "Module '%s' has been started.\n", name);
         }
     }

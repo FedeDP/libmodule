@@ -1,6 +1,5 @@
 #include "mod.h"
 #include "poll_priv.h"
-#include <dlfcn.h> // dlopen
 
 /***************************************
  * Code related to generic module API. *
@@ -223,50 +222,11 @@ int stop(m_mod_t *mod, bool stopping) {
     return 0;
 }
 
-int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **ref, m_mod_flags flags) {
-    /* Set the only allowed ctx for m_mod_register() to passed ctx */
-    void *handle = dlopen(module_path, RTLD_NOW);
-    if (!handle) {
-        M_DEBUG("Dlopen failed with error: %s\n", dlerror());
-        return -EINVAL;
-    }
-    
-    /* Search for required symbols */
-    m_mod_hook_t hook = {0};
-    hook.on_eval = dlsym(handle, "m_plugin_on_eval");
-    hook.on_start = dlsym(handle, "m_plugin_on_start");
-    hook.on_stop = dlsym(handle, "m_plugin_on_stop");
-    hook.on_evt = dlsym(handle, "m_plugin_on_evt");
-    const char *plugin_name = dlsym(handle, "m_plugin_name");
-    
-    if (!hook.on_evt) {
-        M_DEBUG("Mandatory m_plugin_on_evt() symbol missing.\n");
-        return -EBADF;
-    }
-    
-    if (!plugin_name) {
-        plugin_name = basename(module_path);
-        flags |= M_MOD_NAME_DUP;
-    }
-    
-    m_mod_t *new_mod = NULL;
-    int ret = m_mod_register(plugin_name, c, &new_mod, &hook, flags, NULL);
-    if (ret == 0) {
-        new_mod->dlhandle = handle;
-        if (ref) {
-            *ref = m_mem_ref(new_mod);
-        }
-    }
-    return ret;
-}
-
 /** Public API **/
 
-_public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const m_mod_hook_t *hook,
+_public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, const m_mod_hook_t *hook,
                             m_mod_flags flags, const void *userdata) {
     M_PARAM_ASSERT(name);
-    M_PARAM_ASSERT(self);
-    M_PARAM_ASSERT(!*self);
     M_PARAM_ASSERT(hook);
     /* Mandatory callback */
     M_PARAM_ASSERT(hook->on_evt);
@@ -331,7 +291,9 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **self, const 
             memcpy(&mod->hook, hook, sizeof(m_mod_hook_t));
             mod->state = M_MOD_IDLE;
             
-            *self = mod;
+            if (mod_ref) {
+                *mod_ref = m_mem_ref(mod);
+            }
             
             mod->pubsub_fd[0] = -1;
             mod->pubsub_fd[1] = -1;
@@ -384,43 +346,6 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
         }
     });
     return ret;
-}
-
-/* Only constant flags are kept */
-_public_ int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags flags, m_mod_t **ref) {
-    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_LOAD);
-    M_PARAM_ASSERT(module_path);
-    M_MOD_CTX(mod);
-
-    return open_dl_handle(c, module_path, ref, flags);
-}
-
-_public_ int m_mod_unload(const m_mod_t *mod, const char *module_path) {
-    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_LOAD);
-    M_PARAM_ASSERT(module_path);
-    M_MOD_CTX(mod);
-
-    void *handle = dlopen(module_path, RTLD_NOLOAD | RTLD_LAZY);
-    if (!handle) {
-        return -EINVAL;
-    }
-    
-    m_mod_t *target_mod = NULL;
-    /* Check if desired module is actually loaded in mod's context */
-    m_itr_foreach(c->modules, {
-        m_mod_t *m = m_itr_get(itr);
-        if (m->dlhandle && handle == m->dlhandle) {
-            target_mod = m;
-            memhook._free(itr);
-            break;
-        }
-    });
-
-    if (target_mod) {
-        return m_mod_deregister(&target_mod);
-    }
-    M_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, c->name);
-    return -ENODEV;
 }
 
 _public_ __attribute__((format (printf, 2, 3))) int m_mod_log(const m_mod_t *mod, const char *fmt, ...) {

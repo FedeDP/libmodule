@@ -20,9 +20,9 @@ typedef struct _map m_map_t;
 typedef struct _map_itr m_map_itr_t;
 
 typedef enum {
-    M_MAP_KEY_DUP           = 0x01,         // Should map keys be dupped?
-    M_MAP_KEY_AUTOFREE      = 0x02,         // Should map keys be freed automatically?
-    M_MAP_VAL_ALLOW_UPDATE  = 0X04          // Does map object allow for updating values?
+    M_MAP_KEY_DUP           = 1 << 0,         // Should map keys be dupped?
+    M_MAP_KEY_AUTOFREE      = 1 << 1,         // Should map keys be freed automatically?
+    M_MAP_VAL_ALLOW_UPDATE  = 1 << 2          // Does map object allow for updating values?
 } m_map_flags;
 
 m_map_t *m_map_new(m_map_flags flags, m_map_dtor fn);

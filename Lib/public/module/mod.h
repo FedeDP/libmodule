@@ -8,11 +8,11 @@
 
 /* Modules states */
 typedef enum {
-    M_MOD_IDLE = 0x01,
-    M_MOD_RUNNING = 0x02,
-    M_MOD_PAUSED = 0x04,
-    M_MOD_STOPPED = 0x08,
-    M_MOD_ZOMBIE = 0x10
+    M_MOD_IDLE = 1 << 0,
+    M_MOD_RUNNING = 1 << 1,
+    M_MOD_PAUSED = 1 << 2,
+    M_MOD_STOPPED = 1 << 3,
+    M_MOD_ZOMBIE = 1 << 4
 } m_mod_states;
 
 /* 
@@ -23,15 +23,14 @@ typedef enum {
 #define M_MOD_FL_PERM(val)         val << 16
 #define M_MOD_FL_MODIFIABLE(val)   val << 8
 typedef enum {
-    M_MOD_NAME_DUP          = 0x01,         // Should module's name be strdupped? (force M_MOD_NAME_AUTOFREE flag)
-    M_MOD_NAME_AUTOFREE     = 0x02,         // Should module's name be autofreed?
-    M_MOD_ALLOW_REPLACE     = M_MOD_FL_MODIFIABLE(0x01),         // Can module be replaced by another module with same name?
-    M_MOD_PERSIST           = M_MOD_FL_MODIFIABLE(0x02),         // Module cannot be deregistered by direct call to m_mod_deregister (or by FS delete) while its context is looping
-    M_MOD_USERDATA_AUTOFREE = M_MOD_FL_MODIFIABLE(0x04),         // Automatically free module userdata upon deregister
-    M_MOD_DENY_CTX          = M_MOD_FL_PERM(0x01), // Deny access to module's ctx through m_mod_ctx() (it means the module won't be able to call ctx API)
-    M_MOD_DENY_LOAD         = M_MOD_FL_PERM(0x02), // Deny access to m_mod_(un)load()
-    M_MOD_DENY_PUB          = M_MOD_FL_PERM(0x04), // Deny access to module's publishing functions: m_mod_ps_{tell,publish,broadcast,poisonpill}
-    M_MOD_DENY_SUB          = M_MOD_FL_PERM(0x08), // Deny access to m_mod_ps_(un)subscribe()
+    M_MOD_NAME_DUP          = 1 << 0,         // Should module's name be strdupped? (force M_MOD_NAME_AUTOFREE flag)
+    M_MOD_NAME_AUTOFREE     = 1 << 1,         // Should module's name be autofreed?
+    M_MOD_ALLOW_REPLACE     = M_MOD_FL_MODIFIABLE(1 << 0),         // Can module be replaced by another module with same name?
+    M_MOD_PERSIST           = M_MOD_FL_MODIFIABLE(1 << 1),         // Module cannot be deregistered by direct call to m_mod_deregister (or by FS delete) while its context is looping
+    M_MOD_USERDATA_AUTOFREE = M_MOD_FL_MODIFIABLE(1 << 2),         // Automatically free module userdata upon deregister
+    M_MOD_DENY_CTX          = M_MOD_FL_PERM(1 << 0), // Deny access to module's ctx through m_mod_ctx() (it means the module won't be able to call ctx API)
+    M_MOD_DENY_PUB          = M_MOD_FL_PERM(1 << 1), // Deny access to module's publishing functions: m_mod_ps_{tell,publish,broadcast,poisonpill}
+    M_MOD_DENY_SUB          = M_MOD_FL_PERM(1 << 2), // Deny access to m_mod_ps_(un)subscribe()
 } m_mod_flags;
 
 /* Callbacks typedefs */
@@ -58,13 +57,9 @@ typedef struct {
 /* Module interface functions */
 
 /* Module registration */
-int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod, const m_mod_hook_t *hook,
+int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, const m_mod_hook_t *hook,
                    m_mod_flags flags, const void *userdata);
 int m_mod_deregister(m_mod_t **mod);
-
-/* External shared object module runtime loading */
-int m_mod_load(const m_mod_t *mod, const char *module_path, m_mod_flags flags, m_mod_t **ref);
-int m_mod_unload(const m_mod_t *mod, const char *module_path);
 
 /* Retrieve module context */
 m_ctx_t *m_mod_ctx(const m_mod_t *mod);

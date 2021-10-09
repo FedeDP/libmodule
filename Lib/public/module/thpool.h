@@ -11,8 +11,8 @@ typedef void *(*m_thpool_task)(void *);
 typedef struct _thpool m_thpool_t;
 
 typedef enum {
-    M_THPOOL_LAZY           = 0x01,         // lazy creation of threads
-    M_THPOOL_DETACHED       = 0x02,         // create threads detached
+    M_THPOOL_LAZY           = 1 << 0,         // lazy creation of threads
+    M_THPOOL_DETACHED       = 1 << 1,         // create threads detached
 } m_thpool_flags;
 
 

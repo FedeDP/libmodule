@@ -24,15 +24,6 @@ void test_mod_register_NULL_name(void **state) {
     assert_null(mod);
 }
 
-void test_mod_register_NULL_self(void **state) {
-    (void) state; /* unused */
-    
-    m_mod_hook_t hook = { .on_evt = recv };
-    int ret = m_mod_register("testName", test_ctx, NULL, &hook, 0, NULL);
-    assert_false(ret == 0);
-    assert_null(mod);
-}
-
 void test_mod_register_NULL_hook(void **state) {
     (void) state; /* unused */
     
@@ -85,7 +76,15 @@ void test_mod_deregister(void **state) {
     
     int ret = m_mod_deregister(&mod);
     assert_true(ret == 0);
-    assert_null(mod);
+    assert_non_null(mod);
+    assert_true(m_mod_is(mod, M_MOD_ZOMBIE));
+    
+    /* 
+     * We own a reference on mod because we registered it passing
+     * a non-NULL mod_ref param.
+     * Destroy our reference thus freeing the module.
+     */
+    m_mem_unrefp((void **)&mod);
 }
 
 void test_mod_false_init(void **state) {

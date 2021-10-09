@@ -56,19 +56,17 @@ m_plugin_on_eval()
 - [x] m_mod_load() call dlopen and dlsym to look for predefined symbols, then eventually register the module in the context of the calling module
 
 - [ ] Keep a map of dlhandles object, with key module_path? and dlclose as dtor func? (in ctx!)
-
-- [ ] Move m_mod_load() to m_ctx_load() ?
+- [ ] then, move back #include <dlfcn.h> from priv.h to plugin.c
 
 - [ ] add a plugin_GO api?
+
 - [x] plugin.h and plugin_C.h pragma once
 - [x] m_plugin interface: m_plugin_name optional, otherwise use basename(module_path)
-- [ ] moreover, rename m_mod_load to m_plugin_load and move it to plugin.c
+- [x] moreover, rename m_mod_load to m_plugin_load and move it to plugin.c
 - [x] finally in plugin.h explicit mandatory callback (only on_evt)
 
-- [ ] drop m_mod_t**  param from m_mod_register: it returns a mod that is not a real reference (as the module is owned by ctx thus can become a pointer to freed memory if used after ctx is deregistered)
-- [ ] threat it as a ref, ie: if not null, store a reference to the new module 
-- [ ] Check that CTX FS has a reference on loaded plugins... de reference them when they are unloaded/at end of FS 
-- [ ] return error for wrong plugin loaded in FS
+- [x] drop m_mod_t**  param from m_mod_register: it returns a mod that is not a real reference (as the module is owned by ctx thus can become a pointer to freed memory if used after ctx is deregistered)
+- [x] threat it as a ref, ie: if not null, store a reference to the new module 
 
 #### Generic
 
@@ -76,7 +74,6 @@ m_plugin_on_eval()
 
 - [x] Add a m_ctx_len() api
 - [x] Add a m_mod_src_len() api
-- [ ] Add tests!
 
 - [x] m_ctx_default() api that returns default ctx if any, or NULL
 - [x] default main will use the new api and automatically deregister the ctx before leaving.
