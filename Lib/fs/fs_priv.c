@@ -5,6 +5,7 @@
 #include "mod.h"
 #include "mem.h"
 #include "fs.h"
+#include "plugin.h"
 #include <fuse.h>
 #include <fuse_lowlevel.h>  // to get fuse fd to process events internally
 #include <sys/poll.h>       // poll operation support
@@ -213,7 +214,7 @@ static int fs_unlink(const char *path) {
     if (str_not_empty(path)) {
         m_mod_t *mod = m_map_get(c->modules, path + 1);
         if (mod) {
-            if (m_mod_deregister(&mod) == 0) {
+            if (mod_deregister(&mod, false) == 0) {
                 return 0;
             }
             return -EPERM;
@@ -229,7 +230,7 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     if (str_not_empty(path)) {
         FS_CTX();
-        return open_dl_handle(c, path + 1, NULL, 0);
+        return m_plugin_load(path + 1, c, NULL, 0);
     }
     return -ENOENT;
 }

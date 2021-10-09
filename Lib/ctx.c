@@ -21,6 +21,7 @@ static void ctx_dtor(void *data) {
     M_DEBUG("Destroying context.\n");
     m_ctx_t *context = (m_ctx_t *)data;
     m_map_free(&context->modules);
+    m_map_free(&context->plugins);
     poll_destroy(&context->ppriv);
     memhook._free(context->ppriv.data);
     memhook._free(context->fs_root);
@@ -284,8 +285,8 @@ static int m_ctx_loop_events(m_ctx_t *c, int max_events) {
 }
 
 static int ctx_destroy_mods(void *data, const char *key, void *value) {
-    m_mod_t *mod = (m_mod_t *)value;
-    return m_mod_deregister(&mod);
+    m_mod_t *m = (m_mod_t *)value;
+    return mod_deregister(&m, false);
 }
 
 /** Private API **/

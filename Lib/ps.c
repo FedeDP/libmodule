@@ -16,7 +16,7 @@ static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub);
 static int tell_global(void *data, const char *key, void *value);
 static void ps_msg_dtor(void *data);
 static int get_prio_flag(m_src_flags flag);
-static int tell_subscribers(void *data, const char *key, void *value);
+static void tell_subscribers(void *data, const char *key, void *value);
 static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c);
 static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic, 
                     const void *message, m_ps_flags flags);
@@ -86,7 +86,7 @@ static int tell_if(void *data, const char *key, void *value) {
 
 static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub) {
     ps_priv_t *m = m_mem_new(sizeof(ps_priv_t), ps_msg_dtor);
-    if (m) {        
+    if (m) {
         memcpy(m, msg, sizeof(ps_priv_t));
         m->msg.sender = m_mem_ref((void *)m->msg.sender); // keep module alive until message is dispatched
         m->sub = m_mem_ref(sub);
@@ -118,7 +118,7 @@ static inline int get_prio_flag(m_src_flags flag) {
     return (flag >> 8) & M_SRC_PS_PRIO_MASK;
 }
 
-static int tell_subscribers(void *data, const char *key, void *value) {
+static void tell_subscribers(void *data, const char *key, void *value) {
     m_ctx_t *c = (m_ctx_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
     
@@ -174,7 +174,7 @@ static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic,
 
 int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_ps_types type, m_mod_t *sender, const char *topic) {
     if (sender) {
-        // A module sent a M_PS_MOD_POISONPILL message to another
+        // A module sent a M_PS_MOD_POISONPILL message to another, or it was stopped
         sender->stats.sent_msgs++;
         fetch_ms(&sender->stats.last_seen, &sender->stats.action_ctr);
     }

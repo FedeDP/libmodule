@@ -74,17 +74,16 @@ void test_mod_deregister_NULL_self(void **state) {
 void test_mod_deregister(void **state) {
     (void) state; /* unused */
     
+    /* Test memory referencing */
+    m_mod_t *mod_ref = m_mem_ref(mod);
     int ret = m_mod_deregister(&mod);
     assert_true(ret == 0);
-    assert_non_null(mod);
-    assert_true(m_mod_is(mod, M_MOD_ZOMBIE));
+    assert_null(mod);
+    assert_non_null(mod_ref),
+    assert_true(m_mod_is(mod_ref, M_MOD_ZOMBIE));
     
-    /* 
-     * We own a reference on mod because we registered it passing
-     * a non-NULL mod_ref param.
-     * Destroy our reference thus freeing the module.
-     */
-    m_mem_unrefp((void **)&mod);
+    m_mem_unrefp((void **)&mod_ref);
+    assert_null(mod_ref);
 }
 
 void test_mod_false_init(void **state) {

@@ -5,7 +5,6 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h> // PRIu64
-#include <dlfcn.h> // dlopen
 #include "mem.h"
 #include "thpool.h"
 #include "itr.h"
@@ -174,11 +173,11 @@ typedef enum {
 /*
  * MEM-REFS for mod:
  * + 1 because it is registered
- * + 1 for each m_mod_ref() called on it (included m_mod_register() mod_ref != NULL!)
+ * + 1 for each m_mod_ref() called on it (included m_mod_register() when mod_ref != NULL)
  * + 1 for each PS message sent (ie: message's sender is a new reference for sender)
  * + 1 for each fs open() call on it
  * Moreover, a reference is held while retrieving an event for the module and calling its on_evt() cb,
- * to avoid user calling m_mod_deregister() and invalidating our pointer.
+ * to avoid user calling m_mod_deregister() and invalidating the pointer.
  */
 struct _mod {
     m_mod_states state;                     // module's state
@@ -190,7 +189,8 @@ struct _mod {
     const void *userdata;                   // module's user defined data
     void *fs;                               // FS module priv data. NULL if unsupported
     const char *name;                       // module's name
-    void *dlhandle;                         // For runtime loaded modules
+    void *dlhandle;                         // For plugins
+    const char *plugin_path;                // Filesystem path for plugins
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     m_queue_t *stashed;                     // module's stashed messages
@@ -211,6 +211,7 @@ struct _ctx {
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
     m_log_cb logger;                        // Context's log callback
     m_map_t *modules;                       // Context's modules
+    m_map_t *plugins;                       // Context's plugins
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     m_ctx_flags flags;                      // Context's flags
     char *fs_root;                          // Context's fuse FS root. Null if unsupported
@@ -224,7 +225,7 @@ struct _ctx {
 int evaluate_module(void *data, const char *key, void *value);
 int start(m_mod_t *mod, bool starting);
 int stop(m_mod_t *mod, bool stopping);
-int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **mod, m_mod_flags flags);
+int mod_deregister(m_mod_t **mod, bool from_user);
 
 /* Defined in ctx.c */
 int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
@@ -257,7 +258,7 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
 int deregister_src(m_mod_t *mod, m_src_types type, void *src_data);
 int start_task(m_ctx_t *c, ev_src_t *src);
 
-/* Gglobal variables are defined in main.c */
+/* Global variables are defined in main.c */
 extern m_map_t *ctx;
 extern m_memhook_t memhook;
 extern pthread_mutex_t mx;          // Used to access/modify global ctx map

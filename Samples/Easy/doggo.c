@@ -44,7 +44,7 @@ static void m_mod_on_evt(m_mod_t *mod, const m_evt_t *msg) {
                 m_mod_log(mod, "ZzzZzz...\n");
                 
                 /* Test runtime module loading; loaded module won't have direct access to CTX */
-                m_plugin_load(m_mod_ctx(mod), "./libtestmod.so", M_MOD_DENY_CTX, NULL);
+                m_plugin_load("./libtestmod.so", m_mod_ctx(mod), NULL, M_MOD_DENY_CTX);
             } else if (!strcmp((char *)msg->ps_evt->data, "ByeBye")) {
                 m_mod_log(mod, "Sob...\n");
             } else if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
@@ -72,7 +72,7 @@ static void m_mod_on_evt_sleeping(m_mod_t *mod, const m_evt_t *msg) {
             if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
                 m_mod_unbecome(mod);
                 m_mod_log(mod, "Yawn...\n");
-                m_plugin_unload(m_mod_ctx(mod), "./libtestmod.so");
+                m_plugin_unload("./libtestmod.so", m_mod_ctx(mod));
             } else {
                 m_mod_log(mod, "ZzzZzz...\n");
             }

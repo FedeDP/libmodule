@@ -55,8 +55,9 @@ m_plugin_on_eval()
 
 - [x] m_mod_load() call dlopen and dlsym to look for predefined symbols, then eventually register the module in the context of the calling module
 
-- [ ] Keep a map of dlhandles object, with key module_path? and dlclose as dtor func? (in ctx!)
-- [ ] then, move back #include <dlfcn.h> from priv.h to plugin.c
+- [x] Keep a map of dlhandles object, with key module_path? and dlclose as dtor func? (in ctx!)
+- [x] then, move back #include <dlfcn.h> from priv.h to plugin.c
+- [ ] Fix sigsegv
 
 - [ ] add a plugin_GO api?
 
@@ -67,6 +68,7 @@ m_plugin_on_eval()
 
 - [x] drop m_mod_t**  param from m_mod_register: it returns a mod that is not a real reference (as the module is owned by ctx thus can become a pointer to freed memory if used after ctx is deregistered)
 - [x] threat it as a ref, ie: if not null, store a reference to the new module 
+- [ ] always pass a reference in start,stop,eval,evt callbacks?
 
 #### Generic
 

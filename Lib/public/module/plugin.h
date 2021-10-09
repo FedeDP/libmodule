@@ -24,5 +24,5 @@
  * void m_plugin_on_stop(m_mod_t *self);
  **/
 
-int m_plugin_load(m_ctx_t *c, const char *module_path, m_mod_flags flags, m_mod_t **ref);
-int m_plugin_unload(m_ctx_t *c, const char *module_path);
+int m_plugin_load(const char *plugin_path, m_ctx_t *c, m_mod_t **ref, m_mod_flags flags);
+int m_plugin_unload(const char *plugin_path, m_ctx_t *c);

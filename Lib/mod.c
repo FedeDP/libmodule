@@ -15,18 +15,19 @@ extern int fs_cleanup(m_mod_t *mod);
 
 static void module_dtor(void *data) {
     m_mod_t *mod = (m_mod_t *)data;
+    M_MOD_CTX(mod);
     if (mod) {
         m_mem_unref(mod->ctx);
+        
+        if (mod->plugin_path) {
+            m_map_remove(c->plugins, mod->plugin_path);
+        }
         
         m_map_free(&mod->subscriptions);
         m_stack_free(&mod->recvs);
         m_queue_free(&mod->stashed);
         for (int i = 0; i < M_SRC_TYPE_END; i++) {
             m_bst_free(&mod->srcs[i]);
-        }
-        
-        if (mod->dlhandle) {
-            dlclose(mod->dlhandle);
         }
         
         if (mod->flags & M_MOD_NAME_AUTOFREE) {
@@ -222,6 +223,49 @@ int stop(m_mod_t *mod, bool stopping) {
     return 0;
 }
 
+int mod_deregister(m_mod_t **mod, bool from_user) {
+    M_PARAM_ASSERT(mod);
+    M_MOD_ASSERT((*mod));
+    
+    m_mod_t *m = *mod;
+    M_MOD_CTX(m);
+    
+    if ((m->flags & M_MOD_PERSIST) && c->state == M_CTX_LOOPING) {
+        return -EPERM;
+    }
+    
+    M_DEBUG("Deregistering module '%s'.\n", m->name);
+    
+    int ret = 0;
+    M_MEM_LOCK(m, {
+        /* Remove the module from the context */
+        ret = m_map_remove(c->modules, m->name);
+        
+        if (ret == 0) {
+            /* Stop module */
+            stop(m, true);
+            m->state = M_MOD_ZOMBIE;
+            
+            /* Free FS internal data */
+            fs_cleanup(m);
+            
+            if (from_user) {
+                /* Ok; now unref the user reference */
+                m_mem_unrefp((void **)mod);
+            }
+            
+            /*
+             * Destroy context if it is not looping and
+             * it has no more modules in it and is not a persistent ctx
+             */
+            if (c->state == M_CTX_IDLE && m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
+                ret = m_ctx_deregister(&c);
+            }
+        }
+    });
+    return ret;
+}
+
 /** Public API **/
 
 _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, const m_mod_hook_t *hook,
@@ -247,7 +291,7 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
             M_DEBUG("Module with same name already registered in context.");
             return -EEXIST;
         }
-        ret = m_mod_deregister(&old_mod);
+        ret = mod_deregister(&old_mod, false);
         if (ret != 0) {
             return ret;
         }
@@ -308,44 +352,7 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
 }
 
 _public_ int m_mod_deregister(m_mod_t **mod) {
-    M_PARAM_ASSERT(mod);
-    M_MOD_ASSERT((*mod));
-
-    m_mod_t *m = *mod;
-    M_MOD_CTX(m);
-
-    if ((m->flags & M_MOD_PERSIST) && c->state == M_CTX_LOOPING) {
-        return -EPERM;
-    }
-    
-    M_DEBUG("Deregistering module '%s'.\n", m->name);
-
-    int ret = 0;
-    M_MEM_LOCK(m, {
-        /* Remove the module from the context */
-        ret = m_map_remove(c->modules, m->name);
-        
-        if (ret == 0) {
-            /* Stop module */
-            stop(m, true);
-            m->state = M_MOD_ZOMBIE;
-            
-            /* Free FS internal data */
-            fs_cleanup(m);
-            
-            /* Ok; now user mod handler is NULL */
-            *mod = NULL;
-            
-            /*
-             * Destroy context if it is not looping and
-             * it has no more modules in it and is not a persistent ctx
-             */
-            if (c->state == M_CTX_IDLE && m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
-                ret = m_ctx_deregister(&c);
-            }
-        }
-    });
-    return ret;
+    return mod_deregister(mod, true);
 }
 
 _public_ __attribute__((format (printf, 2, 3))) int m_mod_log(const m_mod_t *mod, const char *fmt, ...) {

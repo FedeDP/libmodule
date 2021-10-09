@@ -1,10 +1,26 @@
 #include "priv.h"
+#include <dlfcn.h> // dlopen
 
-/** Private API **/
+static void plugin_dtor(void *src);
 
-int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **ref, m_mod_flags flags) {
+static void plugin_dtor(void *src) {
+    m_mod_t *mod = (m_mod_t *)src;
+    dlclose(mod->dlhandle);
+}
+
+/** Public API **/
+
+/* Only constant flags are kept */
+_public_ int m_plugin_load(const char *plugin_path, m_ctx_t *c, m_mod_t **ref, m_mod_flags flags) {
+    M_CTX_ASSERT(c);
+    M_PARAM_ASSERT(str_not_empty(plugin_path));
+    
+    if (m_map_contains(c->plugins, plugin_path)) {
+        return -EEXIST;
+    }
+    
     /* Set the only allowed ctx for m_mod_register() to passed ctx */
-    void *handle = dlopen(module_path, RTLD_NOW);
+    void *handle = dlopen(plugin_path, RTLD_NOW);
     if (!handle) {
         M_DEBUG("Dlopen failed with error: %s\n", dlerror());
         return -EINVAL;
@@ -24,7 +40,7 @@ int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **ref, m_mod_fla
     }
     
     if (!plugin_name) {
-        plugin_name = basename(module_path);
+        plugin_name = basename(plugin_path);
         flags |= M_MOD_NAME_DUP;
     }
     
@@ -32,47 +48,37 @@ int open_dl_handle(m_ctx_t *c, const char *module_path, m_mod_t **ref, m_mod_fla
     int ret = m_mod_register(plugin_name, c, &new_mod, &hook, flags, NULL);
     if (ret == 0) {
         new_mod->dlhandle = handle;
+        new_mod->plugin_path = mem_strdup(plugin_path);
         if (ref) {
             *ref = new_mod;
         } else {
-            // Useless reference
+            // useless reference
             m_mem_unref(new_mod);
+        }
+        
+        if (!c->plugins) {
+            c->plugins = m_map_new(M_MAP_KEY_AUTOFREE, plugin_dtor);
+            if (!c->plugins) {
+                // TODO: cleanup!
+                return -ENOMEM;
+            }
+            ret = m_map_put(c->plugins, new_mod->plugin_path, new_mod);
+            if (ret != 0) {
+                // TODO cleanup!
+            }
         }
     }
     return ret;
 }
 
-/** Public API **/
-
-/* Only constant flags are kept */
-_public_ int m_plugin_load(m_ctx_t *c, const char *module_path, m_mod_flags flags, m_mod_t **ref) {
-    M_PARAM_ASSERT(str_not_empty(module_path));
+_public_ int m_plugin_unload(const char *plugin_path, m_ctx_t *c) {
+    M_CTX_ASSERT(c);
+    M_PARAM_ASSERT(str_not_empty(plugin_path));
     
-    return open_dl_handle(c, module_path, ref, flags);
-}
-
-_public_ int m_plugin_unload(m_ctx_t *c, const char *module_path) {
-    M_PARAM_ASSERT(str_not_empty(module_path));
-    
-    void *handle = dlopen(module_path, RTLD_NOLOAD | RTLD_LAZY);
-    if (!handle) {
-        return -EINVAL;
+    m_mod_t *mod = m_map_get(c->plugins, plugin_path);
+    if (mod) {
+        return mod_deregister(&mod, false);
     }
-    
-    m_mod_t *target_mod = NULL;
-    /* Check if desired module is actually loaded in mod's context */
-    m_itr_foreach(c->modules, {
-        m_mod_t *m = m_itr_get(itr);
-        if (m->dlhandle && handle == m->dlhandle) {
-            target_mod = m;
-            memhook._free(itr);
-            break;
-        }
-    });
-    
-    if (target_mod) {
-        return m_mod_deregister(&target_mod);
-    }
-    M_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", module_path, c->name);
+    M_DEBUG("Module loaded from '%s' not found in ctx '%s'.\n", plugin_path, c->name);
     return -ENODEV;
 }
