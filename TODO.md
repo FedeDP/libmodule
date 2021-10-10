@@ -85,6 +85,9 @@ m_plugin_on_eval()
 
 - [x] Api optimization: never use strlen, just check that x[0] != 0
 
+- [ ] Split libmodule API in libmodule_core, libmodule_struct, libmodule_utils
+- [ ] Use jansson library for json (m_mod_dump) allowing to retrieve a json of current state. Only in -DWITH_JSON=true!
+
 ### Reference-counted objects' life management
 
 - [x] Keep objects alive as long as someone references them

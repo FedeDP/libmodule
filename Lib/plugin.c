@@ -6,6 +6,8 @@ static void plugin_dtor(void *src);
 static void plugin_dtor(void *src) {
     m_mod_t *mod = (m_mod_t *)src;
     dlclose(mod->dlhandle);
+    mod->dlhandle = NULL;
+    mod->plugin_path = NULL;
 }
 
 /** Public API **/
