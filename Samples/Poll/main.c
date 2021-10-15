@@ -15,13 +15,15 @@ void m_on_boot(void) {
 int main(int argc, char *argv[]) {
     int ret = 0;
     
+    m_ctx_t *c = m_ctx_default();
+    
     /* Initial dispatch */
-    if (m_ctx_dispatch(NULL) != 0) {
+    if (m_ctx_dispatch(c) != 0) {
         return 1;
     }
 
     /* Get context fd */
-    int fd = m_ctx_fd(NULL);
+    int fd = m_ctx_fd(c);
     if (fd < 0) {
         return 1;
     }
@@ -34,7 +36,7 @@ int main(int argc, char *argv[]) {
         ret = poll(&fds, 1, -1);
         if (ret > 0) {
             if (fds.revents & POLLIN) {
-                ret = m_ctx_dispatch(NULL);
+                ret = m_ctx_dispatch(c);
                 if (ret < 0) {
                     printf("Loop: error happened.\n");
                 } else if (ret > 0) {
@@ -47,5 +49,6 @@ int main(int argc, char *argv[]) {
         }
     }
     close(fd);
+    m_ctx_deregister(&c);
     return 0;
 }

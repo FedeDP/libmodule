@@ -291,7 +291,7 @@ static int ctx_destroy_mods(void *data, const char *key, void *value) {
 
 /** Private API **/
 
-int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
+int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, m_mod_flags mod_flags, const void *userdata) {
     M_DEBUG("Creating context '%s'.\n", ctx_name);
     
     m_ctx_t *new_ctx = m_mem_new(sizeof(m_ctx_t), ctx_dtor);
@@ -311,6 +311,7 @@ int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *us
     }
     
     new_ctx->flags = flags;
+    new_ctx->mod_flags = mod_flags;
     new_ctx->userdata = userdata;
     new_ctx->logger = default_logger;
     new_ctx->modules = m_map_new(0, mem_dtor);
@@ -357,16 +358,17 @@ _public_ m_ctx_t *m_ctx_default(void) {
     return default_ctx;
 }
 
-_public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
-    M_PARAM_ASSERT(ctx_name);
-    M_ASSERT(strcmp(ctx_name, M_CTX_DEFAULT), "Reserved ctx name.", -EINVAL);
+_public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, m_mod_flags mod_flags, const void *userdata) {
+    M_PARAM_ASSERT(str_not_empty(ctx_name));
+    M_ASSERT(strcmp(ctx_name, M_CTX_DEFAULT) != 0, "Reserved ctx name.", -EINVAL);
     M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(!*c);
+    M_PARAM_ASSERT(__builtin_ctz(mod_flags) >= 8); // first 8 bits can only be setted while registering a module!
 
     if (check_ctx(ctx_name)) {
         return -EEXIST;
     }
-    return ctx_new(ctx_name, c, flags, userdata);
+    return ctx_new(ctx_name, c, flags, mod_flags, userdata);
 }
 
 _public_ int m_ctx_deregister(m_ctx_t **c) {
@@ -519,4 +521,11 @@ _public_ ssize_t m_ctx_len(const m_ctx_t *c) {
     M_CTX_ASSERT(c);
     
     return m_map_len(c->modules);
+}
+
+_public_ int m_ctx_finalize(m_ctx_t *c) {
+    M_CTX_ASSERT(c);
+    
+   c->finalized = true;
+   return 0;
 }

@@ -85,8 +85,13 @@ m_plugin_on_eval()
 
 - [x] Api optimization: never use strlen, just check that x[0] != 0
 
-- [ ] Split libmodule API in libmodule_core, libmodule_struct, libmodule_utils
+- [ ] Split libmodule API in libmodule_core, libmodule_struct, libmodule_mem, libmodule_thpool ?
 - [ ] Use jansson library for json (m_mod_dump) allowing to retrieve a json of current state. Only in -DWITH_JSON=true!
+
+- [x] add a m_ctx_finalize() API that once set, deny any new module loaded in the context
+- [x] add a set of m_mod_flags passed to m_ctx_register() that will be forwarded to each module registered
+
+- [ ] add a M_MOD_THREADED flag to run module recv cb on different thread? (internally using a thpool)?
 
 ### Reference-counted objects' life management
 

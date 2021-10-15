@@ -1,7 +1,7 @@
 #include <module/ctx.h>
 #include <module/mod.h>
 
-extern void create_modules(m_ctx_t *c, m_mod_t **modA, m_mod_t **modB);
+extern void create_modules(m_ctx_t *c);
 
 /*
  * This function is automatically called before initing any module.
@@ -18,13 +18,12 @@ int main(int argc, char *argv[]) {
      * Register the context
      */
     m_ctx_t *c = NULL;
-    m_ctx_register("SharedSrc", &c, 0, NULL);
+    m_ctx_register("SharedSrc", &c, 0, 0, NULL);
 
     /*
      * Create the modules in the context
      */
-    m_mod_t *modA = NULL, *modB = NULL;
-    create_modules(c, &modA, &modB);
+    create_modules(c);
 
     /*
      * Loop on context to fetch modules' events

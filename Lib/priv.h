@@ -209,11 +209,13 @@ struct _ctx {
     m_ctx_states state;
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
+    bool finalized;                         // Whether the context is finalized, ie: no more modules can be registered
     m_log_cb logger;                        // Context's log callback
     m_map_t *modules;                       // Context's modules
     m_map_t *plugins;                       // Context's plugins
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     m_ctx_flags flags;                      // Context's flags
+    m_mod_flags mod_flags;                  // Flags inherited by modules registered in the ctx
     char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
     ctx_stats_t stats;                      // Context' stats
@@ -228,7 +230,7 @@ int stop(m_mod_t *mod, bool stopping);
 int mod_deregister(m_mod_t **mod, bool from_user);
 
 /* Defined in ctx.c */
-int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
+int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, m_mod_flags mod_flags, const void *userdata);
 m_ctx_t *check_ctx(const char *ctx_name);
 void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);
 

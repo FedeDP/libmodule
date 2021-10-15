@@ -19,12 +19,12 @@ static m_mod_t *refB;
  * Create "A" and "B" modules in ctx_name context.
  * These modules can share some callbacks.
  */
-void create_modules(m_ctx_t *c, m_mod_t **modA, m_mod_t **modB) {
+void create_modules(m_ctx_t *c) {
     m_mod_hook_t hookA = (m_mod_hook_t) {A_init, NULL, A_recv, A_dtor };
     m_mod_hook_t hookB = (m_mod_hook_t) {B_init, NULL, B_recv, NULL };
     
-    m_mod_register("Pippo", c, modA, &hookA, 0, NULL);
-    m_mod_register("Doggo", c, modB, &hookB, 0, NULL);
+    m_mod_register("Pippo", c, NULL, &hookA, 0, NULL);
+    m_mod_register("Doggo", c, NULL, &hookB, 0, NULL);
 }
 
 static bool A_init(m_mod_t *mod) {

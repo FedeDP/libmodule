@@ -21,14 +21,14 @@ static void logger(const m_mod_t *self, const char *fmt, va_list args) {
 void test_ctx_register_NULL_name(void **state) {
     (void) state; /* unused */
 
-    int ret = m_ctx_register(NULL, &test_ctx, 0, NULL);
+    int ret = m_ctx_register(NULL, &test_ctx, 0, 0, NULL);
     assert_false(ret == 0);
 }
 
 void test_ctx_register(void **state) {
     (void) state; /* unused */
 
-    int ret = m_ctx_register(CTX, &test_ctx, M_CTX_PERSIST, NULL);
+    int ret = m_ctx_register(CTX, &test_ctx, M_CTX_PERSIST, 0, NULL);
     assert_true(ret == 0);
 }
 
@@ -109,7 +109,7 @@ void test_ctx_mod_deregister_during_loop(void **state) {
 
     test_ctx = NULL;
 
-    int ret = m_ctx_register("test", &test_ctx, 0, NULL);
+    int ret = m_ctx_register("test", &test_ctx, 0, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(test_ctx);
 

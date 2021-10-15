@@ -16,7 +16,7 @@ void test_poll_perf(void **state) {
 
     test_ctx = NULL;
 
-    int ret = m_ctx_register("perf", &test_ctx, 0, NULL);
+    int ret = m_ctx_register("perf", &test_ctx, 0, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(test_ctx);
 

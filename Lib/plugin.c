@@ -47,28 +47,46 @@ _public_ int m_plugin_load(const char *plugin_path, m_ctx_t *c, m_mod_t **ref, m
     }
     
     m_mod_t *new_mod = NULL;
-    int ret = m_mod_register(plugin_name, c, &new_mod, &hook, flags, NULL);
-    if (ret == 0) {
+    int ret = 0;
+    do {
+        ret = m_mod_register(plugin_name, c, &new_mod, &hook, flags, NULL);
+        if (ret != 0) {
+            break;
+        }
+
         new_mod->dlhandle = handle;
         new_mod->plugin_path = mem_strdup(plugin_path);
+
+        /* Lazy creation */
+        if (!c->plugins) {
+            c->plugins = m_map_new(M_MAP_KEY_AUTOFREE, plugin_dtor);
+            if (!c->plugins) {
+                ret = -ENOMEM;
+                break;
+            }
+        }
+
+        ret = m_map_put(c->plugins, new_mod->plugin_path, new_mod);
+        if (ret != 0) {
+            break;
+        }
+
         if (ref) {
             *ref = new_mod;
         } else {
             // useless reference
             m_mem_unref(new_mod);
         }
-        
-        if (!c->plugins) {
-            c->plugins = m_map_new(M_MAP_KEY_AUTOFREE, plugin_dtor);
-            if (!c->plugins) {
-                // TODO: cleanup!
-                return -ENOMEM;
-            }
-            ret = m_map_put(c->plugins, new_mod->plugin_path, new_mod);
-            if (ret != 0) {
-                // TODO cleanup!
-            }
-        }
+        return 0;
+    } while (false);
+
+    /* cleanup code in event of error */
+    dlclose(handle);
+    if (new_mod) {
+        memhook._free((void *)new_mod->plugin_path);
+        new_mod->plugin_path = NULL;
+        new_mod->dlhandle = NULL;
+        m_mod_deregister(&new_mod);
     }
     return ret;
 }

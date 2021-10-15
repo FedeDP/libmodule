@@ -270,7 +270,7 @@ int mod_deregister(m_mod_t **mod, bool from_user) {
 
 _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, const m_mod_hook_t *hook,
                             m_mod_flags flags, const void *userdata) {
-    M_PARAM_ASSERT(name);
+    M_PARAM_ASSERT(str_not_empty(name));
     M_PARAM_ASSERT(hook);
     /* Mandatory callback */
     M_PARAM_ASSERT(hook->on_evt);
@@ -279,10 +279,14 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
     if (!c) {
         c = default_ctx;
         if (!c) {
-            ctx_new(M_CTX_DEFAULT, &c, 0, NULL);
+            ctx_new(M_CTX_DEFAULT, &c, 0, 0, NULL);
         }
     }
     M_ALLOC_ASSERT(c);
+    
+    if (c->finalized) {
+        return -EPERM;
+    }
 
     int ret;
     m_mod_t *old_mod = m_map_get(c->modules, name);
@@ -304,7 +308,7 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
 
     mod->ctx = m_mem_ref(c);
     
-    mod->flags = flags;
+    mod->flags = flags | c->mod_flags;
     if (flags & M_MOD_NAME_DUP) {
         mod->flags |= M_MOD_NAME_AUTOFREE;
     }
