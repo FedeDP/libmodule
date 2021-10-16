@@ -251,6 +251,7 @@ void *m_map_peek(const m_map_t *m);
 
 /* Defined in mem.c; used internally as dtor cb for structs APIs userptr, when it is memory ref counted */
 void mem_dtor(void *src);
+size_t m_mem_refs(void *src);
 
 /* Defined in src.c */
 extern const char *src_names[];

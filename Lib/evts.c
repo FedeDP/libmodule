@@ -42,7 +42,11 @@ _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
     M_PARAM_ASSERT(evt->type != M_SRC_TYPE_FD);
 
     m_mem_ref((void *)evt);
-    return m_queue_enqueue(mod->stashed, (void *)evt);
+    int ret = m_queue_enqueue(mod->stashed, (void *)evt);
+    if (ret == 0) {
+        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
+    }
+    return ret;
 }
 
 _public_ int m_mod_unstash(m_mod_t *mod) {
