@@ -23,14 +23,6 @@ void mem_dtor(void *src) {
     m_mem_unref(src);
 }
 
-size_t m_mem_refs(void *src) {
-    if (src) {
-        mem_header_t *header = get_header(src);
-        return header->refs;
-    }
-    return 0;
-}
-
 /** Public API **/
 
 /* Create new ref counted memory area */

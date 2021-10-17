@@ -35,7 +35,6 @@ struct _map {
     m_map_flags flags;
     map_elem *table;
     m_map_dtor dtor;
-    map_elem *last_insert; // used internally by libmodule. Not available in external API
 };
 
 struct _map_itr {
@@ -57,7 +56,7 @@ static void clear_elem(m_map_t *m, map_elem *entry);
  * Returns NULL if the entire table has been searched without finding a match.
  */
 static map_elem *hashmap_entry_find(const m_map_t *m, const char *key, bool find_empty) {
-    const size_t probe_len = MAP_PROBE_LEN(m);    
+    const size_t probe_len = MAP_PROBE_LEN(m);
     size_t index = hashmap_calc_index(m, key);
     
     /* Linear probing */
@@ -93,20 +92,23 @@ static inline size_t hashmap_calc_index(const m_map_t *m, const char *key) {
 
 /*
  * Hash function for string keys.
- * This is an implementation of the well-documented Jenkins 
- * one-at-a-time hash function.
+ * This is an implementation of the well-documented 
+ * Bernstein hash djb2 + MurmurHash3 finalizer
  */
 static size_t hashmap_hash_string(const char *key) {
-    size_t hash = 0;
+    size_t hash = (const uint32_t) 5381;
     
-    for (; *key; ++key) {
-        hash += *key;
-        hash += (hash << 10);
-        hash ^= (hash >> 6);
+    char c;
+    while ((c = *key++)) {
+        hash = ((hash << 5) + hash) + c;
     }
-    hash += (hash << 3);
-    hash ^= (hash >> 11);
-    hash += (hash << 15);
+    
+    // MurmurHash3 Finalizer (mixer)
+    hash ^= hash >> 16;
+    hash *= 0x85ebca6b;
+    hash ^= hash >> 13;
+    hash *= 0xc2b2ae35;
+    hash ^= hash >> 16; 
     return hash;
 }
 
@@ -194,7 +196,6 @@ static int hashmap_put(m_map_t *m, const char *key, void *value) {
     }
 
     entry->data = value;
-    m->last_insert = entry;
     return 0;
 }
 
@@ -238,13 +239,6 @@ static void clear_elem(m_map_t *m, map_elem *removed_entry) {
     }
     /* Clear the last removed entry */
     memset(removed_entry, 0, sizeof(map_elem));
-}
-
-/** Private API **/
-
-void *m_map_peek(const m_map_t *m) {
-    M_RET_ASSERT(m_map_len(m) > 0, NULL);
-    return m->last_insert->data;
 }
 
 /** Public API **/
@@ -358,7 +352,7 @@ _public_ void *m_map_get(const m_map_t *m, const char *key) {
     M_RET_ASSERT(m_map_len(m) > 0, NULL);
 
     /* Find data location */
-    map_elem *entry = hashmap_entry_find(m, key, false);
+    map_elem *entry = hashmap_entry_find((m_map_t *)m, key, false);
     if (!entry) {
         return NULL;
     }

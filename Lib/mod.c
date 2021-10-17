@@ -5,11 +5,14 @@
  * Code related to generic module API. *
  ***************************************/
 
+enum mod_hook { MOD_EVAL, MOD_START, MOD_STOP };
+
 static void module_dtor(void *data);
 static int _pipe(m_mod_t *mod);
 static int init_pubsub_fd(m_mod_t *mod);
 static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop);
 static void reset_module(m_mod_t *mod);
+static int optional_hook(m_mod_t *mod, enum mod_hook req_hook);
 
 extern int fs_cleanup(m_mod_t *mod);
 
@@ -112,6 +115,40 @@ static void reset_module(m_mod_t *mod) {
     m_queue_clear(mod->stashed);
 }
 
+static int optional_hook(m_mod_t *mod, enum mod_hook req_hook) {
+    bool bool_ret = true;
+    int ret;
+
+    M_MEM_LOCK(mod, {
+        switch (req_hook) {
+        case MOD_START:
+            if (mod->hook.on_start) {
+                bool_ret = mod->hook.on_start(mod);
+            }
+            break;
+        case MOD_STOP:
+            if (mod->hook.on_stop) {
+                mod->hook.on_stop(mod);
+            }
+            break;
+        case MOD_EVAL:
+            if (mod->hook.on_eval) {
+                bool_ret = mod->hook.on_eval(mod);
+            }
+            break;
+        default:
+            break;
+        }
+        
+        ret = bool_ret ? 0 : -1;
+        if (m_mod_is(mod, M_MOD_ZOMBIE)) {
+            // m_mod_deregister was called
+            ret = -ENOENT;
+        }
+    });
+    return ret;
+}
+
 /** Private API **/
 
 int evaluate_module(void *data, const char *key, void *value) {
@@ -148,12 +185,14 @@ int evaluate_module(void *data, const char *key, void *value) {
     }
 
     /* Check if module should be started */
-    if (m_mod_is(mod, M_MOD_IDLE) &&
-        (!mod->hook.on_eval || mod->hook.on_eval(mod))) {
-
-        start(mod, true);
+    int ret = 0;
+    if (m_mod_is(mod, M_MOD_IDLE)) {
+        ret = optional_hook(mod, MOD_EVAL);
+        if (ret == 0) {
+            start(mod, true);
+        }
     }
-    return 0;
+    return ret;
 }
 
 int start(m_mod_t *mod, bool starting) {
@@ -180,15 +219,26 @@ int start(m_mod_t *mod, bool starting) {
     c->stats.running_modules++;
 
     /* Call module on_start() callback only if module is being (re)started */
-    if (!starting || !mod->hook.on_start || mod->hook.on_start(mod)) {
+    if (starting) {
+        ret = optional_hook(mod, MOD_START);
+    }
+    
+    switch (ret) {
+    case 0:
         M_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
         tell_system_pubsub_msg(NULL, c, M_PS_MOD_STARTED, mod, NULL);
-        return 0;
+        break;
+    case -1:
+        /* on_start() hook returned false, we need to stop this module right away */
+        stop(mod, true);
+        ret = 0;
+        break;
+    case -ENOENT:
+        // module was deregistered in on_start() hook
+    default:
+        break;
     }
-
-    /* If on_start() returns false, we need to stop this module right away */
-    stop(mod, true);
-    return 0;
+    return ret;
 }
 
 int stop(m_mod_t *mod, bool stopping) {
@@ -212,15 +262,20 @@ int stop(m_mod_t *mod, bool stopping) {
      */
     if (stopping) {
         reset_module(mod);
-        if (mod->hook.on_stop) {
-            mod->hook.on_stop(mod);
-        }
+        ret = optional_hook(mod, MOD_STOP);
     }
     
-    M_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
-    
-    tell_system_pubsub_msg(NULL, c, M_PS_MOD_STOPPED, mod, NULL);
-    return 0;
+    switch (ret) {
+    case -ENOENT:
+        // module was deregistered in on_stop() hook
+        break;
+    default:
+        M_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
+        tell_system_pubsub_msg(NULL, c, M_PS_MOD_STOPPED, mod, NULL);
+        ret = 0;
+        break;
+    }
+    return ret;
 }
 
 int mod_deregister(m_mod_t **mod, bool from_user) {

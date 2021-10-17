@@ -1,6 +1,10 @@
 #include "priv.h"
 #include <dlfcn.h> // dlopen
 
+/*****************************************************************
+ * Code related to plugins (shared object runtime attached) API. *
+ *****************************************************************/
+
 static void plugin_dtor(void *src);
 
 static void plugin_dtor(void *src) {

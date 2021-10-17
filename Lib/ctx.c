@@ -363,7 +363,7 @@ _public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags
     M_ASSERT(strcmp(ctx_name, M_CTX_DEFAULT) != 0, "Reserved ctx name.", -EINVAL);
     M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(!*c);
-    M_PARAM_ASSERT(__builtin_ctz(mod_flags) >= 8); // first 8 bits can only be setted while registering a module!
+    M_PARAM_ASSERT(mod_flags == 0 || __builtin_ctz(mod_flags) >= 8); // first 8 bits can only be setted while registering a module!
 
     if (check_ctx(ctx_name)) {
         return -EEXIST;

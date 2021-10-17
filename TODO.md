@@ -68,7 +68,7 @@ m_plugin_on_eval()
 
 - [x] drop m_mod_t**  param from m_mod_register: it returns a mod that is not a real reference (as the module is owned by ctx thus can become a pointer to freed memory if used after ctx is deregistered)
 - [x] threat it as a ref, ie: if not null, store a reference to the new module 
-- [ ] always pass a reference in start,stop,eval,evt callbacks?
+- [x] always pass a reference in start,stop,eval,evt callbacks?
 
 #### Generic
 
@@ -86,12 +86,9 @@ m_plugin_on_eval()
 - [x] Api optimization: never use strlen, just check that x[0] != 0
 
 - [ ] Split libmodule API in libmodule_core, libmodule_struct, libmodule_mem, libmodule_thpool ?
-- [ ] Use jansson library for json (m_mod_dump) allowing to retrieve a json of current state. Only in -DWITH_JSON=true!
 
 - [x] add a m_ctx_finalize() API that once set, deny any new module loaded in the context
 - [x] add a set of m_mod_flags passed to m_ctx_register() that will be forwarded to each module registered
-
-- [ ] add a M_MOD_THREADED flag to run module recv cb on different thread? (internally using a thpool)?
 
 ### Reference-counted objects' life management
 
@@ -498,7 +495,7 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 - [ ] All modules have a cmd_piped_fd; calling eg: m_mod_become(X) would internally be translated to "m_cmd_enqueue(M_BECOME, X)" and that would be atomic;
   then module reads from cmd_piped_fd and executes the requested op
 - [ ] need a way to map m_mod_ API arguments though
-- [ ] offer an api to run module's recv on their own thread (register flag: M_MOD_THreaded), it means their receive() will be run async
+- [ ] offer an api to run module's recv on their own thread (register flag: M_MOD_THREADED), it means their receive() will be run async (in a thpool)
 
 ### Replay API
 
