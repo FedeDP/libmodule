@@ -352,7 +352,7 @@ _public_ void *m_map_get(const m_map_t *m, const char *key) {
     M_RET_ASSERT(m_map_len(m) > 0, NULL);
 
     /* Find data location */
-    map_elem *entry = hashmap_entry_find((m_map_t *)m, key, false);
+    map_elem *entry = hashmap_entry_find(m, key, false);
     if (!entry) {
         return NULL;
     }
