@@ -19,11 +19,16 @@ typedef struct _map m_map_t;
 /* Incomplete struct declaration for hashmap iterator */
 typedef struct _map_itr m_map_itr_t;
 
+/*
+ * 8 bits for key related flags
+ * 8 bits for value related flags
+ */
 typedef enum {
     M_MAP_KEY_DUP           = 1 << 0,         // Should map keys be dupped?
     M_MAP_KEY_AUTOFREE      = 1 << 1,         // Should map keys be freed automatically?
-    M_MAP_VAL_ALLOW_UPDATE  = 1 << 2          // Does map object allow for updating values?
+    M_MAP_VAL_ALLOW_UPDATE  = 1 << 8          // Does map object allow for updating values?
 } m_map_flags;
+
 
 m_map_t *m_map_new(m_map_flags flags, m_map_dtor fn);
 m_map_itr_t *m_map_itr_new(const m_map_t *m);

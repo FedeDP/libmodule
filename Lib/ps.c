@@ -5,18 +5,17 @@
  * Code related to Actor-like PubSub API. *
  ******************************************/
 
-// PRIO_SIZE -> { lowest, low, norm, high, highest }
-#define M_SRC_PS_PRIO_SIZE       __builtin_ctz((M_SRC_PS_PRIO_HIGHEST << 1) / M_SRC_PS_PRIO_LOWEST)
-#define M_SRC_PS_PRIO_MASK       ~(M_SRC_PS_PRIO_HIGHEST << 1)
+// PRIO_SIZE -> { low, norm, high }
+#define M_SRC_PRIO_SIZE       __builtin_ctz((M_SRC_PRIO_HIGH << 1) / M_SRC_PS_PRIO_LOW)
+#define M_SRC_PRIO_MASK       ~(M_SRC_PRIO_HIGH << 1)
 
 static void subscribtions_dtor(void *data);
 static ev_src_t *fetch_sub(m_mod_t *mod, const char *topic);
 static int tell_if(void *data, const char *key, void *value);
 static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub);
-static int tell_global(void *data, const char *key, void *value);
 static void ps_msg_dtor(void *data);
 static int get_prio_flag(m_src_flags flag);
-static void tell_subscribers(void *data, const char *key, void *value);
+static void tell_subscribers(void *data, void *value);
 static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c);
 static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic, 
                     const void *message, m_ps_flags flags);
@@ -34,10 +33,10 @@ static void subscribtions_dtor(void *data) {
     }
 }
 
-static ev_src_t *fetch_sub(m_mod_t *mod, const char *topic) {    
+static ev_src_t *fetch_sub(m_mod_t *mod, const char *topic) {
     /* Check if module is directly subscribed to topic */
     ev_src_t *sub = m_map_get(mod->subscriptions, topic);
-    if (sub) {        
+    if (sub) {
         goto found;
     }
     
@@ -94,13 +93,6 @@ static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub) {
     return m;
 }
 
-static int tell_global(void *data, const char *key, void *value) {
-    m_ctx_t *c = (m_ctx_t *)value;
-    ps_priv_t *msg = (ps_priv_t *)data;
-    
-    return m_map_iterate(c->modules, tell_if, msg);
-}
-
 static void ps_msg_dtor(void *data) {
     ps_priv_t *pubsub_msg = (ps_priv_t *)data;
     
@@ -115,35 +107,21 @@ static void ps_msg_dtor(void *data) {
 
 static inline int get_prio_flag(m_src_flags flag) {
     /* Remove generic src flags (>> 8) and apply PRIO mask */
-    return (flag >> 8) & M_SRC_PS_PRIO_MASK;
+    return (flag >> 8) & M_SRC_PRIO_MASK;
 }
 
-static void tell_subscribers(void *data, const char *key, void *value) {
+static void tell_subscribers(void *data, void *value) {
     m_ctx_t *c = (m_ctx_t *)value;
     ps_priv_t *msg = (ps_priv_t *)data;
-    
-    m_queue_t *prio_subs[M_SRC_PS_PRIO_SIZE];
-    for (int i = 0; i < M_SRC_PS_PRIO_SIZE; i++) {
-        prio_subs[i] = m_queue_new(NULL);
-    }
     
     m_itr_foreach(c->modules, {
         m_mod_t *mod = m_itr_get(itr);
         ev_src_t *sub = NULL;
         
         if (m_mod_is(mod, M_MOD_RUNNING | M_MOD_PAUSED) && (sub = fetch_sub(mod, msg->msg.topic))) {
-            const int idx = __builtin_ctz(get_prio_flag(sub->flags)); // count trailing zeroes
-            m_queue_enqueue(prio_subs[idx], sub);
+            tell_if(msg, (char *)sub, mod);
         }
     });
-    
-    for (int i = M_SRC_PS_PRIO_SIZE - 1; i >= 0; i--) {
-        m_itr_foreach(prio_subs[i], {
-            ev_src_t *sub = m_itr_get(itr);
-            tell_if(msg, (char *)sub, sub->mod);
-        });
-        m_queue_free(&prio_subs[i]);
-    }
 }
 
 static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c) {    
@@ -154,7 +132,7 @@ static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c) {
         if (m->msg.type != M_PS_USER || !m->msg.topic) {
             m_map_iterate(c->modules, tell_if, m);
         } else {
-            tell_subscribers(m, NULL, c);
+            tell_subscribers(m, c);
         }
     }
     return 0;
@@ -275,13 +253,6 @@ _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags fla
         ps_src_t *ps_src = &sub->ps_src;
         sub->type = M_SRC_TYPE_PS;
         sub->flags = flags;
-        /*
-         * No priority set, default to NORM priority.
-         * If multiple priorities are set, the lowest-priority value wins.
-         */
-        if (get_prio_flag(sub->flags) == 0) {
-            sub->flags |= M_SRC_PS_PRIO_NORM;
-        }
         sub->userptr = userptr;
         sub->mod = mod;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
