@@ -501,7 +501,7 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
         ctx_logger(c, mod, "\t],\n");
     }
     
-    /* Skip internal M_SRC_TYPE_PS */
+    /* Skip internal fds (M_SRC_TYPE_PS) */
     size_t num_srcs = 0;
     for (int k = M_SRC_TYPE_FD; k < M_SRC_TYPE_END; k++) {
         if (m_bst_len(mod->srcs[k]) > 0) {

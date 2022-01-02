@@ -18,13 +18,11 @@
 #define M_CTX_DEFAULT_EVENTS   64
 #define M_CTX_DEFAULT  "libmodule"
 
-#ifndef NDEBUG
-    #define M_DEBUG printf("| D | %s:%d | ", __func__, __LINE__); printf
-#else
-    #define M_DEBUG (void)
-#endif
 
-#define M_WARN printf("| W | %s:%d | ", __func__, __LINE__); printf
+#define M_DEBUG(...)    libmodule_logger.debug(__func__, __LINE__, __VA_ARGS__)
+#define M_INFO(...)     libmodule_logger.info(__func__, __LINE__, __VA_ARGS__)
+#define M_WARN(...)     libmodule_logger.warn(__func__, __LINE__, __VA_ARGS__)
+#define M_ERR(...)      libmodule_logger.error(__func__, __LINE__, __VA_ARGS__)
 
 #define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
 
@@ -55,6 +53,26 @@
     m_mem_ref(mem); \
     func; \
     m_mem_unref(mem);
+
+#define X_LOG \
+        X(ERROR) \
+        X(WARN) \
+        X(INFO) \
+        X(DEBUG)
+
+typedef enum {
+#define X(name) name,
+    X_LOG
+#undef X
+} m_logger_level;
+
+typedef struct {
+    void (*error)(const char *caller, int lineno, const char *fmt, ...);
+    void (*warn)(const char *caller, int lineno, const char *fmt, ...);
+    void (*info)(const char *caller, int lineno, const char *fmt, ...);
+    void (*debug)(const char *caller, int lineno, const char *fmt, ...);
+    FILE *log_file;
+} m_logger;
 
 /* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
@@ -261,4 +279,5 @@ int start_task(m_ctx_t *c, ev_src_t *src);
 extern m_map_t *ctx;
 extern m_memhook_t memhook;
 extern pthread_mutex_t mx;          // Used to access/modify global ctx map
+extern m_logger libmodule_logger;
 extern m_ctx_t *default_ctx;

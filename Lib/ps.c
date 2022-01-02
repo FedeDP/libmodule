@@ -106,8 +106,7 @@ static void ps_msg_dtor(void *data) {
 }
 
 static inline int get_prio_flag(m_src_flags flag) {
-    /* Remove generic src flags (>> 8) and apply PRIO mask */
-    return (flag >> 8) & M_SRC_PRIO_MASK;
+    return flag & M_SRC_PRIO_MASK;
 }
 
 static void tell_subscribers(void *data, void *value) {

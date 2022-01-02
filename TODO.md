@@ -44,21 +44,25 @@ Maybe try to m_mod_load() the newly created file?
 
 
 - [ ] Use attribute cleanup where it makes sense? M_foreach() ?
+
 - [ ] expose a set.h internally using map.c APi (from the same source file)
+
+- [ ]  split libmodule_structs, libmodule_utils ...
+
 - [ ] each module has a timerfd; user can set m_mod_batch_time/batch_size
 - [ ] when timerfd fires or batch size is reached, all Batched events will be sent 
 - [ ] New, internal flag: M_SRC_INTERNAL 
 - [x] drop priority support for subscriptions
 - [ ] add M_SRC_PRIO flags: high -> push event as soon as it arrives (without accounting for batch), default: account for batch, low: never push the event alone, always wait to batch it with at least another event (even when batching is disabled)
-- [ ] drop SYSTEM_MSG in favour of publishing on "libmodule_*" topic (eg: libmodule_loop_started) with sender NULL to just subscribed modules
-- [ ] rename MODULE_ASSERT to MODULE_DEBUG
-- [ ] add MODULE_WARN/INFO/ERROR macro
-- [ ] enable logging only when env LIBMODULE_LOG=debug/info/warn/error are enabled
-- [ ] at startup, check getenv (LIBMODULE_LOG) e metti tutti le funzioni di log non abilitate a dei PTR a no-op (eg libmodule_warn_noop(){} Libmodule_warn{fprintf(stderr, "W|%s");}
-- [ ] Getenv (LIBMODULE_LOG_OUTPUT) and default to stdout when nonset
-- [ ] #define OUT    (empty) and add OUT before any param pointer that is also a return value
-- [ ]  split libmodule_structs, libmodule_utils ...
 
+- [ ] drop SYSTEM_MSG in favour of publishing on "libmodule_*" topic (eg: libmodule_loop_started) with sender NULL to just subscribed modules
+
+- [x] add MODULE_WARN/INFO/ERROR macro
+- [x] enable logging only when env LIBMODULE_LOG=debug/info/warn/error are enabled
+- [ ] Make use of new M_WARN, M_INFO, M_ERR macros
+- [x] Getenv (LIBMODULE_LOG_OUTPUT) and default to stdout/stderr when nonset
+
+- [ ] #define OUT    (empty) and add OUT before any param pointer that is also a return value
 
 ### Last changes
 

@@ -159,7 +159,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     ps_priv_t *ps_msg;
                     /* Received on pubsub interface */
                     if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-                        M_WARN("Failed to read message: %s\n", strerror(errno));
+                        M_ERR("Failed to read message: %s\n", strerror(errno));
                     } else {
                         msg->ps_evt = &ps_msg->msg;
                         p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
@@ -259,7 +259,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
     } else if (err) {
         /* Quit and return < 0 only for real errors */
         if (err != EINTR && err != EAGAIN) {
-            M_WARN("Ctx '%s' loop error: %s.\n", c->name, strerror(err));
+            M_ERR("Ctx '%s' loop error: %s.\n", c->name, strerror(err));
             loop_quit(c, err);
             recved = -1; // error!
         }
