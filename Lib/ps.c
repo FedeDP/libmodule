@@ -42,11 +42,11 @@ static ev_src_t *fetch_sub(m_mod_t *mod, const char *topic) {
     
     /* Check if any stored subscriptions is a regex that matches topic */
     m_itr_foreach(mod->subscriptions, {
-        sub = m_itr_get(itr);
+        sub = m_itr_get(m_itr);
         /* Execute regular expression */
         int ret = regexec(&sub->ps_src.reg, topic, 0, NULL, 0);
         if (!ret) {
-            memhook._free(itr);
+            memhook._free(m_itr);
             goto found;
         }
     });
@@ -114,7 +114,7 @@ static void tell_subscribers(void *data, void *value) {
     ps_priv_t *msg = (ps_priv_t *)data;
     
     m_itr_foreach(c->modules, {
-        m_mod_t *mod = m_itr_get(itr);
+        m_mod_t *mod = m_itr_get(m_itr);
         ev_src_t *sub = NULL;
         
         if (m_mod_is(mod, M_MOD_RUNNING | M_MOD_PAUSED) && (sub = fetch_sub(mod, msg->msg.topic))) {

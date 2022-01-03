@@ -15,9 +15,10 @@
 #define _weak_          __attribute__((weak))
 #define _public_        __attribute__ ((visibility("default")))
 
-#define M_CTX_DEFAULT_EVENTS   64
-#define M_CTX_DEFAULT  "libmodule"
+#define M_CTX_DEFAULT_EVENTS    64
+#define M_CTX_DEFAULT           "libmodule"
 
+#define M_SRC_INTERNAL          1 << 7
 
 #define M_DEBUG(...)    libmodule_logger.debug(__func__, __LINE__, __VA_ARGS__)
 #define M_INFO(...)     libmodule_logger.info(__func__, __LINE__, __VA_ARGS__)

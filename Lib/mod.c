@@ -79,7 +79,7 @@ static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     for (int i = 0; i < M_SRC_TYPE_END; i++) {
         m_itr_foreach(mod->srcs[i], {
-            ev_src_t *t = m_itr_get(itr);
+            ev_src_t *t = m_itr_get(m_itr);
             if (flag == RM && stop) {
                 if (t->type == M_SRC_TYPE_PS) {
                     /*
@@ -90,7 +90,7 @@ static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
                     */
                     flush_pubsub_msgs(mod, NULL, mod);
                 }
-                ret = m_itr_rm(itr);
+                ret = m_itr_rm(m_itr);
             } else {
                 ret = poll_set_new_evt(&c->ppriv, t, flag);
                 
@@ -160,7 +160,7 @@ int evaluate_module(void *data, const char *key, void *value) {
         fetch_ms(&curr_ms, NULL);
 
         m_itr_foreach(mod->srcs[M_SRC_TYPE_THRESH], {
-            ev_src_t *src = (ev_src_t *)m_itr_get(itr);
+            ev_src_t *src = (ev_src_t *)m_itr_get(m_itr);
             m_src_thresh_t *thr = &src->thresh_src.thr;
             m_src_thresh_t *alarm = &src->thresh_src.alarm;
 
@@ -459,12 +459,8 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     ctx_logger(c, mod, "{\n");
     ctx_logger(c, mod, "\t\"Name\": \"'%s\",\n", mod->name);
     ctx_logger(c, mod, "\t\"State\": \"%#x\",\n", mod->state);
-    if (mod->flags) {
-        ctx_logger(c, mod, "\t\"Flags\": \"%#x\",\n", mod->flags);
-    }
-    if (mod->userdata) {
-        ctx_logger(c, mod, "\t\"UP\": \"%p\",\n", mod->userdata);
-    }
+    ctx_logger(c, mod, "\t\"Flags\": \"%#x\",\n", mod->flags);
+    ctx_logger(c, mod, "\t\"UP\": \"%p\",\n", mod->userdata);
 
     ctx_logger(c, mod, "\t\"Stats\": {\n");
     ctx_logger(c, mod, "\t\t\"Reg_time\": %" PRIu64 ",\n", mod->stats.registration_time);
@@ -477,105 +473,66 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     fetch_ms(&curr_ms, NULL);
     uint64_t active_time = curr_ms - mod->stats.registration_time;
     ctx_logger(c, mod, "\t\t\"Action_freq\": %lf\n", (double)mod->stats.action_ctr / active_time);
-
-    bool closed_stats = false;
-    bool closed_subs = false;
-    int i = 0;
-    if (m_map_len(mod->subscriptions) > 0) {
-        closed_stats = true;
-        ctx_logger(c, mod, "\t},\n");
-
-        ctx_logger(c, mod, "\t\"Subs\": [\n");
-        m_itr_foreach(mod->subscriptions, {
-            ev_src_t *sub = m_itr_get(itr);
-            ctx_logger(c, mod, "\t{\n");
-            if (sub->flags) {
-                ctx_logger(c, mod, "\t\t\"Flags\": \"%#x\"\n", sub->flags);
-            }
-            if (sub->userptr) {
-                ctx_logger(c, mod, "\t\t\"UP\": \"%p\",\n", sub->userptr);
-            }
-            ctx_logger(c, mod, "\t\t\"Topic\": \"%s\"\n", sub->ps_src.topic);
-            ctx_logger(c, mod, "\t}%c\n", ++i < m_map_len(mod->subscriptions) ? ',' : ' ');
-        });
-        ctx_logger(c, mod, "\t],\n");
-    }
+    ctx_logger(c, mod, "\t},\n");
     
-    /* Skip internal fds (M_SRC_TYPE_PS) */
-    size_t num_srcs = 0;
+    ctx_logger(c, mod, "\t\"Subs\": [\n");
+    m_itr_foreach(mod->subscriptions, {
+        ev_src_t *sub = m_itr_get(m_itr);
+        ctx_logger(c, mod, "\t{\n");
+        ctx_logger(c, mod, "\t\t\"Flags\": \"%#x\"\n", sub->flags);
+        ctx_logger(c, mod, "\t\t\"UP\": \"%p\",\n", sub->userptr);
+        ctx_logger(c, mod, "\t\t\"Topic\": \"%s\"\n", sub->ps_src.topic);
+        ctx_logger(c, mod, "\t}%c\n", m_idx + 1 < m_map_len(mod->subscriptions) ? ',' : ' ');
+    });
+    ctx_logger(c, mod, "\t],\n");
+    
+    /* Skip internal fds (M_SRC_TYPE_PS or M_SRC_INTERNAL flag) */
     for (int k = M_SRC_TYPE_FD; k < M_SRC_TYPE_END; k++) {
-        if (m_bst_len(mod->srcs[k]) > 0) {
-            /* Eventually close still opened structs */
-            if (!closed_stats || !closed_subs) {
-                ctx_logger(c, mod, "\t},\n");
-                closed_stats = true;
-                closed_subs = true;
+        ctx_logger(c, mod, "\t\"%s\": [\n", src_names[k]);
+        m_itr_foreach(mod->srcs[k], {
+            ev_src_t *t = m_itr_get(m_itr);
+            if (t->flags & M_SRC_INTERNAL) {
+                continue;
+            }
+            
+            ctx_logger(c, mod, "\t{\n");
+            ctx_logger(c, mod, "\t\t\"Flags\": \"%#x\",\n", t->flags);
+            ctx_logger(c, mod, "\t\t\"UP\": \"%p\",\n", t->userptr);
+
+            switch (t->type) {
+            case M_SRC_TYPE_FD:
+                ctx_logger(c, mod, "\t\t\"FD\": %d\n", t->fd_src.fd);
+                break;
+            case M_SRC_TYPE_SGN:
+                ctx_logger(c, mod, "\t\t\"SGN\": %d\n", t->sgn_src.sgs.signo);
+                break;
+            case M_SRC_TYPE_TMR:
+                ctx_logger(c, mod, "\t\t\"TMR_MS\": %lu,\n", t->tmr_src.its.ms);
+                ctx_logger(c, mod, "\t\t\"TMR_CID\": %d\n", t->tmr_src.its.clock_id);
+                break;
+            case M_SRC_TYPE_PATH:
+                ctx_logger(c, mod, "\t\t\"PATH\": \"%s\",\n", t->path_src.pt.path);
+                ctx_logger(c, mod, "\t\t\"EV\": \"%#x\"\n", t->path_src.pt.events);
+                break;
+            case M_SRC_TYPE_PID:
+                ctx_logger(c, mod, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);
+                ctx_logger(c, mod, "\t\t\"EV\": %u\n", t->pid_src.pid.events);
+                break;
+            case M_SRC_TYPE_TASK:
+                ctx_logger(c, mod, "\t\t\"TID\": %d\n", t->task_src.tid.tid);
+                break;
+            case M_SRC_TYPE_THRESH:
+                ctx_logger(c, mod, "\t\t\"INACTIVE_MS\": %d,\n", t->thresh_src.thr.inactive_ms);
+                ctx_logger(c, mod, "\t\t\"ACTIVITY_FREQ\": %d\n", t->thresh_src.thr.activity_freq);
+                break;
+            default:
+                break;
             }
 
-            if (num_srcs) {
-                ctx_logger(c, mod, "\t],\n");
-            }
-
-            num_srcs++;
-
-            ctx_logger(c, mod, "\t\"%s\": [\n", src_names[k]);
-            i = 0;
-            m_itr_foreach(mod->srcs[k], {
-                ev_src_t *t = m_itr_get(itr);
-
-                if (i++ > 0) {
-                    ctx_logger(c, mod, "\t},\n");
-                }
-
-                ctx_logger(c, mod, "\t{\n");
-                if (t->flags) {
-                    ctx_logger(c, mod, "\t\t\"Flags\": \"%#x\",\n", t->flags);
-                }
-                if (t->userptr) {
-                    ctx_logger(c, mod, "\t\t\"UP\": \"%p\",\n", t->userptr);
-                }
-                switch (t->type) {
-                case M_SRC_TYPE_FD:
-                    ctx_logger(c, mod, "\t\t\"FD\": %d\n", t->fd_src.fd);
-                    break;
-                case M_SRC_TYPE_SGN:
-                    ctx_logger(c, mod, "\t\t\"SGN\": %d\n", t->sgn_src.sgs.signo);
-                    break;
-                case M_SRC_TYPE_TMR:
-                    ctx_logger(c, mod, "\t\t\"TMR_MS\": %lu,\n", t->tmr_src.its.ms);
-                    ctx_logger(c, mod, "\t\t\"TMR_CID\": %d\n", t->tmr_src.its.clock_id);
-                    break;
-                case M_SRC_TYPE_PATH:
-                    ctx_logger(c, mod, "\t\t\"PATH\": \"%s\",\n", t->path_src.pt.path);
-                    ctx_logger(c, mod, "\t\t\"EV\": \"%#x\"\n", t->path_src.pt.events);
-                    break;
-                case M_SRC_TYPE_PID:
-                    ctx_logger(c, mod, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);
-                    ctx_logger(c, mod, "\t\t\"EV\": %u\n", t->pid_src.pid.events);
-                    break;
-                case M_SRC_TYPE_TASK:
-                    ctx_logger(c, mod, "\t\t\"TID\": %d\n", t->task_src.tid.tid);
-                    break;
-                case M_SRC_TYPE_THRESH:
-                    ctx_logger(c, mod, "\t\t\"INACTIVE_MS\": %d,\n", t->thresh_src.thr.inactive_ms);
-                    ctx_logger(c, mod, "\t\t\"ACTIVITY_FREQ\": %d\n", t->thresh_src.thr.activity_freq);
-                    break;
-                default:
-                    break;
-                }
-            });
-            ctx_logger(c, mod, "\t}\n");
-        }
+            ctx_logger(c, mod, "\t}%c\n", m_idx + 1 < m_bst_len(mod->srcs[k]) ? ',' : ' ');
+        });
+         ctx_logger(c, mod, "\t]%c\n", (k < M_SRC_TYPE_END - 1) ? ',' : ' ');
     }
-
-    /* Eventually close srcs or subs or stats */
-    if (num_srcs) {
-        ctx_logger(c, mod, "\t]\n");
-    }
-    if (!closed_stats || !closed_subs) {
-        ctx_logger(c, mod, "\t}\n");
-    }
-    
     ctx_logger(c, mod, "}\n");
     return 0;
 }

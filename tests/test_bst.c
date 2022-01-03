@@ -123,10 +123,10 @@ void test_bst_iterator(void **state) {
     
     int count = m_bst_len(my_t);
     m_itr_foreach(my_t, {
-        int *val = m_itr_get(itr);
+        int *val = m_itr_get(m_itr);
         printf("%d\n", *val);
         if (rand() % 2 == 1) {
-            m_itr_rm(itr);
+            m_itr_rm(m_itr);
         }
         count--;
     });

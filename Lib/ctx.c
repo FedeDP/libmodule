@@ -444,15 +444,9 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
 
     ctx_logger(c, NULL, "{\n");
     ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
-    if (c->flags) {
-        ctx_logger(c, NULL, "\t\"Flags\": \"%#x\",\n", c->flags);
-    }
-    if (c->userdata) {
-        ctx_logger(c, NULL, "\t\"UP\": \"%p\",\n", c->userdata);
-    }
-    if (str_not_empty(c->fs_root)) {
-        ctx_logger(c, NULL, "\t\t\"Fs_root\": \"%s\",\n", c->fs_root);
-    }
+    ctx_logger(c, NULL, "\t\"Flags\": \"%#x\",\n", c->flags);
+    ctx_logger(c, NULL, "\t\"UP\": \"%p\",\n", c->userdata);
+    ctx_logger(c, NULL, "\t\t\"Fs_root\": \"%s\",\n", str_not_empty(c->fs_root) ? c->fs_root : "N/A");
     ctx_logger(c, NULL, "\t\"State\": {\n");
     ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
     ctx_logger(c, NULL, "\t\t\"Looping\": %d\n", c->state == M_CTX_LOOPING);
@@ -474,10 +468,9 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "\t},\n");
 
     ctx_logger(c, NULL, "\t\"Modules\": [\n");
-    int i = 0;
     m_itr_foreach(c->modules, {
-        const char *mod_name = m_map_itr_get_key(itr);
-        ctx_logger(c, NULL, "\t\t\"%s\"%c\n", mod_name, ++i < m_map_len(c->modules) ? ',' : ' ');
+        const char *mod_name = m_map_itr_get_key(m_itr);
+        ctx_logger(c, NULL, "\t\t\"%s\"%c\n", mod_name, m_idx + 1 < m_map_len(c->modules) ? ',' : ' ');
     });
     ctx_logger(c, NULL, "\t]\n");
     ctx_logger(c, NULL, "}\n");

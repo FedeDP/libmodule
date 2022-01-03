@@ -101,7 +101,7 @@ static int wait_pool(m_thpool_t *pool, thpool_shutdown_t shutdown) {
         if (!(pool->flags & M_THPOOL_DETACHED)) {
             /* Join all worker threads */
             m_itr_foreach(pool->threads, {
-                pthread_t *th = m_itr_get(itr);
+                pthread_t *th = m_itr_get(m_itr);
                 ret += pthread_join(*th, NULL);
             });
         }

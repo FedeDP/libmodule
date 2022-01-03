@@ -51,7 +51,8 @@
     )(X)
     
 #define m_itr_foreach(X, fn) { \
-        for (__auto_type itr = m_itr_new(X); itr; m_itr_next(&itr)) fn; \
+        size_t m_idx = 0; \
+        for (__auto_type m_itr = m_itr_new(X); m_itr; m_itr_next(&m_itr), m_idx++) fn; \
     }
 
 #define m_iterate(X, cb, up) _Generic((X), \

@@ -63,7 +63,7 @@ _public_ int m_mod_unstashall(m_mod_t *mod) {
     M_MOD_ASSERT(mod);
 
     m_itr_foreach(mod->stashed, {
-            m_evt_t *evt = m_itr_get(itr);
+            m_evt_t *evt = m_itr_get(m_itr);
             /*
              * Here evt has 1 ref; run_pubsub_cb() would drop it
              * thus invalidating ptr.

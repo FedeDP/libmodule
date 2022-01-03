@@ -168,7 +168,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     
     FS_CTX();
     m_itr_foreach(c->modules, {
-        m_mod_t *mod = m_itr_get(itr);
+        m_mod_t *mod = m_itr_get(m_itr);
         filler(buf, mod->name, NULL, 0, 0);
     });
     return 0;
@@ -315,7 +315,7 @@ static void fs_logger(const m_mod_t *mod, const char *fmt, va_list args) {
 
 static void fs_wakeup_clients(fs_priv_t *fp, bool leaving) {
     m_itr_foreach(fp->clients, {
-        fs_client_t *cl = m_itr_get(itr);
+        fs_client_t *cl = m_itr_get(m_itr);
         if (cl->ph) {
             cl->in_evt = leaving ? -1 : 1;
             fuse_notify_poll(cl->ph);
