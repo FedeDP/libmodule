@@ -1,26 +1,19 @@
 #include "mod.h"
-#include "poll_priv.h"
+#include "fs_priv.h"
 
 /******************************************
  * Code related to Actor-like PubSub API. *
  ******************************************/
-
-// PRIO_SIZE -> { low, norm, high }
-#define M_SRC_PRIO_SIZE       __builtin_ctz((M_SRC_PRIO_HIGH << 1) / M_SRC_PS_PRIO_LOW)
-#define M_SRC_PRIO_MASK       ~(M_SRC_PRIO_HIGH << 1)
 
 static void subscribtions_dtor(void *data);
 static ev_src_t *fetch_sub(m_mod_t *mod, const char *topic);
 static int tell_if(void *data, const char *key, void *value);
 static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub);
 static void ps_msg_dtor(void *data);
-static int get_prio_flag(m_src_flags flag);
 static void tell_subscribers(void *data, void *value);
 static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c);
 static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic, 
                     const void *message, m_ps_flags flags);
-
-extern int fs_notify(m_mod_t *mod, const m_evt_t *msg);
 
 static void subscribtions_dtor(void *data) {
     ev_src_t *sub = (ev_src_t *)data;
@@ -70,7 +63,7 @@ static int tell_if(void *data, const char *key, void *value) {
         ((msg->msg.type != M_PS_USER && msg->msg.sender != mod) ||           // system messages with sender != this module (avoid sending ourselves system messages produced by us)
         (msg->msg.type == M_PS_USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
         (!msg->msg.topic || sub)))) {
-        
+
         M_DEBUG("Telling a message to '%s'\n", mod->name);
         ps_priv_t *m = alloc_ps_msg(msg, sub);
         if (m) {
@@ -103,10 +96,6 @@ static void ps_msg_dtor(void *data) {
     if (pubsub_msg->msg.sender) {
         m_mem_unref((void *)pubsub_msg->msg.sender);
     }
-}
-
-static inline int get_prio_flag(m_src_flags flag) {
-    return flag & M_SRC_PRIO_MASK;
 }
 
 static void tell_subscribers(void *data, void *value) {
@@ -163,6 +152,11 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
     ps_priv_t *mm = NULL;
 
+    m_queue_t *flushed __attribute__((__cleanup__(m_queue_free))) = m_queue_new(mem_dtor);
+    if (!flushed) {
+        M_WARN("Failed to create flushing queue.\n");
+    }
+
     while (mod->pubsub_fd[0] != -1 &&
         read(mod->pubsub_fd[0], &mm, sizeof(ps_priv_t *)) == sizeof(ps_priv_t *)) {
         /*
@@ -176,19 +170,23 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
         if (!data && m_mod_is(mod, M_MOD_RUNNING)) {
             M_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
             m_evt_t *msg = new_evt(M_SRC_TYPE_PS);
-            if (msg) {
+            if (msg && flushed) {
                 msg->ps_evt = &mm->msg;
-                run_pubsub_cb(mod, msg, mm->sub);
+                m_queue_enqueue(flushed, msg);
                 continue;
             }
         }
         M_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
         m_mem_unref(mm);
     }
+    if (m_queue_len(flushed) > 0) {
+        call_pubsub_cb(mod, flushed);
+    }
+    m_queue_free(&flushed);
     return 0;
 }
 
-void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
+void call_pubsub_cb(m_mod_t *mod, m_queue_t *evts) {
     /* If module is using some different receive function, honor it. */
     m_evt_cb cb = m_stack_peek(mod->recvs);
     if (!cb) {
@@ -196,26 +194,17 @@ void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
         cb = mod->hook.on_evt;
     }
     
-    if (src) {
-        /*
-         * if src == NULL, do not touch msg->userdata:
-         * * it will be NULL when called from ctx loop or flush_ps_messages
-         * * it will already be valued when call by m_mod_unstash API
-         */
-        msg->userdata = src->userptr;
-    }
-    
     /* Notify underlying fuse fs */
-    fs_notify(mod, msg);
-        
-    /* Finally call user callback */
-    cb(mod, msg);
-
-    /* Unref the message */
-    m_mem_unref(msg);
+    fs_notify(mod, evts);
     
-    mod->stats.recv_msgs++;
+    /* Finally call user callback */
+    cb(mod, evts);
+    
+    mod->stats.recv_msgs += m_queue_len(evts);
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
+    
+    /* Unref batched messages */
+    m_queue_clear(evts);
 }
 
 /** Public API **/
@@ -251,7 +240,7 @@ _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags fla
 
         ps_src_t *ps_src = &sub->ps_src;
         sub->type = M_SRC_TYPE_PS;
-        sub->flags = flags;
+        sub->flags = ensure_src_prio(flags);
         sub->userptr = userptr;
         sub->mod = mod;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));

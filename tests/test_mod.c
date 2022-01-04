@@ -8,8 +8,8 @@
 #include <string.h>
 
 static bool init_false(m_mod_t *mod);
-static void recv(m_mod_t *mod, const m_evt_t *msg);
-static void recv_ready(m_mod_t *mod, const m_evt_t *msg);
+static void recv(m_mod_t *mod, const m_queue_t *const evts);
+static void recv_ready(m_mod_t *mod, const m_queue_t *const evts);
 
 static int ctr;
 
@@ -444,26 +444,32 @@ static bool init_false(m_mod_t *mod) {
  * Then, set new behavior and unstash everything.
  * Check that all stashed messages are received.
  */
-static void recv(m_mod_t *mod, const m_evt_t *msg) {
-    if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
-        ctr++;
-        int ret = m_mod_stash(mod, msg);
-        assert_int_equal(ret, 0);
-        if (!strcmp((char *) msg->ps_evt->data, "hi3!")) {
-            ret = m_mod_become(mod, recv_ready);
+static void recv(m_mod_t *mod, const m_queue_t *const evts) {
+    m_itr_foreach(evts, {
+        m_evt_t *msg = m_itr_get(m_itr);
+        if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
+            ctr++;
+            int ret = m_mod_stash(mod, msg);
             assert_int_equal(ret, 0);
+            if (!strcmp((char *) msg->ps_evt->data, "hi3!")) {
+                ret = m_mod_become(mod, recv_ready);
+                assert_int_equal(ret, 0);
 
-            ret = m_mod_unstashall(mod);
-            assert_int_equal(ret, 3); // 3 messages unstashed
+                ret = m_mod_unstash(mod, -1);
+                assert_int_equal(ret, 3); // 3 messages unstashed
+            }
         }
-    }
+    });
 }
 
-static void recv_ready(m_mod_t *mod, const m_evt_t *msg) {
-    if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
-        ctr--;
-        if (!strcmp((char *) msg->ps_evt->data, "hi3!")) {
-            m_ctx_quit(test_ctx, ctr);
+static void recv_ready(m_mod_t *mod, const m_queue_t *const evts) {
+    m_itr_foreach(evts, {
+        m_evt_t *msg = m_itr_get(m_itr);
+        if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER) {
+            ctr--;
+            if (!strcmp((char *) msg->ps_evt->data, "hi3!")) {
+                m_ctx_quit(test_ctx, ctr);
+            }
         }
-    }
+    });
 }

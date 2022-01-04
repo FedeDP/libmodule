@@ -372,10 +372,21 @@ int fs_process(m_ctx_t *c) {
     return ret;
 }
 
-int fs_notify(m_mod_t *mod, const m_evt_t *msg) {
+int fs_notify(m_mod_t *mod, const m_queue_t *const evts) {
     if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
-        if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_CTX_STOPPED) {
+        
+        bool ctx_stopped = false;
+        m_itr_foreach(evts, {
+            m_evt_t *msg = m_itr_get(m_itr);
+            if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_CTX_STOPPED) {
+                ctx_stopped = true;
+                memhook._free(m_itr);
+                break;
+            }
+        });
+
+        if (ctx_stopped) {
             /* When loop gets stopped, destroy clients list */
             m_list_free(&fp->clients);
             memhook._free(fp);

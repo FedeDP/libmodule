@@ -11,6 +11,7 @@ static void default_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static int loop_start(m_ctx_t *c, int max_events);
 static uint8_t loop_stop(m_ctx_t *c);
 static inline int loop_quit(m_ctx_t *c, uint8_t quit_code);
+static void push_evt(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src);
 static int recv_events(m_ctx_t *c, int timeout);
 static int m_ctx_loop_events(m_ctx_t *c, int max_events);
 static int ctx_destroy_mods(void *data, const char *key, void *value);
@@ -110,6 +111,70 @@ static int loop_quit(m_ctx_t *c, uint8_t quit_code) {
     return 0;
 }
 
+/*
+ * We will call current on_evt callback when either:
+ * * a HIGH priority message is received
+ * * a NORM priority message is received and number of batched events reached number of requested batch size
+ * * an internal (timer) message is received, that means that batch timer is elapsed
+ */
+static void push_evt(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
+    /* System events: use internal source! */
+    if (!src && msg && msg->type == M_SRC_TYPE_PS && msg->ps_evt->type != M_PS_USER) {
+        fd_src_t fd_src = {0};
+        fd_src.fd = mod->pubsub_fd[0];
+        src = m_bst_find(mod->srcs[M_SRC_TYPE_PS], &fd_src);
+    }
+    
+    const bool is_internal = src && src->flags & M_SRC_INTERNAL;
+    bool force = false;
+    if (msg) {
+        /*
+         * If it is an internal event, unref it as
+         * it does not need to be recved by user;
+         * else, push it onto the message queue.
+         */
+        if (is_internal) {
+            m_mem_unref(msg);
+        } else {
+            m_queue_enqueue(mod->batch.events, msg);
+            /*
+             * if src == NULL, do not touch msg->userdata as it is already set to correct value:
+             * * it will be NULL when called from ctx loop or flush_pubsub_msgs
+             * * it will already be valued when called by m_mod_unstash API
+             */
+            if (src) {
+                msg->userdata = src->userptr;
+                /* When receiving a high priority message, flush immediately */
+                if (src->flags & M_SRC_PRIO_HIGH) {
+                    force = true;
+                } else if (src->flags & M_SRC_PRIO_LOW) {
+                    /*
+                     * Always unify a low priority message with subsequent ones,
+                     * even if batching is disabled
+                     */
+                    return;
+                }
+            }
+        }
+    }
+    
+    if (m_queue_len(mod->batch.events) == 0) {
+        return;
+    }
+    
+    /*
+     * If we reached the batch len, or pubsub_cb was called by 
+     * M_SRC_INTERNAL timer (meaning that batching time has elapsed),
+     * run the pubsub callback!
+     */
+    if (force ||
+        m_queue_len(mod->batch.events) >= mod->batch.len ||
+        is_internal) {
+        
+        call_pubsub_cb(mod, mod->batch.events);
+    }
+}
+
 static int recv_events(m_ctx_t *c, int timeout) {
     static uint64_t last_time_called;
 
@@ -133,6 +198,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
     for (int i = 0; i < nfds && !err; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
         if (p && p->type == M_SRC_TYPE_FD && p->mod == NULL) {
+            M_INFO("Received event from fuse fs.\n");
             /* Received from fuse */
             fs_process(c);
             recved++;
@@ -148,7 +214,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
             m_mod_t *mod = m_mem_ref(p->mod);
             m_evt_t *msg = new_evt(p->type);
             if (msg) {
-                M_DEBUG("'%s' received %u type msg.\n", mod->name, msg->type);
+                M_INFO("'%s' received %u type msg.\n", mod->name, msg->type);
                 switch (msg->type) {
                 case M_SRC_TYPE_FD:
                     /* Received from FD */
@@ -204,7 +270,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     }
                     break;
                 default:
-                    M_DEBUG("Unmanaged src %d.\n", msg->type);
+                    M_WARN("Unmanaged src %d.\n", msg->type);
                     break;
                 }
             }
@@ -216,12 +282,11 @@ static int recv_events(m_ctx_t *c, int timeout) {
                  * All messages share same address inside union.
                  * In this case, check that any message was actually received,
                  * and it was from a know source type.
-                 * It should never happen though.
                  */
                 if (msg->fd_evt) {
                     recved++;
                     if (msg->type != M_SRC_TYPE_PS || msg->ps_evt->type != M_PS_MOD_POISONPILL) {
-                        run_pubsub_cb(mod, msg, p);
+                        push_evt(mod, msg, p);
                         msg_consumed = true;
                     } else {
                         M_DEBUG("PoisonPilling '%s'.\n", mod->name);
@@ -242,7 +307,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                 /*
                  * Unref the message if it wasn't consumed 
                  * by user callback to avoid memleaks,
-                 * otherwise it was unref'd in run_pubsub_cb()
+                 * otherwise it would be unref'd in run_pubsub_cb()
                  */
                 m_mem_unref(msg);
             }
@@ -250,6 +315,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
         } else {
             /* Forward error to below handling code */
             err = EAGAIN;
+            M_WARN("Received message without proper source: src -> %p\n", p);
         }
     }
 
@@ -446,7 +512,7 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
     ctx_logger(c, NULL, "\t\"Flags\": \"%#x\",\n", c->flags);
     ctx_logger(c, NULL, "\t\"UP\": \"%p\",\n", c->userdata);
-    ctx_logger(c, NULL, "\t\t\"Fs_root\": \"%s\",\n", str_not_empty(c->fs_root) ? c->fs_root : "N/A");
+    ctx_logger(c, NULL, "\t\"Fs_root\": \"%s\",\n", str_not_empty(c->fs_root) ? c->fs_root : "N/A");
     ctx_logger(c, NULL, "\t\"State\": {\n");
     ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
     ctx_logger(c, NULL, "\t\t\"Looping\": %d\n", c->state == M_CTX_LOOPING);

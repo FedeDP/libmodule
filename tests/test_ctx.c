@@ -98,10 +98,13 @@ void test_ctx_dispatch(void **state) {
     assert_true(ret == 0); // loop stopped with exit code 0
 }
 
-static void my_recv(m_mod_t *mod, const m_evt_t *msg) {
-    if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_CTX_STARTED) {
-        m_mod_deregister(&mod);
-    }
+static void my_recv(m_mod_t *mod, const m_queue_t *const evts) {
+    m_itr_foreach(evts, {
+        m_evt_t *msg = m_itr_get(m_itr);
+        if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_CTX_STARTED) {
+            m_mod_deregister(&mod);
+        }
+    });
 }
 
 void test_ctx_mod_deregister_during_loop(void **state) {

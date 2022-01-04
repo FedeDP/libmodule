@@ -1,5 +1,5 @@
 #include "mod.h"
-#include "poll_priv.h"
+#include "fs_priv.h"
 
 /***************************************
  * Code related to generic module API. *
@@ -14,8 +14,6 @@ static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop);
 static void reset_module(m_mod_t *mod);
 static int optional_hook(m_mod_t *mod, enum mod_hook req_hook);
 
-extern int fs_cleanup(m_mod_t *mod);
-
 static void module_dtor(void *data) {
     m_mod_t *mod = (m_mod_t *)data;
     M_MOD_CTX(mod);
@@ -29,6 +27,7 @@ static void module_dtor(void *data) {
         m_map_free(&mod->subscriptions);
         m_stack_free(&mod->recvs);
         m_queue_free(&mod->stashed);
+        m_queue_free(&mod->batch.events);
         for (int i = 0; i < M_SRC_TYPE_END; i++) {
             m_bst_free(&mod->srcs[i]);
         }
@@ -62,7 +61,7 @@ static int init_pubsub_fd(m_mod_t *mod) {
     if (_pipe(mod) == 0) {
         fd_src_t fd_src = {0};
         fd_src.fd = mod->pubsub_fd[0];
-        if (register_src(mod, M_SRC_TYPE_PS, &fd_src, M_SRC_FD_AUTOCLOSE, NULL) == 0) {
+        if (register_src(mod, M_SRC_TYPE_PS, &fd_src, M_SRC_FD_AUTOCLOSE | M_SRC_PRIO_HIGH, NULL) == 0) {
             return 0;
         }
         close(mod->pubsub_fd[0]);
@@ -389,7 +388,12 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
         if (!mod->stashed) {
             break;
         }
-
+        
+        mod->batch.events = m_queue_new(mem_dtor);
+        if (!mod->batch.events) {
+            break;
+        }
+        
         if (m_map_put(c->modules, mod->name, mod) == 0) {
             memcpy(&mod->hook, hook, sizeof(m_mod_hook_t));
             mod->state = M_MOD_IDLE;
@@ -464,6 +468,7 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
 
     ctx_logger(c, mod, "\t\"Stats\": {\n");
     ctx_logger(c, mod, "\t\t\"Reg_time\": %" PRIu64 ",\n", mod->stats.registration_time);
+    ctx_logger(c, mod, "\t\t\"Num_srcs\": %lu,\n", m_mod_src_len(mod, M_SRC_TYPE_END));
     ctx_logger(c, mod, "\t\t\"Sent_msgs\": %" PRIu64 ",\n", mod->stats.sent_msgs);
     ctx_logger(c, mod, "\t\t\"Recv_msgs\": %" PRIu64 ",\n", mod->stats.recv_msgs);
     ctx_logger(c, mod, "\t\t\"Last_seen\": %" PRIu64 ",\n", mod->stats.last_seen);
@@ -583,4 +588,31 @@ _public_ int m_mod_stop(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING | M_MOD_PAUSED);
     
     return stop(mod, true);
+}
+
+_public_ int m_mod_set_batch_size(m_mod_t *mod, size_t len) {
+    M_MOD_ASSERT(mod);
+    
+    mod->batch.len = len;
+    return 0;
+}
+
+_public_ int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ms) {
+    M_MOD_ASSERT(mod);
+
+    /* If it was already set, remove old timer */
+    if (mod->batch.timer.ms != 0) {
+        deregister_src(mod, M_SRC_TYPE_TMR, &mod->batch.timer);
+    }
+    mod->batch.timer.clock_id = CLOCK_MONOTONIC;
+    mod->batch.timer.ms = timeout_ms;
+    if (timeout_ms != 0) {
+        // If batching by size was disabled
+        if (mod->batch.len == 0) {
+            // Set a maximum value for batching so that only timed batching will be effective
+            mod->batch.len = -1;
+        }
+        return register_src(mod, M_SRC_TYPE_TMR, &mod->batch.timer, M_SRC_INTERNAL | M_SRC_PRIO_HIGH, NULL);
+    }
+    return 0;
 }

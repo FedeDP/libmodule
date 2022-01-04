@@ -4,7 +4,7 @@
 #include <module/mem.h>
 #include <string.h>
 
-static void my_recv(m_mod_t *mod, const m_evt_t *const msg);
+static void my_recv(m_mod_t *mod, const m_queue_t *const evts);
 
 static m_mod_t *mod = NULL;
 static m_evt_t *ref;
@@ -37,12 +37,15 @@ void test_evt_ref(void **state) {
     assert_int_equal(ret, 0);
 }
 
-static void my_recv(m_mod_t *mod, const m_evt_t *const msg) {
-    if (msg->type == M_SRC_TYPE_PS &&
-        msg->ps_evt->type == M_PS_USER) {
+static void my_recv(m_mod_t *mod, const m_queue_t *const evts) {
+    m_itr_foreach(evts, {
+        m_evt_t *msg = m_itr_get(m_itr);
+        if (msg->type == M_SRC_TYPE_PS &&
+            msg->ps_evt->type == M_PS_USER) {
 
-        ref = m_mem_ref((void *)msg);
-        m_ctx_quit(test_ctx,0);
-    }
+            ref = m_mem_ref((void *)msg);
+            m_ctx_quit(test_ctx,0);
+        }
+    });
 }
 

@@ -49,13 +49,16 @@ Maybe try to m_mod_load() the newly created file?
 
 - [ ]  split libmodule_structs, libmodule_utils ...
 
-- [ ] when timerfd fires or batch size is reached, all Batched events will be sent 
-- [ ] m_mod_set_batch_time() -> m_src_timer_register( M_SRC_INTERNAL) ...
+- [x] when timerfd fires or batch size is reached, all Batched events will be sent 
+- [x] m_mod_set_batch_time() -> m_src_timer_register( M_SRC_INTERNAL) ...
 - [x] New, internal flag: M_SRC_INTERNAL -> used for internal flags
 - [x] drop priority support for subscriptions
-- [ ] add M_SRC_PRIO flags: high -> push event as soon as it arrives (without accounting for batch), default: account for batch, low: never push the event alone, always wait to batch it with at least another event (even when batching is disabled)
+- [x] Fix: what to do when both batch_timeout and batch_size are set?
+- [x] add M_SRC_PRIO flags: high -> push event as soon as it arrives (without accounting for batch), default: account for batch, low: never push the event alone, always wait to batch it with at least another event (even when batching is disabled)
+- [x] Calling unstash API (or any other API that changes the event queue) will break the on_evt iteration on the queue...
 
 - [ ] drop SYSTEM_MSG in favour of publishing on "libmodule_*" topic (eg: libmodule_loop_started) with sender NULL to just subscribed modules
+- [ ] M_CTX_BROADCAST_SYSTEM -> ctx flag to instead broadcast all system messages (without the need to subscribe, just like it is rn)
 
 - [x] {mod,ctx}_dump() to always print all fields, even empty one (skipping M_SRC_INTERNAL sources ofc!)
 
@@ -63,6 +66,10 @@ Maybe try to m_mod_load() the newly created file?
 - [x] enable logging only when env LIBMODULE_LOG=debug/info/warn/error are enabled
 - [ ] Make use of new M_WARN, M_INFO, M_ERR macros
 - [x] Getenv (LIBMODULE_LOG_OUTPUT) and default to stdout/stderr when nonset
+
+- [ ] Split some more private headers from priv.h
+
+- [x] itr.h allow const types too
 
 ### Last changes
 

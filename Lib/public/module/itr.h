@@ -10,12 +10,17 @@
 #include "queue.h"
 #include "bst.h"
 
-#define m_itr_new(X) _Generic((X), \
+#define m_itr_new(X) _Generic((&*(X)), \
     m_map_t *: m_map_itr_new, \
+    const m_map_t *: m_map_itr_new, \
     m_list_t *: m_list_itr_new, \
+    const m_list_t *: m_list_itr_new, \
     m_stack_t *: m_stack_itr_new, \
+    const m_stack_t *: m_stack_itr_new, \
     m_queue_t *: m_queue_itr_new, \
-    m_bst_t *: m_bst_itr_new \
+    const m_queue_t *: m_queue_itr_new, \
+    m_bst_t *: m_bst_itr_new, \
+    const m_bst_t *: m_bst_itr_new \
     )(X)
 
 #define m_itr_next(X) _Generic((X), \

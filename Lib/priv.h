@@ -13,7 +13,7 @@
 
 #define unlikely(x)     __builtin_expect((x),0)
 #define _weak_          __attribute__((weak))
-#define _public_        __attribute__ ((visibility("default")))
+#define _public_        __attribute__((visibility("default")))
 
 #define M_CTX_DEFAULT_EVENTS    64
 #define M_CTX_DEFAULT           "libmodule"
@@ -188,6 +188,13 @@ typedef enum {
     M_CTX_ZOMBIE,
 } m_ctx_states;
 
+// TODO: initialize the struct while mod is created (len == 1, create events queue (?))
+typedef struct {
+    size_t len;
+    m_src_tmr_t timer;
+    m_queue_t *events;
+} mod_batch_t;
+
 /* Struct that holds data for each module */
 /*
  * MEM-REFS for mod:
@@ -208,6 +215,7 @@ struct _mod {
     const void *userdata;                   // module's user defined data
     void *fs;                               // FS module priv data. NULL if unsupported
     const char *name;                       // module's name
+    mod_batch_t batch;                      // Events' batching informations
     void *dlhandle;                         // For plugins
     const char *plugin_path;                // Filesystem path for plugins
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
@@ -253,11 +261,11 @@ int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, m_mod_flags mo
 m_ctx_t *check_ctx(const char *ctx_name);
 void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);
 
-/* Defined in pubsub.c */
+/* Defined in ps.c */
 int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_ps_types type, 
                            m_mod_t *sender, const char *topic);
 int flush_pubsub_msgs(void *data, const char *key, void *value);
-void run_pubsub_cb(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src);
+void call_pubsub_cb(m_mod_t *mod, m_queue_t *evts);
 
 /* Defined in utils.c */
 char *mem_strdup(const char *s);
@@ -271,6 +279,7 @@ void mem_dtor(void *src);
 /* Defined in src.c */
 extern const char *src_names[];
 int init_src(m_mod_t *mod, m_src_types t);
+m_src_flags ensure_src_prio(m_src_flags flags);
 int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
                  m_src_flags flags, const void *userptr);
 int deregister_src(m_mod_t *mod, m_src_types type, void *src_data);

@@ -5,6 +5,7 @@
 #endif
 
 #include "cmn.h"
+#include "itr.h"
 
 /* Modules states */
 typedef enum {
@@ -18,7 +19,7 @@ typedef enum {
 /* Callbacks typedefs */
 typedef bool (*m_start_cb)(m_mod_t *self);
 typedef bool (*m_eval_cb)(m_mod_t *self);
-typedef void (*m_evt_cb)(m_mod_t *self, const m_evt_t *const msg);
+typedef void (*m_evt_cb)(m_mod_t *self, const m_queue_t *const evts);
 typedef void (*m_stop_cb)(m_mod_t *self);
 
 /* Struct that holds user defined callbacks */
@@ -81,12 +82,10 @@ int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic);
 
 /* Events' stashing API */
 int m_mod_stash(m_mod_t *mod, const m_evt_t *evt);
-int m_mod_unstash(m_mod_t *mod);
-int m_mod_unstashall(m_mod_t *mod);
+ssize_t m_mod_unstash(m_mod_t *mod, size_t len);
 
 /* Event Sources management */
-
-ssize_t m_mod_src_len(m_mod_t *mod, m_src_types type);
+ssize_t m_mod_src_len(const m_mod_t *mod, m_src_types type);
 
 int m_mod_src_register_fd(m_mod_t *mod, int fd, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_fd(m_mod_t *mod, int fd);
@@ -108,6 +107,10 @@ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid);
 
 int m_mod_src_register_thresh(m_mod_t *mod, const m_src_thresh_t *thr, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr);
+
+/* Event batch management */
+int m_mod_set_batch_size(m_mod_t *mod, size_t len);
+int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ms);
 
 /* Generic event source registering functions */
 #define m_mod_src_register(mod, X, flags, userptr) _Generic((X) + 0, \

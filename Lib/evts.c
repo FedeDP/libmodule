@@ -41,43 +41,37 @@ _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
     // Cannot stash FD evts: it would cause an infinite loop polling on it
     M_PARAM_ASSERT(evt->type != M_SRC_TYPE_FD);
 
-    m_mem_ref((void *)evt);
-    int ret = m_queue_enqueue(mod->stashed, (void *)evt);
+    int ret = m_queue_enqueue(mod->stashed, m_mem_ref((void *)evt));
     if (ret == 0) {
         fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     }
     return ret;
 }
 
-_public_ int m_mod_unstash(m_mod_t *mod) {
+_public_ ssize_t m_mod_unstash(m_mod_t *mod, size_t len) {
     M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(len > 0);
 
-    m_evt_t *evt = m_queue_dequeue(mod->stashed);
-    if (evt) {
-        run_pubsub_cb(mod, evt, NULL);
-    }
-    return 0;
-}
-
-_public_ int m_mod_unstashall(m_mod_t *mod) {
-    M_MOD_ASSERT(mod);
+    m_queue_t *unstashed __attribute__((__cleanup__(m_queue_free))) = m_queue_new(mem_dtor);
+    M_ALLOC_ASSERT(unstashed);
 
     m_itr_foreach(mod->stashed, {
-            m_evt_t *evt = m_itr_get(m_itr);
-            /*
-             * Here evt has 1 ref; run_pubsub_cb() would drop it
-             * thus invalidating ptr.
-             * But m_queue_clear() still needs ptrs!
-             * Keep evts alive.
-             */
-            m_mem_ref(evt);
-            run_pubsub_cb(mod, evt, NULL);
+        if (m_idx + 1 == len) {
+            memhook._free(m_itr);
+            break;
+        }
+        m_evt_t *evt = m_itr_get(m_itr);
+        /*
+         * Here evt has 1 ref; run_pubsub_cb() would drop it
+         * thus invalidating ptr.
+         * But m_itr_rm() still needs ptrs!
+         * Keep evts alive.
+         */
+        m_queue_enqueue(unstashed, m_mem_ref(evt));
+        m_itr_rm(m_itr);
     });
-    /* Return number of events unstashed or error */
-    const int len = m_queue_len(mod->stashed);
-    int ret = m_queue_clear(mod->stashed);
-    if (ret == 0) {
-        ret = len;
-    }
-    return ret;
+
+    const size_t processed = m_queue_len(unstashed);
+    call_pubsub_cb(mod, unstashed);
+    return processed;
 }

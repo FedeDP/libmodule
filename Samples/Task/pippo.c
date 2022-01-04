@@ -27,6 +27,7 @@ static bool m_mod_on_start(m_mod_t *mod) {
     
     m_mod_src_register(mod, &((m_src_tmr_t) { CLOCK_MONOTONIC, 1000 }), 0, &tmrData);
     m_mod_src_register(mod, &((m_src_task_t) { 8, inc }), 0, &thData);
+    m_mod_set_batch_timeout(mod, 1500); // 1500ms!
     return true;
 }
 
@@ -38,26 +39,29 @@ static void m_mod_on_stop(m_mod_t *mod) {
     
 }
 
-static void m_mod_on_evt(m_mod_t *mod, const m_evt_t *msg) {
-    switch (msg->type) {
-    case M_SRC_TYPE_TMR: {
-        int *data = (int *)msg->userdata;
-        if (*data == 5) {
-            m_mod_log(mod, "Timed out.\n");
-            m_ctx_quit(m_mod_ctx(mod), 0);
-            m_mod_log(mod,"Final data val: %d\n", thData);
-        } else {
-            (*data)++;
-            m_mod_log(mod, "Clock... %d\n", *data);
+static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
+    m_itr_foreach(evts, {
+        m_evt_t *msg = m_itr_get(m_itr);
+        switch (msg->type) {
+        case M_SRC_TYPE_TMR: {
+            int *data = (int *)msg->userdata;
+            if (*data == 5) {
+                m_mod_log(mod, "Timed out.\n");
+                m_ctx_quit(m_mod_ctx(mod), 0);
+                m_mod_log(mod,"Final data val: %d\n", thData);
+            } else {
+                (*data)++;
+                m_mod_log(mod, "Clock... %d\n", *data);
+            }
+            break;
         }
-        break;
-    }
-    case M_SRC_TYPE_TASK:
-        m_mod_log(mod,"Task id: %u ended with retval: %d\n", msg->task_evt->tid, msg->task_evt->retval);
-        break;
-    default:
-        break;
-    }
+        case M_SRC_TYPE_TASK:
+            m_mod_log(mod,"Task id: %u ended with retval: %d\n", msg->task_evt->tid, msg->task_evt->retval);
+            break;
+        default:
+            break;
+        }
+    });
 }
 
 static int inc(void *udata) {
