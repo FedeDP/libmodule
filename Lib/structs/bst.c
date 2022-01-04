@@ -221,11 +221,11 @@ _public_ void *m_bst_find(m_bst_t *l, void *data) {
     return NULL;
 }
 
-_public_ int m_bst_iterate(m_bst_t *l, m_bst_cb cb, void *userptr) {
+_public_ int m_bst_iterate(const m_bst_t *l, m_bst_cb cb, void *userptr) {
     return m_bst_traverse(l, M_BST_PRE, cb, userptr);
 }
 
-_public_ int m_bst_traverse(m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr) {
+_public_ int m_bst_traverse(const m_bst_t *l, m_bst_order type, m_bst_cb cb, void *userptr) {
     M_PARAM_ASSERT(l);
     M_PARAM_ASSERT(cb);
     

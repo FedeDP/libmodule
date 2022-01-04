@@ -371,7 +371,7 @@ _public_ bool m_map_contains(const m_map_t *m, const char *key) {
  * Iteration is stopped if func returns non-zero.  
  * Returns func's return value if it is < 0, otherwise, 0.
  */
-_public_ int m_map_iterate(m_map_t *m, m_map_cb fn, void *userptr) {
+_public_ int m_map_iterate(const m_map_t *m, m_map_cb fn, void *userptr) {
     M_PARAM_ASSERT(fn);
     M_PARAM_ASSERT(m_map_len(m) > 0);
     

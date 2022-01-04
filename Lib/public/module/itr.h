@@ -62,8 +62,13 @@
 
 #define m_iterate(X, cb, up) _Generic((X), \
     m_map_t *: m_map_iterate, \
+    const m_map_t *: m_map_iterate, \
     m_list_itr_t *: m_list_iterate, \
+    const m_list_itr_t *: m_list_iterate, \
     m_stack_itr_t *: m_stack_iterate, \
+    const m_stack_itr_t *: m_stack_iterate, \
     m_queue_itr_t *: m_queue_iterate, \
-    m_bst_itr_t *: m_bst_iterate \
+    const m_queue_itr_t *: m_queue_iterate, \
+    m_bst_itr_t *: m_bst_iterate, \
+    const m_bst_itr_t *: m_bst_iterate \
     )(X, cb, up)
