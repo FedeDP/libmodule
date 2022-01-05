@@ -4,10 +4,8 @@
  * Code related to event sources. *
  **********************************/
 
-#define M_TASK_MAX_THREADS 16
-
-// PRIO_SIZE -> { low, norm, high }
-#define M_SRC_PRIO_MASK       ~(M_SRC_PRIO_HIGH << 1)
+#define M_TASK_MAX_THREADS    16
+#define M_SRC_PRIO_MASK       (M_SRC_PRIO_HIGH << 1) - 1
 
 static void src_priv_dtor(void *data);
 static void *task_thread(void *data);
@@ -82,8 +80,6 @@ static void src_priv_dtor(void *data) {
     if (t->flags & M_SRC_AUTOFREE) {
         memhook._free((void *)t->userptr);
     }
-
-    memhook._free(t);
 }
 
 static void *task_thread(void *data) {
@@ -150,7 +146,7 @@ static int threshcmp(void *my_data, void *node_data) {
 /** Private API **/
 
 int init_src(m_mod_t *mod, m_src_types t) {
-    mod->srcs[t] = m_bst_new(src_cmp_map[t], src_priv_dtor);
+    mod->srcs[t] = m_bst_new(src_cmp_map[t], mem_dtor);
     if (!mod->srcs[t]) {
         return -ENOMEM;
     }
@@ -168,7 +164,7 @@ m_src_flags ensure_src_prio(m_src_flags flags) {
 int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
                          m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT(mod);
-    ev_src_t *src = memhook._calloc(1, sizeof(ev_src_t));
+    ev_src_t *src = m_mem_new(sizeof(ev_src_t), src_priv_dtor);
     M_ALLOC_ASSERT(src);
 
     src->flags = ensure_src_prio(flags);
@@ -229,7 +225,7 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
             break;
         }
         default:
-            M_DEBUG("Wrong src type: %d\n", type);
+            M_WARN("Wrong src type: %d\n", type);
             memhook._free(src);
             return -EINVAL;
     }
@@ -249,7 +245,7 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
         }
         return !ret ? 0 : -errno;
     }
-    memhook._free(src);
+    m_mem_unref(src);
     return ret;
 }
 
@@ -275,8 +271,12 @@ int start_task(m_ctx_t *c, ev_src_t *src) {
 
 _public_ int m_mod_src_register_fd(m_mod_t *mod, int fd, m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(fd >= 0);
+    
+    // Only M_SRC_PRIO_HIGH is available for fd sources
+    const m_src_flags prio_flags = flags & M_SRC_PRIO_MASK;
+    M_PARAM_ASSERT(prio_flags == 0 || prio_flags == M_SRC_PRIO_HIGH);
 
-    return register_src(mod, M_SRC_TYPE_FD, &fd, flags, userptr);
+    return register_src(mod, M_SRC_TYPE_FD, &fd, flags | M_SRC_PRIO_HIGH, userptr);
 }
 
 _public_ int m_mod_src_deregister_fd(m_mod_t *mod, int fd) {

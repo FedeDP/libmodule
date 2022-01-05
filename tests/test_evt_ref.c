@@ -2,7 +2,6 @@
 #include <module/mod.h>
 #include <module/ctx.h>
 #include <module/mem.h>
-#include <string.h>
 
 static void my_recv(m_mod_t *mod, const m_queue_t *const evts);
 
@@ -40,8 +39,7 @@ void test_evt_ref(void **state) {
 static void my_recv(m_mod_t *mod, const m_queue_t *const evts) {
     m_itr_foreach(evts, {
         m_evt_t *msg = m_itr_get(m_itr);
-        if (msg->type == M_SRC_TYPE_PS &&
-            msg->ps_evt->type == M_PS_USER) {
+        if (msg->type == M_SRC_TYPE_PS) {
 
             ref = m_mem_ref((void *)msg);
             m_ctx_quit(test_ctx,0);

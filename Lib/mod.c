@@ -10,7 +10,7 @@ enum mod_hook { MOD_EVAL, MOD_START, MOD_STOP };
 static void module_dtor(void *data);
 static int _pipe(m_mod_t *mod);
 static int init_pubsub_fd(m_mod_t *mod);
-static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop);
+static int manage_srcs(m_mod_t *mod, m_ctx_t *c, int flag, bool stop);
 static void reset_module(m_mod_t *mod);
 static int optional_hook(m_mod_t *mod, enum mod_hook req_hook);
 
@@ -72,7 +72,7 @@ static int init_pubsub_fd(m_mod_t *mod) {
     return -errno;
 }
 
-static int manage_fds(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
+static int manage_srcs(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
     int ret = 0;
     
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
@@ -112,6 +112,9 @@ static void reset_module(m_mod_t *mod) {
     m_map_clear(mod->subscriptions);
     m_stack_clear(mod->recvs);
     m_queue_clear(mod->stashed);
+    m_queue_clear(mod->batch.events);
+    mod->batch.len = 0;
+    memset(&mod->batch.timer, 0, sizeof(m_src_tmr_t));
 }
 
 static int optional_hook(m_mod_t *mod, enum mod_hook req_hook) {
@@ -211,7 +214,7 @@ int start(m_mod_t *mod, bool starting) {
     }
 
     M_MOD_CTX(mod);
-    int ret = manage_fds(mod, c, ADD, false);
+    int ret = manage_srcs(mod, c, ADD, false);
     M_ASSERT(!ret, errors[starting], ret);
     
     mod->state = M_MOD_RUNNING;
@@ -225,7 +228,7 @@ int start(m_mod_t *mod, bool starting) {
     switch (ret) {
     case 0:
         M_DEBUG("%s '%s'.\n", starting ? "Started" : "Resumed", mod->name);
-        tell_system_pubsub_msg(NULL, c, M_PS_MOD_STARTED, mod, NULL);
+        tell_system_pubsub_msg(NULL, c, mod, M_PS_MOD_STARTED);
         break;
     case -1:
         /* on_start() hook returned false, we need to stop this module right away */
@@ -244,7 +247,7 @@ int stop(m_mod_t *mod, bool stopping) {
     static const char *errors[] = { "Failed to pause module.", "Failed to stop module." };
     M_MOD_CTX(mod);
 
-    int ret = manage_fds(mod, c, RM, stopping);
+    int ret = manage_srcs(mod, c, RM, stopping);
     M_ASSERT(!ret, errors[stopping], ret);
 
     if (m_mod_is(mod, M_MOD_RUNNING)) {
@@ -270,7 +273,7 @@ int stop(m_mod_t *mod, bool stopping) {
         break;
     default:
         M_DEBUG("%s '%s'.\n", stopping ? "Stopped" : "Paused", mod->name);
-        tell_system_pubsub_msg(NULL, c, M_PS_MOD_STOPPED, mod, NULL);
+        tell_system_pubsub_msg(NULL, c, mod, M_PS_MOD_STOPPED);
         ret = 0;
         break;
     }

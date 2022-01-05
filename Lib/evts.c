@@ -52,7 +52,7 @@ _public_ ssize_t m_mod_unstash(m_mod_t *mod, size_t len) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(len > 0);
 
-    m_queue_t *unstashed __attribute__((__cleanup__(m_queue_free))) = m_queue_new(mem_dtor);
+    m_queue_t *unstashed = m_queue_new(mem_dtor);
     M_ALLOC_ASSERT(unstashed);
 
     m_itr_foreach(mod->stashed, {

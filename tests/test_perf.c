@@ -1,7 +1,6 @@
 #include "test_perf.h"
 #include <module/mod.h>
 #include <module/ctx.h>
-#include <string.h>
 #include <time.h>
 
 #define MAX_LEN 5000
@@ -65,7 +64,7 @@ void test_poll_perf(void **state) {
 static void my_recv(m_mod_t *mod, const m_queue_t *const evts) {
     m_itr_foreach(evts, {
         m_evt_t *msg = m_itr_get(m_itr);
-        if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER && ++ctr == MAX_LEN) {
+        if (msg->type == M_SRC_TYPE_PS && ++ctr == MAX_LEN) {
             m_ctx_quit(test_ctx, 0);
         } else if (msg->type == M_SRC_TYPE_THRESH) {
             m_src_thresh_t *alarm = (m_src_thresh_t *)msg->userdata;

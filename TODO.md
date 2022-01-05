@@ -43,11 +43,9 @@
 Maybe try to m_mod_load() the newly created file?
 
 
-- [ ] Use attribute cleanup where it makes sense? M_foreach() ?
+- [x] Use attribute cleanup where it makes sense
 
 - [ ] expose a set.h internally using map.c APi (from the same source file)
-
-- [ ]  split libmodule_structs, libmodule_utils ...
 
 - [x] when timerfd fires or batch size is reached, all Batched events will be sent 
 - [x] m_mod_set_batch_time() -> m_src_timer_register( M_SRC_INTERNAL) ...
@@ -56,18 +54,24 @@ Maybe try to m_mod_load() the newly created file?
 - [x] Fix: what to do when both batch_timeout and batch_size are set?
 - [x] add M_SRC_PRIO flags: high -> push event as soon as it arrives (without accounting for batch), default: account for batch, low: never push the event alone, always wait to batch it with at least another event (even when batching is disabled)
 - [x] Calling unstash API (or any other API that changes the event queue) will break the on_evt iteration on the queue...
+- [x] FD sources are forcefully HIGH priority
+- [ ] high prio events cannot be stashed
+- [ ] add a priv_evt_t (following ps_priv_t) type that internally wraps m_evt_t adding the m_src_t
 
-- [ ] drop SYSTEM_MSG in favour of publishing on "libmodule_*" topic (eg: libmodule_loop_started) with sender NULL to just subscribed modules
+- [x] drop SYSTEM_MSG in favour of publishing on "libmodule_*" topic (eg: libmodule_loop_started) with sender NULL to just subscribed modules
 - [ ] M_CTX_BROADCAST_SYSTEM -> ctx flag to instead broadcast all system messages (without the need to subscribe, just like it is rn)
+- [ ] Fix fs_notify impl 
+- [ ] Update examples using msg->ps_evt->system
 
 - [x] {mod,ctx}_dump() to always print all fields, even empty one (skipping M_SRC_INTERNAL sources ofc!)
 
 - [x] add MODULE_WARN/INFO/ERROR macro
 - [x] enable logging only when env LIBMODULE_LOG=debug/info/warn/error are enabled
-- [ ] Make use of new M_WARN, M_INFO, M_ERR macros
+- [x] Make use of new M_WARN, M_INFO, M_ERR macros
 - [x] Getenv (LIBMODULE_LOG_OUTPUT) and default to stdout/stderr when nonset
 
 - [ ] Split some more private headers from priv.h
+- [ ] split libmodule_structs, libmodule_utils ...
 
 - [x] itr.h allow const types too
 

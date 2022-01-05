@@ -353,6 +353,7 @@ int fs_init(m_ctx_t *c) {
             
         /* Actually register fuse fd in poll plugin */
         f->src->type = M_SRC_TYPE_FD;
+        f->src->flags = M_SRC_INTERNAL;
         f->src->fd_src.fd = fuse_session_fd(fuse_get_session(f->handler));
         ret = poll_set_new_evt(&c->ppriv, f->src, ADD);
     }
@@ -372,6 +373,7 @@ int fs_process(m_ctx_t *c) {
     return ret;
 }
 
+// FIXME! if mod is not subscribed to M_PS_CTX_STOPPED this won't be received!
 int fs_notify(m_mod_t *mod, const m_queue_t *const evts) {
     if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
@@ -379,7 +381,7 @@ int fs_notify(m_mod_t *mod, const m_queue_t *const evts) {
         bool ctx_stopped = false;
         m_itr_foreach(evts, {
             m_evt_t *msg = m_itr_get(m_itr);
-            if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_CTX_STOPPED) {
+            if (msg->type == M_SRC_TYPE_PS && strcmp(msg->ps_evt->topic, M_PS_CTX_STOPPED) == 0) {
                 ctx_stopped = true;
                 memhook._free(m_itr);
                 break;

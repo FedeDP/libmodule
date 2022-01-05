@@ -61,20 +61,16 @@ typedef enum {
     M_MOD_DENY_SUB          = M_MOD_FL_PERM(1 << 2), // Deny access to m_mod_ps_(un)subscribe()
 } m_mod_flags;
 
-/* PubSub message types */
-typedef enum {
-    M_PS_USER,
-    M_PS_CTX_STARTED,
-    M_PS_CTX_STOPPED,
-    M_PS_MOD_STARTED,
-    M_PS_MOD_STOPPED,
-    M_PS_MOD_POISONPILL
-} m_ps_types;
+/* PubSub system topics. Subscribe to any of these to receive system messages. */
+#define M_PS_CTX_STARTED    "LIBMODULE_CTX_STARTED"
+#define M_PS_CTX_STOPPED    "LIBMODULE_CTX_STOPPED"
+#define M_PS_MOD_STARTED    "LIBMODULE_MOD_STARTED"
+#define M_PS_MOD_STOPPED    "LIBMODULE_MOD_STOPPED"
 
 /* Module event sources' types */
 typedef enum {
     M_SRC_TYPE_PS,    // PubSub Source
-    M_SRC_TYPE_FD,    // FD Source
+    M_SRC_TYPE_FD,    // FD Source -> M_SRC_PRIO_HIGH flag is forced
     M_SRC_TYPE_TMR,   // Timer Source
     M_SRC_TYPE_SGN,   // Signal Source
     M_SRC_TYPE_PATH,  // Path Source
@@ -92,7 +88,7 @@ typedef enum {
 #define M_SRC_SHIFT(type, val)   val << (8 * (type + 1))
 typedef enum {
     M_SRC_PRIO_LOW        =       1 << 0, // PubSub subscription low priority
-    M_SRC_RIO_NORM        =       1 << 1, // PubSub subscription mid priority (default)
+    M_SRC_PRIO_NORM       =       1 << 1, // PubSub subscription mid priority (default)
     M_SRC_PRIO_HIGH       =       1 << 2, // PubSub subscription high priority
     M_SRC_AUTOFREE        =       1 << 3, // Automatically free userdata upon source deregistation.
     M_SRC_ONESHOT         =       1 << 4, // Run just once then automatically deregister source.
@@ -143,10 +139,10 @@ typedef struct {
 
 /* PubSub messages */
 typedef struct {
-    m_ps_types type;
+    bool system;            // Is this a system message?
     const m_mod_t *sender;
     const char *topic;
-    const void *data;
+    const void *data;       // NULL for system messages
 } m_evt_ps_t;
 
 /* Generic fd event messages */

@@ -7,6 +7,7 @@
 
 static void subscribtions_dtor(void *data);
 static ev_src_t *fetch_sub(m_mod_t *mod, const char *topic);
+static inline bool is_system_message(const char *topic);
 static int tell_if(void *data, const char *key, void *value);
 static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub);
 static void ps_msg_dtor(void *data);
@@ -49,6 +50,10 @@ found:
     return sub;
 }
 
+static inline bool is_system_message(const char *topic) {
+    return strncmp(topic, "LIBMODULE_", strlen("LIBMODULE_")) == 0;
+}
+
 /* 
  * Note: we cannot use m_mod_is() here as this function may be called
  * from another ctx when M_PS_GLOBAL is set on a broadcast message,
@@ -60,9 +65,7 @@ static int tell_if(void *data, const char *key, void *value) {
     ev_src_t *sub = msg->msg.topic ? (ev_src_t *)key : NULL;                 // key is indeed a subscription when we are publishing (check tell_subscribers()) !!
 
     if (mod->state & (M_MOD_RUNNING | M_MOD_PAUSED) &&                       // mod is running or paused
-        ((msg->msg.type != M_PS_USER && msg->msg.sender != mod) ||           // system messages with sender != this module (avoid sending ourselves system messages produced by us)
-        (msg->msg.type == M_PS_USER &&                                       // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
-        (!msg->msg.topic || sub)))) {
+        (!msg->msg.topic || sub)) {                                          // it is a publish and mod is subscribed on topic, or it is a broadcast/direct tell message
 
         M_DEBUG("Telling a message to '%s'\n", mod->name);
         ps_priv_t *m = alloc_ps_msg(msg, sub);
@@ -112,12 +115,12 @@ static void tell_subscribers(void *data, void *value) {
     });
 }
 
-static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c) {    
+static int tell_pubsub_msg(ps_priv_t *m, const m_mod_t *recipient, m_ctx_t *c) {
     if (recipient) { // it is a direct tell
         tell_if(m, NULL, (m_mod_t *)recipient);
     } else {
-        /* Broadcast or SYSTEM messages */
-        if (m->msg.type != M_PS_USER || !m->msg.topic) {
+        /* Broadcast messages */
+        if (!m->msg.topic) {
             m_map_iterate(c->modules, tell_if, m);
         } else {
             tell_subscribers(m, c);
@@ -132,19 +135,19 @@ static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic,
 
     mod->stats.sent_msgs++;
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    ps_priv_t m = { { M_PS_USER, mod, topic, message }, flags, NULL };
+    ps_priv_t m = { { false, mod, topic, message }, flags, NULL };
     return tell_pubsub_msg(&m, recipient, mod->ctx);
 }
 
 /** Private API **/
 
-int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_ps_types type, m_mod_t *sender, const char *topic) {
+int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_mod_t *sender, const char *topic) {
     if (sender) {
         // A module sent a M_PS_MOD_POISONPILL message to another, or it was stopped
         sender->stats.sent_msgs++;
         fetch_ms(&sender->stats.last_seen, &sender->stats.action_ctr);
     }
-    ps_priv_t m = { { type, sender, topic, NULL }, 0, NULL };
+    ps_priv_t m = { { true, sender, topic, NULL }, 0, NULL };
     return tell_pubsub_msg(&m, recipient, c);
 }
 
@@ -152,7 +155,7 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
     ps_priv_t *mm = NULL;
 
-    m_queue_t *flushed __attribute__((__cleanup__(m_queue_free))) = m_queue_new(mem_dtor);
+    m_queue_t *flushed = m_queue_new(mem_dtor);
     if (!flushed) {
         M_WARN("Failed to create flushing queue.\n");
     }
@@ -179,14 +182,15 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
         M_DEBUG("Destroying enqueued pubsub message for module '%s'.\n", mod->name);
         m_mem_unref(mm);
     }
-    if (m_queue_len(flushed) > 0) {
-        call_pubsub_cb(mod, flushed);
-    }
-    m_queue_free(&flushed);
+    call_pubsub_cb(mod, flushed);
     return 0;
 }
 
 void call_pubsub_cb(m_mod_t *mod, m_queue_t *evts) {
+    if (m_queue_len(evts) == 0) {
+        goto end;
+    }
+    
     /* If module is using some different receive function, honor it. */
     m_evt_cb cb = m_stack_peek(mod->recvs);
     if (!cb) {
@@ -203,8 +207,9 @@ void call_pubsub_cb(m_mod_t *mod, m_queue_t *evts) {
     mod->stats.recv_msgs += m_queue_len(evts);
     fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     
-    /* Unref batched messages */
-    m_queue_clear(evts);
+end:
+    /* Destroy events */
+    m_queue_free(&evts);
 }
 
 /** Public API **/
@@ -280,8 +285,8 @@ _public_ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *m
 _public_ int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_PARAM_ASSERT(topic);
+    M_RET_ASSERT(!is_system_message(topic), -EPERM);
     
-    /* Eventually cleanup PS_GLOBAL flag */    
     return send_msg(mod, NULL, topic, message, flags);
 }
 
@@ -299,5 +304,5 @@ _public_ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     M_PARAM_ASSERT(mod->ctx == recipient->ctx);
     M_PARAM_ASSERT(m_mod_is(recipient, M_MOD_RUNNING));
 
-    return tell_system_pubsub_msg(recipient, mod->ctx, M_PS_MOD_POISONPILL, mod, NULL);
+    return tell_system_pubsub_msg(recipient, mod->ctx, mod, M_PS_MOD_POISONPILL);
 }

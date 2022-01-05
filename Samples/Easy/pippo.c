@@ -86,11 +86,8 @@ static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
                     }
                     break;
             }
-        } else if (msg->ps_evt->type == M_PS_USER &&
-                !strcmp((char *)msg->ps_evt->data, "BauBau")) {
-            
+        } else if (strcmp((char *)msg->ps_evt->data, "BauBau") == 0) {
             m_ctx_dump(m_mod_ctx(mod));
-            
             m_mod_become(mod, m_mod_on_evt_ready);
             m_mod_log(mod, "Press 'p' to play with Doggo! Or 'f' to feed your Doggo. 's' to have a nap. 'w' to wake him up. 'q' to leave him for now.\n");
         }
@@ -123,7 +120,6 @@ static void m_mod_on_evt_ready(m_mod_t *mod, const m_queue_t *const evts) {
                 case 'p':
                     m_mod_log(mod, "Doggo, let's play a bit!\n");
                     m_mod_ps_tell(mod, doggo, "LetsPlay", 0);
-                    m_ctx_dump(m_mod_ctx(mod));
                     break;
                 case 's':
                     m_mod_log(mod, "Doggo, you should sleep a bit!\n");

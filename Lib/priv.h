@@ -55,6 +55,8 @@
     func; \
     m_mem_unref(mem);
 
+#define M_PS_MOD_POISONPILL     "LIBMODULE_MOD_POISONPILL"
+
 #define X_LOG \
         X(ERROR) \
         X(WARN) \
@@ -166,6 +168,12 @@ typedef struct {
     int max_events;                         // Max number of returned events for poll_plugin
 } poll_priv_t;
 
+/* Struct that holds an event + its source, private */
+typedef struct {
+    m_evt_t *evt;
+    ev_src_t *src;                          // Ref to src that caused the event
+} evt_priv_t;
+
 typedef struct {
     uint64_t registration_time;
     uint64_t last_seen;
@@ -188,7 +196,6 @@ typedef enum {
     M_CTX_ZOMBIE,
 } m_ctx_states;
 
-// TODO: initialize the struct while mod is created (len == 1, create events queue (?))
 typedef struct {
     size_t len;
     m_src_tmr_t timer;
@@ -262,8 +269,7 @@ m_ctx_t *check_ctx(const char *ctx_name);
 void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);
 
 /* Defined in ps.c */
-int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_ps_types type, 
-                           m_mod_t *sender, const char *topic);
+int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_mod_t *sender, const char *topic);
 int flush_pubsub_msgs(void *data, const char *key, void *value);
 void call_pubsub_cb(m_mod_t *mod, m_queue_t *evts);
 

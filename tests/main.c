@@ -168,6 +168,7 @@ int main(void) {
         cmocka_unit_test(test_queue_length),
         cmocka_unit_test(test_queue_iterator),
         cmocka_unit_test(test_queue_dequeue),
+        cmocka_unit_test(test_queue_clear),
         cmocka_unit_test(test_queue_free),
         
         /* Test List API */

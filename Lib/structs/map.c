@@ -419,7 +419,7 @@ _public_ int m_map_remove(m_map_t *m, const char *key) {
 /* Remove all elements from map */
 _public_ int m_map_clear(m_map_t *m) {
     M_PARAM_ASSERT(m);
-    
+ 
     for (m_map_itr_t *itr = m_map_itr_new(m); itr; m_map_itr_next(&itr)) {
         m_map_itr_remove(itr);
     }

@@ -99,6 +99,20 @@ void test_queue_clear(void **state) {
     
     int len = m_queue_len(my_q);
     assert_int_equal(len, 0);
+    
+    // Push some new values
+    /* NULL value */
+    ret = m_queue_enqueue(my_q, NULL);
+    assert_false(ret == 0);
+    
+    ret = m_queue_enqueue(my_q, &val1);
+    assert_true(ret == 0);
+    
+    ret = m_queue_enqueue(my_q, &val2);
+    assert_true(ret == 0);
+    
+    ret = m_queue_enqueue(my_q, val3);
+    assert_true(ret == 0);
 }
 
 void test_queue_free(void **state) {

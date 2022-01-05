@@ -63,8 +63,8 @@ static int loop_start(m_ctx_t *c, int max_events) {
         /* Eventually start any IDLE module */
         m_iterate(c->modules, evaluate_module, NULL);
 
-        /* Tell every RUNNING module that loop is started */
-        tell_system_pubsub_msg(NULL, c, M_PS_CTX_STARTED, NULL, NULL);
+        /* Publish loop started system message */
+        tell_system_pubsub_msg(NULL, c, NULL, M_PS_CTX_STARTED);
     }
     return ret;
 }
@@ -72,8 +72,8 @@ static int loop_start(m_ctx_t *c, int max_events) {
 static uint8_t loop_stop(m_ctx_t *c) {
     c->state = M_CTX_IDLE;
     
-    /* Tell every module that loop is stopped */
-    tell_system_pubsub_msg(NULL, c, M_PS_CTX_STOPPED, NULL, NULL);
+    /* Publish loop stopped system message */
+    tell_system_pubsub_msg(NULL, c, NULL, M_PS_CTX_STOPPED);
     
     /* Flush pubsub msg to avoid memleaks */
     m_iterate(c->modules, flush_pubsub_msgs, NULL);
@@ -118,13 +118,6 @@ static int loop_quit(m_ctx_t *c, uint8_t quit_code) {
  * * an internal (timer) message is received, that means that batch timer is elapsed
  */
 static void push_evt(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
-    /* System events: use internal source! */
-    if (!src && msg && msg->type == M_SRC_TYPE_PS && msg->ps_evt->type != M_PS_USER) {
-        fd_src_t fd_src = {0};
-        fd_src.fd = mod->pubsub_fd[0];
-        src = m_bst_find(mod->srcs[M_SRC_TYPE_PS], &fd_src);
-    }
-    
     const bool is_internal = src && src->flags & M_SRC_INTERNAL;
     bool force = false;
     if (msg) {
@@ -170,8 +163,14 @@ static void push_evt(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
     if (force ||
         m_queue_len(mod->batch.events) >= mod->batch.len ||
         is_internal) {
-        
-        call_pubsub_cb(mod, mod->batch.events);
+
+        /*
+         * Avoid the user changing the list of batched events while parsing them,
+         * eg: by calling deregister/stop on the module.
+         */
+        m_queue_t *evts = mod->batch.events;
+        mod->batch.events = m_queue_new(mem_dtor);
+        call_pubsub_cb(mod, evts);
     }
 }
 
@@ -228,7 +227,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                         M_ERR("Failed to read message: %s\n", strerror(errno));
                     } else {
                         msg->ps_evt = &ps_msg->msg;
-                        p = ps_msg->sub;            // Use real event source, ie: topic subscription if any
+                        p = ps_msg->sub;            // Use real event source, ie: topic subscription (this is a ref that will be dtor'ed in ps_msg_dtor())
                     }
                     break;
                 }
@@ -276,8 +275,15 @@ static int recv_events(m_ctx_t *c, int timeout) {
             }
             err = errno; // Store any errno that happened while consuming events
             bool msg_consumed = false;
-            
+
             if (err == 0) {
+                /*
+                 * Keep a reference on the event source, 
+                 * in case the module gets stopped/deregistered in user callback
+                 * or M_PS_MOD_POISONPILL was received.
+                 */
+                m_mem_ref(p);
+
                 /*
                  * All messages share same address inside union.
                  * In this case, check that any message was actually received,
@@ -285,15 +291,15 @@ static int recv_events(m_ctx_t *c, int timeout) {
                  */
                 if (msg->fd_evt) {
                     recved++;
-                    if (msg->type != M_SRC_TYPE_PS || msg->ps_evt->type != M_PS_MOD_POISONPILL) {
+                    if (msg->type != M_SRC_TYPE_PS || !msg->ps_evt->topic || strcmp(msg->ps_evt->topic, M_PS_MOD_POISONPILL)) {
                         push_evt(mod, msg, p);
                         msg_consumed = true;
                     } else {
-                        M_DEBUG("PoisonPilling '%s'.\n", mod->name);
+                        M_INFO("PoisonPilling '%s'.\n", mod->name);
                         stop(mod, true);
                     }
                 }
-                
+
                 /* Remove it if it was a oneshot event */
                 if (p && p->flags & M_SRC_ONESHOT) {
                     if (p->type != M_SRC_TYPE_PS) {
@@ -302,7 +308,10 @@ static int recv_events(m_ctx_t *c, int timeout) {
                         m_map_remove(mod->subscriptions, p->ps_src.topic);
                     }
                 }
+
+                m_mem_unref(p);
             }
+
             if (!msg_consumed) {
                 /*
                  * Unref the message if it wasn't consumed 
