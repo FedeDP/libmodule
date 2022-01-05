@@ -11,7 +11,7 @@ static void default_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static int loop_start(m_ctx_t *c, int max_events);
 static uint8_t loop_stop(m_ctx_t *c);
 static inline int loop_quit(m_ctx_t *c, uint8_t quit_code);
-static void push_evt(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src);
+static void push_evt(m_mod_t *mod, evt_priv_t *evt);
 static int recv_events(m_ctx_t *c, int timeout);
 static int m_ctx_loop_events(m_ctx_t *c, int max_events);
 static int ctx_destroy_mods(void *data, const char *key, void *value);
@@ -117,36 +117,37 @@ static int loop_quit(m_ctx_t *c, uint8_t quit_code) {
  * * a NORM priority message is received and number of batched events reached number of requested batch size
  * * an internal (timer) message is received, that means that batch timer is elapsed
  */
-static void push_evt(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
+static void push_evt(m_mod_t *mod, evt_priv_t *evt) {
+    ev_src_t *src = evt->src;
+    m_evt_t *msg = &evt->evt;
+    
     const bool is_internal = src && src->flags & M_SRC_INTERNAL;
     bool force = false;
-    if (msg) {
+    /*
+     * If it is an internal event, unref it as
+     * it does not need to be recved by user;
+     * else, push it onto the message queue.
+     */
+    if (is_internal) {
+        m_mem_unref(evt);
+    } else {
+        m_queue_enqueue(mod->batch.events, evt);
         /*
-         * If it is an internal event, unref it as
-         * it does not need to be recved by user;
-         * else, push it onto the message queue.
-         */
-        if (is_internal) {
-            m_mem_unref(msg);
-        } else {
-            m_queue_enqueue(mod->batch.events, msg);
-            /*
-             * if src == NULL, do not touch msg->userdata as it is already set to correct value:
-             * * it will be NULL when called from ctx loop or flush_pubsub_msgs
-             * * it will already be valued when called by m_mod_unstash API
-             */
-            if (src) {
-                msg->userdata = src->userptr;
-                /* When receiving a high priority message, flush immediately */
-                if (src->flags & M_SRC_PRIO_HIGH) {
-                    force = true;
-                } else if (src->flags & M_SRC_PRIO_LOW) {
-                    /*
-                     * Always unify a low priority message with subsequent ones,
-                     * even if batching is disabled
-                     */
-                    return;
-                }
+            * if src == NULL, do not touch msg->userdata as it is already set to correct value:
+            * * it will be NULL when called from ctx loop or flush_pubsub_msgs
+            * * it will already be valued when called by m_mod_unstash API
+            */
+        if (src) {
+            msg->userdata = src->userptr;
+            /* When receiving a high priority message, flush immediately */
+            if (src->flags & M_SRC_PRIO_HIGH) {
+                force = true;
+            } else if (src->flags & M_SRC_PRIO_LOW) {
+                /*
+                    * Always unify a low priority message with subsequent ones,
+                    * even if batching is disabled
+                    */
+                return;
             }
         }
     }
@@ -170,6 +171,7 @@ static void push_evt(m_mod_t *mod, m_evt_t *msg, const ev_src_t *src) {
          */
         m_queue_t *evts = mod->batch.events;
         mod->batch.events = m_queue_new(mem_dtor);
+    
         call_pubsub_cb(mod, evts);
     }
 }
@@ -211,8 +213,10 @@ static int recv_events(m_ctx_t *c, int timeout) {
              * invalidates our pointer.
              */
             m_mod_t *mod = m_mem_ref(p->mod);
-            m_evt_t *msg = new_evt(p->type);
-            if (msg) {
+            evt_priv_t *evt = new_evt(p);
+            m_evt_t *msg = NULL;
+            if (evt) {
+                msg = &evt->evt;
                 M_INFO("'%s' received %u type msg.\n", mod->name, msg->type);
                 switch (msg->type) {
                 case M_SRC_TYPE_FD:
@@ -226,8 +230,14 @@ static int recv_events(m_ctx_t *c, int timeout) {
                     if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
                         M_ERR("Failed to read message: %s\n", strerror(errno));
                     } else {
+                        /*
+                         * Use real event source, ie: topic subscription, being careful to unref current src;
+                         * Note: it can be NULL when the ps message was created by a direct tell() or broadcast()
+                         */
                         msg->ps_evt = &ps_msg->msg;
-                        p = ps_msg->sub;            // Use real event source, ie: topic subscription (this is a ref that will be dtor'ed in ps_msg_dtor())
+                        m_mem_unref(p);
+                        p = m_mem_ref(ps_msg->sub);
+                        evt->src = p;
                     }
                     break;
                 }
@@ -277,13 +287,19 @@ static int recv_events(m_ctx_t *c, int timeout) {
             bool msg_consumed = false;
 
             if (err == 0) {
-                /*
-                 * Keep a reference on the event source, 
-                 * in case the module gets stopped/deregistered in user callback
-                 * or M_PS_MOD_POISONPILL was received.
+                /* 
+                 * Remove the source if it was a oneshot event.
+                 * NOTE: this will reduce refs counter for evt->src to just 1,
+                 * ie: it stays alive because it is needed by an evt
                  */
-                m_mem_ref(p);
-
+                if (p && p->flags & M_SRC_ONESHOT) {
+                    if (p->type != M_SRC_TYPE_PS) {
+                        m_bst_remove(mod->srcs[p->type], p);
+                    } else {
+                        m_map_remove(mod->subscriptions, p->ps_src.topic);
+                    }
+                }
+                
                 /*
                  * All messages share same address inside union.
                  * In this case, check that any message was actually received,
@@ -292,33 +308,21 @@ static int recv_events(m_ctx_t *c, int timeout) {
                 if (msg->fd_evt) {
                     recved++;
                     if (msg->type != M_SRC_TYPE_PS || !msg->ps_evt->topic || strcmp(msg->ps_evt->topic, M_PS_MOD_POISONPILL)) {
-                        push_evt(mod, msg, p);
+                        push_evt(mod, evt);
                         msg_consumed = true;
                     } else {
                         M_INFO("PoisonPilling '%s'.\n", mod->name);
                         stop(mod, true);
                     }
                 }
-
-                /* Remove it if it was a oneshot event */
-                if (p && p->flags & M_SRC_ONESHOT) {
-                    if (p->type != M_SRC_TYPE_PS) {
-                        m_bst_remove(mod->srcs[p->type], p);
-                    } else {
-                        m_map_remove(mod->subscriptions, p->ps_src.topic);
-                    }
-                }
-
-                m_mem_unref(p);
             }
 
             if (!msg_consumed) {
                 /*
-                 * Unref the message if it wasn't consumed 
+                 * Unref the evt if it wasn't consumed 
                  * by user callback to avoid memleaks,
-                 * otherwise it would be unref'd in run_pubsub_cb()
                  */
-                m_mem_unref(msg);
+                m_mem_unref(evt);
             }
             m_mem_unref(mod);
         } else {

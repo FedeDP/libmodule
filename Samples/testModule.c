@@ -20,7 +20,7 @@ void m_plugin_on_stop(m_mod_t *mod) {
 }
 
 void m_plugin_on_evt(m_mod_t *mod, const m_evt_t *msg) {
-    if (msg->type == M_SRC_TYPE_PS && strcmp(msg->ps_evt->topic, "leaving")) {
+    if (msg->type == M_SRC_TYPE_PS) {
         if (!strcmp((char *)msg->ps_evt->data, "ByeBye")) {
             m_mod_log(mod, "Received quit.\n");
         }

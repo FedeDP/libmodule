@@ -5,7 +5,6 @@
  **********************************/
 
 #define M_TASK_MAX_THREADS    16
-#define M_SRC_PRIO_MASK       (M_SRC_PRIO_HIGH << 1) - 1
 
 static void src_priv_dtor(void *data);
 static void *task_thread(void *data);
@@ -155,7 +154,9 @@ int init_src(m_mod_t *mod, m_src_types t) {
 
 m_src_flags ensure_src_prio(m_src_flags flags) {
     int prio_flags = flags & M_SRC_PRIO_MASK;
-    if (prio_flags == 0) {
+    // No prio flag specified or more than one
+    if (prio_flags == 0 || __builtin_popcount(prio_flags) != 1) {
+        flags &= ~M_SRC_PRIO_MASK; // cleanup prio bits
         flags |= M_SRC_PRIO_NORM;
     }
     return flags;
@@ -385,7 +386,7 @@ _public_ ssize_t m_mod_src_len(const m_mod_t *mod, m_src_types type) {
     } while (--itr_type >= M_SRC_TYPE_PS && type == M_SRC_TYPE_END);
     
     /* Do not account for internal timer event */
-    if (mod->batch.timer.ms != 0) {
+    if (mod->batch.timer.ms != 0 && (type == M_SRC_TYPE_END || type == M_SRC_TYPE_TMR)) {
         len--;
     }
     return len;

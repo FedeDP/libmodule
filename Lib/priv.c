@@ -5,9 +5,10 @@
  *******************************************/
 
 static void evt_dtor(void *data) {
-    m_evt_t *evt = (m_evt_t *)data;
+    evt_priv_t *evt = (evt_priv_t *)data;
+    m_mem_unref(evt->src);
     /* We use fd_evt as all messages share address inside union */
-    m_mem_unref(evt->fd_evt);
+    m_mem_unref(evt->evt.fd_evt);
 }
 
 /** Private API **/
@@ -38,10 +39,11 @@ void fetch_ms(uint64_t *val, uint64_t *ctr) {
     }
 }
 
-m_evt_t *new_evt(m_src_types type) {
-    m_evt_t *msg = m_mem_new(sizeof(m_evt_t), evt_dtor);
+evt_priv_t *new_evt(ev_src_t *src) {
+    evt_priv_t *msg = m_mem_new(sizeof(evt_priv_t), evt_dtor);
     if (msg) {
-        msg->type = type;
+        msg->evt.type = src->type;
+        msg->src = m_mem_ref(src);
     }
     return msg;
 }

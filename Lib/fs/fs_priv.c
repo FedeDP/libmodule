@@ -373,29 +373,13 @@ int fs_process(m_ctx_t *c) {
     return ret;
 }
 
-// FIXME! if mod is not subscribed to M_PS_CTX_STOPPED this won't be received!
 int fs_notify(m_mod_t *mod, const m_queue_t *const evts) {
     if (mod && mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         
-        bool ctx_stopped = false;
         m_itr_foreach(evts, {
-            m_evt_t *msg = m_itr_get(m_itr);
-            if (msg->type == M_SRC_TYPE_PS && strcmp(msg->ps_evt->topic, M_PS_CTX_STOPPED) == 0) {
-                ctx_stopped = true;
-                memhook._free(m_itr);
-                break;
-            }
-        });
-
-        if (ctx_stopped) {
-            /* When loop gets stopped, destroy clients list */
-            m_list_free(&fp->clients);
-            memhook._free(fp);
-            mod->fs = NULL;
-        } else {
             fs_wakeup_clients(fp, false);
-        }
+        });
     }
     return 0;
 }
@@ -404,6 +388,17 @@ int fs_cleanup(m_mod_t *mod) {
     if (mod->fs) {
         fs_priv_t *fp = (fs_priv_t *)mod->fs;
         fs_wakeup_clients(fp, true);
+    }
+    return 0;
+}
+
+int fs_ctx_stopped(m_mod_t *mod) {
+    if (mod && mod->fs) {
+        fs_priv_t *fp = (fs_priv_t *)mod->fs;
+        /* When loop gets stopped, destroy clients list */
+        m_list_free(&fp->clients);
+        memhook._free(fp);
+        mod->fs = NULL;
     }
     return 0;
 }

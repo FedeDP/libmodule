@@ -55,13 +55,11 @@ Maybe try to m_mod_load() the newly created file?
 - [x] add M_SRC_PRIO flags: high -> push event as soon as it arrives (without accounting for batch), default: account for batch, low: never push the event alone, always wait to batch it with at least another event (even when batching is disabled)
 - [x] Calling unstash API (or any other API that changes the event queue) will break the on_evt iteration on the queue...
 - [x] FD sources are forcefully HIGH priority
-- [ ] high prio events cannot be stashed
-- [ ] add a priv_evt_t (following ps_priv_t) type that internally wraps m_evt_t adding the m_src_t
+- [x] high prio events cannot be stashed
+- [x] add a priv_evt_t (following ps_priv_t) type that internally wraps m_evt_t adding the m_src_t
 
 - [x] drop SYSTEM_MSG in favour of publishing on "libmodule_*" topic (eg: libmodule_loop_started) with sender NULL to just subscribed modules
-- [ ] M_CTX_BROADCAST_SYSTEM -> ctx flag to instead broadcast all system messages (without the need to subscribe, just like it is rn)
-- [ ] Fix fs_notify impl 
-- [ ] Update examples using msg->ps_evt->system
+- [x] Fix fs_notify impl 
 
 - [x] {mod,ctx}_dump() to always print all fields, even empty one (skipping M_SRC_INTERNAL sources ofc!)
 

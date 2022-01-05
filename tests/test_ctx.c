@@ -138,7 +138,7 @@ void test_ctx_mod_deregister_during_loop(void **state) {
     assert_true(m_mod_is(mod, M_MOD_IDLE));
     
     /* Register the module to the desired system message */
-    m_mod_src_register(mod, M_PS_CTX_STARTED, 0, NULL);
+    m_mod_src_register(mod, M_PS_CTX_STARTED, M_SRC_ONESHOT, NULL);
 
     ret = m_ctx_loop(test_ctx);
     assert_int_equal(ret, 0);

@@ -83,11 +83,8 @@ static int manage_srcs(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
                 if (t->type == M_SRC_TYPE_PS) {
                     /*
                     * Free all unread pubsub msg for this module.
-                    *
-                    * Pass a !NULL pointer as first parameter,
-                    * so that flush_pubsub_msgs() will free messages instead of delivering them.
                     */
-                    flush_pubsub_msgs(mod, NULL, mod);
+                    flush_pubsub_msgs(NULL, NULL, mod);
                 }
                 ret = m_itr_rm(m_itr);
             } else {
@@ -486,6 +483,9 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     ctx_logger(c, mod, "\t\"Subs\": [\n");
     m_itr_foreach(mod->subscriptions, {
         ev_src_t *sub = m_itr_get(m_itr);
+        if (sub->flags & M_SRC_INTERNAL) {
+            continue;
+        }
         ctx_logger(c, mod, "\t{\n");
         ctx_logger(c, mod, "\t\t\"Flags\": \"%#x\"\n", sub->flags);
         ctx_logger(c, mod, "\t\t\"UP\": \"%p\",\n", sub->userptr);
@@ -494,7 +494,7 @@ _public_ int m_mod_dump(const m_mod_t *mod) {
     });
     ctx_logger(c, mod, "\t],\n");
     
-    /* Skip internal fds (M_SRC_TYPE_PS or M_SRC_INTERNAL flag) */
+    /* Skip internal fds (M_SRC_TYPE_PS and M_SRC_INTERNAL flag) */
     for (int k = M_SRC_TYPE_FD; k < M_SRC_TYPE_END; k++) {
         ctx_logger(c, mod, "\t\"%s\": [\n", src_names[k]);
         m_itr_foreach(mod->srcs[k], {

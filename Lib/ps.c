@@ -84,7 +84,7 @@ static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub) {
     if (m) {
         memcpy(m, msg, sizeof(ps_priv_t));
         m->msg.sender = m_mem_ref((void *)m->msg.sender); // keep module alive until message is dispatched
-        m->sub = m_mem_ref(sub);
+        m->sub = sub;
     }
     return m;
 }
@@ -92,7 +92,6 @@ static ps_priv_t *alloc_ps_msg(const ps_priv_t *msg, ev_src_t *sub) {
 static void ps_msg_dtor(void *data) {
     ps_priv_t *pubsub_msg = (ps_priv_t *)data;
     
-    m_mem_unref(pubsub_msg->sub);
     if (pubsub_msg->flags & M_PS_AUTOFREE) {
         memhook._free((void *)pubsub_msg->msg.data);
     }
@@ -155,6 +154,8 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
     m_mod_t *mod = (m_mod_t *)value;
     ps_priv_t *mm = NULL;
 
+    const bool stopping_mod = key == NULL;
+    
     m_queue_t *flushed = m_queue_new(mem_dtor);
     if (!flushed) {
         M_WARN("Failed to create flushing queue.\n");
@@ -163,18 +164,15 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
     while (mod->pubsub_fd[0] != -1 &&
         read(mod->pubsub_fd[0], &mm, sizeof(ps_priv_t *)) == sizeof(ps_priv_t *)) {
         /*
-         * Actually tell msg ONLY if we are not deregistering module,
+         * Actually tell msg ONLY if we are not stopping the module,
          * ie: we are stopping looping on the context.
          * Else, just free msg.
-         *
-         * While stopping module, manage_fds() will call this with data != NULL
-         * to let us know we should destroy all enqueued messages.
          */
-        if (!data && m_mod_is(mod, M_MOD_RUNNING)) {
+        if (!stopping_mod && m_mod_is(mod, M_MOD_RUNNING)) {
             M_DEBUG("Flushing enqueued pubsub message for module '%s'.\n", mod->name);
-            m_evt_t *msg = new_evt(M_SRC_TYPE_PS);
+            evt_priv_t *msg = new_evt(mm->sub);
             if (msg && flushed) {
-                msg->ps_evt = &mm->msg;
+                msg->evt.ps_evt = &mm->msg;
                 m_queue_enqueue(flushed, msg);
                 continue;
             }
@@ -183,6 +181,15 @@ int flush_pubsub_msgs(void *data, const char *key, void *value) {
         m_mem_unref(mm);
     }
     call_pubsub_cb(mod, flushed);
+    
+    /* 
+     * If we are stopping the ctx loop,
+     * advise fuse fs that the ctx is stoppped
+     * and all clients must be notified and freed.
+     */
+    if (!stopping_mod) {
+        fs_ctx_stopped(mod);
+    }
     return 0;
 }
 

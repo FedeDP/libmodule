@@ -56,6 +56,7 @@
     m_mem_unref(mem);
 
 #define M_PS_MOD_POISONPILL     "LIBMODULE_MOD_POISONPILL"
+#define M_SRC_PRIO_MASK         (M_SRC_PRIO_HIGH << 1) - 1
 
 #define X_LOG \
         X(ERROR) \
@@ -170,7 +171,7 @@ typedef struct {
 
 /* Struct that holds an event + its source, private */
 typedef struct {
-    m_evt_t *evt;
+    m_evt_t evt;
     ev_src_t *src;                          // Ref to src that caused the event
 } evt_priv_t;
 
@@ -276,7 +277,7 @@ void call_pubsub_cb(m_mod_t *mod, m_queue_t *evts);
 /* Defined in utils.c */
 char *mem_strdup(const char *s);
 void fetch_ms(uint64_t *val, uint64_t *ctr);
-m_evt_t *new_evt(m_src_types type);
+evt_priv_t *new_evt(ev_src_t *src);
 bool str_not_empty(const char *str);
 
 /* Defined in mem.c; used internally as dtor cb for structs APIs userptr, when it is memory ref counted */

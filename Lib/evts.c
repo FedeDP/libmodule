@@ -38,8 +38,14 @@ _public_ int m_mod_unbecome(m_mod_t *mod) {
 _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(evt);
-    // Cannot stash FD evts: it would cause an infinite loop polling on it
-    M_PARAM_ASSERT(evt->type != M_SRC_TYPE_FD);
+    
+    evt_priv_t *priv_evt = (evt_priv_t *)evt;
+    m_src_flags prio_flags = 0;
+    if (priv_evt->src) {
+        prio_flags = priv_evt->src->flags & M_SRC_PRIO_MASK;
+    }
+    // Cannot stash HIGH priority evts!
+    M_RET_ASSERT(!(prio_flags & M_SRC_PRIO_HIGH), -EPERM);
 
     int ret = m_queue_enqueue(mod->stashed, m_mem_ref((void *)evt));
     if (ret == 0) {
