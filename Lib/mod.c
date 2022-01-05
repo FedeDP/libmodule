@@ -1,5 +1,9 @@
-#include "mod.h"
+#include "public/module/mem.h"
+#include "ps.h"
+#include "src.h"
 #include "fs_priv.h"
+#include "ctx.h"
+#include "poll_priv.h"
 
 /***************************************
  * Code related to generic module API. *

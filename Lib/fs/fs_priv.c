@@ -1,11 +1,8 @@
-#include "fs_priv.h"
-
-#define FUSE_USE_VERSION 35
-
-#include "mod.h"
-#include "mem.h"
+#include "poll_priv.h"
 #include "fs.h"
 #include "plugin.h"
+
+#define FUSE_USE_VERSION 35
 #include <fuse.h>
 #include <fuse_lowlevel.h>  // to get fuse fd to process events internally
 #include <sys/poll.h>       // poll operation support

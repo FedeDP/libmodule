@@ -5,6 +5,7 @@
  * Thank you!
  */
 
+#include "public/module/thpool.h"
 #include "priv.h"
 #include <stdatomic.h>
 

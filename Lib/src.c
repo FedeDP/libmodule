@@ -1,3 +1,4 @@
+#include "public/module/thpool.h"
 #include "poll_priv.h"
 
 /**********************************

@@ -1,10 +1,5 @@
 #pragma once
 
-#ifndef LIBMODULE_STRUCT_H
-    #define LIBMODULE_STRUCT_H
-#endif
-#include "cmn.h"
-
 /** Linked-List interface **/
 
 /* Callback for tree_iterate; first parameter is userdata, second is tree data */

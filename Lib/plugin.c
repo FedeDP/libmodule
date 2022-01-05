@@ -1,4 +1,5 @@
-#include "priv.h"
+#include "mod.h"
+#include "ctx.h"
 #include <dlfcn.h> // dlopen
 
 /*****************************************************************

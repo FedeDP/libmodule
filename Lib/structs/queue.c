@@ -162,12 +162,9 @@ _public_ int m_queue_remove(m_queue_t *q) {
 _public_ int m_queue_clear(m_queue_t *q) {
     M_PARAM_ASSERT(m_queue_len(q) > 0);
     
-    for (m_queue_itr_t *itr = m_queue_itr_new(q); itr; m_queue_itr_next(&itr)) {
-        m_queue_itr_remove(itr);
+    while (q->len > 0) {
+        m_queue_remove(q);
     }
-//     while (q->len > 0) {
-//         m_queue_remove(q);
-//     }
     return 0;
 }
 

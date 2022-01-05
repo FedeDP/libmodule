@@ -1,10 +1,5 @@
 #pragma once
 
-#ifndef LIBMODULE_STRUCT_H
-    #define LIBMODULE_STRUCT_H
-#endif
-#include "cmn.h"
-
 /** Queue interface **/
 
 /* Callback for queue_iterate */

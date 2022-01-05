@@ -107,17 +107,21 @@ static _m_dtor0_ void libmodule_deinit(void) {
 
 /** Public API **/
 
-int m_set_memhook(const m_memhook_t *hook) {
+int m_set_memhook(  void *(*_malloc)(size_t),
+                    void *(*_calloc)(size_t, size_t),
+                    void (*_free)(void *)) {
     /*
      * Check that we are called from within m_pre_start,
      * when library is not yet initialized
      */
     M_RET_ASSERT(!ctx, -EPERM);
-    M_PARAM_ASSERT(hook);
-    M_PARAM_ASSERT(hook->_malloc);
-    M_PARAM_ASSERT(hook->_calloc);
-    M_PARAM_ASSERT(hook->_free);
+    
+    M_PARAM_ASSERT(_malloc);
+    M_PARAM_ASSERT(_calloc);
+    M_PARAM_ASSERT(_free);
 
-    memcpy(&memhook, hook, sizeof(m_memhook_t));
+    memhook._malloc = _malloc;
+    memhook._calloc = _calloc;
+    memhook._free = _free;
     return 0;
 }

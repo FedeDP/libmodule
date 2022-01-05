@@ -1,6 +1,7 @@
 #pragma once
 
-#include "priv.h"
+#include "src.h"
+#include "ctx.h"
 #include <fcntl.h>
 
 /* Useful macros to smooth away differences between supported OS */

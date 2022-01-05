@@ -1,8 +1,30 @@
-#include "priv.h"
+#include "evts.h"
+#include "ps.h"
+#include "ctx.h"
 
 /************************************
  * Code related to events handling. *
  ************************************/
+
+static void evt_dtor(void *data) {
+    evt_priv_t *evt = (evt_priv_t *)data;
+    m_mem_unref(evt->src);
+    /* We use fd_evt as all messages share address inside union */
+    m_mem_unref(evt->evt.fd_evt);
+}
+
+/** Private API **/
+
+evt_priv_t *new_evt(ev_src_t *src) {
+    evt_priv_t *msg = m_mem_new(sizeof(evt_priv_t), evt_dtor);
+    if (msg) {
+        msg->evt.type = src->type;
+        msg->src = m_mem_ref(src);
+    }
+    return msg;
+}
+
+/** Public API **/
 
 /* Must be unref through m_mem_unref() */
 _public_ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {

@@ -1,4 +1,7 @@
-#include "poll_priv.h"
+#pragma once
+
+#include "public/module/mod.h"
+#include "public/module/ctx.h"
 
 #define dummy(x) x { return -ENOSYS; }
 

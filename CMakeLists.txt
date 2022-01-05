@@ -131,7 +131,7 @@ set_target_properties(
     PUBLIC_HEADER "${PUBLIC_H}"
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS} Lib/ Lib/fs/ Lib/poll/ Lib/public/module/)
+target_include_directories(${PROJECT_NAME} PRIVATE ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS} Lib/ Lib/fs/ Lib/poll/ Lib/utils/ Lib/public/module/)
 target_link_libraries(${PROJECT_NAME} ${URING_LIBRARIES} ${KQUEUE_LIBRARIES} ${FUSE_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} dl)
 target_link_directories(${PROJECT_NAME} PUBLIC ${URING_LIBRARY_DIRS} ${KQUEUE_LIBRARY_DIRS} ${FUSE_LIBRARY_DIRS})
 

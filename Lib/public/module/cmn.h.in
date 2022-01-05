@@ -1,6 +1,6 @@
 #pragma once
 
-#if (!defined LIBMODULE_CORE_H && !defined LIBMODULE_STRUCT_H && !defined LIBMODULE_MEM_H && !defined LIBMODULE_TH_H)
+#if (!defined LIBMODULE_CORE_H && !defined LIBMODULE_MEM_H && !defined LIBMODULE_TH_H)
     #error "Libmodule cmn.h should not be explicitly included."
 #endif
 
@@ -201,15 +201,10 @@ typedef struct {
     const void *userdata;                           // Event userdata, passed through m_mod_src_register()
 } m_evt_t;
 
-/* Struct that holds user defined memory functions */
-typedef struct {
-    void *(*_malloc)(size_t size);
-    void *(*_calloc)(size_t nmemb, size_t size);
-    void (*_free)(void *ptr);
-} m_memhook_t;
-
 /*
  * Common to any context; set this in m_pre_start(),
  * ie: before library is inited and internal structures allocated
  */
-int m_set_memhook(const m_memhook_t *hook);
+int m_set_memhook(  void *(*_malloc)(size_t),
+                    void *(*_calloc)(size_t, size_t),
+                    void (*_free)(void *));
