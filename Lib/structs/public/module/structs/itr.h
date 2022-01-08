@@ -10,7 +10,7 @@
 #include "queue.h"
 #include "bst.h"
 
-#define m_itr_new(X) _Generic((&*(X)), \
+#define m_itr_new(X) _Generic((X), \
     m_map_t *: m_map_itr_new, \
     const m_map_t *: m_map_itr_new, \
     m_list_t *: m_list_itr_new, \
