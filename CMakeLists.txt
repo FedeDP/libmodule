@@ -8,13 +8,6 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-option(STATIC_MODULE "build ${PROJECT_NAME} as static library" OFF)
-if(STATIC_MODULE)
-    set(LIBRARY_TYPE STATIC)
-else()
-    set(LIBRARY_TYPE SHARED)
-endif()
-
 option(BUILD_TESTS "build ${PROJECT_NAME} tests" OFF)
 if(BUILD_TESTS)
     find_package(Cmocka)
@@ -45,10 +38,3 @@ if(BUILD_DOCS)
 endif()
 
 include(Lib/CMakeLists.txt)
-
-# Some pretty printings
-MESSAGE(STATUS "Building ${PROJECT_NAME}-${PROJECT_VERSION}")
-MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-MESSAGE(STATUS "Library Type: ${LIBRARY_TYPE}")
-MESSAGE(STATUS "Poll plugin: ${POLL_PLUGIN}")
-MESSAGE(STATUS "Target OS: ${CMAKE_SYSTEM_NAME}")
