@@ -1,7 +1,6 @@
 #include "mem.h"
 #include <stdlib.h>
 #include <string.h>
-#include "public/module/mem/mem.h"
 
 m_memhook_t memhook = { malloc, calloc, free };
 
@@ -15,8 +14,4 @@ char *mem_strdup(const char *s) {
         }
     }
     return new;
-}
-
-void mem_dtor(void *src) {
-    m_mem_unref(src);
 }

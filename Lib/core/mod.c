@@ -595,30 +595,3 @@ _public_ int m_mod_stop(m_mod_t *mod) {
     
     return stop(mod, true);
 }
-
-_public_ int m_mod_set_batch_size(m_mod_t *mod, size_t len) {
-    M_MOD_ASSERT(mod);
-    
-    mod->batch.len = len;
-    return 0;
-}
-
-_public_ int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ms) {
-    M_MOD_ASSERT(mod);
-
-    /* If it was already set, remove old timer */
-    if (mod->batch.timer.ms != 0) {
-        deregister_src(mod, M_SRC_TYPE_TMR, &mod->batch.timer);
-    }
-    mod->batch.timer.clock_id = CLOCK_MONOTONIC;
-    mod->batch.timer.ms = timeout_ms;
-    if (timeout_ms != 0) {
-        // If batching by size was disabled
-        if (mod->batch.len == 0) {
-            // Set a maximum value for batching so that only timed batching will be effective
-            mod->batch.len = -1;
-        }
-        return register_src(mod, M_SRC_TYPE_TMR, &mod->batch.timer, M_SRC_INTERNAL | M_SRC_PRIO_HIGH, NULL);
-    }
-    return 0;
-}

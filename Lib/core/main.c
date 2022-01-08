@@ -54,6 +54,10 @@ static _m_dtor0_ void libmodule_deinit(void) {
     pthread_mutex_destroy(&mx);
 }
 
+void mem_dtor(void *src) {
+    m_mem_unref(src);
+}
+
 _public_ int m_set_memhook(  void *(*_malloc)(size_t),
                     void *(*_calloc)(size_t, size_t),
                     void (*_free)(void *)) {
