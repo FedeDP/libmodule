@@ -3,10 +3,11 @@ exec_prefix=@CMAKE_INSTALL_PREFIX@
 libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
 includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 
-Name: @PROJECT_NAME@
-Description: @PROJECT_DESCRIPTION@
+Name: lib@PKG_TARGET@
+Description: @PKG_DESC@
 Version: @PROJECT_VERSION@
 
 Requires:
-Libs: -L${libdir} -lmodule @PKG_DIRS@ @PKG_DEPS@
 Cflags: -I${includedir} @PKG_INCS@
+Libs: -L${libdir} @PKG_DIRS@ @PKG_DEPS@
+Libs.private: -L"${libdir}" -lmodule_utils_internal

@@ -70,7 +70,7 @@ Maybe try to m_mod_load() the newly created file?
 
 - [x] Split some more private headers from priv.h
 - [x] split libmodule_structs, libmodule_thpool, libmodule_mem ...
-- [ ] Fix pkg-config
+- [x] Fix pkg-config
 - [ ] test with installed lib
 
 - [x] itr.h allow const types too

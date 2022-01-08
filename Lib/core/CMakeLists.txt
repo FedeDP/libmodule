@@ -5,15 +5,6 @@ include(GNUInstallDirs)
 # Find sources
 file(GLOB SOURCES Lib/core/*.c)
 
-set(PKG_DEPS "-ldl ${CMAKE_THREAD_LIBS_INIT}")
-
-# Useful macro to properly set pkg-config script deps
-macro(set_deps name)
-    string(REPLACE ";" " " PKG_DIRS "${PKG_DIRS} ${${name}_LIBRARY_DIRS}")  # -L flags
-    string(REPLACE ";" " " PKG_DEPS "${PKG_DEPS} ${${name}_LDFLAGS}")       # -l flags
-    string(REPLACE ";" " " PKG_INCS "${PKG_INCS} ${${name}_CFLAGS}")        # -I flags
-endmacro()
-
 # Internal deps
 include(Lib/utils/CMakeLists.txt)
 include(Lib/structs/CMakeLists.txt)
@@ -25,7 +16,6 @@ if (WITH_FS)
     find_package(PkgConfig)
     pkg_check_modules(FUSE REQUIRED fuse3)
     set(SOURCES ${SOURCES} Lib/core/fs/fs.c)
-    set_deps(FUSE)
 else()
     set(SOURCES ${SOURCES} Lib/core/fs/fs_noop.c)
 endif()
@@ -50,13 +40,11 @@ if(WITH_LIBURING)
     pkg_check_modules(URING REQUIRED liburing)
     set(SOURCES ${SOURCES} Lib/core/poll/uring.c Lib/core/poll/cmn_linux.c)
     set(POLL_PLUGIN "liburing")
-    set_deps(URING)
 elseif(WITH_LIBKQUEUE)
     find_package(PkgConfig)
     pkg_check_modules(KQUEUE REQUIRED libkqueue)
     set(SOURCES ${SOURCES} Lib/core/poll/kqueue.c)
     set(POLL_PLUGIN "libkqueue")
-    set_deps(KQUEUE)
 elseif(WITH_KQUEUE)
     set(SOURCES ${SOURCES} Lib/core/poll/kqueue.c)
     set(POLL_PLUGIN "kqueue")
@@ -65,32 +53,30 @@ else()
     set(POLL_PLUGIN "epoll")
 endif()
 
-# Configure files
-configure_file(Extra/libmodule.pc.in libmodule.pc @ONLY)
-configure_file(Lib/core/public/module/cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/cmn.h @ONLY)
-if(WITH_FS)
-    configure_file(Lib/core/public/module/fs.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/fs.h @ONLY)
-endif()
-
 file(GLOB PUBLIC_H Lib/core/public/module/*.h)
 
 add_library(${PROJECT_NAME}_core ${LIBRARY_TYPE} ${SOURCES})
 
 set_target_properties(
     ${PROJECT_NAME}_core PROPERTIES 
-    PREFIX ""
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
     PUBLIC_HEADER "${PUBLIC_H}"
     C_VISIBILITY_PRESET hidden
 )
 
-target_include_directories(${PROJECT_NAME}_core PRIVATE ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS} Lib/core/ Lib/core/fs/ Lib/core/poll/ Lib/utils/ Lib/structs/ Lib/structs/public/module/ Lib/mem/ Lib/thpool/)
+target_include_directories(${PROJECT_NAME}_core PRIVATE Lib/core/ Lib/core/fs/ Lib/core/poll/ Lib/utils/ Lib/structs/ Lib/structs/public/module/ Lib/mem/ Lib/thpool/)
+target_include_directories(${PROJECT_NAME}_core PUBLIC ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}_core PUBLIC ${URING_LIBRARIES} ${KQUEUE_LIBRARIES} ${FUSE_LIBRARIES} ${PROJECT_NAME}_structs ${PROJECT_NAME}_thpool ${PROJECT_NAME}_mem dl)
 target_link_directories(${PROJECT_NAME}_core PUBLIC ${URING_LIBRARY_DIRS} ${KQUEUE_LIBRARY_DIRS} ${FUSE_LIBRARY_DIRS})
 
-# TODO: use this to fill pkgconfig script
-#get_target_property(linkedLibrairies ${PROJECT_NAME}_core INTERFACE_LINK_LIBRARIES)
+fill_pc_vars(${PROJECT_NAME}_core "Libmodule core library")
+configure_file(Extra/libmodule.pc.in libmodule_core.pc @ONLY)
+
+configure_file(Lib/core/public/module/cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/cmn.h @ONLY)
+if(WITH_FS)
+    configure_file(Lib/core/public/module/fs.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/fs.h @ONLY)
+endif()
 
 install(TARGETS ${PROJECT_NAME}_core
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -98,7 +84,7 @@ install(TARGETS ${PROJECT_NAME}_core
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/module
 )
 
-install(FILES ${CMAKE_BINARY_DIR}/libmodule.pc
+install(FILES ${CMAKE_BINARY_DIR}/libmodule_core.pc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 
 install(FILES LICENSE
