@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.0)
 
-file(GLOB PUBLIC_H Lib/structs/public/module/structs/*.h)
-file(GLOB SRCS Lib/structs/*.c)
+file(GLOB PUBLIC_H_structs Lib/structs/public/module/structs/*.h)
+file(GLOB SRCS_structs Lib/structs/*.c)
 
-add_library(${PROJECT_NAME}_structs ${LIBRARY_TYPE} ${SRCS})
+add_library(${PROJECT_NAME}_structs ${LIBRARY_TYPE} ${SRCS_structs})
 set_target_properties(
     ${PROJECT_NAME}_structs PROPERTIES 
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
-    PUBLIC_HEADER "${PUBLIC_H}"
+    PUBLIC_HEADER "${PUBLIC_H_structs}"
     C_VISIBILITY_PRESET hidden
 )
 target_link_libraries(${PROJECT_NAME}_structs PRIVATE ${PROJECT_NAME}_utils_internal)

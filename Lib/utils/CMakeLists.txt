@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 
-file(GLOB SRCS Lib/utils/*.c)
+file(GLOB SRCS_utils_internal Lib/utils/*.c)
 
-add_library(${PROJECT_NAME}_utils_internal ${LIBRARY_TYPE} ${SRCS})
+add_library(${PROJECT_NAME}_utils_internal ${LIBRARY_TYPE} ${SRCS_utils_internal})
 set_target_properties(
     ${PROJECT_NAME}_utils_internal PROPERTIES 
     VERSION ${PROJECT_VERSION}
