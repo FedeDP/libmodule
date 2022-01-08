@@ -1,4 +1,7 @@
-#include "priv.h"
+#include <stdbool.h>
+#include "log.h"
+#include "mem.h"
+#include "public/module/structs/queue.h"
 
 typedef struct _elem {
     void *userptr;

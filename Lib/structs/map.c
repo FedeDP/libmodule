@@ -3,7 +3,12 @@
  * https://github.com/DavidLeeds/hashmap
  */
 
-#include "priv.h"
+#include <stdbool.h>
+#include <string.h>
+#include <stdint.h>
+#include "log.h"
+#include "mem.h"
+#include "public/module/structs/map.h"
 
 #define MAP_SIZE_DEFAULT            (1 << 8)    /* 256 */
 #define MAP_SIZE_MOD(map, val)      ((val) & ((map)->table_size - 1))

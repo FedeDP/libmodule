@@ -1,5 +1,5 @@
 #include "test_stack.h"
-#include <module/itr.h>
+#include <module/structs/itr.h>
 
 static m_stack_t *my_st;
 static int val1 = 1;

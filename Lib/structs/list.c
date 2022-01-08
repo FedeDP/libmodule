@@ -1,4 +1,6 @@
-#include "priv.h"
+#include "log.h"
+#include "mem.h"
+#include "public/module/structs/list.h"
 
 typedef struct _elem {
     void *userptr;

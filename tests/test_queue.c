@@ -1,5 +1,5 @@
 #include "test_queue.h"
-#include <module/itr.h>
+#include <module/structs/itr.h>
 
 static m_queue_t *my_q;
 static int val1 = 1;

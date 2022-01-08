@@ -1,5 +1,5 @@
 #include "test_map.h"
-#include <module/itr.h>
+#include <module/structs/itr.h>
 
 static m_map_t *my_map;
 static int val = 5;

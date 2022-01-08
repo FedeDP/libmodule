@@ -1,7 +1,7 @@
 #include "test_mod.h"
 #include <module/mod.h>
 #include <module/ctx.h>
-#include <module/mem.h>
+#include <module/mem/mem.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>

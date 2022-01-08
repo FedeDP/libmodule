@@ -68,8 +68,10 @@ Maybe try to m_mod_load() the newly created file?
 - [x] Make use of new M_WARN, M_INFO, M_ERR macros
 - [x] Getenv (LIBMODULE_LOG_OUTPUT) and default to stdout/stderr when nonset
 
-- [ ] Split some more private headers from priv.h
-- [ ] split libmodule_structs, libmodule_utils ...
+- [x] Split some more private headers from priv.h
+- [x] split libmodule_structs, libmodule_thpool, libmodule_mem ...
+- [ ] Fix pkg-config
+- [ ] test
 
 - [x] itr.h allow const types too
 
@@ -526,6 +528,12 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
   then module reads from cmd_piped_fd and executes the requested op
 - [ ] need a way to map m_mod_ API arguments though
 - [ ] offer an api to run module's recv on their own thread (register flag: M_MOD_THREADED), it means their receive() will be run async (in a thpool)
+
+### Src plugins
+
+- [ ] Allow users to register M_SRC_TYPE_CUSTOM srcs
+- [ ] m_src_custom_t { void *priv, poll_plugin_t } 
+- [ ] this way, when a CUSTOM src is found, libmodule just routes calls to the poll_plugin_t passed during the register
 
 ### Replay API
 

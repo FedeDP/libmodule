@@ -1,5 +1,5 @@
 #include "test_thpool.h"
-#include "module/thpool.h"
+#include "module/thpool/thpool.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>

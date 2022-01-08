@@ -1,5 +1,5 @@
 #include "test_mem.h"
-#include <module/mem.h>
+#include <module/mem/mem.h>
 #include <stddef.h>
 #include <stdalign.h>
 #include <stdlib.h>

@@ -2,6 +2,7 @@
 #include <module/plugin.h>
 #include <module/ctx.h> 
 #include <string.h>
+#include <stdlib.h>
 
 static void m_mod_on_evt_sleeping(m_mod_t *mod, const m_queue_t *const evts);
 
@@ -9,6 +10,7 @@ M_MOD("Doggo");
 
 static void m_mod_on_boot(void) {
     printf("Press 'c' to start playing with your own doggo...\n");
+    m_set_memhook(malloc, calloc, free);
 }
 
 static bool m_mod_on_start(m_mod_t *mod) {

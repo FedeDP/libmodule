@@ -1,5 +1,5 @@
 #include "test_bst.h"
-#include <module/itr.h>
+#include <module/structs/itr.h>
 
 static m_bst_t *my_t;
 static int arr[100];

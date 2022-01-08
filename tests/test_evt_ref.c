@@ -1,7 +1,7 @@
 #include "test_evt_ref.h"
 #include <module/mod.h>
 #include <module/ctx.h>
-#include <module/mem.h>
+#include <module/mem/mem.h>
 
 static void my_recv(m_mod_t *mod, const m_queue_t *const evts);
 

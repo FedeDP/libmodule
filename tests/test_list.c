@@ -1,5 +1,5 @@
 #include "test_list.h"
-#include <module/itr.h>
+#include <module/structs/itr.h>
 #include <stdlib.h>
 
 static m_list_t *my_l;

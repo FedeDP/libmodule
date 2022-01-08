@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-#include <module/mem.h>
+#include <module/mem/mem.h>
 
 static bool A_init(m_mod_t *mod);
 static bool B_init(m_mod_t *mod);
