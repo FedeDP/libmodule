@@ -1,6 +1,7 @@
-#include "poll_priv.h"
+#include "poll.h"
 #include "fs.h"
-#include "plugin.h"
+#include "public/module/plugin.h"
+#include "public/module/fs.h"
 
 #define FUSE_USE_VERSION 35
 #include <fuse.h>
