@@ -56,10 +56,10 @@ if(BUILD_OOT_TEST)
     pkg_check_modules(PKG_LIBMODULE REQUIRED libmodule_core)
     execute_process(
       COMMAND wget -q -O ${CMAKE_CURRENT_BINARY_DIR}/pippo.c https://raw.githubusercontent.com/FedeDP/libmodule/devel/Samples/Task/pippo.c
+      COMMAND_ECHO STDOUT
     )
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} ${CORE_PKG_DEPS} ${CORE_PKG_INCS} ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
-      COMMAND_ECHO STDOUT
       RESULT_VARIABLE IS_ERR
     )
     if(IS_ERR)
@@ -68,7 +68,6 @@ if(BUILD_OOT_TEST)
     set(ENV{LD_LIBRARY_PATH} \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/\")
     execute_process(
       COMMAND ${CMAKE_CURRENT_BINARY_DIR}/pippo
-      COMMAND_ECHO STDOUT
       RESULT_VARIABLE IS_ERR
     )
     if(IS_ERR)

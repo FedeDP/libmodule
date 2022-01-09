@@ -93,7 +93,7 @@ install(FILES ${CMAKE_BINARY_DIR}/libmodule_core.pc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 
 install(FILES LICENSE
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/licenses/${PROJECT_NAME})
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/licenses/lib${PROJECT_NAME})
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -std=c11 -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security -fsanitize=undefined")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
@@ -118,7 +118,7 @@ set(CPACK_RPM_PACKAGE_URL "https://github.com/FedeDP/libmodule")
 set(CPACK_RPM_PACKAGE_GROUP "System Environment/Libraries")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "${CMAKE_INSTALL_DATAROOTDIR}/licenses ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig")
 if(WITH_FS)
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "fuse3-libs")
+    set(CPACK_RPM_PACKAGE_REQUIRES "fuse3-libs")
 endif()
 if(WITH_LIBURING)
     set(CPACK_RPM_PACKAGE_REQUIRES "liburing")
