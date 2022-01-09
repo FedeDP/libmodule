@@ -14,7 +14,7 @@ set_target_properties(
 target_link_libraries(${PROJECT_NAME}_structs PRIVATE ${PROJECT_NAME}_utils_internal)
 target_include_directories(${PROJECT_NAME}_structs PRIVATE Lib/utils/ Lib/structs/)
 
-fill_pc_vars(${PROJECT_NAME}_structs "Libmodule data structures library")
+fill_pc_vars(structs "Libmodule data structures library")
 configure_file(Extra/libmodule.pc.in libmodule_structs.pc @ONLY)
 
 install(TARGETS ${PROJECT_NAME}_structs

@@ -8,28 +8,33 @@ else()
 endif()
 
 macro(fill_pc_vars target desc)
-    set(PKG_TARGET ${target})
+    set(PKG_TARGET module_${target})
     set(PKG_DESC ${desc})
     
-    get_target_property(int_link_dirs ${target} INTERFACE_LINK_DIRECTORIES)
+    get_target_property(int_link_dirs module_${target} INTERFACE_LINK_DIRECTORIES) # -L flags
     if(NOT int_link_dirs)
         set(PKG_DIRS "")
     else()
-        string(REPLACE ";" " -L" PKG_DIRS ";${int_link_dirs}")  # -L flags
+        string(REPLACE ";" " -L" PKG_DIRS ";${int_link_dirs}")
     endif()
 
-    get_target_property(int_link_libs ${target} INTERFACE_LINK_LIBRARIES)
+    get_target_property(int_link_libs module_${target} INTERFACE_LINK_LIBRARIES) # -l flags
     if(NOT int_link_libs)
-        string(REPLACE ";" " -l" PKG_DEPS ";${target}")       # -l flags
+        set(PKG_DEPS "-lmodule_${target}")
     else()
-        string(REPLACE ";" " -l" PKG_DEPS ";${int_link_libs};${target}")       # -l flags
+        string(REPLACE ";" " -l" PKG_DEPS ";${int_link_libs};module_${target}")
     endif()
     
-    get_target_property(int_incl_dirs ${target} INTERFACE_INCLUDE_DIRECTORIES)
+    get_target_property(int_incl_dirs module_${target} INTERFACE_INCLUDE_DIRECTORIES) # -I flags
     if(NOT int_incl_dirs)
-        set(PKG_INCS "")
+        if(${target} STREQUAL "core")
+            # Core headers are in /usr/include/module/
+            set(PKG_INCS "-I${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/module/")
+        else()
+            set(PKG_INCS "-I${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/module/${target}")
+        endif()
     else()
-        string(REPLACE ";" " -I" PKG_INCS ";${int_incl_dirs}")        # -I flags
+        string(REPLACE ";" " -I" PKG_INCS ";${int_incl_dirs};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/${target}")
     endif()
 endmacro()
 
@@ -54,12 +59,13 @@ if(BUILD_OOT_TEST)
     set(ENV{PKG_CONFIG_PATH} \"${CMAKE_INSTALL_PREFIX}/share/pkgconfig/\")
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(PKG_LIBMODULE REQUIRED libmodule_core)
+    message(\"otop \${PKG_LIBMODULE_INCLUDE_DIRS}\")
     execute_process(
       COMMAND wget -q -O ${CMAKE_CURRENT_BINARY_DIR}/pippo.c https://raw.githubusercontent.com/FedeDP/libmodule/devel/Samples/Task/pippo.c
       COMMAND_ECHO STDOUT
     )
     execute_process(
-      COMMAND ${CMAKE_C_COMPILER} ${CORE_PKG_DEPS} ${CORE_PKG_INCS} -I${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}  ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
+      COMMAND ${CMAKE_C_COMPILER} \${PKG_LIBMODULE_LDFLAGS} -I\${PKG_LIBMODULE_INCLUDE_DIRS}  ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
       RESULT_VARIABLE IS_ERR
       COMMAND_ECHO STDOUT
     )

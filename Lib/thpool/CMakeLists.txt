@@ -16,7 +16,7 @@ set_target_properties(
 target_link_libraries(${PROJECT_NAME}_thpool PUBLIC ${CMAKE_THREAD_LIBS_INIT} ${PROJECT_NAME}_structs)
 target_include_directories(${PROJECT_NAME}_thpool PRIVATE Lib/utils/ Lib/structs/ Lib/thpool/)
 
-fill_pc_vars(${PROJECT_NAME}_thpool "Libmodule thread pool library")
+fill_pc_vars(thpool "Libmodule thread pool library")
 configure_file(Extra/libmodule.pc.in libmodule_thpool.pc @ONLY)
 
 install(TARGETS ${PROJECT_NAME}_thpool

@@ -10,4 +10,4 @@ Version: @PROJECT_VERSION@
 Requires:
 Cflags: -I${includedir} @PKG_INCS@
 Libs: -L${libdir} @PKG_DIRS@ @PKG_DEPS@
-Libs.private: -L"${libdir}" -lmodule_utils_internal
+Libs.private: -L${libdir} -lmodule_utils_internal
