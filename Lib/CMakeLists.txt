@@ -41,3 +41,42 @@ MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Library Type: ${LIBRARY_TYPE}")
 MESSAGE(STATUS "Poll plugin: ${POLL_PLUGIN}")
 MESSAGE(STATUS "Target OS: ${CMAKE_SYSTEM_NAME}")
+
+
+option(BUILD_OOT_TEST "build ${PROJECT_NAME} out of tree test (system integration test)" OFF)
+if(BUILD_OOT_TEST)
+    # Script that tests that pkg-config is able to find libmodule_core
+    # and a small binary can be compiled succesfully (Task example)
+    install(
+    CODE
+    "
+    message(STATUS \"Testing out of tree build.\")
+    set(ENV{PKG_CONFIG_PATH} \"${CMAKE_INSTALL_PREFIX}/share/pkgconfig/\")
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(PKG_LIBMODULE REQUIRED libmodule_core)
+    execute_process(
+      COMMAND wget -q -O ${CMAKE_CURRENT_BINARY_DIR}/pippo.c https://raw.githubusercontent.com/FedeDP/libmodule/devel/Samples/Task/pippo.c
+    )
+    execute_process(
+      COMMAND ${CMAKE_C_COMPILER} ${CORE_PKG_DEPS} ${CORE_PKG_INCS} ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
+      COMMAND_ECHO STDOUT
+      RESULT_VARIABLE IS_ERR
+    )
+    if(IS_ERR)
+        message(FATAL_ERROR \"error building the source file.\")
+    endif()
+    set(ENV{LD_LIBRARY_PATH} \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/\")
+    execute_process(
+      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/pippo
+      COMMAND_ECHO STDOUT
+      RESULT_VARIABLE IS_ERR
+    )
+    if(IS_ERR)
+        message(FATAL_ERROR \"error running the source file.\")
+    else()
+        message(STATUS \"SUCCESS: source file built and run.\")
+    endif()
+    "
+    COMPONENT runtime
+    )
+endif()
