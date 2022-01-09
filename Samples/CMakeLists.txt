@@ -14,19 +14,19 @@ add_executable(Thpool ${THPOOL_SRC})
 
 add_library(testmod SHARED testModule.c)
 
-target_include_directories(testmod PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/module/)
+target_include_directories(testmod PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/)
 
 target_link_libraries(Easy ${PROJECT_NAME}_core)
-target_include_directories(Easy PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/module/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
+target_include_directories(Easy PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
 
 target_link_libraries(SharedSrc ${PROJECT_NAME}_core)
-target_include_directories(SharedSrc PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/module/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
+target_include_directories(SharedSrc PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
 
 target_link_libraries(Poll ${PROJECT_NAME}_core)
-target_include_directories(Poll PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/module/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
+target_include_directories(Poll PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
 
 target_link_libraries(Task ${PROJECT_NAME}_core)
-target_include_directories(Task PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/module/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
+target_include_directories(Task PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
 
 target_link_libraries(Thpool ${PROJECT_NAME}_core)
-target_include_directories(Thpool PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/module/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/ ${PROJECT_SOURCE_DIR}/Lib/thpool/public/)
+target_include_directories(Thpool PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/ ${PROJECT_SOURCE_DIR}/Lib/thpool/public/)

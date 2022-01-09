@@ -24,5 +24,5 @@ if(WITH_VALGRIND)
     endif()
 endif()
 
-target_include_directories(ModuleTest PRIVATE ${CMOCKA_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/Lib/core/public ${PROJECT_SOURCE_DIR}/Lib/structs/public/module/ ${PROJECT_SOURCE_DIR}/Lib/structs/public ${PROJECT_SOURCE_DIR}/Lib/thpool/public ${PROJECT_SOURCE_DIR}/Lib/mem/public)
+target_include_directories(ModuleTest PRIVATE ${CMOCKA_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/Lib/core/public ${PROJECT_SOURCE_DIR}/Lib/structs/public ${PROJECT_SOURCE_DIR}/Lib/thpool/public ${PROJECT_SOURCE_DIR}/Lib/mem/public)
 target_link_libraries(ModuleTest ${CMOCKA_LIBRARIES} ${PROJECT_NAME}_core)
