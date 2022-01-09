@@ -20,11 +20,11 @@ tasks:
   - test: |
       cd libmodule
       (cd build && ctest -V)
-      (cd build_fs && kldload fusefs && ctest -V) -> This requires fuse module to be loaded
+      (cd build_fs && sudo kldload fusefs && ctest -V) -> This requires fuse module to be loaded
   - install: |
       cd libmodule
-      (cd build && make install) 
-      (cd build_fs && make install) 
+      (cd build && sudo make install) 
+      (cd build_fs && sudo make install) 
 triggers:
   - action: email
     condition: failure

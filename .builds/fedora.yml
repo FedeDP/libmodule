@@ -25,8 +25,8 @@ tasks:
       (cd build_fs && ctest -V)
   - install: |
       cd libmodule
-      (cd build && make install) 
-      (cd build_fs && make install) 
+      (cd build && sudo make install) 
+      (cd build_fs && sudo make install) 
   - build_pkg: |
       cd libmodule/build
       cpack -G RPM

@@ -30,10 +30,10 @@ tasks:
       (cd build_fs && ctest -V)
   - install: |
       cd libmodule
-      (cd build_kqueue && make install)
-      (cd build_uring && make install)
-      (cd build_epoll && make install)
-      (cd build_fs && make install)
+      (cd build_kqueue && sudo make install)
+      (cd build_uring && sudo make install)
+      (cd build_epoll && sudo make install)
+      (cd build_fs && sudo make install)
 triggers:
   - action: email
     condition: failure

@@ -110,7 +110,7 @@ set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 # Metadata common to all packaging systems
 set(CPACK_PACKAGE_CONTACT "Federico Di Pierro <nierro92@gmail.com>")
 set(CPACK_PACKAGE_DESCRIPTION "Libmodule offers a small and simple implementation of an actor library, aiming at letting developers easily create modular C projects in a way which is both simple and elegant.")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Small and simple implementation of an actor library for C.")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Simple and elegant implementation of an actor library for C.")
 
 # RPM Specific configuration
 set(CPACK_RPM_PACKAGE_LICENSE "MIT")
