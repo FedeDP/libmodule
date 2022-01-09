@@ -28,6 +28,12 @@ tasks:
       (cd build_uring && ctest -V)
       (cd build_epoll && ctest -V)
       (cd build_fs && ctest -V)
+  - install: |
+      cd libmodule
+      (cd build_kqueue && make install)
+      (cd build_uring && make install)
+      (cd build_epoll && make install)
+      (cd build_fs && make install)
 triggers:
   - action: email
     condition: failure
