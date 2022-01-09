@@ -4,8 +4,8 @@
     #define LIBMODULE_CORE_H
 #endif
 
-#include "cmn.h"
-#include "structs/itr.h"
+#include <module/cmn.h>
+#include <module/structs/itr.h>
 
 /* Modules states */
 typedef enum {

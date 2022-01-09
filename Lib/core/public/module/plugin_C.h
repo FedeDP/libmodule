@@ -1,7 +1,7 @@
 #pragma once
 
-#include "plugin.h"
-#include "mod.h"
+#include <module/plugin.h>
+#include <module/mod.h>
 
 /** 
  * This is a small C define to ease the use of C plugins.

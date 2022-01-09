@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mod.h"
+#include <module/mod.h>
 #include <sys/ioctl.h>      // ioctl support
 
 #define LIBMODULE_MAGIC        'm' // libmodule API global prefix

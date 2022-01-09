@@ -4,11 +4,11 @@
  * Iterator interface to easily iterate over data structs APIs.
  */
 
-#include "map.h"
-#include "list.h"
-#include "stack.h"
-#include "queue.h"
-#include "bst.h"
+#include <module/structs/map.h>
+#include <module/structs/list.h>
+#include <module/structs/stack.h>
+#include <module/structs/queue.h>
+#include <module/structs/bst.h>
 
 #define m_itr_new(X) _Generic((X), \
     m_map_t *: m_map_itr_new, \

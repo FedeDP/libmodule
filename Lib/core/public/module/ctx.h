@@ -4,7 +4,7 @@
     #define LIBMODULE_CORE_H
 #endif
 
-#include "cmn.h"
+#include <module/cmn.h>
 
 /* Context flags */
 typedef enum {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mod.h"
+#include <module/mod.h>
 
 /* Simple macro to automatically manage module lifecycle and callbacks */
 #define M_MOD(name) \

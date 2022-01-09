@@ -71,7 +71,7 @@ target_link_libraries(${PROJECT_NAME}_core PUBLIC ${URING_LIBRARIES} ${KQUEUE_LI
 target_link_libraries(${PROJECT_NAME}_core PRIVATE ${PROJECT_NAME}_utils_internal)
 target_link_directories(${PROJECT_NAME}_core PUBLIC ${URING_LIBRARY_DIRS} ${KQUEUE_LIBRARY_DIRS} ${FUSE_LIBRARY_DIRS})
 
-fill_pc_vars(core "Libmodule core library")
+fill_pc_vars(${PROJECT_NAME}_core "Libmodule core library")
 configure_file(Extra/libmodule.pc.in libmodule_core.pc @ONLY)
 
 # These are used by Lib/CMakeLists in BUILD_OOT_TEST

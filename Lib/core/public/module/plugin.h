@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mod.h"
+#include <module/mod.h>
 
 /**
  * This is the main plugin API:
