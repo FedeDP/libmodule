@@ -6,6 +6,7 @@ packages:
   - liburing-git
   - libkqueue
   - fuse3
+  - wget
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:
