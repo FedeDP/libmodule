@@ -153,23 +153,14 @@ int init_src(m_mod_t *mod, m_src_types t) {
     return 0;
 }
 
-m_src_flags ensure_src_prio(m_src_flags flags) {
-    int prio_flags = flags & M_SRC_PRIO_MASK;
-    // No prio flag specified or more than one
-    if (prio_flags == 0 || __builtin_popcount(prio_flags) != 1) {
-        flags &= ~M_SRC_PRIO_MASK; // cleanup prio bits
-        flags |= M_SRC_PRIO_NORM;
-    }
-    return flags;
-}
-
 int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
                          m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT(mod);
+    M_SRC_ASSERT_PRIO_FLAGS();
     ev_src_t *src = m_mem_new(sizeof(ev_src_t), src_priv_dtor);
     M_ALLOC_ASSERT(src);
 
-    src->flags = ensure_src_prio(flags);
+    src->flags = flags;
     src->userptr = userptr;
     src->type = type;
     src->mod = mod;

@@ -69,13 +69,13 @@ typedef enum {
 /* Module event sources' types */
 typedef enum {
     M_SRC_TYPE_PS,    // PubSub Source
-    M_SRC_TYPE_FD,    // FD Source -> M_SRC_PRIO_HIGH flag is forced
+    M_SRC_TYPE_FD,    // FD Source -> M_SRC_PRIO_HIGH flag is implicit
     M_SRC_TYPE_TMR,   // Timer Source
     M_SRC_TYPE_SGN,   // Signal Source
     M_SRC_TYPE_PATH,  // Path Source
     M_SRC_TYPE_PID,   // PID Source
-    M_SRC_TYPE_TASK,  // Task source -> M_SRC_ONESHOT flag is forced
-    M_SRC_TYPE_THRESH,// Threshold source -> M_SRC_ONESHOT flag is forced
+    M_SRC_TYPE_TASK,  // Task source -> M_SRC_ONESHOT flag is implicit
+    M_SRC_TYPE_THRESH,// Threshold source -> M_SRC_ONESHOT flag is implicit
     M_SRC_TYPE_END    // End of supported sources
 } m_src_types;
 

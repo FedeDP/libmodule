@@ -226,6 +226,7 @@ end:
 _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
+    M_SRC_ASSERT_PRIO_FLAGS();
 
     /* Check if it is a valid regex: compile it */
     regex_t regex;
@@ -254,7 +255,7 @@ _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags fla
 
         ps_src_t *ps_src = &sub->ps_src;
         sub->type = M_SRC_TYPE_PS;
-        sub->flags = ensure_src_prio(flags);
+        sub->flags = flags;
         sub->userptr = userptr;
         sub->mod = mod;
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));

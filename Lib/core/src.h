@@ -2,8 +2,13 @@
 
 #include "mod.h"
 
-#define M_SRC_PRIO_MASK         (M_SRC_PRIO_HIGH << 1) - 1
 #define M_SRC_INTERNAL          1 << 7
+#define M_SRC_PRIO_MASK         (M_SRC_PRIO_HIGH << 1) - 1
+#define M_SRC_ASSERT_PRIO_FLAGS() \
+    int prio_flags = flags & M_SRC_PRIO_MASK; \
+    M_PARAM_ASSERT(prio_flags == 0 || __builtin_popcount(prio_flags) == 1); \
+    if (prio_flags == 0) \
+        flags |= M_SRC_PRIO_NORM;
 
 /* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
@@ -93,7 +98,6 @@ typedef struct {
 
 extern const char *src_names[];
 int init_src(m_mod_t *mod, m_src_types t);
-m_src_flags ensure_src_prio(m_src_flags flags);
 int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
                  m_src_flags flags, const void *userptr);
 int deregister_src(m_mod_t *mod, m_src_types type, void *src_data);
