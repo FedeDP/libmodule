@@ -5,6 +5,7 @@ packages:
   - cmake
   - fusefs-libs3
   - pkgconf
+  - wget
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:

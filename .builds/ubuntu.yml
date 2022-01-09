@@ -6,6 +6,7 @@ packages:
   - libfuse3-dev
   - fuse3
   - pkgconf
+  - wget
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:
