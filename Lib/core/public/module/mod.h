@@ -5,7 +5,6 @@
 #endif
 
 #include "cmn.h"
-// #include "/home/federico/Progetti/libmodule/Lib/structs/public/module/structs/itr.h"
 #include "structs/itr.h"
 
 /* Modules states */
