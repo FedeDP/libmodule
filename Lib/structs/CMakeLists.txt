@@ -12,7 +12,7 @@ set_target_properties(
     C_VISIBILITY_PRESET hidden
 )
 target_link_libraries(${PROJECT_NAME}_structs PRIVATE ${PROJECT_NAME}_utils_internal)
-target_include_directories(${PROJECT_NAME}_structs PRIVATE Lib/utils/ Lib/structs/)
+target_include_directories(${PROJECT_NAME}_structs PRIVATE Lib/utils/ Lib/structs/ Lib/structs/public/)
 
 fill_pc_vars(${PROJECT_NAME}_structs "Libmodule data structures library")
 configure_file(Extra/libmodule.pc.in libmodule_structs.pc @ONLY)
