@@ -59,13 +59,13 @@ if(BUILD_OOT_TEST)
     set(ENV{PKG_CONFIG_PATH} \"${CMAKE_INSTALL_PREFIX}/share/pkgconfig/\")
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(PKG_LIBMODULE REQUIRED libmodule_core)
-    message(\"otop \${PKG_LIBMODULE_INCLUDE_DIRS}\")
     execute_process(
       COMMAND wget -q -O ${CMAKE_CURRENT_BINARY_DIR}/pippo.c https://raw.githubusercontent.com/FedeDP/libmodule/devel/Samples/Task/pippo.c
       COMMAND_ECHO STDOUT
     )
+    string(REPLACE \";\" \" -I\" PKG_LIBMODULE_INCS \";\${PKG_LIBMODULE_INCLUDE_DIRS}\")
     execute_process(
-      COMMAND ${CMAKE_C_COMPILER} \${PKG_LIBMODULE_LDFLAGS} -I\${PKG_LIBMODULE_INCLUDE_DIRS}  ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
+      COMMAND ${CMAKE_C_COMPILER} \${PKG_LIBMODULE_LDFLAGS} -I\${PKG_LIBMODULE_INCS}  ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
       RESULT_VARIABLE IS_ERR
       COMMAND_ECHO STDOUT
     )
