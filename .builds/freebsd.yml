@@ -20,7 +20,7 @@ tasks:
   - test: |
       cd libmodule
       (cd build && ctest -V)
-      (cd build_fs && sudo kldload fusefs && ctest -V) -> This requires fuse module to be loaded
+      (cd build_fs && sudo kldload fusefs && ctest -V) #-> This requires fuse module to be loaded
   - install: |
       cd libmodule
       (cd build && sudo make install) 

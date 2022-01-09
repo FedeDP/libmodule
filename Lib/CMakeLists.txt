@@ -61,6 +61,7 @@ if(BUILD_OOT_TEST)
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} ${CORE_PKG_DEPS} ${CORE_PKG_INCS} ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
       RESULT_VARIABLE IS_ERR
+      COMMAND_ECHO STDOUT
     )
     if(IS_ERR)
         message(FATAL_ERROR \"error building the source file.\")
