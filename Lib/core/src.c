@@ -219,7 +219,7 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
         }
         default:
             M_WARN("Wrong src type: %d\n", type);
-            memhook._free(src);
+            m_mem_unref(src);
             return -EINVAL;
     }
 
