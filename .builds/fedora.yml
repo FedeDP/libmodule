@@ -13,8 +13,8 @@ tasks:
   - prepare: |
       cd libmodule
       mkdir build build_fs
-      (cd build && cmake -DBUILD_TESTS=true -DBUILD_SAMPLES=true ../)
-      (cd build_fs && cmake -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_FS=true ..)
+      (cd build && cmake -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DBUILD_OOT_TEST=true ../)
+      (cd build_fs && cmake -DBUILD_TESTS=true -DBUILD_SAMPLES=true -DWITH_FS=true -DBUILD_OOT_TEST=true ..)
   - build: |
       cd libmodule
       (cd build && make)
