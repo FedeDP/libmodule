@@ -57,7 +57,7 @@ if(BUILD_OOT_TEST)
       COMMAND wget -q -O ${CMAKE_CURRENT_BINARY_DIR}/pippo.c https://raw.githubusercontent.com/FedeDP/libmodule/devel/Samples/Task/pippo.c
     )
     execute_process(
-      COMMAND ${CMAKE_C_COMPILER} \${PKG_LIBMODULE_LDFLAGS} -I\${PKG_LIBMODULE_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
+      COMMAND ${CMAKE_C_COMPILER} \${PKG_LIBMODULE_LDFLAGS} \${PKG_LIBMODULE_CFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
       RESULT_VARIABLE IS_ERR
       COMMAND_ECHO STDOUT
     )

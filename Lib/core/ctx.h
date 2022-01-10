@@ -45,7 +45,6 @@ struct _ctx {
     bool finalized;                         // Whether the context is finalized, ie: no more modules can be registered
     m_log_cb logger;                        // Context's log callback
     m_map_t *modules;                       // Context's modules
-    m_map_t *plugins;                       // Context's plugins
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     m_ctx_flags flags;                      // Context's flags
     m_mod_flags mod_flags;                  // Flags inherited by modules registered in the ctx

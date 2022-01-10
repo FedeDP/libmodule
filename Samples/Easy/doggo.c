@@ -77,6 +77,7 @@ static void m_mod_on_evt_sleeping(m_mod_t *mod, const m_queue_t *const evts) {
                 if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
                     m_mod_unbecome(mod);
                     m_mod_log(mod, "Yawn...\n");
+                    m_ctx_dump(m_mod_ctx(mod));
                     m_plugin_unload("./libtestmod.so", m_mod_ctx(mod));
                     m_mod_src_deregister(mod, M_PS_MOD_STARTED);
                 } else {

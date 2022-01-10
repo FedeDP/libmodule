@@ -3,6 +3,7 @@
 #include "fs.h"
 #include "ctx.h"
 #include "poll.h"
+#include <dlfcn.h> // dlopen
 
 /***************************************
  * Code related to generic module API. *
@@ -23,8 +24,9 @@ static void module_dtor(void *data) {
     if (mod) {
         m_mem_unref(mod->ctx);
         
-        if (mod->plugin_path) {
-            m_map_remove(c->plugins, mod->plugin_path);
+        if (mod->dlhandle) {
+            dlclose(mod->dlhandle);
+            mod->dlhandle = NULL;
         }
         
         m_map_free(&mod->subscriptions);
@@ -323,6 +325,106 @@ int mod_deregister(m_mod_t **mod, bool from_user) {
     return ret;
 }
 
+void mod_dump(const m_mod_t *mod, bool log_mod, const char *indent) {
+    M_MOD_CTX(mod);
+    
+    const m_mod_t *m = mod;
+    if (!log_mod) {
+        m = NULL;
+    }
+    ctx_logger(c, m, "%s{\n", indent);
+    ctx_logger(c, m, "%s\t\"Name\": \"'%s\",\n", indent, mod->name);
+    ctx_logger(c, m, "%s\t\"State\": \"%#x\",\n", indent, mod->state);
+    ctx_logger(c, m, "%s\t\"Flags\": \"%#x\",\n", indent, mod->flags);
+    ctx_logger(c, m, "%s\t\"UP\": \"%p\",\n", indent, mod->userdata);
+    ctx_logger(c, m, "%s\t\"Plugin\": %s,\n", indent, mod->dlhandle ? "true" : "false");
+    if (mod->dlhandle) {
+        // Use dladdr() instead of dlinfo() as dladdrs is supported on osx too
+        Dl_info info;
+        dladdr(mod->hook.on_eval, &info);
+        ctx_logger(c, m, "%s\t\"Plugin_path\": \"%s\",\n", indent, info.dli_fname);
+    } else {
+        ctx_logger(c, m, "%s\t\"Plugin_path\": \"N/A\",\n", indent);
+    }
+    
+    ctx_logger(c, m, "%s\t\"Stats\": {\n", indent);
+    ctx_logger(c, m, "%s\t\t\"Reg_time\": %" PRIu64 ",\n", indent, mod->stats.registration_time);
+    ctx_logger(c, m, "%s\t\t\"Num_srcs\": %lu,\n", indent, m_mod_src_len(mod, M_SRC_TYPE_END));
+    ctx_logger(c, m, "%s\t\t\"Sent_msgs\": %" PRIu64 ",\n", indent, mod->stats.sent_msgs);
+    ctx_logger(c, m, "%s\t\t\"Recv_msgs\": %" PRIu64 ",\n", indent, mod->stats.recv_msgs);
+    ctx_logger(c, m, "%s\t\t\"Last_seen\": %" PRIu64 ",\n", indent, mod->stats.last_seen);
+    ctx_logger(c, m, "%s\t\t\"Num_actions\": %" PRIu64 ",\n", indent, mod->stats.action_ctr);
+    
+    uint64_t curr_ms;
+    fetch_ms(&curr_ms, NULL);
+    uint64_t active_time = curr_ms - mod->stats.registration_time;
+    ctx_logger(c, m, "%s\t\t\"Action_freq\": %lf\n", indent, (double)mod->stats.action_ctr / active_time);
+    ctx_logger(c, m, "%s\t},\n", indent);
+    
+    ctx_logger(c, m, "%s\t\"Subs\": [\n", indent);
+    m_itr_foreach(mod->subscriptions, {
+        ev_src_t *sub = m_itr_get(m_itr);
+        if (sub->flags & M_SRC_INTERNAL) {
+            continue;
+        }
+        ctx_logger(c, m, "%s\t{\n", indent);
+        ctx_logger(c, m, "%s\t\t\"Flags\": \"%#x\"\n", indent, sub->flags);
+        ctx_logger(c, m, "%s\t\t\"UP\": \"%p\",\n", indent, sub->userptr);
+        ctx_logger(c, m, "%s\t\t\"Topic\": \"%s\"\n", indent, sub->ps_src.topic);
+        ctx_logger(c, m, "%s\t}%c\n", indent, m_idx + 1 < m_map_len(mod->subscriptions) ? ',' : ' ');
+    });
+    ctx_logger(c, m, "%s\t],\n", indent);
+    
+    /* Skip internal fds (M_SRC_TYPE_PS and M_SRC_INTERNAL flag) */
+    for (int k = M_SRC_TYPE_FD; k < M_SRC_TYPE_END; k++) {
+        ctx_logger(c, m, "%s\t\"%s\": [\n", indent, src_names[k]);
+        m_itr_foreach(mod->srcs[k], {
+            ev_src_t *t = m_itr_get(m_itr);
+            if (t->flags & M_SRC_INTERNAL) {
+                continue;
+            }
+            
+            ctx_logger(c, m, "%s\t{\n", indent);
+            ctx_logger(c, m, "%s\t\t\"Flags\": \"%#x\",\n", indent, t->flags);
+            ctx_logger(c, m, "%s\t\t\"UP\": \"%p\",\n", indent, t->userptr);
+            
+            switch (t->type) {
+                case M_SRC_TYPE_FD:
+                    ctx_logger(c, m, "%s\t\t\"FD\": %d\n", indent, t->fd_src.fd);
+                    break;
+                case M_SRC_TYPE_SGN:
+                    ctx_logger(c, m, "%s\t\t\"SGN\": %d\n", indent, t->sgn_src.sgs.signo);
+                    break;
+                case M_SRC_TYPE_TMR:
+                    ctx_logger(c, m, "%s\t\t\"TMR_MS\": %lu,\n", indent, t->tmr_src.its.ms);
+                    ctx_logger(c, m, "%s\t\t\"TMR_CID\": %d\n", indent, t->tmr_src.its.clock_id);
+                    break;
+                case M_SRC_TYPE_PATH:
+                    ctx_logger(c, m, "%s\t\t\"PATH\": \"%s\",\n", indent, t->path_src.pt.path);
+                    ctx_logger(c, m, "%s\t\t\"EV\": \"%#x\"\n", indent, t->path_src.pt.events);
+                    break;
+                case M_SRC_TYPE_PID:
+                    ctx_logger(c, m, "%s\t\t\"PID\": %d,\n", indent, t->pid_src.pid.pid);
+                    ctx_logger(c, m, "%s\t\t\"EV\": %u\n", indent, t->pid_src.pid.events);
+                    break;
+                case M_SRC_TYPE_TASK:
+                    ctx_logger(c, m, "%s\t\t\"TID\": %d\n", indent, t->task_src.tid.tid);
+                    break;
+                case M_SRC_TYPE_THRESH:
+                    ctx_logger(c, m, "%s\t\t\"INACTIVE_MS\": %d,\n", indent, t->thresh_src.thr.inactive_ms);
+                    ctx_logger(c, m, "%s\t\t\"ACTIVITY_FREQ\": %d\n", indent, t->thresh_src.thr.activity_freq);
+                    break;
+                default:
+                    break;
+            }
+            
+            ctx_logger(c, m, "%s\t}%c\n", indent, m_idx + 1 < m_bst_len(mod->srcs[k]) ? ',' : ' ');
+        });
+        ctx_logger(c, m, "%s\t]%c\n", indent, (k < M_SRC_TYPE_END - 1) ? ',' : ' ');
+    }
+    ctx_logger(c, m, "%s}\n", indent);
+}
+
 /** Public API **/
 
 _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, const m_mod_hook_t *hook,
@@ -461,90 +563,8 @@ _public_ m_mod_states m_mod_state(const m_mod_t *mod) {
 
 _public_ int m_mod_dump(const m_mod_t *mod) {
     M_MOD_ASSERT(mod);
-    M_MOD_CTX(mod);
-
-    ctx_logger(c, mod, "{\n");
-    ctx_logger(c, mod, "\t\"Name\": \"'%s\",\n", mod->name);
-    ctx_logger(c, mod, "\t\"State\": \"%#x\",\n", mod->state);
-    ctx_logger(c, mod, "\t\"Flags\": \"%#x\",\n", mod->flags);
-    ctx_logger(c, mod, "\t\"UP\": \"%p\",\n", mod->userdata);
-
-    ctx_logger(c, mod, "\t\"Stats\": {\n");
-    ctx_logger(c, mod, "\t\t\"Reg_time\": %" PRIu64 ",\n", mod->stats.registration_time);
-    ctx_logger(c, mod, "\t\t\"Num_srcs\": %lu,\n", m_mod_src_len(mod, M_SRC_TYPE_END));
-    ctx_logger(c, mod, "\t\t\"Sent_msgs\": %" PRIu64 ",\n", mod->stats.sent_msgs);
-    ctx_logger(c, mod, "\t\t\"Recv_msgs\": %" PRIu64 ",\n", mod->stats.recv_msgs);
-    ctx_logger(c, mod, "\t\t\"Last_seen\": %" PRIu64 ",\n", mod->stats.last_seen);
-    ctx_logger(c, mod, "\t\t\"Num_actions\": %" PRIu64 ",\n", mod->stats.action_ctr);
-
-    uint64_t curr_ms;
-    fetch_ms(&curr_ms, NULL);
-    uint64_t active_time = curr_ms - mod->stats.registration_time;
-    ctx_logger(c, mod, "\t\t\"Action_freq\": %lf\n", (double)mod->stats.action_ctr / active_time);
-    ctx_logger(c, mod, "\t},\n");
     
-    ctx_logger(c, mod, "\t\"Subs\": [\n");
-    m_itr_foreach(mod->subscriptions, {
-        ev_src_t *sub = m_itr_get(m_itr);
-        if (sub->flags & M_SRC_INTERNAL) {
-            continue;
-        }
-        ctx_logger(c, mod, "\t{\n");
-        ctx_logger(c, mod, "\t\t\"Flags\": \"%#x\"\n", sub->flags);
-        ctx_logger(c, mod, "\t\t\"UP\": \"%p\",\n", sub->userptr);
-        ctx_logger(c, mod, "\t\t\"Topic\": \"%s\"\n", sub->ps_src.topic);
-        ctx_logger(c, mod, "\t}%c\n", m_idx + 1 < m_map_len(mod->subscriptions) ? ',' : ' ');
-    });
-    ctx_logger(c, mod, "\t],\n");
-    
-    /* Skip internal fds (M_SRC_TYPE_PS and M_SRC_INTERNAL flag) */
-    for (int k = M_SRC_TYPE_FD; k < M_SRC_TYPE_END; k++) {
-        ctx_logger(c, mod, "\t\"%s\": [\n", src_names[k]);
-        m_itr_foreach(mod->srcs[k], {
-            ev_src_t *t = m_itr_get(m_itr);
-            if (t->flags & M_SRC_INTERNAL) {
-                continue;
-            }
-            
-            ctx_logger(c, mod, "\t{\n");
-            ctx_logger(c, mod, "\t\t\"Flags\": \"%#x\",\n", t->flags);
-            ctx_logger(c, mod, "\t\t\"UP\": \"%p\",\n", t->userptr);
-
-            switch (t->type) {
-            case M_SRC_TYPE_FD:
-                ctx_logger(c, mod, "\t\t\"FD\": %d\n", t->fd_src.fd);
-                break;
-            case M_SRC_TYPE_SGN:
-                ctx_logger(c, mod, "\t\t\"SGN\": %d\n", t->sgn_src.sgs.signo);
-                break;
-            case M_SRC_TYPE_TMR:
-                ctx_logger(c, mod, "\t\t\"TMR_MS\": %lu,\n", t->tmr_src.its.ms);
-                ctx_logger(c, mod, "\t\t\"TMR_CID\": %d\n", t->tmr_src.its.clock_id);
-                break;
-            case M_SRC_TYPE_PATH:
-                ctx_logger(c, mod, "\t\t\"PATH\": \"%s\",\n", t->path_src.pt.path);
-                ctx_logger(c, mod, "\t\t\"EV\": \"%#x\"\n", t->path_src.pt.events);
-                break;
-            case M_SRC_TYPE_PID:
-                ctx_logger(c, mod, "\t\t\"PID\": %d,\n", t->pid_src.pid.pid);
-                ctx_logger(c, mod, "\t\t\"EV\": %u\n", t->pid_src.pid.events);
-                break;
-            case M_SRC_TYPE_TASK:
-                ctx_logger(c, mod, "\t\t\"TID\": %d\n", t->task_src.tid.tid);
-                break;
-            case M_SRC_TYPE_THRESH:
-                ctx_logger(c, mod, "\t\t\"INACTIVE_MS\": %d,\n", t->thresh_src.thr.inactive_ms);
-                ctx_logger(c, mod, "\t\t\"ACTIVITY_FREQ\": %d\n", t->thresh_src.thr.activity_freq);
-                break;
-            default:
-                break;
-            }
-
-            ctx_logger(c, mod, "\t}%c\n", m_idx + 1 < m_bst_len(mod->srcs[k]) ? ',' : ' ');
-        });
-         ctx_logger(c, mod, "\t]%c\n", (k < M_SRC_TYPE_END - 1) ? ',' : ' ');
-    }
-    ctx_logger(c, mod, "}\n");
+    mod_dump(mod, true, "");
     return 0;
 }
 

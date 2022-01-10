@@ -24,7 +24,6 @@ static void ctx_dtor(void *data) {
     M_DEBUG("Destroying context.\n");
     m_ctx_t *context = (m_ctx_t *)data;
     m_map_free(&context->modules);
-    m_map_free(&context->plugins);
     poll_destroy(&context->ppriv);
     memhook._free(context->ppriv.data);
     memhook._free(context->fs_root);
@@ -544,14 +543,14 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "\t\t\"Busy_time\": %" PRIu64 ",\n", total_busy_time);
     ctx_logger(c, NULL, "\t\t\"Recv_events\": %" PRIu64 ",\n", c->stats.recv_msgs);
     ctx_logger(c, NULL, "\t\t\"Action_freq\": %lf,\n", (double)c->stats.recv_msgs / total_looping_time);
-    ctx_logger(c, NULL, "\t\t\"Modules\": %lu\n", m_ctx_len(c));
+    ctx_logger(c, NULL, "\t\t\"Modules\": %lu,\n", m_ctx_len(c));
     ctx_logger(c, NULL, "\t\t\"Running_modules\": %" PRIu64 "\n", c->stats.running_modules);
     ctx_logger(c, NULL, "\t},\n");
 
     ctx_logger(c, NULL, "\t\"Modules\": [\n");
     m_itr_foreach(c->modules, {
-        const char *mod_name = m_map_itr_get_key(m_itr);
-        ctx_logger(c, NULL, "\t\t\"%s\"%c\n", mod_name, m_idx + 1 < m_map_len(c->modules) ? ',' : ' ');
+        const m_mod_t *mod = m_itr_get(m_itr);
+        mod_dump(mod, false, "\t");
     });
     ctx_logger(c, NULL, "\t]\n");
     ctx_logger(c, NULL, "}\n");

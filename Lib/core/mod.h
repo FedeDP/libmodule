@@ -53,7 +53,6 @@ struct _mod {
     const char *name;                       // module's name
     mod_batch_t batch;                      // Events' batching informations
     void *dlhandle;                         // For plugins
-    const char *plugin_path;                // Filesystem path for plugins
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     m_queue_t *stashed;                     // module's stashed messages
@@ -64,3 +63,4 @@ int evaluate_module(void *data, const char *key, void *value);
 int start(m_mod_t *mod, bool starting);
 int stop(m_mod_t *mod, bool stopping);
 int mod_deregister(m_mod_t **mod, bool from_user);
+void mod_dump(const m_mod_t *mod, bool log_mod, const char *indent);

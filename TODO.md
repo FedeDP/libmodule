@@ -92,10 +92,7 @@ m_plugin_on_eval()
 - [x] then, move back #include <dlfcn.h> from priv.h to plugin.c
 - [x] Fix sigsegv
 
-- [ ] add a plugin_GO api?
-
 - [x] plugin.h and plugin_C.h pragma once
-- [x] m_plugin interface: m_plugin_name optional, otherwise use basename(module_path)
 - [x] moreover, rename m_mod_load to m_plugin_load and move it to plugin.c
 - [x] finally in plugin.h explicit mandatory callback (only on_evt)
 
@@ -117,8 +114,6 @@ m_plugin_on_eval()
 - [x] M__MOD() macro use NULL as ctx
 
 - [x] Api optimization: never use strlen, just check that x[0] != 0
-
-- [ ] Split libmodule API in libmodule_core, libmodule_struct, libmodule_mem, libmodule_thpool ?
 
 - [x] add a m_ctx_finalize() API that once set, deny any new module loaded in the context
 - [x] add a set of m_mod_flags passed to m_ctx_register() that will be forwarded to each module registered
@@ -530,12 +525,6 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 - [ ] need a way to map m_mod_ API arguments though
 - [ ] offer an api to run module's recv on their own thread (register flag: M_MOD_THREADED), it means their receive() will be run async (in a thpool)
 
-### Src plugins
-
-- [ ] Allow users to register M_SRC_TYPE_CUSTOM srcs
-- [ ] m_src_custom_t { void *priv, poll_plugin_t } 
-- [ ] this way, when a CUSTOM src is found, libmodule just routes calls to the poll_plugin_t passed during the register
-
 ### Replay API
 
 - [ ] Publish to require a m_mem_t. Thus we have access to object size.
@@ -544,6 +533,12 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 - [ ] add a "--m.replay-from" cmdline switch to default main
 - [ ] Basic flow: normally start program and when start looping, before actually polling, flush all messages loaded from file/db
 - [ ] Then, if "--m.store" is enabled, store any message received while looping
+
+### Generic
+
+- [ ] Fix m_src_flags with 64b values (right now there is no value over 32b thus it is not a real issue)
+
+## Ideas
 
 ### Remote API
 
@@ -558,7 +553,3 @@ https://www.gnu.org/software/libc/manual/html_node/Pipe-Atomicity.html
 - [ ] deregister children at parent deregister
 - [ ] bind children to parent states (ie: parent paused -> children paused; parent resumed -> children resumed...)
 - [ ] m_forward -> like m_tell but to all children
-
-### Generic
-
-- [ ] Fix m_src_flags with 64b values (right now there is no value over 32b thus it is not a real issue)
