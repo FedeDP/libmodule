@@ -1,7 +1,5 @@
 cmake_minimum_required (VERSION 3.3.2)
 
-set(CMAKE_FIND_LIBRARY_PREFIXES "lib")
-
 option(STATIC_MODULE "build ${PROJECT_NAME} as static library" OFF)
 if(STATIC_MODULE)
     set(LIBRARY_TYPE STATIC)
