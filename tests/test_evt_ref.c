@@ -12,7 +12,7 @@ void test_evt_ref(void **state) {
     (void) state; /* unused */
 
     test_ctx = NULL;
-    int ret = m_ctx_register("evt_ref", &test_ctx, 0, 0, NULL);
+    int ret = m_ctx_register("evt_ref", &test_ctx, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(test_ctx);
 

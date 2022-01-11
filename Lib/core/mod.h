@@ -43,20 +43,20 @@ typedef struct {
  */
 struct _mod {
     m_mod_states state;                     // module's state
-    m_mod_flags flags;                      // Module's flags
+    CONST m_mod_flags flags;                // Module's flags
     int pubsub_fd[2];                       // In and Out pipe for pubsub msg
     mod_stats_t stats;                      // Module's stats
-    m_mod_hook_t hook;                      // module's user defined callbacks
+    CONST m_mod_hook_t hook;                // module's user defined callbacks
     m_stack_t *recvs;                       // Stack of recv functions for module_become/unbecome (stack of funpointers)
-    const void *userdata;                   // module's user defined data
+    CONST const void *userdata;             // module's user defined data
     void *fs;                               // FS module priv data. NULL if unsupported
-    const char *name;                       // module's name
+    CONST const char *name;                 // module's name
     mod_batch_t batch;                      // Events' batching informations
-    void *dlhandle;                         // For plugins
+    CONST void *dlhandle;                   // Handle for plugin (NULL if not a plugin)
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     m_queue_t *stashed;                     // module's stashed messages
-    m_ctx_t *ctx;                           // Module's ctx
+    CONST m_ctx_t *ctx;                     // Module's ctx
 };
 
 int evaluate_module(void *data, const char *key, void *value);

@@ -30,7 +30,7 @@ typedef void (*m_log_cb)(const m_mod_t *ref, const char *fmt, va_list args);
 m_ctx_t *m_ctx_default(void);
 
 /* Context interface functions */
-int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, m_mod_flags mod_flags, const void *userdata);
+int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
 int m_ctx_deregister(m_ctx_t **c);
 
 int m_ctx_set_logger(m_ctx_t *c, m_log_cb logger);

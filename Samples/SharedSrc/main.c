@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
      * Register the context
      */
     m_ctx_t *c = NULL;
-    m_ctx_register("SharedSrc", &c, 0, 0, NULL);
+    m_ctx_register("SharedSrc", &c, 0, NULL);
 
     /*
      * Create the modules in the context

@@ -11,6 +11,9 @@
 #include "mem.h"
 #include "log.h"
 
+// Const-after-init struct members are outlined by this
+#define CONST 
+
 #define M_MEM_LOCK(mem, func) \
     m_mem_ref(mem); \
     func; \

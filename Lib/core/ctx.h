@@ -2,6 +2,7 @@
 
 #include "public/module/ctx.h"
 #include "public/module/structs/map.h"
+#include "public/module/thpool/thpool.h"
 #include "globals.h"
 
 #define M_CTX_DEFAULT_EVENTS    64
@@ -20,7 +21,7 @@ typedef struct {
     uint64_t looping_start_time;
     uint64_t idle_time;
     uint64_t recv_msgs;
-    uint64_t running_modules;
+    size_t running_modules;
 } ctx_stats_t;
 
 /* Ctx states */
@@ -38,7 +39,7 @@ typedef enum {
  *      (thus it won't be actually destroyed until any module is inside it)
  */
 struct _ctx {
-    const char *name;
+    CONST const char *name;
     m_ctx_states state;
     bool quit;                              // Context's quit flag
     uint8_t quit_code;                      // Context's quit code, returned by modules_ctx_loop()
@@ -46,15 +47,14 @@ struct _ctx {
     m_log_cb logger;                        // Context's log callback
     m_map_t *modules;                       // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
-    m_ctx_flags flags;                      // Context's flags
-    m_mod_flags mod_flags;                  // Flags inherited by modules registered in the ctx
+    CONST m_ctx_flags flags;                // Context's flags
     char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
     ctx_stats_t stats;                      // Context' stats
     m_thpool_t  *thpool;                    // thpool for M_SRC_TYPE_TASK srcs; lazily created
-    const void *userdata;                   // Context's user defined data
+    CONST const void *userdata;             // Context's user defined data
 };
 
-int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, m_mod_flags mod_flags, const void *userdata);
+int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
 m_ctx_t *check_ctx(const char *ctx_name);
 void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);

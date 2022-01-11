@@ -53,6 +53,12 @@ else()
     set(POLL_PLUGIN "epoll")
 endif()
 
+# Configure headers
+configure_file(Lib/core/public/module/cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/cmn.h @ONLY)
+if(WITH_FS)
+    configure_file(Lib/core/public/module/fs.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/fs.h @ONLY)
+endif()
+
 file(GLOB PUBLIC_H Lib/core/public/module/*.h)
 
 add_library(${PROJECT_NAME}_core ${LIBRARY_TYPE} ${SOURCES})
@@ -73,15 +79,6 @@ target_link_directories(${PROJECT_NAME}_core PUBLIC ${URING_LIBRARY_DIRS} ${KQUE
 
 fill_pc_vars(${PROJECT_NAME}_core "Libmodule core library")
 configure_file(Extra/libmodule.pc.in libmodule_core.pc @ONLY)
-
-# These are used by Lib/CMakeLists in BUILD_OOT_TEST
-set(CORE_PKG_DEPS ${PKG_DEPS})
-set(CORE_PKG_INCS ${PKG_INCS})
-
-configure_file(Lib/core/public/module/cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/cmn.h @ONLY)
-if(WITH_FS)
-    configure_file(Lib/core/public/module/fs.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/fs.h @ONLY)
-endif()
 
 install(TARGETS ${PROJECT_NAME}_core
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
