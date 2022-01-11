@@ -29,7 +29,7 @@ tasks:
       (cd build_fs && sudo make install) 
   - build_pkg: |
       cd libmodule/build
-      cpack -G DEB
+      sudo cpack -G DEB
 triggers:
   - action: email
     condition: failure

@@ -1,7 +1,7 @@
 image: freebsd/latest
 packages:
   - cmocka
-  #- valgrind
+  - valgrind
   - cmake
   - fusefs-libs3
   - pkgconf

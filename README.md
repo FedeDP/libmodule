@@ -23,14 +23,14 @@ Frankly speaking, it is denoted by a M_MOD() macro plus a bunch of mandatory cal
 
 M_MOD("Pippo");
 
-static bool m_mod_on_start(mod_t *mod) {
-    /* Register STDIN fd */
-    m_mod_src_register(mod, STDIN_FILENO, 0, NULL);
+static bool m_mod_on_eval(mod_t *mod) {
+    /* Should module be started? */
     return true;
 }
 
-static bool m_mod_on_eval(mod_t *mod) {
-    /* Should module be started? */
+static bool m_mod_on_start(mod_t *mod) {
+    /* Register STDIN fd */
+    m_mod_src_register(mod, STDIN_FILENO, 0, NULL);
     return true;
 }
 
@@ -38,29 +38,37 @@ static void m_mod_on_stop(mod_t *mod) {
     
 }
 
-static void m_mod_on_evt(mod_t *mod, const m_evt_t *const msg) {
-    if (msg->type == M_SRC_TYPE_FD) {
-        char c;
-        read(msg->fd_evt->fd, &c, sizeof(char));
-        switch (tolower(c)) {
-            case 'q':
-                m_mod_log(mod, "Leaving...\n");
-                m_mod_tell(mod, mod, "ByeBye", 0);
-                break;
-            default:
-                if (c != ' ' && c != '\n') {
-                    m_mod_log(mod, "Pressed %c\n", c);
-                }
-                break;
+static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
+    m_itr_foreach(evts, {
+        m_evt_t *msg = m_itr_get(m_itr);
+        switch (msg->type) {
+        case M_SRC_TYPE_FD: {
+            char c;
+            read(msg->fd_evt->fd, &c, sizeof(char));
+            switch (tolower(c)) {
+                case 'q':
+                    m_mod_log(mod, "Leaving...\n");
+                    m_mod_tell(mod, mod, "ByeBye", 0);
+                    break;
+                default:
+                    if (c != ' ' && c != '\n') {
+                        m_mod_log(mod, "Pressed '%c'\n", c);
+                    }
+                    break;
+            }
+            break;
         }
-    } else if (msg->type == M_SRC_TYPE_PS && msg->ps_evt->type == M_PS_USER && 
-        !strcmp((char *)msg->ps_evt->data, "ByeBye")) {
-        
-        m_ctx_quit(m_mod_ctx(mod), 0);
+        case M_SRC_TYPE_PS:
+            if (strcmp((char *)msg->ps_evt->data, "ByeBye") == 0) {
+                m_mod_log("Bye\n"):
+                m_ctx_quit(m_mod_ctx(mod), 0);
+            }
+            break;
+        }
     }
 }
 ```
-In this example, a "Pippo" module is created and will read chars from stdin until 'q' is pressed.  
+In this example, a "Pippo" module is created and will echo chars from stdin until 'q' is pressed.  
 Note that it does not even need a main function, as libmodule already provides a default one as a [weak, thus overridable, symbol](https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Function-Attributes.html).  
 
 ## Is it portable?

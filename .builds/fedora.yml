@@ -30,7 +30,7 @@ tasks:
       (cd build_fs && sudo make install) 
   - build_pkg: |
       cd libmodule/build
-      cpack -G RPM
+      sudo cpack -G RPM
 triggers:
   - action: email
     condition: failure
