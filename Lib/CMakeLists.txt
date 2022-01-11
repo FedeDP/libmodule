@@ -57,11 +57,12 @@ if(BUILD_OOT_TEST)
       COMMAND wget -q -O ${CMAKE_CURRENT_BINARY_DIR}/pippo.c https://raw.githubusercontent.com/FedeDP/libmodule/devel/Samples/Task/pippo.c
     )
     execute_process(
-      COMMAND ${CMAKE_C_COMPILER} \${PKG_LIBMODULE_LDFLAGS} \${PKG_LIBMODULE_CFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo
+      COMMAND ${CMAKE_C_COMPILER} ${CMAKE_CURRENT_BINARY_DIR}/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo \${PKG_LIBMODULE_LDFLAGS} \${PKG_LIBMODULE_CFLAGS}
       RESULT_VARIABLE IS_ERR
       COMMAND_ECHO STDOUT
     )
     if(IS_ERR)
+        file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/pippo.c)
         message(FATAL_ERROR \"error building the source file.\")
     endif()
     set(ENV{LD_LIBRARY_PATH} \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/\")
@@ -69,6 +70,8 @@ if(BUILD_OOT_TEST)
       COMMAND ${CMAKE_CURRENT_BINARY_DIR}/pippo
       RESULT_VARIABLE IS_ERR
     )
+    file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/pippo)
+    file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/pippo.c)
     if(IS_ERR)
         message(FATAL_ERROR \"error running the source file.\")
     else()
