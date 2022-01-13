@@ -14,7 +14,6 @@ typedef enum {
     M_THPOOL_DETACHED       = 1 << 1,         // create threads detached
 } m_thpool_flags;
 
-
 m_thpool_t *m_thpool_new(uint8_t thread_count, m_thpool_flags flags);
 int m_thpool_add(m_thpool_t *pool, m_thpool_task task, void *arg);
 ssize_t m_thpool_length(m_thpool_t *pool);

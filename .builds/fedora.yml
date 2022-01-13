@@ -7,7 +7,6 @@ packages:
   - rpm-build
   - fuse3-devel
   - fuse3
-  - wget
 sources:
   - https://github.com/FedeDP/libmodule
 tasks:

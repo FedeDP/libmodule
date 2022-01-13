@@ -399,13 +399,6 @@ void test_mod_publish_NULL_msg(void **state) {
     assert_false(ret == 0);
 }
 
-void test_mod_publish_NULL_topic(void **state) {
-    (void) state; /* unused */
-    
-    int ret = m_mod_ps_publish(test_mod, NULL, (unsigned char *)"hi!", 0);
-    assert_false(ret == 0);
-}
-
 void test_mod_publish(void **state) {
     (void) state; /* unused */
     
@@ -416,21 +409,21 @@ void test_mod_publish(void **state) {
 void test_mod_broadcast_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ps_broadcast(NULL, (unsigned char *)"hi!", 0);
+    int ret = m_mod_ps_publish(NULL, NULL, (unsigned char *)"hi!", 0);
     assert_false(ret == 0);
 }
 
 void test_mod_broadcast_NULL_msg(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ps_broadcast(test_mod, NULL, 0);
+    int ret = m_mod_ps_publish(test_mod, NULL, NULL, 0);
     assert_false(ret == 0);
 }
 
 void test_mod_broadcast(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_ps_broadcast(test_mod, (unsigned char *)"hi3!", 0);
+    int ret = m_mod_ps_publish(test_mod, NULL, (unsigned char *)"hi3!", 0);
     assert_true(ret == 0);
 }
 

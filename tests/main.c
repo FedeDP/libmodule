@@ -101,7 +101,6 @@ int main(void) {
         /* Test module publish */
         cmocka_unit_test(test_mod_publish_NULL_self),
         cmocka_unit_test(test_mod_publish_NULL_msg),
-        cmocka_unit_test(test_mod_publish_NULL_topic),
         cmocka_unit_test(test_mod_publish),
         
         /* Test module broadcast */

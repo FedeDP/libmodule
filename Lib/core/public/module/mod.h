@@ -4,8 +4,151 @@
     #define LIBMODULE_CORE_H
 #endif
 
+#include <stdbool.h>
+#include <time.h>
+#include <sys/types.h>
 #include <module/cmn.h>
 #include <module/structs/itr.h>
+
+/* Module event sources' types */
+typedef enum {
+    M_SRC_TYPE_PS,    // PubSub Source
+    M_SRC_TYPE_FD,    // FD Source -> M_SRC_PRIO_HIGH flag is implicit
+    M_SRC_TYPE_TMR,   // Timer Source
+    M_SRC_TYPE_SGN,   // Signal Source
+    M_SRC_TYPE_PATH,  // Path Source
+    M_SRC_TYPE_PID,   // PID Source
+    M_SRC_TYPE_TASK,  // Task source -> M_SRC_ONESHOT flag is implicit
+    M_SRC_TYPE_THRESH,// Threshold source -> M_SRC_ONESHOT flag is implicit
+    M_SRC_TYPE_END    // End of supported sources
+} m_src_types;
+
+/*
+ * Module event sources' flags:
+ * First 8 bits are reserved for common source flags.
+ * Then, each source type has 8 bits reserved for its flags.
+ */
+#define M_SRC_SHIFT(type, val)   val << (8 * (type + 1))
+typedef enum {
+    M_SRC_PRIO_LOW        =       1 << 0, // PubSub subscription low priority
+    M_SRC_PRIO_NORM       =       1 << 1, // PubSub subscription mid priority (default)
+    M_SRC_PRIO_HIGH       =       1 << 2, // PubSub subscription high priority
+    M_SRC_AUTOFREE        =       1 << 3, // Automatically free userdata upon source deregistation.
+    M_SRC_ONESHOT         =       1 << 4, // Run just once then automatically deregister source.
+    M_SRC_DUP             =       1 << 5, // Duplicate PubSub topic, source fd or source path.
+    M_SRC_FD_AUTOCLOSE    =       M_SRC_SHIFT(M_SRC_TYPE_FD, 1 << 0), // Automatically close fd upon deregistation.
+    M_SRC_TMR_ABSOLUTE    =       M_SRC_SHIFT(M_SRC_TYPE_TMR, 1 << 0), // Absolute timer
+} m_src_flags;
+
+/* PubSub system topics. Subscribe to any of these to receive system messages. */
+#define M_PS_CTX_STARTED    "LIBMODULE_CTX_STARTED"
+#define M_PS_CTX_STOPPED    "LIBMODULE_CTX_STOPPED"
+#define M_PS_MOD_STARTED    "LIBMODULE_MOD_STARTED"
+#define M_PS_MOD_STOPPED    "LIBMODULE_MOD_STOPPED"
+
+/*
+ * Module's pubsub API flags (m_mod_tell(), m_mod_publish(), m_mod_broadcast())
+ */
+typedef enum {
+    M_PS_AUTOFREE   = 1 << 0,     // Autofree PubSub data after every recipient receives message (ie: when ps_evt ref counter goes to 0)
+} m_ps_flags;
+
+/** Libmodule input src types for m_mod_src_register() API **/
+
+typedef struct {
+    clockid_t clock_id;     // Clock_id (eg: CLOCK_MONOTONIC). Unsupported on libkqueue/kqueue
+    uint64_t ms;            // Timer in ms
+} m_src_tmr_t;
+
+typedef struct {
+    unsigned int signo;     // Requested signal number source, as defined in signal.h
+} m_src_sgn_t;
+
+typedef struct {
+    const char *path;       // Path of file/folder to which subscribe for events
+    unsigned int events;    // Desired events
+} m_src_path_t;
+
+typedef struct {
+    pid_t pid;              // Process id to be watched
+    unsigned int events;    // Desired events. Unused on linux: only process exit is supported
+} m_src_pid_t;
+
+typedef struct {
+    int tid;                // Unique task id; it allows to run multiple times the same fn
+    int (*fn)(void *);      // Function to be run on thread
+} m_src_task_t;
+
+typedef struct {
+    uint64_t inactive_ms;   // if != 0 -> if module is inactive for longer than this, an alarm will be received
+    double activity_freq;   // if != 0 -> if module's activity is higher than this, an alarm will be received
+} m_src_thresh_t;
+
+/** Libmodule output messages received in m_mod_on_evt() callback queue **/
+
+/* PubSub messages */
+typedef struct {
+    bool system;            // Is this a system message?
+    const m_mod_t *sender;
+    const char *topic;
+    const void *data;       // NULL for system messages
+} m_evt_ps_t;
+
+/* Generic fd event messages */
+typedef struct {
+    int fd;
+} m_evt_fd_t;
+
+/* Timer event messages */
+typedef struct {
+    uint64_t ms;
+} m_evt_tmr_t;
+
+/* Signal event messages */
+typedef struct {
+    unsigned int signo;
+} m_evt_sgn_t;
+
+/* Path event messages */
+typedef struct {
+    const char *path;
+    unsigned int events;
+} m_evt_path_t;
+
+/* Pid event messages */
+typedef struct {
+    pid_t pid;
+    unsigned int events;
+} m_evt_pid_t;
+
+/* Task event messages */
+typedef struct {
+    unsigned int tid;
+    int retval;
+} m_evt_task_t;
+
+/* Thresh event messages */
+typedef struct {
+    unsigned int id;
+    uint64_t inactive_ms;
+    double activity_freq;
+} m_evt_thresh_t;
+
+/* Libmodule receive() main message type */
+typedef struct {
+    m_src_types type;                               // Event type
+    union {                                         // Events
+        m_evt_fd_t      *fd_evt;
+        m_evt_ps_t      *ps_evt;
+        m_evt_tmr_t     *tmr_evt;
+        m_evt_sgn_t     *sgn_evt;
+        m_evt_path_t    *path_evt;
+        m_evt_pid_t     *pid_evt;
+        m_evt_task_t    *task_evt;
+        m_evt_thresh_t  *thresh_evt;
+    };
+    const void *userdata;                           // Event userdata, passed through m_mod_src_register()
+} m_evt_t;
 
 /* Modules states */
 typedef enum {
@@ -93,7 +236,6 @@ int m_mod_unbecome(m_mod_t *mod);
 /* Module PubSub interface */
 int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, m_ps_flags flags);
 int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, m_ps_flags flags);
-int m_mod_ps_broadcast(m_mod_t *mod, const void *message, m_ps_flags flags);
 int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient);
 int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr);
 int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic);

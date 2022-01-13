@@ -1,5 +1,6 @@
 #include <module/ctx.h>
 #include <poll.h>
+#include <unistd.h>
 
 /*
  * This function is automatically called before registering any module.

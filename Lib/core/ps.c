@@ -53,7 +53,7 @@ found:
 }
 
 static inline bool is_system_message(const char *topic) {
-    return strncmp(topic, "LIBMODULE_", strlen("LIBMODULE_")) == 0;
+    return topic && strncmp(topic, "LIBMODULE_", strlen("LIBMODULE_")) == 0;
 }
 
 /* 
@@ -288,23 +288,14 @@ _public_ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *m
     /* only same ctx modules can talk */
     M_PARAM_ASSERT(mod->ctx == recipient->ctx);
 
-    /* Eventually cleanup PS_GLOBAL flag */    
     return send_msg(mod, recipient, NULL, message, flags);
 }
 
 _public_ int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
-    M_PARAM_ASSERT(topic);
     M_RET_ASSERT(!is_system_message(topic), -EPERM);
     
     return send_msg(mod, NULL, topic, message, flags);
-}
-
-_public_ int m_mod_ps_broadcast(m_mod_t *mod, const void *message, m_ps_flags flags) {
-    M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
-    M_PARAM_ASSERT(message);
-    
-    return send_msg(mod, NULL, NULL, message, flags);
 }
 
 _public_ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {

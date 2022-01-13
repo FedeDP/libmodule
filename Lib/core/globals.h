@@ -4,6 +4,8 @@
 #include <regex.h>
 #include <string.h>
 #include <inttypes.h> // PRIu64
+#include <stdarg.h>
+#include <unistd.h>
 #include "public/module/structs/itr.h"
 #include "public/module/mem/mem.h"
 #include "public/module/ctx.h"

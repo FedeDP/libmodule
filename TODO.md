@@ -76,6 +76,8 @@ Maybe try to m_mod_load() the newly created file?
 
 - [x] itr.h allow const types too
 
+- [x] Drop m_mod_ps_broadcast to reduce API, just call m_mod_ps_publish with NULL topic
+
 ### Last changes
 
 #### Plugin API

@@ -46,7 +46,6 @@ void test_mod_tell_NULL_msg(void **state);
 void test_mod_tell(void **state);
 void test_mod_publish_NULL_self(void **state);
 void test_mod_publish_NULL_msg(void **state);
-void test_mod_publish_NULL_topic(void **state);
 void test_mod_publish(void **state);
 void test_mod_broadcast_NULL_self(void **state);
 void test_mod_broadcast_NULL_msg(void **state);
