@@ -1,4 +1,7 @@
 site_name: Libmodule Documentation
+site_description: C simple and elegant implementation of an Actor library
+site_author: Federico Di Pierro
+
 pages:
 - Index: index.md
 #- Concepts: concepts.md
