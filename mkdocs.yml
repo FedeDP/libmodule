@@ -1,0 +1,21 @@
+site_name: Libmodule Documentation
+pages:
+- Index: index.md
+#- Concepts: concepts.md
+    #- Module: concepts_module.md
+    #- Context: concepts_context.md
+    #- Loop: concepts_loop.md
+    #- Sources: concepts_sources.md
+    #- Logging: concepts_logging.md
+    #- Lifecycle: concepts_lifecycle.md
+#- Module API: module.md
+#- Context API: context.md
+#- Data Structures API: structs.md
+    #- Map: map.md
+    #- List: list.md
+    #- Queue: queue.md
+    #- Stack: stack.md
+    #- Bst: bst.md
+#- Reference counted memory: mem.md
+#- Thread Pool API: thpool.md
+theme: readthedocs

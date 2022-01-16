@@ -347,13 +347,14 @@ It would allows to check if same node already exists on insert, without losing t
 
 - [ ] Fully rewrite documentation per-namespace
 - [ ] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
-- [ ] Document that m_{mod,ctx}_deregister() should not be called inside user hook { on_start(), on_stop(), on_eval() } functions; m_mod_deregister() can be used from on_evt() though.  
+- [ ] Document that m_{mod,ctx}_deregister() should not be called inside user hook { on_start(), on_stop(), on_eval() } functions; m_mod_deregister() can be used from on_evt() though.  (IS THIS WHOLE SENTENCE TRUE?)
 - [ ] Add build options doc
-- [ ] Document multiple ps_flags in subscribe() (ie: we only account for lowest priority value)  
+- [ ] Document PRIO flags
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document m_ctx_pre_loop()!
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
 - [ ] Document loop_stop() behaviour (it waits on any tasks to complete before leaving, thus it is a blocking function when any SRC_TASK is still running)
+- [ ] Switch to md for doc (https://mkdocs.readthedocs.io/en/0.15.3/user-guide/writing-your-docs/)
 
 ### Remaining fixes/Improvements
 
