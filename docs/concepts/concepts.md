@@ -35,3 +35,8 @@ But if you called `m_mod_ref()`, then you own a reference on that module and it'
 
 Moreover, libmodule allows users to override default memhook used, by calling `m_set_memhook()`.  
 This function must be called from `m_pre_start()` function, because it has to be called before any internal ctor is run, ie: before any allocation takes place.  
+A memhook is just a wrapper around 3 main memory related functions:  
+
+* `malloc`  
+* `calloc`  
+* `free`  

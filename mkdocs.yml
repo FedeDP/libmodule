@@ -1,7 +1,7 @@
 site_name: Libmodule Documentation
 site_description: C simple and elegant implementation of an Actor library
 site_author: Federico Di Pierro
-repo_url: https://github.com/FededDP/libmodule/
+repo_url: https://github.com/FedeDP/libmodule/
 
 nav:
     - Home: index.md
