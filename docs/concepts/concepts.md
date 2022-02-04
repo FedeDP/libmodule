@@ -3,19 +3,21 @@
 ## Naming Conventions
 
 Libmodule uses the following naming conventions:  
-* `m_` is the prefix for all the library API
-* `m_foo_` APIs group together the same namespace API
-* struct types have the `_t` suffix
-* enum types **do not have** the `_t` suffix
+
+* `m_` is the prefix for all the library API  
+* `m_foo_` APIs group together the same namespace API  
+* struct types have the `_t` suffix  
+* enum types **do not have** the `_t` suffix  
 
 ## Logging
 
 Libmodule offers an internal logging facility, to enable verbose logging for the library.  
-There are 4 log levels that can be enabled through `LIBMODULE_LOG` env variable:
-* 0 (error, **default**)
-* 1 (warn)
-* 2 (info)
-* 3 (debug)
+There are 4 log levels that can be enabled through `LIBMODULE_LOG` env variable:  
+
+* 0 (error, **default**)  
+* 1 (warn)  
+* 2 (info)  
+* 3 (debug)  
 
 Moreover, you can specify an output file for the log, by passing `LIBMODULE_LOG_OUTPUT` env variable.  
 By default, stdout is used.

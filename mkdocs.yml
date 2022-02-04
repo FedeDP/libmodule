@@ -4,24 +4,25 @@ site_author: Federico Di Pierro
 repo_url: https://github.com/FededDP/libmodule/
 
 nav:
-    - 'Home': 'index.md'
-    - 'Concepts':
-        - 'concepts/concepts.md'
-        - 'Module': 'concepts/mod.md'
-        - 'Context': 'concepts/ctx.md'
-    - 'Core API':
-        - 'core/core.md'
-        - 'Module API': 'core/mod.md'
-        - 'Context API': 'core/ctx.md'
-    - 'Data Structures API':
-        - 'structs/structs.md'
-        - 'Map': 'structs/map.md'
-        - 'List': 'structs/list.md'
-        - 'Queue': 'structs/queue.md'
-        - 'Stack': 'structs/stack.md'
-        - 'Bst': 'structs/bst.md'
-    - 'Reference counted memory': 'mem/mem.md'
-    - 'Thread Pool API': 'thpool/thpool.md'
+    - Home: index.md
+    - Concepts:
+        - concepts/concepts.md
+        - Module: concepts/mod.md
+        - Context: concepts/ctx.md
+    - Core API:
+        - core/core.md
+        - Module API: core/mod.md
+        - Context API: core/ctx.md
+    - Data Structures API:
+        - structs/structs.md
+        - Map: structs/map.md
+        - List: structs/list.md
+        - Queue: structs/queue.md
+        - Stack: structs/stack.md
+        - Bst: structs/bst.md
+    - Reference counted memory: mem/mem.md
+    - Thread Pool API: thpool/thpool.md
+
 theme: readthedocs
 
 markdown_extensions:
