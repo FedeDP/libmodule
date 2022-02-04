@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdalign.h>
 #include <stdlib.h>
+#include <time.h>
 
 void test_mem(void **state) {
     (void) state; /* unused */
