@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <sys/types.h>
 
 typedef void *(*m_thpool_task)(void *);
 

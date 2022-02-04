@@ -8,6 +8,9 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -std=c11 -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security -fsanitize=undefined")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+
 option(BUILD_TESTS "build ${PROJECT_NAME} tests" OFF)
 if(BUILD_TESTS)
     find_package(Cmocka)

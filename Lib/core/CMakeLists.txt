@@ -92,9 +92,6 @@ install(FILES ${CMAKE_BINARY_DIR}/libmodule_core.pc
 install(FILES LICENSE
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/licenses/lib${PROJECT_NAME})
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -std=c11 -Wtype-limits -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security -fsanitize=undefined")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
-
 # Packaging support
 # THANKS to libkqueue CMakeLists.txt for packaging support :)
 SET(CPACK_SET_DESTDIR "on")

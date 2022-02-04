@@ -31,7 +31,7 @@ _public_ _weak_ void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
 
 _public_ _weak_ int main(int argc, char *argv[]) {
     if (!default_ctx) {
-        fprintf(stderr, "No context available.\n");
+        M_ERR("No context available.\n");
         return EXIT_FAILURE;
     }
     m_ctx_pre_loop(default_ctx, argc, argv);
@@ -42,14 +42,14 @@ _public_ _weak_ int main(int argc, char *argv[]) {
 }
 
 static _m_ctor1_ void libmodule_init(void) {
-    M_DEBUG("Initializing libmodule %d.%d.%d.\n", LIBMODULE_VERSION_MAJ, LIBMODULE_VERSION_MIN, LIBMODULE_VERSION_PAT);
+    M_INFO("Initializing libmodule %d.%d.%d.\n", LIBMODULE_VERSION_MAJ, LIBMODULE_VERSION_MIN, LIBMODULE_VERSION_PAT);
     ctx = m_map_new(0, mem_dtor);
     assert(ctx != NULL);
     pthread_mutex_init(&mx, NULL);
 }
 
 static _m_dtor0_ void libmodule_deinit(void) {
-    M_DEBUG("Destroying libmodule.\n");
+    M_INFO("Destroying libmodule.\n");
     m_map_free(&ctx);
     pthread_mutex_destroy(&mx);
 }

@@ -4,9 +4,6 @@
     #define LIBMODULE_CORE_H
 #endif
 
-#include <stdbool.h>
-#include <time.h>
-#include <sys/types.h>
 #include <module/cmn.h>
 #include <module/structs/itr.h>
 
@@ -137,7 +134,7 @@ typedef struct {
 /* Libmodule receive() main message type */
 typedef struct {
     m_src_types type;                               // Event type
-    union {                                         // Events
+    union {                                         // Event data
         m_evt_fd_t      *fd_evt;
         m_evt_ps_t      *ps_evt;
         m_evt_tmr_t     *tmr_evt;
@@ -148,6 +145,7 @@ typedef struct {
         m_evt_thresh_t  *thresh_evt;
     };
     const void *userdata;                           // Event userdata, passed through m_mod_src_register()
+    uint64_t ts;                                    // Event timestamp
 } m_evt_t;
 
 /* Modules states */

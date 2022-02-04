@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
-find_package (Threads)
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
 
 file(GLOB PUBLIC_H_thpool Lib/thpool/public/module/thpool/*.h)
 file(GLOB SRCS_thpool Lib/thpool/*.c)

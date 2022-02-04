@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "test_mod.h"
 #include <module/mod.h>
 #include <module/ctx.h>

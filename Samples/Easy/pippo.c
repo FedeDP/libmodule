@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 199309L
+
 #include <module/mod_easy.h>
 #include <module/mem/mem.h>
 #include <module/ctx.h>
@@ -5,6 +7,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <signal.h>
+#include <time.h>
+
 #ifdef __linux__
     #include <sys/inotify.h>
 #else

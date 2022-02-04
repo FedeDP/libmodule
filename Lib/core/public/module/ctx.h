@@ -3,7 +3,6 @@
 #ifndef LIBMODULE_CORE_H
     #define LIBMODULE_CORE_H
 #endif
-
 #include <module/cmn.h>
 
 /* Context flags */

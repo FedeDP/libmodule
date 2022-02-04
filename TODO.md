@@ -45,8 +45,6 @@ Maybe try to m_mod_load() the newly created file?
 
 - [x] Use attribute cleanup where it makes sense
 
-- [ ] expose a set.h internally using map.c APi (from the same source file)
-
 - [x] when timerfd fires or batch size is reached, all Batched events will be sent 
 - [x] m_mod_set_batch_time() -> m_src_timer_register( M_SRC_INTERNAL) ...
 - [x] New, internal flag: M_SRC_INTERNAL -> used for internal flags
@@ -77,6 +75,8 @@ Maybe try to m_mod_load() the newly created file?
 - [x] itr.h allow const types too
 
 - [x] Drop m_mod_ps_broadcast to reduce API, just call m_mod_ps_publish with NULL topic
+
+- [x] add a timestamp to m_evt_t
 
 ### Last changes
 

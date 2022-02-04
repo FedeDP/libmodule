@@ -4,21 +4,22 @@ site_author: Federico Di Pierro
 
 pages:
 - Index: index.md
-#- Concepts: concepts.md
-    #- Module: concepts_module.md
-    #- Context: concepts_context.md
-    #- Loop: concepts_loop.md
-    #- Sources: concepts_sources.md
-    #- Logging: concepts_logging.md
-    #- Lifecycle: concepts_lifecycle.md
-#- Module API: module.md
-#- Context API: context.md
-#- Data Structures API: structs.md
-    #- Map: map.md
-    #- List: list.md
-    #- Queue: queue.md
-    #- Stack: stack.md
-    #- Bst: bst.md
-#- Reference counted memory: mem.md
-#- Thread Pool API: thpool.md
+- Concepts: concepts/concepts.md
+    - Module: concepts/mod.md
+    - Context: concepts/ctx.md
+- Core API: core/core.md
+    - Module API: core/mod.md
+    - Context API: core/ctx.md
+- Data Structures API: structs/structs.md
+    - Map: structs/map.md
+    - List: structs/list.md
+    - Queue: structs/queue.md
+    - Stack: structs/stack.md
+    - Bst: structs/bst.md
+- Reference counted memory: mem/mem.md
+- Thread Pool API: thpool/thpool.md
 theme: readthedocs
+
+markdown_extensions:
+    - toc:
+        permalink: "#"

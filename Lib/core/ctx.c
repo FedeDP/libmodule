@@ -218,6 +218,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
             m_evt_t *msg = NULL;
             if (evt) {
                 msg = &evt->evt;
+                fetch_ms(&msg->ts, NULL);
                 M_INFO("'%s' received %u type msg.\n", mod->name, msg->type);
                 switch (msg->type) {
                 case M_SRC_TYPE_FD:

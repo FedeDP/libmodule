@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <module/thpool/thpool.h>
 #include <string.h>
 #include <stdlib.h>

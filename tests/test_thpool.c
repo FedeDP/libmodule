@@ -1,8 +1,11 @@
+#define _DEFAULT_SOURCE
+
 #include "test_thpool.h"
 #include "module/thpool/thpool.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>
+#include <unistd.h>
 
 #define NUM_THREADS     8
 #define NUM_JOBS        64

@@ -6,6 +6,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdarg.h>
+#include <sys/types.h>
 
 #define LIBMODULE_VERSION_MAJ @PROJECT_VERSION_MAJOR@
 #define LIBMODULE_VERSION_MIN @PROJECT_VERSION_MINOR@

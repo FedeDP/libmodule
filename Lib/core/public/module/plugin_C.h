@@ -1,6 +1,5 @@
 #pragma once
 
-#include <module/plugin.h>
 #include <module/mod.h>
 
 /** 

@@ -1,7 +1,7 @@
 # Libmodule
 
 [![builds.sr.ht status](https://builds.sr.ht/~fededp/libmodule.svg)](https://builds.sr.ht/~fededp/libmodule?)
-[![Documentation Status](https://readthedocs.org/projects/libmodule/badge/?version=latest)](http://libmodule.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/libmodule/badge/?version=stable)](http://libmodule.readthedocs.io/en/latest/?badge=stable)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## What is this?
@@ -12,7 +12,7 @@ Indeed, libmodule was heavily inspired by my own actor library experience with [
 ## What is a module, anyway?
 
 Unsurprisingly, module is the core concept of libmodule architecture.  
-A module is an Actor that can listen on socket events too.  
+A module is an Actor that can listen on non-pubsub events too.  
 Frankly speaking, it is denoted by a M_MOD() macro plus a bunch of mandatory callbacks, eg:
 ```C
 #include <module/mod_easy.h>
@@ -68,7 +68,7 @@ static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
     }
 }
 ```
-In this example, a "Pippo" module is created and will echo chars from stdin until 'q' is pressed.  
+In this example, a "Pippo" module is created and will echo chars from stdin until 'q' is pressed, exiting with 0.  
 Note that it does not even need a main function, as libmodule already provides a default one as a [weak, thus overridable, symbol](https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Function-Attributes.html).  
 
 ## Is it portable?
