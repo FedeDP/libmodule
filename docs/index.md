@@ -1,4 +1,4 @@
-# Home for Libmodule Documentation
+# Home of Libmodule Documentation
 
 Libmodule offers a small and simple C implementation of an actor library that aims to let developers easily create modular C projects in a way which is both simple and elegant.  
 

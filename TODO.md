@@ -65,6 +65,7 @@ Maybe try to m_mod_load() the newly created file?
 - [x] enable logging only when env LIBMODULE_LOG=debug/info/warn/error are enabled
 - [x] Make use of new M_WARN, M_INFO, M_ERR macros
 - [x] Getenv (LIBMODULE_LOG_OUTPUT) and default to stdout/stderr when nonset
+- [ ] Improve logging: per-namespace -> LIBMODULE_LOG="mod/debug" "ctx/debug"; can be a list; "debug" remains to enable all debugs
 
 - [x] Split some more private headers from priv.h
 - [x] split libmodule_structs, libmodule_thpool, libmodule_mem ...
@@ -82,25 +83,8 @@ Maybe try to m_mod_load() the newly created file?
 
 #### Plugin API
 
-- [x] create a plugin.h interface declaring the plugin api
-- [x] create a plugin_C.h with just a M_PLUGIN() macro that declares plugin API, eg:
-M_PLUGIN_NAME = "name"
-m_plugin_on_start()
-m_plugin_on_eval()
-
-- [x] m_mod_load() call dlopen and dlsym to look for predefined symbols, then eventually register the module in the context of the calling module
-
-- [x] Keep a map of dlhandles object, with key module_path? and dlclose as dtor func? (in ctx!)
-- [x] then, move back #include <dlfcn.h> from priv.h to plugin.c
-- [x] Fix sigsegv
-
-- [x] plugin.h and plugin_C.h pragma once
-- [x] moreover, rename m_mod_load to m_plugin_load and move it to plugin.c
-- [x] finally in plugin.h explicit mandatory callback (only on_evt)
-
-- [x] drop m_mod_t**  param from m_mod_register: it returns a mod that is not a real reference (as the module is owned by ctx thus can become a pointer to freed memory if used after ctx is deregistered)
-- [x] threat it as a ref, ie: if not null, store a reference to the new module 
-- [x] always pass a reference in start,stop,eval,evt callbacks?
+- [x] unify plugin with m_mod_register(): if NULL hook is passed -> treat name as path and dlopen it, to find symbols
+- [ ] fix valgrind issue
 
 #### Generic
 

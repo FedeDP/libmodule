@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 static void m_mod_on_evt_sleeping(m_mod_t *mod, const m_queue_t *const evts);
+static m_mod_t *plugin;
 
 M_MOD("Doggo");
 
@@ -54,7 +55,7 @@ static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
                     m_mod_src_register(mod, M_PS_MOD_STARTED, 0, NULL);
 
                     /* Test runtime module loading; loaded module won't have direct access to CTX */
-                    m_plugin_load("./libtestmod.so", m_mod_ctx(mod), NULL, M_MOD_DENY_CTX);
+                    m_mod_register("./libtestmod.so", m_mod_ctx(mod), &plugin, NULL, M_MOD_DENY_CTX, NULL);
                 } else if (!strcmp((char *)msg->ps_evt->data, "ByeBye")) {
                     m_mod_log(mod, "Sob...\n");
                 } else if (!strcmp((char *)msg->ps_evt->data, "WakeUp")) {
@@ -78,7 +79,7 @@ static void m_mod_on_evt_sleeping(m_mod_t *mod, const m_queue_t *const evts) {
                     m_mod_unbecome(mod);
                     m_mod_log(mod, "Yawn...\n");
                     m_ctx_dump(m_mod_ctx(mod));
-                    m_plugin_unload("./libtestmod.so", m_mod_ctx(mod));
+                    m_mod_deregister(&plugin);
                     m_mod_src_deregister(mod, M_PS_MOD_STARTED);
                 } else {
                     m_mod_log(mod, "ZzzZzz...\n");

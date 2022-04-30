@@ -20,8 +20,9 @@ static int optional_hook(m_mod_t *mod, enum mod_hook req_hook);
 
 static void module_dtor(void *data) {
     m_mod_t *mod = (m_mod_t *)data;
-    M_MOD_CTX(mod);
     if (mod) {
+        M_DEBUG("Module '%s' dtor.\n", mod->name);
+        
         m_mem_unref(mod->ctx);
         
         if (mod->dlhandle) {
@@ -338,14 +339,6 @@ void mod_dump(const m_mod_t *mod, bool log_mod, const char *indent) {
     ctx_logger(c, m, "%s\t\"Flags\": \"%#x\",\n", indent, mod->flags);
     ctx_logger(c, m, "%s\t\"UP\": \"%p\",\n", indent, mod->userdata);
     ctx_logger(c, m, "%s\t\"Plugin\": %s,\n", indent, mod->dlhandle ? "true" : "false");
-    if (mod->dlhandle) {
-        // Use dladdr() instead of dlinfo() as dladdrs is supported on osx too
-        Dl_info info;
-        dladdr(mod->hook.on_eval, &info);
-        ctx_logger(c, m, "%s\t\"Plugin_path\": \"%s\",\n", indent, info.dli_fname);
-    } else {
-        ctx_logger(c, m, "%s\t\"Plugin_path\": \"N/A\",\n", indent);
-    }
     
     ctx_logger(c, m, "%s\t\"Stats\": {\n", indent);
     ctx_logger(c, m, "%s\t\t\"Reg_time\": %" PRIu64 ",\n", indent, mod->stats.registration_time);
@@ -430,9 +423,8 @@ void mod_dump(const m_mod_t *mod, bool log_mod, const char *indent) {
 _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, const m_mod_hook_t *hook,
                             m_mod_flags flags, const void *userdata) {
     M_PARAM_ASSERT(str_not_empty(name));
-    M_PARAM_ASSERT(hook);
-    /* Mandatory callback */
-    M_PARAM_ASSERT(hook->on_evt);
+    /* Mandatory callback if hook is passed */
+    M_PARAM_ASSERT(!hook || hook->on_evt);
     
     /* NULL ctx means using default ctx */
     if (!c) {
@@ -478,6 +470,29 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
     do {
         mod->name = flags & M_MOD_NAME_DUP ? mem_strdup(name) : name;
         
+        // NULL hook means register a runtime loaded module
+        if (hook == NULL) {
+            mod->dlhandle = dlopen(mod->name, RTLD_NOW);
+            if (!mod->dlhandle) {
+                M_WARN("Couldn't dynamically load module: dlopen failed with error: %s\n", dlerror());
+                ret = -EINVAL;
+                break;
+            }
+            
+            /* Search for required symbols */
+            mod->hook.on_eval = dlsym(mod->dlhandle, "m_mod_on_eval");
+            mod->hook.on_start = dlsym(mod->dlhandle, "m_mod_on_start");
+            mod->hook.on_stop = dlsym(mod->dlhandle, "m_mod_on_stop");
+            mod->hook.on_evt = dlsym(mod->dlhandle, "m_mod_on_evt");
+            if (!mod->hook.on_evt) {
+                M_WARN("Mandatory m_mod_on_evt() symbol missing.\n");
+                ret = -EINVAL;
+                break;
+            }
+        } else {
+            memcpy(&mod->hook, hook, sizeof(m_mod_hook_t));
+        }
+        
         for (int i = 0; i < M_SRC_TYPE_END; i++) {
             if (init_src(mod, i) != 0) {
                 break;
@@ -500,9 +515,8 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
         }
         
         if (m_map_put(c->modules, mod->name, mod) == 0) {
-            memcpy(&mod->hook, hook, sizeof(m_mod_hook_t));
             mod->state = M_MOD_IDLE;
-            
+
             if (mod_ref) {
                 *mod_ref = m_mem_ref(mod);
             }

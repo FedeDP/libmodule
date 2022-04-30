@@ -358,28 +358,21 @@ _public_ ssize_t m_mod_src_len(const m_mod_t *mod, m_src_types type) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(type >= M_SRC_TYPE_PS && type <= M_SRC_TYPE_END);
     
-    ssize_t len = 0;
-    int itr_type = type;
-    do {
-        switch (itr_type) {
-        case M_SRC_TYPE_END:
-            break;
-        case M_SRC_TYPE_PS:
-            if (mod->subscriptions) {
-                len += m_map_len(mod->subscriptions);
-            }
-            break;
-        default:
-            if (mod->srcs[itr_type]) {
-                len += m_bst_len(mod->srcs[itr_type]);
-            }
-            break;
+    int len = 0;
+    m_itr_foreach(mod->subscriptions, {
+        ev_src_t *src = m_itr_get(m_itr);
+        if (!(src->flags & M_SRC_INTERNAL)) {
+            len++;
         }
-    } while (--itr_type >= M_SRC_TYPE_PS && type == M_SRC_TYPE_END);
+    });
     
-    /* Do not account for internal timer event */
-    if (mod->batch.timer.ms != 0 && (type == M_SRC_TYPE_END || type == M_SRC_TYPE_TMR)) {
-        len--;
+    for (int i = M_SRC_TYPE_FD; i < M_SRC_TYPE_END; i++) {
+        m_itr_foreach(mod->srcs[i], {
+            ev_src_t *src = m_itr_get(m_itr);
+            if (!(src->flags & M_SRC_INTERNAL)) {
+                len++;
+            }
+        });
     }
     return len;
 }

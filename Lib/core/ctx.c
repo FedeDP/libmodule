@@ -21,8 +21,9 @@ static int ctx_destroy_mods(void *data, const char *key, void *value);
 m_ctx_t *default_ctx = NULL;
 
 static void ctx_dtor(void *data) {
-    M_DEBUG("Destroying context.\n");
     m_ctx_t *context = (m_ctx_t *)data;
+    M_DEBUG("Ctx '%s' dtor.\n", context->name);
+    
     m_map_free(&context->modules);
     poll_destroy(&context->ppriv);
     memhook._free(context->ppriv.data);
@@ -452,11 +453,10 @@ _public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags
 
 _public_ int m_ctx_deregister(m_ctx_t **c) {
     M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);
-    
-    const bool is_default_ctx = *c == default_ctx;
-    
+
     int ret = 0;
     m_ctx_t *context = *c;
+    const bool is_default_ctx = context == default_ctx;
 
     /* Keep memory alive */
     M_MEM_LOCK(context, {
