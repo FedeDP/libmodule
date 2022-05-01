@@ -56,6 +56,7 @@ struct _mod {
     m_bst_t *srcs[M_SRC_TYPE_END];          // module's event sources
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     m_queue_t *stashed;                     // module's stashed messages
+    m_list_t *bound_mods;                   // modules that are bound to this module's state
     CONST m_ctx_t *ctx;                     // Module's ctx
 };
 

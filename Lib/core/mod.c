@@ -34,6 +34,7 @@ static void module_dtor(void *data) {
         m_stack_free(&mod->recvs);
         m_queue_free(&mod->stashed);
         m_queue_free(&mod->batch.events);
+        m_list_free(&mod->bound_mods);
         for (int i = 0; i < M_SRC_TYPE_END; i++) {
             m_bst_free(&mod->srcs[i]);
         }
@@ -514,6 +515,11 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
             break;
         }
         
+        mod->bound_mods = m_list_new(NULL, mem_dtor);
+        if (!mod->bound_mods) {
+            break;
+        }
+        
         if (m_map_put(c->modules, mod->name, mod) == 0) {
             mod->state = M_MOD_IDLE;
 
@@ -609,23 +615,63 @@ _public_ m_ctx_t *m_mod_ctx(const m_mod_t *mod) {
 _public_ int m_mod_start(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_IDLE | M_MOD_STOPPED);
     
-    return start(mod, true);
+    int ret = start(mod, true);
+    if (ret == 0) {
+        m_itr_foreach(mod->bound_mods, {
+            m_mod_t *bmod = m_itr_get(m_itr);
+            m_mod_start(bmod);
+        });
+    }
+    return ret;
 }
 
 _public_ int m_mod_pause(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
     
-    return stop(mod, false);
+    int ret = stop(mod, false);
+    if (ret == 0) {
+        m_itr_foreach(mod->bound_mods, {
+            m_mod_t *bmod = m_itr_get(m_itr);
+            m_mod_pause(bmod);
+        });
+    }
+    return ret;
 }
 
 _public_ int m_mod_resume(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_PAUSED);
     
-    return start(mod, false);
+    int ret = start(mod, false);
+    if (ret == 0) {
+        m_itr_foreach(mod->bound_mods, {
+            m_mod_t *bmod = m_itr_get(m_itr);
+            m_mod_resume(bmod);
+        });
+    }
+    return ret;
 }
 
 _public_ int m_mod_stop(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING | M_MOD_PAUSED);
     
-    return stop(mod, true);
+    int ret = stop(mod, true);
+    if (ret == 0) {
+        m_itr_foreach(mod->bound_mods, {
+            m_mod_t *bmod = m_itr_get(m_itr);
+            m_mod_stop(bmod);
+        });
+    }
+    return ret;
+}
+
+_public_ int m_mod_bind(m_mod_t *mod, m_mod_t *ref) {
+    M_MOD_ASSERT(mod);
+    M_MOD_ASSERT(ref);
+    
+    /*
+     * NOTE: dependency cycle is not avoided.
+     * This is deliberately not too smart to avoid costly checks.
+     * Be careful.
+     */
+    return m_list_insert(ref->bound_mods, m_mem_ref(mod));
 }

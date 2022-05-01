@@ -65,7 +65,7 @@ Maybe try to m_mod_load() the newly created file?
 - [x] enable logging only when env LIBMODULE_LOG=debug/info/warn/error are enabled
 - [x] Make use of new M_WARN, M_INFO, M_ERR macros
 - [x] Getenv (LIBMODULE_LOG_OUTPUT) and default to stdout/stderr when nonset
-- [ ] Improve logging: per-namespace -> LIBMODULE_LOG="mod/debug" "ctx/debug"; can be a list; "debug" remains to enable all debugs
+- [ ] Improve logging: per-namespace -> LIBMODULE_MOD_LOG="debug" LIBMODULE_CTX_LOG="debug"; LIBMODULE_LOG="debug" remains to enable all debugs
 
 - [x] Split some more private headers from priv.h
 - [x] split libmodule_structs, libmodule_thpool, libmodule_mem ...
@@ -103,6 +103,8 @@ Maybe try to m_mod_load() the newly created file?
 
 - [x] add a m_ctx_finalize() API that once set, deny any new module loaded in the context
 - [x] add a set of m_mod_flags passed to m_ctx_register() that will be forwarded to each module registered
+
+- [x] add a m_mod_bind() to bind a module's lifecycle to that of another one
 
 ### Reference-counted objects' life management
 

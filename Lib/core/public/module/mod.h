@@ -219,6 +219,8 @@ int m_mod_pause(m_mod_t *mod);
 int m_mod_resume(m_mod_t *mod);
 int m_mod_stop(m_mod_t *mod);
 
+int m_mod_bind(m_mod_t *mod, m_mod_t *ref);
+
 /* Module generic functions */
 int m_mod_log(const m_mod_t *mod, const char *fmt, ...);
 int m_mod_dump(const m_mod_t *mod);
