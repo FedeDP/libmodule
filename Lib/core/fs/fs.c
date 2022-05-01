@@ -1,6 +1,5 @@
 #include "poll.h"
 #include "fs.h"
-#include "public/module/plugin.h"
 #include "public/module/fs.h"
 
 #define FUSE_USE_VERSION 35
@@ -228,7 +227,7 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     if (str_not_empty(path)) {
         FS_CTX();
-        return m_plugin_load(path + 1, c, NULL, 0);
+        return m_mod_register(path + 1, c, NULL, NULL, 0, NULL);
     }
     return -ENOENT;
 }
