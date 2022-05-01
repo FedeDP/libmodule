@@ -612,16 +612,19 @@ _public_ m_ctx_t *m_mod_ctx(const m_mod_t *mod) {
 
 /** Module state setters **/
 
+#define M_MOD_BOUND(fn) \
+    if (ret == 0) { \
+        m_itr_foreach(mod->bound_mods, { \
+            m_mod_t *bmod = m_itr_get(m_itr); \
+            fn(bmod); \
+        }); \
+    }
+
 _public_ int m_mod_start(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_IDLE | M_MOD_STOPPED);
     
     int ret = start(mod, true);
-    if (ret == 0) {
-        m_itr_foreach(mod->bound_mods, {
-            m_mod_t *bmod = m_itr_get(m_itr);
-            m_mod_start(bmod);
-        });
-    }
+    M_MOD_BOUND(m_mod_start);
     return ret;
 }
 
@@ -629,12 +632,7 @@ _public_ int m_mod_pause(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
     
     int ret = stop(mod, false);
-    if (ret == 0) {
-        m_itr_foreach(mod->bound_mods, {
-            m_mod_t *bmod = m_itr_get(m_itr);
-            m_mod_pause(bmod);
-        });
-    }
+    M_MOD_BOUND(m_mod_pause);
     return ret;
 }
 
@@ -642,12 +640,7 @@ _public_ int m_mod_resume(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_PAUSED);
     
     int ret = start(mod, false);
-    if (ret == 0) {
-        m_itr_foreach(mod->bound_mods, {
-            m_mod_t *bmod = m_itr_get(m_itr);
-            m_mod_resume(bmod);
-        });
-    }
+    M_MOD_BOUND(m_mod_resume);
     return ret;
 }
 
@@ -655,12 +648,7 @@ _public_ int m_mod_stop(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING | M_MOD_PAUSED);
     
     int ret = stop(mod, true);
-    if (ret == 0) {
-        m_itr_foreach(mod->bound_mods, {
-            m_mod_t *bmod = m_itr_get(m_itr);
-            m_mod_stop(bmod);
-        });
-    }
+    M_MOD_BOUND(m_mod_stop);
     return ret;
 }
 

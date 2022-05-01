@@ -1,5 +1,4 @@
 #include <module/mod_easy.h>
-#include <module/plugin.h>
 #include <module/ctx.h> 
 #include <string.h>
 #include <stdlib.h>
