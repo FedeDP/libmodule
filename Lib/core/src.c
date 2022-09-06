@@ -156,6 +156,7 @@ int init_src(m_mod_t *mod, m_src_types t) {
 int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
                          m_src_flags flags, const void *userptr) {
     M_MOD_ASSERT(mod);
+    M_MOD_CONSUME_TOKEN(mod);
     M_SRC_ASSERT_PRIO_FLAGS();
     ev_src_t *src = m_mem_new(sizeof(ev_src_t), src_priv_dtor);
     M_ALLOC_ASSERT(src);
@@ -225,7 +226,6 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
 
     int ret = m_bst_insert(mod->srcs[type], src);
     if (ret == 0) {
-        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         /* If a src is registered at runtime, start receiving its events */
         if (m_mod_is(mod, M_MOD_RUNNING)) {
             M_MOD_CTX(mod);
@@ -244,12 +244,9 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
 
 int deregister_src(m_mod_t *mod, m_src_types type, void *src_data) {
     M_MOD_ASSERT(mod);
+    M_MOD_CONSUME_TOKEN(mod);
 
-    int ret = m_bst_remove(mod->srcs[type], src_data);
-    if (ret == 0) {
-        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    }
-    return ret;
+    return m_bst_remove(mod->srcs[type], src_data);
 }
 
 int start_task(m_ctx_t *c, ev_src_t *src) {

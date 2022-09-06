@@ -272,6 +272,9 @@ int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr);
 int m_mod_set_batch_size(m_mod_t *mod, size_t len);
 int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ms);
 
+/* Mod tokenbucket */
+int m_mod_set_tokenbucket(m_mod_t *mod, uint16_t rate, uint64_t burst);
+
 /* Generic event source registering functions */
 #define m_mod_src_register(mod, X, flags, userptr) _Generic((X) + 0, \
     int: m_mod_src_register_fd, \

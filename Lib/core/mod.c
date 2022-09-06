@@ -82,7 +82,6 @@ static int init_pubsub_fd(m_mod_t *mod) {
 static int manage_srcs(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
     int ret = 0;
     
-    fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     for (int i = 0; i < M_SRC_TYPE_END; i++) {
         m_itr_foreach(mod->srcs[i], {
             ev_src_t *t = m_itr_get(m_itr);
@@ -520,6 +519,10 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
             break;
         }
         
+        // Initially disabled token bucket
+        mod->tb.burst = UINT64_MAX;
+        mod->tb.tokens = UINT64_MAX;
+        
         if (m_map_put(c->modules, mod->name, mod) == 0) {
             mod->state = M_MOD_IDLE;
 
@@ -541,6 +544,35 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
 
 _public_ int m_mod_deregister(m_mod_t **mod) {
     return mod_deregister(mod, true);
+}
+
+_public_ int m_mod_set_tokenbucket(m_mod_t *mod, uint16_t rate, uint64_t burst) {
+    M_MOD_ASSERT(mod);
+    M_PARAM_ASSERT(rate <= 1000);
+
+    // src_deregister and src_register already consume a token
+
+    /* If it was already set, remove old timer */
+    if (mod->tb.timer.ms != 0) {
+        m_mod_src_deregister_tmr(mod, &mod->tb.timer);
+    }
+    
+    // Rate 0 -> disable tb
+    if (rate == 0) {
+        mod->tb.rate = 0;
+        mod->tb.burst = UINT64_MAX;
+        mod->tb.tokens = UINT64_MAX;
+        memset(&mod->tb.timer, 0, sizeof(mod->tb.timer));
+        return 0;
+    }
+    
+    // Store new values and create new token bucket timer src
+    mod->tb.rate = rate;
+    mod->tb.burst = burst;
+    mod->tb.tokens = burst;
+    mod->tb.timer.clock_id = CLOCK_MONOTONIC;
+    mod->tb.timer.ms = 1 / rate;
+    return m_mod_src_register_tmr(mod, &mod->tb.timer, M_SRC_INTERNAL | M_SRC_PRIO_HIGH, &mod->tb);
 }
 
 _public_ __attribute__((format (printf, 2, 3))) int m_mod_log(const m_mod_t *mod, const char *fmt, ...) {
@@ -622,6 +654,7 @@ _public_ m_ctx_t *m_mod_ctx(const m_mod_t *mod) {
 
 _public_ int m_mod_start(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_IDLE | M_MOD_STOPPED);
+    M_MOD_CONSUME_TOKEN(mod);
     
     int ret = start(mod, true);
     M_MOD_BOUND(m_mod_start);
@@ -630,6 +663,7 @@ _public_ int m_mod_start(m_mod_t *mod) {
 
 _public_ int m_mod_pause(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
+    M_MOD_CONSUME_TOKEN(mod);
     
     int ret = stop(mod, false);
     M_MOD_BOUND(m_mod_pause);
@@ -638,6 +672,7 @@ _public_ int m_mod_pause(m_mod_t *mod) {
 
 _public_ int m_mod_resume(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_PAUSED);
+    M_MOD_CONSUME_TOKEN(mod);
     
     int ret = start(mod, false);
     M_MOD_BOUND(m_mod_resume);
@@ -646,6 +681,7 @@ _public_ int m_mod_resume(m_mod_t *mod) {
 
 _public_ int m_mod_stop(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING | M_MOD_PAUSED);
+    M_MOD_CONSUME_TOKEN(mod);
     
     int ret = stop(mod, true);
     M_MOD_BOUND(m_mod_stop);
@@ -655,11 +691,7 @@ _public_ int m_mod_stop(m_mod_t *mod) {
 _public_ int m_mod_bind(m_mod_t *mod, m_mod_t *ref) {
     M_MOD_ASSERT(mod);
     M_MOD_ASSERT(ref);
+    M_MOD_CONSUME_TOKEN(mod);
     
-    /*
-     * NOTE: dependency cycle is not avoided.
-     * This is deliberately not too smart to avoid costly checks.
-     * Be careful.
-     */
     return m_list_insert(ref->bound_mods, m_mem_ref(mod));
 }

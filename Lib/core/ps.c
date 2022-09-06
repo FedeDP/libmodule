@@ -135,7 +135,6 @@ static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic,
     M_PARAM_ASSERT(message);
 
     mod->stats.sent_msgs++;
-    fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
     ps_priv_t m = { { false, mod, topic, message }, flags, NULL };
     return tell_pubsub_msg(&m, recipient, mod->ctx);
 }
@@ -146,7 +145,6 @@ int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_mod_t *sender
     if (sender) {
         // A module sent a M_PS_MOD_POISONPILL message to another, or it was stopped
         sender->stats.sent_msgs++;
-        fetch_ms(&sender->stats.last_seen, &sender->stats.action_ctr);
     }
     ps_priv_t m = { { true, sender, topic, NULL }, 0, NULL };
     return tell_pubsub_msg(&m, recipient, c);
@@ -214,7 +212,8 @@ void call_pubsub_cb(m_mod_t *mod, m_queue_t *evts) {
     cb(mod, evts);
     
     mod->stats.recv_msgs += m_queue_len(evts);
-    fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
+    
+    fetch_ms(&mod->stats.last_seen, NULL);
     
 end:
     /* Destroy events */
@@ -227,6 +226,7 @@ _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags fla
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
     M_SRC_ASSERT_PRIO_FLAGS();
+    M_MOD_CONSUME_TOKEN(mod);
 
     /* Check if it is a valid regex: compile it */
     regex_t regex;
@@ -261,9 +261,6 @@ _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags fla
         memcpy(&ps_src->reg, &regex, sizeof(regex_t));
         ps_src->topic = sub->flags & M_SRC_DUP ? mem_strdup(topic) : topic;
         ret = m_map_put(mod->subscriptions, ps_src->topic, sub); // M_MAP_VAL_ALLOW_UPDATE -> this will dtor old elem before updating
-        if (ret == 0) {
-            fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-        }
     }
     return ret;
 }
@@ -271,10 +268,10 @@ _public_ int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags fla
 _public_ int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_SUB);
     M_PARAM_ASSERT(topic);
+    M_MOD_CONSUME_TOKEN(mod);
     
     int ret = m_map_remove(mod->subscriptions, topic);
     if (ret == 0) {
-        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         if (m_map_len(mod->subscriptions) == 0) {
             m_map_free(&mod->subscriptions);
         }
@@ -287,6 +284,7 @@ _public_ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *m
     M_PARAM_ASSERT(recipient);
     /* only same ctx modules can talk */
     M_PARAM_ASSERT(mod->ctx == recipient->ctx);
+    M_MOD_CONSUME_TOKEN(mod);
 
     return send_msg(mod, recipient, NULL, message, flags);
 }
@@ -294,6 +292,7 @@ _public_ int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *m
 _public_ int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, m_ps_flags flags) {
     M_MOD_ASSERT_PERM(mod, M_MOD_DENY_PUB);
     M_RET_ASSERT(!is_system_message(topic), -EPERM);
+    M_MOD_CONSUME_TOKEN(mod);
     
     return send_msg(mod, NULL, topic, message, flags);
 }
@@ -304,6 +303,7 @@ _public_ int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient) {
     /* only same ctx modules can talk */
     M_PARAM_ASSERT(mod->ctx == recipient->ctx);
     M_PARAM_ASSERT(m_mod_is(recipient, M_MOD_RUNNING));
+    M_MOD_CONSUME_TOKEN(mod);
 
     return tell_system_pubsub_msg(recipient, mod->ctx, mod, M_PS_MOD_POISONPILL);
 }

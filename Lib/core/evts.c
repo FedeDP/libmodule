@@ -39,19 +39,16 @@ _public_ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
 _public_ int m_mod_become(m_mod_t *mod, m_evt_cb new_on_evt) {
     M_PARAM_ASSERT(new_on_evt);
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
+    M_MOD_CONSUME_TOKEN(mod);
 
-    int ret = m_stack_push(mod->recvs, new_on_evt);
-    if (ret == 0) {
-        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    }
-    return ret;
+    return m_stack_push(mod->recvs, new_on_evt);;
 }
 
 _public_ int m_mod_unbecome(m_mod_t *mod) {
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
+    M_MOD_CONSUME_TOKEN(mod);
 
     if (m_stack_pop(mod->recvs) != NULL) {
-        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
         return 0;
     }
     return -EINVAL;
@@ -60,6 +57,7 @@ _public_ int m_mod_unbecome(m_mod_t *mod) {
 _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(evt);
+    M_MOD_CONSUME_TOKEN(mod);
     
     evt_priv_t *priv_evt = (evt_priv_t *)evt;
     m_src_flags prio_flags = 0;
@@ -69,16 +67,13 @@ _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
     // Cannot stash HIGH priority evts!
     M_RET_ASSERT(!(prio_flags & M_SRC_PRIO_HIGH), -EPERM);
 
-    int ret = m_queue_enqueue(mod->stashed, m_mem_ref((void *)evt));
-    if (ret == 0) {
-        fetch_ms(&mod->stats.last_seen, &mod->stats.action_ctr);
-    }
-    return ret;
+    return m_queue_enqueue(mod->stashed, m_mem_ref((void *)evt));;
 }
 
 _public_ ssize_t m_mod_unstash(m_mod_t *mod, size_t len) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(len > 0);
+    M_MOD_CONSUME_TOKEN(mod);
 
     m_queue_t *unstashed = m_queue_new(mem_dtor);
     M_ALLOC_ASSERT(unstashed);
@@ -106,6 +101,7 @@ _public_ ssize_t m_mod_unstash(m_mod_t *mod, size_t len) {
 
 _public_ int m_mod_set_batch_size(m_mod_t *mod, size_t len) {
     M_MOD_ASSERT(mod);
+    M_MOD_CONSUME_TOKEN(mod);
     
     mod->batch.len = len;
     return 0;
@@ -114,19 +110,21 @@ _public_ int m_mod_set_batch_size(m_mod_t *mod, size_t len) {
 _public_ int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ms) {
     M_MOD_ASSERT(mod);
 
+    // src_deregister and src_register already consume a token
+
     /* If it was already set, remove old timer */
     if (mod->batch.timer.ms != 0) {
-        deregister_src(mod, M_SRC_TYPE_TMR, &mod->batch.timer);
+        m_mod_src_deregister_tmr(mod, &mod->batch.timer);
     }
     mod->batch.timer.clock_id = CLOCK_MONOTONIC;
     mod->batch.timer.ms = timeout_ms;
     if (timeout_ms != 0) {
-        // If batching by size was disabled
+        // If batching by size is disabled
         if (mod->batch.len == 0) {
             // Set a maximum value for batching so that only timed batching will be effective
-            mod->batch.len = -1;
+            mod->batch.len = SIZE_MAX;
         }
-        return register_src(mod, M_SRC_TYPE_TMR, &mod->batch.timer, M_SRC_INTERNAL | M_SRC_PRIO_HIGH, NULL);
+        return m_mod_src_register_tmr(mod, &mod->batch.timer, M_SRC_INTERNAL | M_SRC_PRIO_HIGH, &mod->batch);
     }
     return 0;
 }

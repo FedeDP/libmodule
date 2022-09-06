@@ -123,15 +123,29 @@ static void push_evt(m_mod_t *mod, evt_priv_t *evt) {
     ev_src_t *src = evt->src;
     m_evt_t *msg = &evt->evt;
     
-    const bool is_batch_timer = src && src->type == M_SRC_TYPE_TMR && src->flags & M_SRC_INTERNAL;
+    const bool is_internal = src && (src->flags & M_SRC_INTERNAL);
     bool force = false;
+
     /*
-     * If it is a batch timer event, unref it as
+     * If it is an internal event, unref it as
      * it does not need to be recved by user;
      * else, push it onto the message queue.
      */
-    if (is_batch_timer) {
+    if (is_internal) {
+        const bool is_batch_timer = src->userptr == &mod->batch;
+        const bool is_tb_timer = src->userptr == &mod->tb;
+        
         m_mem_unref(evt);
+        /* When batch timer elapses, force flush events to user */
+        force = is_batch_timer;
+
+        /* If this is the tokenbucket timer, refill one token */
+        if (is_tb_timer) {
+            if (mod->tb.tokens < mod->tb.burst) {
+                mod->tb.tokens++;
+            }
+        }
+
     } else {
         m_queue_enqueue(mod->batch.events, evt);
         /*
@@ -164,7 +178,6 @@ static void push_evt(m_mod_t *mod, evt_priv_t *evt) {
      * run the pubsub callback!
      */
     if (force ||
-        is_batch_timer ||
         m_queue_len(mod->batch.events) >= mod->batch.len) {
 
         /*
