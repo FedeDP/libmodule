@@ -8,7 +8,6 @@ set_target_properties(
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
 )
-target_include_directories(${PROJECT_NAME}_utils_internal PRIVATE)
 
 install(TARGETS ${PROJECT_NAME}_utils_internal
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

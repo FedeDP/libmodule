@@ -2,6 +2,11 @@
 
 ### TODO
 
+### Generic
+
+- [x] Fix build on bsd
+- [x] Fix libmodule_thpool.pc (-l-pthread)
+
 ### Logging
 
 - [ ] Improve logging: per-namespace -> LIBMODULE_MOD_LOG="debug" LIBMODULE_CTX_LOG="debug"; LIBMODULE_LOG="debug" remains to enable all debugs
@@ -12,9 +17,12 @@
 - [ ] Define flags for srcs like path, timer etc etc so that libmodule is really os agnostic (?)
 
 ### Mod
-- [ ] https://stoppels.ch/2022/08/20/executable-shared-libraries.html -> running libmodule.so will print version informations
-- [ ] add a poll backend
+
 - [x] Add a module tokenbucket API that will basically force module actions to be below requested rate/burst
+
+### Ctx 
+
+- [ ] Add a ctx tokenbucket API that will basically force ctx events to be below requested rate/burst?
 
 #### DOC
 
