@@ -6,6 +6,7 @@
 
 - [x] Fix build on bsd
 - [x] Fix libmodule_thpool.pc (-l-pthread)
+- [x] Move core/utils.c under utils_internal library
 
 ### Logging
 
