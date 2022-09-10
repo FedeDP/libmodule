@@ -3,11 +3,11 @@
 
 void fetch_ms(uint64_t *val, uint64_t *ctr) {
     struct timespec spec;
-    #ifdef __linux__
+#ifdef CLOCK_BOOTTIME
     clock_gettime(CLOCK_BOOTTIME, &spec);
-    #else
+#else
     clock_gettime(CLOCK_MONOTONIC, &spec);
-    #endif
+#endif
     *val = spec.tv_sec * 1000 + spec.tv_nsec / 1000000;
     
     if (ctr) {
