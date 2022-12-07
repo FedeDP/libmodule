@@ -7,6 +7,15 @@
 - [x] Fix build on bsd
 - [x] Fix libmodule_thpool.pc (-l-pthread)
 - [x] Move core/utils.c under utils_internal library
+- [ ] Store callback to be called when an event is retrieved directly inside event source?
+Ctx main loop would just become:
+```
+ev_src_t *p = poll_recv(&c->ppriv, i);
+if (p) {
+  p->process(p, msg);
+}
+```
+It would also be much easier to add context private/specific events (like the fuse fd in FS, or a token bucket timer)
 
 ### Logging
 
@@ -24,7 +33,7 @@
 
 ### Ctx 
 
-- [ ] Add a ctx tokenbucket API that will basically force ctx events to be below requested rate/burst?
+- [ ] Add a ctx tokenbucket API that will basically force ctx events to be below requested rate/burst? (https://github.com/osrg/openvswitch/blob/master/lib/token-bucket.c) super easy without any timer, everything computed in place (or use a ctx private timer src?)
 
 #### DOC
 

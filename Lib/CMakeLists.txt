@@ -1,5 +1,8 @@
 cmake_minimum_required (VERSION 3.3.2)
 
+include(GNUInstallDirs)
+include(JoinPaths)
+
 option(STATIC_MODULE "build ${PROJECT_NAME} as static library" OFF)
 if(STATIC_MODULE)
     set(LIBRARY_TYPE STATIC)
@@ -32,6 +35,9 @@ macro(fill_pc_vars target desc)
         string(REPLACE ";" " -I" PKG_INCS ";${int_incl_dirs}")
     endif()
 endmacro()
+
+join_paths(libdir_pc "\${exec_prefix}" "${CMAKE_INSTALL_LIBDIR}")
+join_paths(includedir_pc "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
 
 include(Lib/core/CMakeLists.txt)
 
