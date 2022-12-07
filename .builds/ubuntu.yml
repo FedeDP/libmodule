@@ -1,4 +1,4 @@
-image: ubuntu/next
+image: ubuntu/lts
 packages:
   - libcmocka-dev
   - valgrind
