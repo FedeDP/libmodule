@@ -213,15 +213,14 @@ static int recv_events(m_ctx_t *c, int timeout) {
 
     for (int i = 0; i < nfds && !err; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
-        if (p && p->type == M_SRC_TYPE_FD && p->mod == NULL) {
-            M_INFO("Received event from fuse fs.\n");
-            /* Received from fuse */
-            fs_process(c);
-            recved++;
-            continue;
-        }
-        
-        if (p && p->mod) {
+        if (p) {
+            if (!p->mod) {
+                // It is a ctx priv event
+                p->process(p, c, i, NULL);
+                recved++;
+                continue;
+            }
+
             /*
              * Keep a reference on mod, to avoid that
              * a m_mod_deregister() call by user callback
@@ -234,70 +233,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
                 msg = &evt->evt;
                 fetch_ms(&msg->ts, NULL);
                 M_INFO("'%s' received %u type msg.\n", mod->name, msg->type);
-                switch (msg->type) {
-                case M_SRC_TYPE_FD:
-                    /* Received from FD */
-                    msg->fd_evt = m_mem_new(sizeof(*msg->fd_evt), NULL);
-                    msg->fd_evt->fd = p->fd_src.fd;
-                    break;
-                case M_SRC_TYPE_PS: {
-                    ps_priv_t *ps_msg;
-                    /* Received on pubsub interface */
-                    if (read(p->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
-                        M_ERR("Failed to read message: %s\n", strerror(errno));
-                    } else {
-                        /*
-                         * Use real event source, ie: topic subscription, being careful to unref current src;
-                         * Note: it can be NULL when the ps message was created by a direct tell() or broadcast()
-                         */
-                        msg->ps_evt = &ps_msg->msg;
-                        m_mem_unref(p);
-                        p = m_mem_ref(ps_msg->sub);
-                        evt->src = p;
-                    }
-                    break;
-                }
-                case M_SRC_TYPE_SGN:
-                    msg->sgn_evt = m_mem_new(sizeof(*msg->sgn_evt), NULL);
-                    if (poll_consume_sgn(&c->ppriv, i, p, msg->sgn_evt) == 0) {
-                        msg->sgn_evt->signo = p->sgn_src.sgs.signo;
-                    }
-                    break;
-                case M_SRC_TYPE_TMR:
-                    msg->tmr_evt = m_mem_new(sizeof(*msg->tmr_evt), NULL);
-                    if (poll_consume_tmr(&c->ppriv, i, p,  msg->tmr_evt) == 0) {
-                        msg->tmr_evt->ms = p->tmr_src.its.ms;
-                    }
-                    break;
-                case M_SRC_TYPE_PATH:
-                    msg->path_evt = m_mem_new(sizeof(*msg->path_evt), NULL);
-                    if (poll_consume_pt(&c->ppriv, i, p, msg->path_evt) == 0) {
-                        msg->path_evt->path = p->path_src.pt.path;
-                    }
-                    break;
-                case M_SRC_TYPE_PID:
-                    msg->pid_evt = m_mem_new(sizeof(*msg->pid_evt), NULL);
-                    if (poll_consume_pid(&c->ppriv, i, p, msg->pid_evt) == 0) {
-                        msg->pid_evt->pid = p->pid_src.pid.pid;
-                    }
-                    break;
-                case M_SRC_TYPE_TASK:
-                    msg->task_evt = m_mem_new(sizeof(*msg->task_evt), NULL);
-                    if (poll_consume_task(&c->ppriv, i, p, msg->task_evt) == 0) {
-                        msg->task_evt->tid = p->task_src.tid.tid;
-                    }
-                    break;
-                case M_SRC_TYPE_THRESH:
-                    msg->thresh_evt = m_mem_new(sizeof(*msg->thresh_evt), NULL);
-                    if (poll_consume_thresh(&c->ppriv, i, p, msg->thresh_evt) == 0) {
-                        msg->thresh_evt->inactive_ms = p->thresh_src.alarm.inactive_ms;
-                        msg->thresh_evt->activity_freq = p->thresh_src.alarm.activity_freq;
-                    }
-                    break;
-                default:
-                    M_WARN("Unmanaged src %d.\n", msg->type);
-                    break;
-                }
+                p = p->process(p, c, i, evt);
             }
             err = errno; // Store any errno that happened while consuming events
             bool msg_consumed = false;

@@ -10,6 +10,9 @@
     if (prio_flags == 0) \
         flags |= M_SRC_PRIO_NORM;
 
+/* Forward declare evt_priv_t to avoid dep cycle */
+typedef struct _ev_priv evt_priv_t;
+
 /* Struct that holds fds to self_t mapping for poll plugin */
 typedef struct {
     int fd;
@@ -71,7 +74,7 @@ typedef struct {
 } ps_src_t;
 
 /* Struct that holds generic "event source" data */
-typedef struct {
+typedef struct _ev_src {
     union {
         ps_src_t     ps_src;
         fd_src_t     fd_src;
@@ -87,6 +90,7 @@ typedef struct {
     void *ev;                               // poll plugin defined data structure
     m_mod_t *mod;                           // ptr needed to map an event source to a module in poll_plugin
     const void *userptr;
+    struct _ev_src *(*process)(struct _ev_src *this, m_ctx_t *c, int idx, evt_priv_t *evt); // Processors can update the src, that's why they return an ev_src_t (PS only)
 } ev_src_t;
 
 /* Struct that holds pubsub messaging, private */

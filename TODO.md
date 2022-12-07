@@ -7,15 +7,7 @@
 - [x] Fix build on bsd
 - [x] Fix libmodule_thpool.pc (-l-pthread)
 - [x] Move core/utils.c under utils_internal library
-- [ ] Store callback to be called when an event is retrieved directly inside event source?
-Ctx main loop would just become:
-```
-ev_src_t *p = poll_recv(&c->ppriv, i);
-if (p) {
-  p->process(p, msg);
-}
-```
-It would also be much easier to add context private/specific events (like the fuse fd in FS, or a token bucket timer)
+- [x] Store callback to be called when an event is retrieved directly inside event source
 
 ### Logging
 

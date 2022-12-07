@@ -1,5 +1,6 @@
 #include "poll.h"
 #include "fs.h"
+#include "evts.h"
 #include "public/module/fs.h"
 
 #define FUSE_USE_VERSION 35
@@ -322,6 +323,12 @@ static void fs_wakeup_clients(fs_priv_t *fp, bool leaving) {
     });
 }
 
+static ev_src_t *process_fs(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
+    M_INFO("Received event from fuse fs.\n");
+    fs_process(c);
+    return this;
+}
+
 /** Private API **/
 
 int fs_init(m_ctx_t *c) {
@@ -332,26 +339,27 @@ int fs_init(m_ctx_t *c) {
 
     c->fs = memhook._calloc(1, sizeof(fs_ctx_t));
     M_ALLOC_ASSERT(c->fs);
-        
+
     FS_PRIV();
 
     /* Mandatory fuse arg: app name */
     fuse_opt_add_arg(&f->args, "libmodule");
-        
+
     f->handler = fuse_new(&f->args, &operations, sizeof(operations), c);
     M_ALLOC_ASSERT(f->handler);
-        
+
     f->start = time(NULL);
-        
+
     ret = fuse_mount(f->handler, c->fs_root);
     if (ret == 0) {
         f->src = memhook._calloc(1, sizeof(ev_src_t));
         M_ALLOC_ASSERT(f->src);
-            
+
         /* Actually register fuse fd in poll plugin */
         f->src->type = M_SRC_TYPE_FD;
         f->src->flags = M_SRC_INTERNAL;
         f->src->fd_src.fd = fuse_session_fd(fuse_get_session(f->handler));
+        f->src->process = process_fs;
         ret = poll_set_new_evt(&c->ppriv, f->src, ADD);
     }
     return ret;

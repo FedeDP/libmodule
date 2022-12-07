@@ -1,5 +1,6 @@
 #include "public/module/thpool/thpool.h"
 #include "poll.h"
+#include "evts.h"
 
 /**********************************
  * Code related to event sources. *
@@ -10,6 +11,7 @@
 static void src_priv_dtor(void *data);
 static void *task_thread(void *data);
 
+/* Compare functions */
 static int fdcmp(void *my_data, void *node_data);
 static int tmrcmp(void *my_data, void *node_data);
 static int sgncmp(void *my_data, void *node_data);
@@ -17,6 +19,16 @@ static int pathcmp(void *my_data, void *node_data);
 static int pidcmp(void *my_data, void *node_data);
 static int taskcmp(void *my_data, void *node_data);
 static int threshcmp(void *my_data, void *node_data);
+
+/* Process functions */
+static ev_src_t *process_ps(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
+static ev_src_t *process_fd(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
+static ev_src_t *process_tmr(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
+static ev_src_t *process_sgn(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
+static ev_src_t *process_path(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
+static ev_src_t *process_pid(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
+static ev_src_t *process_task(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
+static ev_src_t *process_thresh(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
 
 static m_bst_cmp src_cmp_map[] = {
         fdcmp,      // M_SRC_TYPE_PS we use internal pipe fd used for pubsub as module PS source
@@ -143,6 +155,79 @@ static int threshcmp(void *my_data, void *node_data) {
     return my_val - their_val;
 }
 
+static ev_src_t *process_ps(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
+    ps_priv_t *ps_msg;
+    /* Received on pubsub interface */
+    if (read(this->fd_src.fd, (void **)&ps_msg, sizeof(ps_priv_t *)) != sizeof(ps_priv_t *)) {
+        M_ERR("Failed to read message: %s\n", strerror(errno));
+    } else {
+        /*
+         * Use real event source, ie: topic subscription, being careful to unref current src;
+         * Note: it can be NULL when the ps message was created by a direct tell() or broadcast()
+         */
+        evt->evt.ps_evt = &ps_msg->msg;
+        m_mem_unref(this);
+        this = m_mem_ref(ps_msg->sub);
+        evt->src = this;
+    }
+    return this;
+}
+
+static ev_src_t *process_fd(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
+    evt->evt.fd_evt = m_mem_new(sizeof(*evt->evt.fd_evt), NULL);
+    evt->evt.fd_evt->fd = this->fd_src.fd;
+    return this;
+}
+
+static ev_src_t *process_tmr(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
+    evt->evt.tmr_evt = m_mem_new(sizeof(*evt->evt.tmr_evt), NULL);
+    if (poll_consume_tmr(&c->ppriv, idx, this, evt->evt.tmr_evt) == 0) {
+        evt->evt.tmr_evt->ms = this->tmr_src.its.ms;
+    }
+    return this;
+}
+
+static ev_src_t *process_sgn(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
+    evt->evt.sgn_evt = m_mem_new(sizeof(*evt->evt.sgn_evt), NULL);
+    if (poll_consume_sgn(&c->ppriv, idx, this, evt->evt.sgn_evt) == 0) {
+        evt->evt.sgn_evt->signo = this->sgn_src.sgs.signo;
+    }
+    return this;
+}
+
+static ev_src_t *process_path(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
+    evt->evt.path_evt = m_mem_new(sizeof(*evt->evt.path_evt), NULL);
+    if (poll_consume_pt(&c->ppriv, idx, this, evt->evt.path_evt) == 0) {
+        evt->evt.path_evt->path = this->path_src.pt.path;
+    }
+    return this;
+}
+
+static ev_src_t *process_pid(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
+    evt->evt.pid_evt = m_mem_new(sizeof(*evt->evt.pid_evt), NULL);
+    if (poll_consume_pid(&c->ppriv, idx, this, evt->evt.pid_evt) == 0) {
+        evt->evt.pid_evt->pid = this->pid_src.pid.pid;
+    }
+    return this;
+}
+
+static ev_src_t *process_task(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
+    evt->evt.task_evt = m_mem_new(sizeof(*evt->evt.task_evt), NULL);
+    if (poll_consume_task(&c->ppriv, idx, this, evt->evt.task_evt) == 0) {
+        evt->evt.task_evt->tid = this->task_src.tid.tid;
+    }
+    return this;
+}
+
+static ev_src_t *process_thresh(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
+    evt->evt.thresh_evt = m_mem_new(sizeof(*evt->evt.thresh_evt), NULL);
+    if (poll_consume_thresh(&c->ppriv, idx, this, evt->evt.thresh_evt) == 0) {
+        evt->evt.thresh_evt->inactive_ms = this->thresh_src.alarm.inactive_ms;
+        evt->evt.thresh_evt->activity_freq = this->thresh_src.alarm.activity_freq;
+    }
+    return this;
+}
+
 /** Private API **/
 
 int init_src(m_mod_t *mod, m_src_types t) {
@@ -183,16 +268,23 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
             } else {
                 fd_src->fd = fd;
             }
+            if (type == M_SRC_TYPE_FD) {
+                src->process = process_fd;
+            } else {
+                src->process = process_ps;
+            }
             break;
         }
         case M_SRC_TYPE_TMR: {
             tmr_src_t *tm_src = &src->tmr_src;
             memcpy(&tm_src->its, src_data, sizeof(m_src_tmr_t));
+            src->process = process_tmr;
             break;
         }
         case M_SRC_TYPE_SGN: {
             sgn_src_t *sgn_src = &src->sgn_src;
             memcpy(&sgn_src->sgs, src_data, sizeof(m_src_sgn_t));
+            src->process = process_sgn;
             break;
         }
         case M_SRC_TYPE_PATH: {
@@ -201,21 +293,25 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
             if (flags & M_SRC_DUP) {
                 pt_src->pt.path = mem_strdup(pt_src->pt.path);
             }
+            src->process = process_path;
             break;
         }
         case M_SRC_TYPE_PID: {
             pid_src_t *pid_src = &src->pid_src;
             memcpy(&pid_src->pid, src_data, sizeof(m_src_pid_t));
+            src->process = process_pid;
             break;
         }
         case M_SRC_TYPE_TASK: {
             task_src_t *task_src = &src->task_src;
             memcpy(&task_src->tid, src_data, sizeof(m_src_task_t));
+            src->process = process_task;
             break;
         }
         case M_SRC_TYPE_THRESH: {
             thresh_src_t *thresh_src = &src->thresh_src;
             memcpy(&thresh_src->thr, src_data, sizeof(m_src_thresh_t));
+            src->process = process_thresh;
             break;
         }
         default:
