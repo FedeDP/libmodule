@@ -49,7 +49,7 @@ static __attribute__((constructor (111))) void libmodule_log_init(void) {
     }
 }
 
-static __attribute__((destructor (110))) void libmodule_deinit(void) {
+static __attribute__((destructor (110))) void libmodule_log_deinit(void) {
     if (libmodule_logger.log_file) {
         fclose(libmodule_logger.log_file);
     }

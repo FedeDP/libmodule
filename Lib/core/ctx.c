@@ -233,7 +233,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
             if (evt) {
                 msg = &evt->evt;
                 fetch_ms(&msg->ts, NULL);
-                M_INFO("'%s' received %u type msg.\n", mod->name, msg->type);
+                M_INFO("'%s' received %u type evt.\n", mod->name, msg->type);
                 p = p->process(p, c, i, evt);
             }
             err = errno; // Store any errno that happened while consuming events
