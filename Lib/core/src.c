@@ -319,7 +319,6 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
             m_mem_unref(src);
             return -EINVAL;
     }
-
     int ret = m_bst_insert(mod->srcs[type], src);
     if (ret == 0) {
         /* If a src is registered at runtime, start receiving its events */

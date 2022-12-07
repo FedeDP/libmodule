@@ -214,9 +214,10 @@ static int recv_events(m_ctx_t *c, int timeout) {
     for (int i = 0; i < nfds && !err; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
         if (p) {
+            M_ASSERT(p->process, "NULL processor for src.", -EINVAL);
             if (!p->mod) {
                 // It is a ctx priv event
-                p->process(p, c, i, NULL);
+                p = p->process(p, c, i, NULL);
                 recved++;
                 continue;
             }

@@ -2,13 +2,17 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <assert.h>
 
 #define unlikely(x)     __builtin_expect((x),0)
 #define _weak_          __attribute__((weak))
 #define _public_        __attribute__((visibility("default")))
 
-#define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
-
+#ifndef NDEBUG
+    #define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
+#else
+    #define M_ASSERT(cond, msg, ret)    assert(cond);
+#endif
 #define M_RET_ASSERT(cond, ret)     M_ASSERT(cond, "("#cond ") condition failed.", ret) 
 
 #define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM)
