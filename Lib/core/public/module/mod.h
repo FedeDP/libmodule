@@ -6,6 +6,7 @@
 
 #include <module/cmn.h>
 #include <module/structs/itr.h>
+#include <time.h>
 
 /* Module event sources' types */
 typedef enum {
