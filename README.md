@@ -1,7 +1,7 @@
 # Libmodule
 
 [![builds.sr.ht status](https://builds.sr.ht/~fededp/libmodule.svg)](https://builds.sr.ht/~fededp/libmodule?)
-[![Documentation Status](https://readthedocs.org/projects/libmodule/badge/?version=master)](http://libmodule.readthedocs.io/en/latest/?badge=master)
+[![Documentation Status](https://readthedocs.org/projects/libmodule/badge/?version=latest)](https://libmodule.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## What is this?
