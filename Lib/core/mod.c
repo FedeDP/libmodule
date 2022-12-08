@@ -116,8 +116,15 @@ static void reset_module(m_mod_t *mod) {
     m_stack_clear(mod->recvs);
     m_queue_clear(mod->stashed);
     m_queue_clear(mod->batch.events);
+    m_list_clear(mod->bound_mods);
+    /* Disable batching */
     mod->batch.len = 0;
     memset(&mod->batch.timer, 0, sizeof(m_src_tmr_t));
+    /* Disable tokenbucket */
+    mod->tb.rate = 0;
+    mod->tb.burst = UINT64_MAX;
+    mod->tb.tokens = UINT64_MAX;
+    memset(&mod->tb.timer, 0, sizeof(m_src_tmr_t));
 }
 
 static int optional_hook(m_mod_t *mod, enum mod_hook req_hook) {

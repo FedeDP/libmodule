@@ -145,7 +145,6 @@ static void push_evt(m_mod_t *mod, evt_priv_t *evt) {
                 mod->tb.tokens++;
             }
         }
-
     } else {
         m_queue_enqueue(mod->batch.events, evt);
         /*
@@ -160,9 +159,9 @@ static void push_evt(m_mod_t *mod, evt_priv_t *evt) {
                 force = true;
             } else if (src->flags & M_SRC_PRIO_LOW) {
                 /*
-                    * Always unify a low priority message with subsequent ones,
-                    * even if batching is disabled
-                    */
+                 * Always batch a low priority message with subsequent ones,
+                 * even if batching is disabled
+                 */
                 return;
             }
         }
