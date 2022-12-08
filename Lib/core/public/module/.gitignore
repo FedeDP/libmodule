@@ -1,0 +1,3 @@
+# Exclude compile time created files by cmake
+cmn.h
+fs.h

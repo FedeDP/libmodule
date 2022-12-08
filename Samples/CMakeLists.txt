@@ -1,23 +1,32 @@
 cmake_minimum_required(VERSION 3.0)
 
 file(GLOB EASY_SRC Easy/*.c)
-file(GLOB MULTICTX_SRC MultiCtx/*.c)
 file(GLOB SHAREDSRC_SRC SharedSrc/*.c)
-file(GLOB CPP_SRC Cpp/*.cpp)
 file(GLOB POLL_SRC Poll/*.c)
-
-include_directories("${PROJECT_SOURCE_DIR}/Lib/public/")
+file(GLOB TASK_SRC Task/*.c)
+file(GLOB THPOOL_SRC Thpool/*.c)
 
 add_executable(Easy ${EASY_SRC})
-add_executable(MultiCtx ${MULTICTX_SRC})
 add_executable(SharedSrc ${SHAREDSRC_SRC})
-add_executable(Cpp ${CPP_SRC})
 add_executable(Poll ${POLL_SRC})
+add_executable(Task ${TASK_SRC})
+add_executable(Thpool ${THPOOL_SRC})
 
-add_library("testmod" SHARED testModule.c)
+add_library(testmod SHARED testModule.c)
 
-target_link_libraries(Easy ${PROJECT_NAME})
-target_link_libraries(MultiCtx ${PROJECT_NAME} pthread)
-target_link_libraries(SharedSrc ${PROJECT_NAME})
-target_link_libraries(Cpp ${PROJECT_NAME})
-target_link_libraries(Poll ${PROJECT_NAME})
+target_include_directories(testmod PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/)
+
+target_link_libraries(Easy ${PROJECT_NAME}_core)
+target_include_directories(Easy PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
+
+target_link_libraries(SharedSrc ${PROJECT_NAME}_core)
+target_include_directories(SharedSrc PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
+
+target_link_libraries(Poll ${PROJECT_NAME}_core)
+target_include_directories(Poll PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
+
+target_link_libraries(Task ${PROJECT_NAME}_core)
+target_include_directories(Task PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/)
+
+target_link_libraries(Thpool ${PROJECT_NAME}_core)
+target_include_directories(Thpool PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/ ${PROJECT_SOURCE_DIR}/Lib/mem/public/ ${PROJECT_SOURCE_DIR}/Lib/thpool/public/)
