@@ -2,30 +2,13 @@
 
 ### TODO
 
-### Generic
+#### Mod 
 
-- [x] Fix build on bsd
-- [x] Fix libmodule_thpool.pc (-l-pthread)
-- [x] Move core/utils.c under utils_internal library
-- [x] Store callback to be called when an event is retrieved directly inside event source
+- [x] `reset_module` -> reset bound_mods and reset tb
 
-### Logging
+#### Generic
 
-- [x] Improve logging: per-namespace -> LIBMODULE_MOD_LOG="debug" LIBMODULE_CTX_LOG="debug"; LIBMODULE_LOG="debug" remains to enable all debugs
-
-### Srcs
-
-- [ ] Define flags for srcs like path, timer etc etc so that libmodule is really os agnostic (?)
-
-### Mod
-
-- [x] Add a module tokenbucket API that will basically force module actions to be below requested rate/burst
-- [x] fix tokenbucket rate?
-- [x] port timer to ns instead of ms?
-
-### Ctx 
-
-- [ ] Add a ctx tokenbucket API that will basically force ctx events to be below requested rate/burst? (https://github.com/osrg/openvswitch/blob/master/lib/token-bucket.c) super easy without any timer, everything computed in place (or use a ctx private timer src?)
+- [ ] add gh actions for win and osx? (i am not sure it builds there though)
 
 #### DOC
 
@@ -39,11 +22,6 @@
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
 - [ ] Document loop_stop() behaviour (it waits on any tasks to complete before leaving, thus it is a blocking function when any SRC_TASK is still running)
 - [ ] Switch to md for doc (https://mkdocs.readthedocs.io/en/0.15.3/user-guide/writing-your-docs/)
-
-#### Plugin API
-
-- [x] unify plugin with m_mod_register(): if NULL hook is passed -> treat name as path and dlopen it, to find symbols
-- [x] fix valgrind issues
 
 ## 6.1.0 (7.0.0?)
 
