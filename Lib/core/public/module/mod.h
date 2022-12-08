@@ -54,7 +54,7 @@ typedef enum {
 
 typedef struct {
     clockid_t clock_id;     // Clock_id (eg: CLOCK_MONOTONIC). Unsupported on libkqueue/kqueue
-    uint64_t ms;            // Timer in ms
+    uint64_t ns;            // Timer in ns
 } m_src_tmr_t;
 
 typedef struct {
@@ -98,7 +98,7 @@ typedef struct {
 
 /* Timer event messages */
 typedef struct {
-    uint64_t ms;
+    uint64_t ns;
 } m_evt_tmr_t;
 
 /* Signal event messages */
@@ -270,10 +270,10 @@ int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr);
 
 /* Event batch management */
 int m_mod_set_batch_size(m_mod_t *mod, size_t len);
-int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ms);
+int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ns);
 
 /* Mod tokenbucket */
-int m_mod_set_tokenbucket(m_mod_t *mod, uint16_t rate, uint64_t burst);
+int m_mod_set_tokenbucket(m_mod_t *mod, uint32_t rate, uint64_t burst);
 
 /* Generic event source registering functions */
 #define m_mod_src_register(mod, X, flags, userptr) _Generic((X) + 0, \

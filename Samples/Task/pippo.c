@@ -29,7 +29,7 @@ static void m_mod_on_boot(void) {
 static bool m_mod_on_start(m_mod_t *mod) {
     m_mod_log(mod,"Starting data val: %d\n", thData);
     
-    m_mod_src_register(mod, &((m_src_tmr_t) { CLOCK_MONOTONIC, 1000 }), 0, &tmrData);
+    m_mod_src_register(mod, &((m_src_tmr_t) { CLOCK_MONOTONIC, (uint64_t)1 * 1000 * 1000 * 1000 }), 0, &tmrData); // 1s
     m_mod_src_register(mod, &((m_src_task_t) { 8, inc }), 0, &thData);
     m_mod_set_batch_timeout(mod, 1500); // 1500ms!
     return true;

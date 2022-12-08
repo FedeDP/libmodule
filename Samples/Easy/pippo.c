@@ -29,7 +29,7 @@ static void m_mod_on_boot() {
 
 static bool m_mod_on_start(m_mod_t *mod) {
     m_mod_src_register(mod, &((m_src_sgn_t) { SIGINT }), 0, &myData);
-    m_mod_src_register(mod, &((m_src_tmr_t) { CLOCK_MONOTONIC, 5000 }), M_SRC_ONESHOT, NULL);
+    m_mod_src_register(mod, &((m_src_tmr_t) { CLOCK_MONOTONIC, (uint64_t)5 * 1000 * 1000 * 1000 }), M_SRC_ONESHOT, NULL); // 5s
     m_mod_src_register(mod, STDIN_FILENO, 0, NULL);
 #ifdef __linux__
     m_mod_src_register(mod, &((m_src_path_t) { "/home/federico", IN_CREATE }), 0, &myData);

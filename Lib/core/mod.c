@@ -389,7 +389,7 @@ void mod_dump(const m_mod_t *mod, bool log_mod, const char *indent) {
                     ctx_logger(c, m, "%s\t\t\"SGN\": %d\n", indent, t->sgn_src.sgs.signo);
                     break;
                 case M_SRC_TYPE_TMR:
-                    ctx_logger(c, m, "%s\t\t\"TMR_MS\": %lu,\n", indent, t->tmr_src.its.ms);
+                    ctx_logger(c, m, "%s\t\t\"TMR_MS\": %lu,\n", indent, t->tmr_src.its.ns);
                     ctx_logger(c, m, "%s\t\t\"TMR_CID\": %d\n", indent, t->tmr_src.its.clock_id);
                     break;
                 case M_SRC_TYPE_PATH:
@@ -546,14 +546,14 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     return mod_deregister(mod, true);
 }
 
-_public_ int m_mod_set_tokenbucket(m_mod_t *mod, uint16_t rate, uint64_t burst) {
+_public_ int m_mod_set_tokenbucket(m_mod_t *mod, uint32_t rate, uint64_t burst) {
     M_MOD_ASSERT(mod);
-    M_PARAM_ASSERT(rate <= 1000);
+    M_PARAM_ASSERT(rate <= BILLION);
 
     // src_deregister and src_register already consume a token
 
     /* If it was already set, remove old timer */
-    if (mod->tb.timer.ms != 0) {
+    if (mod->tb.timer.ns != 0) {
         m_mod_src_deregister_tmr(mod, &mod->tb.timer);
     }
     
@@ -571,7 +571,7 @@ _public_ int m_mod_set_tokenbucket(m_mod_t *mod, uint16_t rate, uint64_t burst) 
     mod->tb.burst = burst;
     mod->tb.tokens = burst;
     mod->tb.timer.clock_id = CLOCK_MONOTONIC;
-    mod->tb.timer.ms = 1 / rate;
+    mod->tb.timer.ns = BILLION / rate;
     return m_mod_src_register_tmr(mod, &mod->tb.timer, M_SRC_INTERNAL | M_SRC_PRIO_HIGH, &mod->tb);
 }
 

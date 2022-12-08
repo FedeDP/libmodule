@@ -22,6 +22,8 @@
 ### Mod
 
 - [x] Add a module tokenbucket API that will basically force module actions to be below requested rate/burst
+- [x] fix tokenbucket rate?
+- [x] port timer to ns instead of ms?
 
 ### Ctx 
 

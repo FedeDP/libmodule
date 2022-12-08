@@ -22,12 +22,11 @@ static void create_eventfd(ev_src_t *tmp);
 static void create_timerfd(ev_src_t *tmp) {
     tmp->tmr_src.f.fd = timerfd_create(tmp->tmr_src.its.clock_id, TFD_NONBLOCK | TFD_CLOEXEC);
     struct itimerspec timerValue = {{0}};
-    timerValue.it_value.tv_sec = tmp->tmr_src.its.ms / 1000;
-    timerValue.it_value.tv_nsec = (tmp->tmr_src.its.ms % 1000) * 1000 * 1000;
+    timerValue.it_value.tv_sec = tmp->tmr_src.its.ns / BILLION;
+    timerValue.it_value.tv_nsec = tmp->tmr_src.its.ns % BILLION;
     if (!(tmp->flags & M_SRC_ONESHOT)) {
         /* Set interval */
-        timerValue.it_interval.tv_sec = tmp->tmr_src.its.ms / 1000;
-        timerValue.it_interval.tv_nsec = (tmp->tmr_src.its.ms % 1000) * 1000 * 1000;
+        memcpy(&timerValue.it_interval, &timerValue.it_value, sizeof(struct timespec));
     }
     const int abs_fl = tmp->flags & M_SRC_TMR_ABSOLUTE ? TFD_TIMER_ABSTIME : 0;
     timerfd_settime(tmp->tmr_src.f.fd, abs_fl, &timerValue, NULL);

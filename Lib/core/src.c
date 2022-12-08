@@ -113,7 +113,7 @@ static int tmrcmp(void *my_data, void *node_data) {
     ev_src_t *src = (ev_src_t *)node_data;
     const m_src_tmr_t *its = (const m_src_tmr_t *)my_data;
 
-    return its->ms - src->tmr_src.its.ms;
+    return its->ns - src->tmr_src.its.ns;
 }
 
 static int sgncmp(void *my_data, void *node_data) {
@@ -182,7 +182,7 @@ static ev_src_t *process_fd(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt
 static ev_src_t *process_tmr(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
     evt->evt.tmr_evt = m_mem_new(sizeof(*evt->evt.tmr_evt), NULL);
     if (poll_consume_tmr(&c->ppriv, idx, this, evt->evt.tmr_evt) == 0) {
-        evt->evt.tmr_evt->ms = this->tmr_src.its.ms;
+        evt->evt.tmr_evt->ns = this->tmr_src.its.ns;
     }
     return this;
 }
@@ -371,13 +371,13 @@ _public_ int m_mod_src_deregister_fd(m_mod_t *mod, int fd) {
 }
 
 _public_ int m_mod_src_register_tmr(m_mod_t *mod, const m_src_tmr_t *its, m_src_flags flags, const void *userptr) {
-    M_PARAM_ASSERT(its && its->ms > 0);
+    M_PARAM_ASSERT(its && its->ns > 0);
 
     return register_src(mod, M_SRC_TYPE_TMR, its, flags, userptr);
 }
 
 _public_ int m_mod_src_deregister_tmr(m_mod_t *mod, const m_src_tmr_t *its) {
-    M_PARAM_ASSERT(its && its->ms > 0);
+    M_PARAM_ASSERT(its && its->ns > 0);
 
     return deregister_src(mod, M_SRC_TYPE_TMR, (void *)its);
 }

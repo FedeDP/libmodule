@@ -16,6 +16,8 @@
 // Const-after-init struct members are outlined by this
 #define CONST 
 
+#define BILLION 1000000000
+
 #define M_MEM_LOCK(mem, func) \
     m_mem_ref(mem); \
     func; \
