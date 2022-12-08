@@ -18,6 +18,7 @@ set_target_properties(
 target_link_libraries(${PROJECT_NAME}_thpool PUBLIC ${CMAKE_THREAD_LIBS_INIT} ${PROJECT_NAME}_structs)
 target_link_libraries(${PROJECT_NAME}_thpool PRIVATE ${PROJECT_NAME}_utils_internal)
 target_include_directories(${PROJECT_NAME}_thpool PRIVATE Lib/utils/ Lib/structs/ Lib/structs/public/ Lib/thpool/)
+target_compile_definitions(${PROJECT_NAME}_thpool PRIVATE LIBMODULE_LOG_CTX=THPOOL)
 
 fill_pc_vars(${PROJECT_NAME}_thpool "Libmodule thread pool library")
 # avoid "-l-pthread" string

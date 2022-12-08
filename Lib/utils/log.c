@@ -2,13 +2,15 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <strings.h>
 
 static void libmodule_log_noop(const char *caller, int lineno, const char *fmt, ...) {}
 
-m_logger libmodule_logger = { libmodule_log_noop, libmodule_log_noop, libmodule_log_noop, libmodule_log_noop };
+m_logger libmodule_logger;
 
 /** Logging functions **/
-#define X(level) \
+#define X_LOG_LEVEL(level) \
 static void libmodule_log_##level(const char *caller, int lineno, const char *fmt, ...) { \
     FILE *out = libmodule_logger.log_file; \
     if (!out) { \
@@ -20,27 +22,89 @@ static void libmodule_log_##level(const char *caller, int lineno, const char *fm
     vfprintf(out, fmt, args); \
     va_end(args); \
 }
-X_LOG
-#undef X
+X_LOG_LEVELS
+#undef X_LOG_LEVEL
 /** **/
 
-static __attribute__((constructor (111))) void libmodule_log_init(void) {
-    // Load log level
-    const char *log_env = getenv("LIBMODULE_LOG");
-    int log_level = ERROR;
-    if (log_env) {
-        log_level = atoi(log_env); // in case of error, 0 (ie: error only)
+static inline m_logger_level find_level(const char *level_str) {
+    static const char *lvl_names[] = {
+        #define X_LOG_LEVEL(name) #name,
+        X_LOG_LEVELS
+        #undef X_LOG_LEVEL
+    };
+    for (int i = 0; i <= sizeof(lvl_names) / sizeof(*lvl_names); i++) {
+        if (strcasecmp(level_str, lvl_names[i]) == 0) {
+            return i;
+        }
     }
-    switch (log_level) {
+    return -1;
+}
+
+static __attribute__((constructor (111))) void libmodule_log_init(void) {
+    /* Load log level for each context */
+    const char *ctx_names[] = {
+        #define X_LOG_CTX(name) #name,
+        X_LOG_CTXS
+        #undef X_LOG_CTX
+    };
+    char *log_env;
+    char env_name[64];
+    bool log_set[X_LOG_CTX_MAX] = {0};
+    for (int i = 0; i < X_LOG_CTX_MAX; i++) {
+        /* Default values */
+        libmodule_logger.DEBUG[i] = libmodule_log_noop;
+        libmodule_logger.INFO[i] = libmodule_log_noop;
+        libmodule_logger.WARN[i] = libmodule_log_noop;
+        libmodule_logger.ERR[i] = libmodule_log_noop;
+        
+        int log_level = ERR;
+        snprintf(env_name, sizeof(env_name), "LIBMODULE_LOG_%s", ctx_names[i]);
+        log_env = getenv(env_name);
+        if (log_env) {
+            log_level = find_level(log_env);
+            if (log_level != -1) {
+                log_set[i] = true;
+            } else {
+                // Default value
+                log_level = ERR;
+            }
+        }
+        switch (log_level) {
         case DEBUG:
-            libmodule_logger.debug = libmodule_log_DEBUG;
+            libmodule_logger.DEBUG[i] = libmodule_log_DEBUG;
         case INFO:
-            libmodule_logger.info = libmodule_log_INFO;
+            libmodule_logger.INFO[i] = libmodule_log_INFO;
         case WARN:
-            libmodule_logger.warn = libmodule_log_WARN;
+            libmodule_logger.WARN[i] = libmodule_log_WARN;
         default:
-            libmodule_logger.error = libmodule_log_ERROR;
+            libmodule_logger.ERR[i] = libmodule_log_ERR;
             break;
+        }
+    }
+    
+    int log_level = ERR;
+    log_env = getenv("LIBMODULE_LOG");
+    if (log_env) {
+        log_level = find_level(log_env);
+        if (log_level == -1) {
+            // Default value
+            log_level = ERR;
+        }
+    }
+    for (int i = 0; i < X_LOG_CTX_MAX; i++) {
+        if (!log_set[i]) {
+            switch (log_level) {
+            case DEBUG:
+                libmodule_logger.DEBUG[i] = libmodule_log_DEBUG;
+            case INFO:
+                libmodule_logger.INFO[i] = libmodule_log_INFO;
+            case WARN:
+                libmodule_logger.WARN[i] = libmodule_log_WARN;
+            default:
+                libmodule_logger.ERR[i] = libmodule_log_ERR;
+                break;
+            }
+        }
     }
     
     const char *log_file_path = getenv("LIBMODULE_LOG_OUTPUT");

@@ -8,6 +8,48 @@
 #define _weak_          __attribute__((weak))
 #define _public_        __attribute__((visibility("default")))
 
+#define X_LOG_LEVELS \
+    X_LOG_LEVEL(ERR) \
+    X_LOG_LEVEL(WARN) \
+    X_LOG_LEVEL(INFO) \
+    X_LOG_LEVEL(DEBUG)
+
+#define X_LOG_CTXS \
+    X_LOG_CTX(MEM) \
+    X_LOG_CTX(STRUCTS) \
+    X_LOG_CTX(THPOOL) \
+    X_LOG_CTX(CORE) \
+    X_LOG_CTX(OTHER)
+
+typedef enum {
+#define X_LOG_LEVEL(name) name,
+    X_LOG_LEVELS
+#undef X_LOG_LEVEL
+    X_LOG_LEVEL_MAX
+} m_logger_level;
+
+typedef enum {
+#define X_LOG_CTX(name) name,
+    X_LOG_CTXS
+#undef X_LOG_CTX
+    X_LOG_CTX_MAX
+} m_logger_context;
+
+typedef struct {
+#define X_LOG_LEVEL(name) void (*name[X_LOG_CTX_MAX])(const char *caller, int lineno, const char *fmt, ...);
+    X_LOG_LEVELS
+#undef X_LOG_LEVEL
+    FILE *log_file;
+} m_logger;
+
+#ifndef LIBMODULE_LOG_CTX
+    #define LIBMODULE_LOG_CTX OTHER
+#endif
+#define M_DEBUG(...)    libmodule_logger.DEBUG[LIBMODULE_LOG_CTX](__func__, __LINE__, __VA_ARGS__)
+#define M_INFO(...)     libmodule_logger.INFO[LIBMODULE_LOG_CTX](__func__, __LINE__, __VA_ARGS__)
+#define M_WARN(...)     libmodule_logger.WARN[LIBMODULE_LOG_CTX](__func__, __LINE__, __VA_ARGS__)
+#define M_ERR(...)      libmodule_logger.ERR[LIBMODULE_LOG_CTX](__func__, __LINE__, __VA_ARGS__)
+
 #ifndef NDEBUG
     #define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
 #else
@@ -17,30 +59,5 @@
 
 #define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM)
 #define M_PARAM_ASSERT(cond)        M_RET_ASSERT(cond, -EINVAL)
-
-#define M_DEBUG(...)    libmodule_logger.debug(__func__, __LINE__, __VA_ARGS__)
-#define M_INFO(...)     libmodule_logger.info(__func__, __LINE__, __VA_ARGS__)
-#define M_WARN(...)     libmodule_logger.warn(__func__, __LINE__, __VA_ARGS__)
-#define M_ERR(...)      libmodule_logger.error(__func__, __LINE__, __VA_ARGS__)
-
-#define X_LOG \
-    X(ERROR) \
-    X(WARN) \
-    X(INFO) \
-    X(DEBUG)
-
-typedef enum {
-    #define X(name) name,
-    X_LOG
-    #undef X
-} m_logger_level;
-
-typedef struct {
-    void (*error)(const char *caller, int lineno, const char *fmt, ...);
-    void (*warn)(const char *caller, int lineno, const char *fmt, ...);
-    void (*info)(const char *caller, int lineno, const char *fmt, ...);
-    void (*debug)(const char *caller, int lineno, const char *fmt, ...);
-    FILE *log_file;
-} m_logger;
 
 extern m_logger libmodule_logger;

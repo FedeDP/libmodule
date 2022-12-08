@@ -76,6 +76,7 @@ target_include_directories(${PROJECT_NAME}_core PUBLIC ${URING_INCLUDE_DIRS} ${K
 target_link_libraries(${PROJECT_NAME}_core PUBLIC ${URING_LIBRARIES} ${KQUEUE_LIBRARIES} ${FUSE_LIBRARIES} ${PROJECT_NAME}_structs ${PROJECT_NAME}_thpool ${PROJECT_NAME}_mem dl)
 target_link_libraries(${PROJECT_NAME}_core PRIVATE ${PROJECT_NAME}_utils_internal)
 target_link_directories(${PROJECT_NAME}_core PUBLIC ${URING_LIBRARY_DIRS} ${KQUEUE_LIBRARY_DIRS} ${FUSE_LIBRARY_DIRS})
+target_compile_definitions(${PROJECT_NAME}_core PRIVATE LIBMODULE_LOG_CTX=CORE)
 
 fill_pc_vars(${PROJECT_NAME}_core "Libmodule core library")
 configure_file(Extra/libmodule.pc.in libmodule_core.pc @ONLY)

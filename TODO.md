@@ -11,9 +11,7 @@
 
 ### Logging
 
-- [ ] Improve logging: per-namespace -> LIBMODULE_MOD_LOG="debug" LIBMODULE_CTX_LOG="debug"; LIBMODULE_LOG="debug" remains to enable all debugs
-- [ ] Drop log noop functions and use normal checks
-- [ ] move logging to liblog and install public API
+- [x] Improve logging: per-namespace -> LIBMODULE_MOD_LOG="debug" LIBMODULE_CTX_LOG="debug"; LIBMODULE_LOG="debug" remains to enable all debugs
 
 ### Srcs
 
