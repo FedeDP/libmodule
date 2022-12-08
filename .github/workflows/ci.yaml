@@ -7,6 +7,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  build-ubuntu-amd64:
+    name: build-ubuntu-amd64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install CMocka
+        run: |
+          sudo apt update
+          sudo apt install -y --no-install-recommends libcmocka-dev valgrind pkgconf
+      - name: Build and test
+        run: |
+          mkdir -p build
+          cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=On ..
+          make package
+          ctest -V
   build-osx-amd64:
     name: build-osx-amd64
     runs-on: macos-latest
