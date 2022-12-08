@@ -214,7 +214,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
     for (int i = 0; i < nfds && !err; i++) {
         ev_src_t *p = poll_recv(&c->ppriv, i);
         if (p) {
-            M_ASSERT(p->process, "NULL processor for src.", -EINVAL);
+            M_ASSERT(p->process);
             if (!p->mod) {
                 // It is a ctx priv event
                 p = p->process(p, c, i, NULL);
@@ -304,7 +304,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
 static int m_ctx_loop_events(m_ctx_t *c, int max_events) {
     M_CTX_ASSERT(c);
     M_PARAM_ASSERT(max_events > 0);
-    M_ASSERT(c->state == M_CTX_IDLE, "Context already looping.", -EINVAL);
+    M_LOG_ASSERT(c->state == M_CTX_IDLE, "Context already looping.", -EINVAL);
 
     int ret = loop_start(c, max_events);
     if (ret == 0) {
@@ -391,7 +391,7 @@ _public_ m_ctx_t *m_ctx_default(void) {
 
 _public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
     M_PARAM_ASSERT(str_not_empty(ctx_name));
-    M_ASSERT(strcmp(ctx_name, M_CTX_DEFAULT) != 0, "Reserved ctx name.", -EINVAL);
+    M_LOG_ASSERT(strcmp(ctx_name, M_CTX_DEFAULT) != 0, "Reserved ctx name.", -EINVAL);
     M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(!*c);
 
@@ -440,7 +440,7 @@ _public_ int m_ctx_loop(m_ctx_t *c) {
 
 _public_ int m_ctx_quit(m_ctx_t *c, uint8_t quit_code) {
     M_CTX_ASSERT(c);
-    M_ASSERT(c->state == M_CTX_LOOPING, "Context not looping.", -EINVAL);
+    M_LOG_ASSERT(c->state == M_CTX_LOOPING, "Context not looping.", -EINVAL);
        
     return loop_quit(c, quit_code);
 }

@@ -218,7 +218,7 @@ int start(m_mod_t *mod, bool starting) {
 
     M_MOD_CTX(mod);
     int ret = manage_srcs(mod, c, ADD, false);
-    M_ASSERT(!ret, errors[starting], ret);
+    M_LOG_ASSERT(!ret, errors[starting], ret);
     
     mod->state = M_MOD_RUNNING;
     c->stats.running_modules++;
@@ -251,7 +251,7 @@ int stop(m_mod_t *mod, bool stopping) {
     M_MOD_CTX(mod);
 
     int ret = manage_srcs(mod, c, RM, stopping);
-    M_ASSERT(!ret, errors[stopping], ret);
+    M_LOG_ASSERT(!ret, errors[stopping], ret);
 
     if (m_mod_is(mod, M_MOD_RUNNING)) {
         c->stats.running_modules--;

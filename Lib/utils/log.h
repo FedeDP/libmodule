@@ -50,14 +50,15 @@ typedef struct {
 #define M_WARN(...)     libmodule_logger.WARN[LIBMODULE_LOG_CTX](__func__, __LINE__, __VA_ARGS__)
 #define M_ERR(...)      libmodule_logger.ERR[LIBMODULE_LOG_CTX](__func__, __LINE__, __VA_ARGS__)
 
-#ifndef NDEBUG
-    #define M_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
-#else
-    #define M_ASSERT(cond, msg, ret)    assert(cond);
-#endif
-#define M_RET_ASSERT(cond, ret)     M_ASSERT(cond, "("#cond ") condition failed.", ret) 
+#define M_LOG_ASSERT(cond, msg, ret)    if (unlikely(!(cond))) { M_DEBUG("%s\n", msg); return ret; }
+#define M_RET_ASSERT(cond, ret)         M_LOG_ASSERT(cond, "("#cond ") condition failed.", ret) 
+#define M_ALLOC_ASSERT(cond)            M_RET_ASSERT(cond, -ENOMEM)
+#define M_PARAM_ASSERT(cond)            M_RET_ASSERT(cond, -EINVAL)
 
-#define M_ALLOC_ASSERT(cond)        M_RET_ASSERT(cond, -ENOMEM)
-#define M_PARAM_ASSERT(cond)        M_RET_ASSERT(cond, -EINVAL)
+#ifndef NDEBUG
+    #define M_ASSERT(cond)              assert(cond);
+#else
+    #define M_ASSERT(cond)
+#endif
 
 extern m_logger libmodule_logger;
