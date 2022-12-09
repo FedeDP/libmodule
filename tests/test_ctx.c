@@ -44,7 +44,7 @@ void test_ctx_deregister(void **state) {
     (void) state; /* unused */
 
     int ret = m_ctx_deregister(&test_ctx);
-    assert_true(ret == 0);
+    assert_int_equal(ret, 0);
     assert_null(test_ctx);
 }
 
