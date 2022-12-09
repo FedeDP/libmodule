@@ -41,13 +41,15 @@ jobs:
       - name: Install CMocka
         run: |
           brew update
-          brew install cmocka
+          brew install cmocka valgrind
       - name: Build and test
         run: |
           mkdir -p build
           cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           cmake --build .
           ctest -V
+          cmake -DBUILD_OOT_TEST=On ..
+          sudo make install
 
   build-win-amd64:
     name: build-win-amd64
