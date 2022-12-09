@@ -15,7 +15,7 @@ jobs:
       - name: Install CMocka
         run: |
           sudo apt update
-          sudo apt install -y --no-install-recommends libcmocka-dev valgrind pkgconf
+          sudo apt install -y --no-install-recommends libcmocka-dev valgrind dpkg rpm
       - name: Build and test
         run: |
           mkdir -p build
