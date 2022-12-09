@@ -100,13 +100,13 @@ void test_ctx_dispatch(void **state) {
     assert_true(ret == 0);  // loop started
 
     ret = m_ctx_dispatch(test_ctx);
-    assert_true(ret == 1); // number of messages dispatched: M_PS_CTX_STARTED.
+    assert_int_equal(ret, 1); // number of messages dispatched: M_PS_CTX_STARTED.
 
     ret = m_ctx_quit(test_ctx, 150);
     assert_true(ret == 0);
 
     ret = m_ctx_dispatch(test_ctx);
-    assert_true(ret == 150); // loop stopped with exit code 0
+    assert_int_equal(ret, 150); // loop stopped with exit code 150
     
     ret = m_mod_unbecome(test_mod);
     assert_true(ret == 0);
