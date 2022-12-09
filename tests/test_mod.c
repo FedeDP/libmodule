@@ -4,23 +4,24 @@
 #include <module/mod.h>
 #include <module/ctx.h>
 #include <module/mem/mem.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/socket.h>
 
 static bool init_false(m_mod_t *mod);
-static void recv(m_mod_t *mod, const m_queue_t *const evts);
-static void recv_ready(m_mod_t *mod, const m_queue_t *const evts);
+static void mod_recv(m_mod_t *mod, const m_queue_t *const evts);
+static void mod_recv_ready(m_mod_t *mod, const m_queue_t *const evts);
 
 static int ctr;
 
 m_mod_t *test_mod = NULL;
 static m_mod_t *testRef = NULL;
+static int fd;
 
 void test_mod_register_NULL_name(void **state) {
     (void) state; /* unused */
 
-    m_mod_hook_t hook = { .on_evt = recv };
+    m_mod_hook_t hook = { .on_evt = mod_recv };
     int ret = m_mod_register(NULL, test_ctx, &test_mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(test_mod);
@@ -37,7 +38,7 @@ void test_mod_register_NULL_hook(void **state) {
 void test_mod_register(void **state) {
     (void) state; /* unused */
     
-    m_mod_hook_t hook = { .on_evt = recv };
+    m_mod_hook_t hook = { .on_evt = mod_recv };
     int ret = m_mod_register("testName", test_ctx, &test_mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(test_mod);
@@ -47,7 +48,7 @@ void test_mod_register(void **state) {
 void test_mod_register_already_registered(void **state) {
     (void) state; /* unused */
     
-    m_mod_hook_t hook = { .on_evt = recv };
+    m_mod_hook_t hook = { .on_evt = mod_recv };
     int ret = m_mod_register("testName", test_ctx, &test_mod, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_non_null(test_mod);
@@ -59,7 +60,7 @@ void test_mod_register_same_name(void **state) {
     
     m_mod_t *self2 = NULL;
     
-    m_mod_hook_t hook = { .on_evt = recv };
+    m_mod_hook_t hook = { .on_evt = mod_recv };
     int ret = m_mod_register("testName", test_ctx, &self2, &hook, 0, NULL);
     assert_false(ret == 0);
     assert_null(self2);
@@ -91,7 +92,7 @@ void test_mod_deregister(void **state) {
 void test_mod_false_init(void **state) {
     (void) state; /* unused */
     
-    m_mod_hook_t hook = { .on_start = init_false, .on_evt = recv };
+    m_mod_hook_t hook = { .on_start = init_false, .on_evt = mod_recv };
     int ret = m_mod_register("testName", test_ctx, &test_mod, &hook, 0, NULL);
     assert_true(ret == 0);
     assert_non_null(test_mod);
@@ -219,7 +220,7 @@ void test_mod_become_NULL_func(void **state) {
 void test_mod_become(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_become(test_mod, recv);
+    int ret = m_mod_become(test_mod, mod_recv);
     assert_true(ret == 0);
 }
 
@@ -244,6 +245,8 @@ void test_mod_unbecome(void **state) {
 void test_mod_add_wrong_fd(void **state) {
     (void) state; /* unused */
     
+    // Initialize fd
+    fd = socket(AF_UNIX, SOCK_STREAM, 0);
     int ret = m_mod_src_register_fd(test_mod, -1, M_SRC_FD_AUTOCLOSE, NULL);
     assert_false(ret == 0);
 }
@@ -251,18 +254,18 @@ void test_mod_add_wrong_fd(void **state) {
 void test_mod_add_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_src_register_fd(NULL, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_src_register_fd(NULL, fd, M_SRC_FD_AUTOCLOSE, NULL);
     assert_false(ret == 0);
 }
 
 void test_mod_add_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_src_register_fd(test_mod, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
+    int ret = m_mod_src_register_fd(test_mod, fd, M_SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == 0);
     
     /* Try to register again */
-    ret = m_mod_src_register_fd(test_mod, STDIN_FILENO, M_SRC_FD_AUTOCLOSE, NULL);
+    ret = m_mod_src_register_fd(test_mod, fd, M_SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == -EEXIST);
 }
 
@@ -276,29 +279,29 @@ void test_mod_rm_wrong_fd(void **state) {
 void test_mod_rm_wrong_fd_2(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_src_deregister_fd(test_mod, STDIN_FILENO + 1);
+    int ret = m_mod_src_deregister_fd(test_mod, fd + 1);
     assert_false(ret == 0);
 }
 
 void test_mod_rm_fd_NULL_self(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_src_deregister_fd(NULL, STDIN_FILENO);
+    int ret = m_mod_src_deregister_fd(NULL, fd);
     assert_false(ret == 0);
 }
 
-static int fd_is_valid(int fd) {
-    return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+static int fd_is_valid(int f) {
+    return fcntl(f, F_GETFD) != -1 || errno != EBADF;
 }
 
 void test_mod_rm_fd(void **state) {
     (void) state; /* unused */
     
-    int ret = m_mod_src_deregister_fd(test_mod, STDIN_FILENO);
+    int ret = m_mod_src_deregister_fd(test_mod, fd);
     assert_true(ret == 0);
     
     /* Fd is now closed (module_deregister_fd with SRC_FD_AUTOCLOSE thus is no more valid */
-    assert_false(fd_is_valid(STDIN_FILENO));
+    assert_false(fd_is_valid(fd));
 }
 
 void test_mod_subscribe_NULL_topic(void **state) {
@@ -439,7 +442,7 @@ static bool init_false(m_mod_t *mod) {
  * Then, set new behavior and unstash everything.
  * Check that all stashed messages are received.
  */
-static void recv(m_mod_t *mod, const m_queue_t *const evts) {
+static void mod_recv(m_mod_t *mod, const m_queue_t *const evts) {
     m_itr_foreach(evts, {
         m_evt_t *msg = m_itr_get(m_itr);
         if (msg->type == M_SRC_TYPE_PS) {
@@ -447,7 +450,7 @@ static void recv(m_mod_t *mod, const m_queue_t *const evts) {
             int ret = m_mod_stash(mod, msg);
             assert_int_equal(ret, 0);
             if (!strcmp((char *) msg->ps_evt->data, "hi3!")) {
-                ret = m_mod_become(mod, recv_ready);
+                ret = m_mod_become(mod, mod_recv_ready);
                 assert_int_equal(ret, 0);
 
                 ret = m_mod_unstash(mod, -1);
@@ -457,7 +460,7 @@ static void recv(m_mod_t *mod, const m_queue_t *const evts) {
     });
 }
 
-static void recv_ready(m_mod_t *mod, const m_queue_t *const evts) {
+static void mod_recv_ready(m_mod_t *mod, const m_queue_t *const evts) {
     m_itr_foreach(evts, {
         m_evt_t *msg = m_itr_get(m_itr);
         if (msg->type == M_SRC_TYPE_PS) {
