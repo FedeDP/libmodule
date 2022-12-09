@@ -20,7 +20,7 @@ jobs:
         run: |
           mkdir build && cd build
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=On ..
-          make package
+          make package VERBOSE=1
           ctest -V
       - name: Build and test FS
         run: |
