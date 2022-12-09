@@ -34,7 +34,7 @@ jobs:
           sudo make install
       - name: Build and test kqueue
         run: |
-          mkdir build && cd build
+          mkdir build_kqueue && cd build_kqueue
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBKQUEUE=true ..
           make package
           ctest -V
@@ -42,7 +42,7 @@ jobs:
           sudo make install
       - name: Build and test uring
         run: |
-          mkdir build && cd build
+          mkdir build_uring && cd build_uring
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBURING=true ..
           make package
           ctest -V
@@ -58,6 +58,7 @@ jobs:
         run: |
           brew update
           brew install cmocka
+          xcode-select --install
       - name: Build and test
         run: |
           mkdir -p build
