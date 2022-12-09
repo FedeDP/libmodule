@@ -15,13 +15,20 @@ jobs:
       - name: Install CMocka
         run: |
           sudo apt update
-          sudo apt install -y --no-install-recommends libcmocka-dev valgrind dpkg rpm
-      - name: Build and test
+          sudo apt install -y --no-install-recommends libcmocka-dev valgrind dpkg rpm libfuse3-dev fuse3
+      - name: Build and test no FS
         run: |
-          mkdir -p build
-          cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=On ..
+          mkdir build && cd build
+          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=On ..
           make package
           ctest -V
+      - name: Build and test FS
+        run: |
+          mkdir build_fs && cd build_fs
+          cmake -DBUILD_TESTS=On -DBUILD_SAMPLES=On -DWITH_FS=On -DBUILD_OOT_TEST=On ..
+          make package
+          ctest -V
+
   build-osx-amd64:
     name: build-osx-amd64
     runs-on: macos-latest
@@ -36,6 +43,8 @@ jobs:
           mkdir -p build
           cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=On ..
           cmake --build .
+          ctest -V
+
   build-win-amd64:
     name: build-win-amd64
     runs-on: windows-latest
