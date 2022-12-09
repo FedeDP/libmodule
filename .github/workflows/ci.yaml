@@ -21,7 +21,7 @@ jobs:
           mkdir build && cd build
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=On ..
           make
-          LIBMODULE_LOG_CORE=debug ctest -V
+          ctest -V
           sudo make install
           make package
       - name: Build and test FS
@@ -29,7 +29,7 @@ jobs:
           mkdir build_fs && cd build_fs
           cmake -DBUILD_TESTS=On -DBUILD_SAMPLES=On -DWITH_FS=On -DBUILD_OOT_TEST=On ..
           make
-          LIBMODULE_LOG_CORE=debug ctest -V
+          ctest -V
           sudo make install
           make package
 
