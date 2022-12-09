@@ -2,10 +2,6 @@
 
 ### TODO
 
-#### Mod 
-
-- [x] `reset_module` -> reset bound_mods and reset tb
-
 #### Generic
 
 - [ ] add gh actions for win and osx? (i am not sure it builds there though)

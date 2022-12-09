@@ -19,13 +19,13 @@ jobs:
       - name: Build and test no FS
         run: |
           mkdir build && cd build
-          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=On ..
-          make package VERBOSE=1
+          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
+          make package
           ctest -V
       - name: Build and test FS
         run: |
           mkdir build_fs && cd build_fs
-          cmake -DBUILD_TESTS=On -DBUILD_SAMPLES=On -DWITH_FS=On -DBUILD_OOT_TEST=On ..
+          cmake -DBUILD_TESTS=On -DBUILD_SAMPLES=On -DWITH_FS=On ..
           make package
           ctest -V
 
