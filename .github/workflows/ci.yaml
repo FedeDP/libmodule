@@ -48,6 +48,39 @@ jobs:
           ctest -V
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
+          
+  build-freebsd-amd64:
+    timeout-minutes: 15
+    runs-on: macos-10.15
+    name: build-freebsd-amd64
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        path: libmodule
+
+    - name: libmodule test suite
+      uses: vmactions/freebsd-vm@v0.1.5
+      with:
+        usesh: true
+        sync: sshfs
+        prepare: |
+          pkg install -y cmake cmocka pkgconf valgrind fusefs-libs3
+            
+        run: |
+          cd libmodule/
+          mkdir build && cd build
+          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=true ..
+          make
+          ctest -V
+          sudo make install
+          cd ..
+          mkdir build_fs && cd build_fs
+          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=true -DWITH_FS=true ..
+          make
+          sudo kldload fusefs
+          ctest -V
+          sudo make install
+          
 
   build-osx-amd64:
     name: build-osx-amd64
