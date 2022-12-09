@@ -13,6 +13,7 @@ add_executable(Task ${TASK_SRC})
 add_executable(Thpool ${THPOOL_SRC})
 
 add_library(testmod SHARED testModule.c)
+target_link_libraries(testmod ${PROJECT_NAME}_core)
 
 target_include_directories(testmod PRIVATE ${PROJECT_SOURCE_DIR}/Lib/core/public/ ${PROJECT_SOURCE_DIR}/Lib/structs/public/)
 
