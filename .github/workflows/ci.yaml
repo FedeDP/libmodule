@@ -50,16 +50,15 @@ jobs:
           sudo make install
           
   build-freebsd-amd64:
-    timeout-minutes: 15
-    runs-on: macos-10.15
+    runs-on: macos-latest
     name: build-freebsd-amd64
     steps:
     - uses: actions/checkout@v3
       with:
         path: libmodule
 
-    - name: libmodule test suite
-      uses: vmactions/freebsd-vm@v0.1.5
+    - name: Build and test
+      uses: vmactions/freebsd-vm@v0
       with:
         usesh: true
         sync: sshfs
@@ -81,7 +80,6 @@ jobs:
           ctest -V
           sudo make install
           
-
   build-osx-amd64:
     name: build-osx-amd64
     runs-on: macos-latest
@@ -97,6 +95,7 @@ jobs:
           cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           cmake --build .
           ctest -V
+          ls /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
 
