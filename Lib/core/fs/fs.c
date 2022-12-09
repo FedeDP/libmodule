@@ -323,6 +323,19 @@ static void fs_wakeup_clients(fs_priv_t *fp, bool leaving) {
     });
 }
 
+static int fs_process(m_ctx_t *c) {
+    FS_PRIV();
+    
+    struct fuse_session *sess = fuse_get_session(f->handler);
+    int ret = fuse_session_receive_buf(sess, &f->buf);
+    if (ret > 0) {
+        fuse_session_process_buf(sess, &f->buf);
+        return 0;
+    }
+    M_DEBUG("Fuse: failed to retrieve buffer.\n");
+    return ret;
+}
+
 static ev_src_t *process_fs(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
     M_INFO("Received event from fuse fs.\n");
     fs_process(c);
@@ -362,19 +375,6 @@ int fs_init(m_ctx_t *c) {
         f->src->process = process_fs;
         ret = poll_set_new_evt(&c->ppriv, f->src, ADD);
     }
-    return ret;
-}
-
-int fs_process(m_ctx_t *c) {
-    FS_PRIV();
-
-    struct fuse_session *sess = fuse_get_session(f->handler);
-    int ret = fuse_session_receive_buf(sess, &f->buf);
-    if (ret > 0) {
-        fuse_session_process_buf(sess, &f->buf);
-        return 0;
-    }
-    M_DEBUG("Fuse: failed to retrieve buffer.\n");
     return ret;
 }
 

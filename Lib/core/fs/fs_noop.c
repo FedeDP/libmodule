@@ -5,10 +5,6 @@ int fs_init(m_ctx_t *c) {
     return -ENOSYS;
 }
 
-int fs_process(m_ctx_t *c) {
-    return -ENOSYS;
-}
-
 int fs_notify(m_mod_t *mod, const m_queue_t *const evts) {
     return -ENOSYS;
 }
