@@ -35,7 +35,7 @@ jobs:
       - name: Build and test kqueue
         run: |
           mkdir build_kqueue && cd build_kqueue
-          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBKQUEUE=true ..
+          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBKQUEUE=true -DWITH_VALGRIND=false ..
           make package
           ctest -V
           cmake -DBUILD_OOT_TEST=On ..
@@ -43,7 +43,7 @@ jobs:
       - name: Build and test uring
         run: |
           mkdir build_uring && cd build_uring
-          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBURING=true ..
+          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBURING=true -DWITH_VALGRIND=false ..
           make package
           ctest -V
           cmake -DBUILD_OOT_TEST=On ..
@@ -58,7 +58,6 @@ jobs:
         run: |
           brew update
           brew install cmocka
-          xcode-select --install
       - name: Build and test
         run: |
           mkdir -p build
