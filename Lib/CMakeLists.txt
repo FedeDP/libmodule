@@ -60,7 +60,7 @@ if(BUILD_OOT_TEST)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(PKG_LIBMODULE REQUIRED libmodule_core)
     execute_process(
-      COMMAND ${CMAKE_C_COMPILER} ${PROJECT_SOURCE_DIR}/Samples/Task/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo \${PKG_LIBMODULE_LDFLAGS} \${PKG_LIBMODULE_CFLAGS}
+      COMMAND ${CMAKE_C_COMPILER} ${PROJECT_SOURCE_DIR}/Samples/Task/pippo.c -o ${CMAKE_CURRENT_BINARY_DIR}/pippo -I/usr/include \${PKG_LIBMODULE_LDFLAGS} \${PKG_LIBMODULE_CFLAGS}
       RESULT_VARIABLE IS_ERR
       COMMAND_ECHO STDOUT
     )
