@@ -19,19 +19,19 @@ jobs:
       - name: Build and test no FS
         run: |
           mkdir build && cd build
-          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=On ..
-          make
-          ctest -V
-          sudo make install
+          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           make package
+          ctest -V
+          cmake -DBUILD_OOT_TEST=On ..
+          sudo make install
       - name: Build and test FS
         run: |
           mkdir build_fs && cd build_fs
-          cmake -DBUILD_TESTS=On -DBUILD_SAMPLES=On -DWITH_FS=On -DBUILD_OOT_TEST=On ..
-          make
-          ctest -V
-          sudo make install
+          cmake -DBUILD_TESTS=On -DBUILD_SAMPLES=On -DWITH_FS=On ..
           make package
+          ctest -V
+          cmake -DBUILD_OOT_TEST=On ..
+          sudo make install
 
   build-osx-amd64:
     name: build-osx-amd64
@@ -45,7 +45,7 @@ jobs:
       - name: Build and test
         run: |
           mkdir -p build
-          cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=On ..
+          cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           cmake --build .
           ctest -V
 
