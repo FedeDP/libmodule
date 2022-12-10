@@ -74,23 +74,23 @@ Note that it does not even need a main function, as libmodule already provides a
 
 ## Is it portable?
 
-Yes, it is. Non-portable code is actually [compile-time-plugins](https://github.com/FedeDP/libmodule/tree/master/Lib/poll_plugins) based.  
+Yes, it is. Non-portable code is actually [compile-time-plugins](Lib/core/poll/) based.  
 On linux, libmodule's internal loop will use epoll, while on BSD and MacOS it will use kqueue.  
 On other OS, cmake will fallback at looking for [libkqueue](https://github.com/mheily/libkqueue), a drop-in replacement for kqueue.  
-Unfortunately, I am not able to test builds on other OS: I could only check that libmodule can be built on Linux through libkqueue.  
 
 Finally, it heavily relies upon gcc attributes that may or may not be available for your compiler.
 
 ## Is there any documentation?
 
 Yes, it is availabe at [readthedocs](http://libmodule.readthedocs.io/en/latest/).  
-There are some simple examples too, see [Samples](https://github.com/FedeDP/libmodule/tree/master/Samples) folder.  
+There are some simple examples too, see [Samples](Samples/) folder.  
 To see a real project using libmodule, see [Clight](https://github.com/FedeDP/Clight) and [Clightd](https://github.com/FedeDP/Clightd).
 
 ## CI
 
-Libmodule, samples and tests builds are tested on [builds.sr.ht](https://builds.sr.ht/~fededp/libmodule) on archlinux, ubuntu, fedora and freebsd.  
+Libmodule, samples and tests are built and tested with github actions on ubuntu, freebsd, and macos.  
 Moreover, tests are executed and valgrind checked too.  
+Finally, a codeQL workflow ensures code quality.  
 
 ## But...why?
 
