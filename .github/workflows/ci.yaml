@@ -95,9 +95,6 @@ jobs:
           cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           cmake --build .
           ctest -V
-          cmake -DBUILD_OOT_TEST=On ..
-          /Applications/Xcode_14.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc --version
-          sudo make install
 
   build-win-amd64:
     name: build-win-amd64
