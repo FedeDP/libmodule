@@ -85,9 +85,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
       - name: Install CMocka
         run: |
           brew update
@@ -99,6 +96,7 @@ jobs:
           cmake --build .
           ctest -V
           cmake -DBUILD_OOT_TEST=On ..
+          /Applications/Xcode_14.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc --version
           sudo make install
 
   build-win-amd64:
