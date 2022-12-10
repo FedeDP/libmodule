@@ -50,7 +50,7 @@ jobs:
           sudo make install
           
   build-freebsd-amd64:
-    runs-on: macos-latest
+    runs-on: macos-12
     name: build-freebsd-amd64
     steps:
     - uses: actions/checkout@v3
@@ -71,14 +71,14 @@ jobs:
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=true ..
           make
           ctest -V
-          sudo make install
+          make install
           cd ..
           mkdir build_fs && cd build_fs
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=true -DWITH_FS=true ..
           make
-          sudo kldload fusefs
+          kldload fusefs
           ctest -V
-          sudo make install
+          make install
           
   build-osx-amd64:
     name: build-osx-amd64
@@ -95,7 +95,8 @@ jobs:
           cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           cmake --build .
           ctest -V
-          ls /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+          ls /usr/include
+          sudo ln -s /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/* /usr/include/
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
 
@@ -116,11 +117,11 @@ jobs:
       - name: Build and Install libkqueue
         run: |
           cd libkqueue
-          cmake -S . -B build_x64 -DSTATICLIB=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON
+          cmake -S . -B build_x64
           cmake --build build_x64 --target install --config Release --parallel 1
       - name: Build and test
         run: |
           cd libmodule 
           mkdir -p build
           cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=Off -DBUILD_OOT_TEST=On ..
-          cmake --build .
+          cmake --build . --target install --config Release
