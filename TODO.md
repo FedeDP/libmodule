@@ -2,10 +2,6 @@
 
 ### TODO
 
-#### Generic
-
-- [ ] add gh actions for win and osx? (i am not sure it builds there though)
-
 #### DOC
 
 - [ ] Fully rewrite documentation per-namespace
