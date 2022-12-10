@@ -32,15 +32,15 @@ jobs:
           ctest -V
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
-      - name: Build and test kqueue
+      - name: Build and test libkqueue
         run: |
           mkdir build_kqueue && cd build_kqueue
-          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBKQUEUE=true -DWITH_VALGRIND=false ..
+          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBKQUEUE=true ..
           make package
           ctest -V
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
-      - name: Build and test uring
+      - name: Build and test liburing
         run: |
           mkdir build_uring && cd build_uring
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBURING=true -DWITH_VALGRIND=false ..
@@ -95,8 +95,6 @@ jobs:
           cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           cmake --build .
           ctest -V
-          ls /usr/include
-          sudo ln -s /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/* /usr/include/
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
 
