@@ -35,7 +35,7 @@ jobs:
       - name: Build and test libkqueue
         run: |
           mkdir build_kqueue && cd build_kqueue
-          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBKQUEUE=true ..
+          cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBKQUEUE=true -DWITH_VALGRIND=false ..
           make package
           ctest -V
           cmake -DBUILD_OOT_TEST=On ..
@@ -85,6 +85,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
       - name: Install CMocka
         run: |
           brew update
@@ -96,7 +99,6 @@ jobs:
           cmake --build .
           ctest -V
           cmake -DBUILD_OOT_TEST=On ..
-          sudo xcode-select -s /Library/Developer/CommandLineTools
           sudo make install
 
   build-win-amd64:
