@@ -96,6 +96,7 @@ jobs:
           cmake --build .
           ctest -V
           cmake -DBUILD_OOT_TEST=On ..
+          sudo xcode-select -s /Library/Developer/CommandLineTools
           sudo make install
 
   build-win-amd64:
