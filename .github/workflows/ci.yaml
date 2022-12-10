@@ -95,29 +95,3 @@ jobs:
           cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           cmake --build .
           ctest -V
-
-  build-win-amd64:
-    name: build-win-amd64
-    runs-on: windows-latest
-    env:
-      PKG_CONFIG_PATH: "C:/Program Files (x86)/libkqueue/lib/pkgconfig/" # libkqueue installs its pc script here
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          path: libmodule
-      - uses: actions/checkout@v3
-        with:
-          repository: mheily/libkqueue
-          path: libkqueue
-          fetch-depth: 0
-      - name: Build and Install libkqueue
-        run: |
-          cd libkqueue
-          cmake -S . -B build_x64
-          cmake --build build_x64 --target install --config Release --parallel 1
-      - name: Build and test
-        run: |
-          cd libmodule 
-          mkdir -p build
-          cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=Off -DBUILD_OOT_TEST=On ..
-          cmake --build . --target install --config Release
