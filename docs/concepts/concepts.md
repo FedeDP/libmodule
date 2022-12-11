@@ -2,7 +2,7 @@
 
 ## Naming Conventions
 
-Libmodule uses the following naming conventions:  
+Libmodule uses the following naming conventions for its public API:  
 
 * `m_` is the prefix for all the library API  
 * `m_foo_` APIs group together the same namespace API  
@@ -11,16 +11,27 @@ Libmodule uses the following naming conventions:
 
 ## Logging
 
-Libmodule offers an internal logging facility, to enable verbose logging for the library.  
+Libmodule offers an internal logging facility, to enable verbose logging for the whole library.  
 There are 4 log levels that can be enabled through `LIBMODULE_LOG` env variable:  
 
-* 0 (error, **default**)  
-* 1 (warn)  
-* 2 (info)  
-* 3 (debug)  
+* "err" (**default**)  
+* "warn"  
+* "info"  
+* "debug"  
+
+Fine-grained control over logging contexts is enabled through the use of specific env variables; following are the supported contexts:  
+
+* `LIBMODULE_LOG_MEM`
+* `LIBMODULE_LOG_STRUCTS`
+* `LIBMODULE_LOG_THPOOL`
+* `LIBMODULE_LOG_CORE`
+* `LIBMODULE_LOG_OTHER`
+
+Basically, you can set different logging level for each context; a default log level is set using the  
+aforementioned `LIBMODULE_LOG` env variable (or **err** only by default).
 
 Moreover, you can specify an output file for the log, by passing `LIBMODULE_LOG_OUTPUT` env variable.  
-By default, stdout is used.
+By default, stdout/stderr are used.
 
 ## Memory
 

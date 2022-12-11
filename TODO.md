@@ -5,7 +5,7 @@
 #### DOC
 
 - [ ] Fully rewrite documentation per-namespace
-- [ ] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
+- [x] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
 - [ ] Document that m_{mod,ctx}_deregister() should not be called inside user hook { on_start(), on_stop(), on_eval() } functions; m_mod_deregister() can be used from on_evt() though.  (IS THIS WHOLE SENTENCE TRUE?)
 - [ ] Add build options doc
 - [ ] Document PRIO flags
