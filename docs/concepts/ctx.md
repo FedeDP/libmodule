@@ -7,10 +7,10 @@ Modules can only see and reach (through PubSub messaging) other modules from sam
 ## Loop
 
 Libmodule offers an internal loop, started with `m_ctx_loop()`; note that each context has its own loop.  
-Moreover, you can even easily integrate it into your own loop: `m_ctx_get_fd()` will retrieve a pollable fd and POLLIN events will be raised whenever a new message is available.  
+Moreover, you can even easily integrate it into your own loop: `m_ctx_fd()` will retrieve a pollable fd and POLLIN events will be raised whenever a new message is available.  
 Remember that before starting your loop, `m_ctx_dispatch()` should be called, to dispatch initial "LoopStarted" messages to each module.  
-Then, whenever POLLIN data is available on libmodule's fd, you only need to call m_ctx_dispatch() again.  
-Finally, remember to close() libmodule's fd retrieved through `m_ctx_get_fd()`.  
+Then, whenever POLLIN data is available on libmodule's fd, you only need to call `m_ctx_dispatch()` again.  
+Finally, remember to `close()` libmodule's fd retrieved through `m_ctx_fd()`.  
 
 ## Default main
 
@@ -21,5 +21,5 @@ Default main is mostly useful in conjunction with `<module/mod_easy>` API.
 It offers 2 functions that can be implemented by caller:
 
 * `m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[])` that is called before the ctx loop is started
-* `m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[])` that is called after the loop stopped, right before leaving  
+* `m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[])` that is called after the loop stopped, right before leaving
 
