@@ -2,18 +2,29 @@
 
 ### TODO
 
+#### Fs
+
+- [ ] check `fs_create` mod register call (NULL `m_mod_hook_t`??)
+- [ ] do expose FS readonly? (drop unlink/create to de(register), drop start/stop/pause/resume ioctls?)
+
+#### Ctx
+
+- [ ] drop `m_ctx_default` api
+
 #### DOC
 
-- [ ] Fully rewrite documentation per-namespace
+- [x] Fully rewrite documentation per-namespace
 - [x] make it explicit in doc that m_set_memhook() should be called within m_pre_start() function
 - [ ] Document that m_{mod,ctx}_deregister() should not be called inside user hook { on_start(), on_stop(), on_eval() } functions; m_mod_deregister() can be used from on_evt() though.  (IS THIS WHOLE SENTENCE TRUE?)
-- [ ] Add build options doc
-- [ ] Document PRIO flags
+- [x] Add build options doc
+- [x] Document PRIO flags
 - [ ] document m_evt_t memref'd behaviour!!!
-- [ ] Document m_ctx_pre_loop()!
+- [x] Document m_ctx_pre_loop()!
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
-- [ ] Document loop_stop() behaviour (it waits on any tasks to complete before leaving, thus it is a blocking function when any SRC_TASK is still running)
-- [ ] Switch to md for doc (https://mkdocs.readthedocs.io/en/0.15.3/user-guide/writing-your-docs/)
+- [x] Document loop_stop() behaviour (it waits on any tasks to complete before leaving, thus it is a blocking function when any SRC_TASK is still running)
+- [x] Switch to md for doc (https://mkdocs.readthedocs.io/en/0.15.3/user-guide/writing-your-docs/)
+- [ ] cleanup old docs
+- [ ] port `make docs` to build the markdown docs
 
 ## 6.1.0 (7.0.0?)
 

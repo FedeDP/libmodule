@@ -388,7 +388,7 @@ _public_ m_ctx_t *m_ctx_default(void) {
     return default_ctx;
 }
 
-_public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
+_public_ int m_ctx_register(const char *ctx_name, OUT m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
     M_PARAM_ASSERT(str_not_empty(ctx_name));
     M_LOG_ASSERT(strcmp(ctx_name, M_CTX_DEFAULT) != 0, "Reserved ctx name.", -EINVAL);
     M_PARAM_ASSERT(c);
@@ -400,7 +400,7 @@ _public_ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags
     return ctx_new(ctx_name, c, flags, userdata);
 }
 
-_public_ int m_ctx_deregister(m_ctx_t **c) {
+_public_ int m_ctx_deregister(OUT m_ctx_t **c) {
     M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);
 
     int ret = 0;
@@ -505,7 +505,7 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     return 0;
 }
 
-_public_ int m_ctx_stats(const m_ctx_t *c, m_ctx_stats_t *stats) {
+_public_ int m_ctx_stats(const m_ctx_t *c, OUT m_ctx_stats_t *stats) {
     M_CTX_ASSERT(c);
     M_PARAM_ASSERT(c->state == M_CTX_LOOPING);
     M_PARAM_ASSERT(stats);

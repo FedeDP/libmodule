@@ -8,6 +8,7 @@ Libmodule uses the following naming conventions for its public API:
 * `m_foo_` APIs group together the same namespace API  
 * struct types have the `_t` suffix  
 * enum types **do not have** the `_t` suffix  
+* `get`ters with no `set`ter, do not have the `get` prefix; for example: `m_ctx_userdata`.
 
 ## Logging
 
@@ -35,12 +36,10 @@ By default, stdout/stderr are used.
 
 ## Memory
 
-### Ref counted
+### Constructors
 
-Ideally, all of the exposed pointers have their lifetime reference based.  
-This means that you can call `m_mem_ref()` API to manage eg: `m_mod_t`, `m_ctx_t`, `m_evt_t` pointers, and so on.  
-Normally, there is no such need because the library manages everything.  
-But if you called `m_mod_ref()`, then you own a reference on that module and it's up to you to free the reference by calling `m_mem_unref()` on it.  
+Libmodule makes heavy usage of gcc `__attribute__((constructor))` (and destructor) to inizialize itself.  
+Ctor order is specified in each namespace doc.  
 
 ### Memhook
 
@@ -51,3 +50,4 @@ A memhook is just a wrapper around 3 main memory related functions:
 * `malloc`  
 * `calloc`  
 * `free`  
+
