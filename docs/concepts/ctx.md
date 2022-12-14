@@ -23,3 +23,23 @@ It offers 2 functions that can be implemented by caller:
 * `m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[])` that is called before the ctx loop is started
 * `m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[])` that is called after the loop stopped, right before leaving
 
+## FS
+
+When built with `WITH_FS` enabled, ctx API will expose 2 additional functions:  
+```C
+const char *m_ctx_fs_get_root(const m_ctx_t *c);
+int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
+```
+By setting a context root path, a ctx will expose its structure as a fuse FS, where each module inside the context is a file.  
+one can then perform multiple operations on the generated directory tree:  
+* `open` and then `poll` module files to get notified whenever a message is received by the module
+* Read (`cat`) module files to get a nice overview of the module state (same as `m_mod_dump`)
+* Create a file to register a new module in the context
+* Delete a module file to deregister a module
+* Perform multiple IOCTLs on a module:
+* * `M_MOD_FS_STATE` to get a module state (same as `m_mod_state`)
+* * `M_MOD_FS_{START,STOP,PAUSE,RESUME}` to set a new module state
+* * `M_MOD_FS_STATS` to get module stats
+
+The FS feature is specially useful to debug issues with module,  
+because it allows a simple runtime inspection on a context and its modules state.

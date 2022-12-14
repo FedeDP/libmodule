@@ -200,9 +200,9 @@ typedef struct {
 /* Module interface functions */
 
 /* Module registration */
-int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, const m_mod_hook_t *hook,
+int m_mod_register(const char *name, m_ctx_t *c, OUT m_mod_t **mod_ref, const m_mod_hook_t *hook,
                    m_mod_flags flags, const void *userdata);
-int m_mod_deregister(m_mod_t **mod);
+int m_mod_deregister(OUT m_mod_t **mod);
 
 /* Retrieve module context */
 m_ctx_t *m_mod_ctx(const m_mod_t *mod);
@@ -225,7 +225,7 @@ int m_mod_bind(m_mod_t *mod, m_mod_t *ref);
 /* Module generic functions */
 int m_mod_log(const m_mod_t *mod, const char *fmt, ...);
 int m_mod_dump(const m_mod_t *mod);
-int m_mod_stats(const m_mod_t *mod, m_mod_stats_t *stats);
+int m_mod_stats(const m_mod_t *mod, OUT m_mod_stats_t *stats);
 
 const void *m_mod_userdata(const m_mod_t *mod);
 

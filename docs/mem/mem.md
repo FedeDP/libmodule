@@ -1,6 +1,7 @@
 # Libmodule mem API
 
 Mem API denotes symbols exposed by `libmodule_mem.so`, that refer to the memory-ref'd concept.  
+It can be found in `<module/mem/mem.h>` header.  
 
 ## API
 
