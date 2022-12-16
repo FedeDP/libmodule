@@ -4,8 +4,8 @@
 
 #### Fs
 
-- [ ] check `fs_create` mod register call (NULL `m_mod_hook_t`??)
-- [ ] do expose FS readonly? (drop unlink/create to de(register), drop start/stop/pause/resume ioctls?)
+- [x] check `fs_create` mod register call (NULL `m_mod_hook_t`??)
+- [x] do expose FS readonly? (drop unlink/create to de(register), drop start/stop/pause/resume ioctls?)
 
 #### Ctx
 

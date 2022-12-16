@@ -208,17 +208,7 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
 }
 
 static int fs_unlink(const char *path) {
-    FS_CTX();
-    if (str_not_empty(path)) {
-        m_mod_t *mod = m_map_get(c->modules, path + 1);
-        if (mod) {
-            if (mod_deregister(&mod, false) == 0) {
-                return 0;
-            }
-            return -EPERM;
-        }
-    }
-    return -ENOENT;
+    return -EPERM;
 }
 
 static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi) {
@@ -226,11 +216,7 @@ static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse
 }
 
 static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    if (str_not_empty(path)) {
-        FS_CTX();
-        return m_mod_register(path + 1, c, NULL, NULL, 0, NULL);
-    }
-    return -ENOENT;
+    return -EPERM;
 }
 
 static int fs_poll(const char *path, struct fuse_file_info *fi,
@@ -270,14 +256,6 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
         case M_MOD_FS_STATE:
             *(m_mod_states *)data = mod->state;
             return 0;
-        case M_MOD_FS_START:
-            return m_mod_start(mod);
-        case M_MOD_FS_STOP:
-            return m_mod_stop(mod);
-        case M_MOD_FS_RESUME:
-            return m_mod_resume(mod);
-        case M_MOD_FS_PAUSE:
-            return m_mod_pause(mod);
         case M_MOD_FS_STATS:
             return m_mod_stats(mod, data);
         default:
