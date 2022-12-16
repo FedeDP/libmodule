@@ -23,7 +23,6 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 Libmodule supports the following build switches:
 * `BUILD_TESTS` -> whether to build tests. Requires `cmocka` library.
 * `BUILD_SAMPLES` -> whether to build examples.
-* `BUILD_DOCS` -> whether to build docs.
 * `BUILD_OOT_TEST` -> whether to build a small out of tree test, to check if libmodule can successfully get linked. The test is done during the `make install` target.  
 
 ## Core library Options
