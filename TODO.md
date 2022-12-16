@@ -23,8 +23,8 @@
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
 - [x] Document loop_stop() behaviour (it waits on any tasks to complete before leaving, thus it is a blocking function when any SRC_TASK is still running)
 - [x] Switch to md for doc (https://mkdocs.readthedocs.io/en/0.15.3/user-guide/writing-your-docs/)
-- [ ] cleanup old docs
-- [ ] drop `docs` target
+- [x] cleanup old docs
+- [x] drop `docs` target
 
 ## 6.1.0 (7.0.0?)
 
