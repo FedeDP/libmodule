@@ -24,7 +24,7 @@
 - [x] Document loop_stop() behaviour (it waits on any tasks to complete before leaving, thus it is a blocking function when any SRC_TASK is still running)
 - [x] Switch to md for doc (https://mkdocs.readthedocs.io/en/0.15.3/user-guide/writing-your-docs/)
 - [ ] cleanup old docs
-- [ ] port `make docs` to build the markdown docs
+- [ ] drop `docs` target
 
 ## 6.1.0 (7.0.0?)
 
