@@ -12,7 +12,6 @@
 - [ ] Document that m_{mod,ctx}_deregister() should not be called inside user hook { on_start(), on_stop(), on_eval() } functions; m_mod_deregister() can be used from on_evt() though.  (IS THIS WHOLE SENTENCE TRUE?)
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
-- [ ] fix readthedocs on PR?
 
 ## 6.1.0 (7.0.0?)
 
