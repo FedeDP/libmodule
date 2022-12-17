@@ -8,7 +8,7 @@ It requires some callbacks that are used by libmodule to manage its life.
 
 Each module's listens to events by registering event sources.  
 A source can be a timer, a topic (for PubSub communications between modules), a signal, a socket, etc etc.  
-You can find the list of supported sources in [`<module/mod.h>`](../../Lib/core/public/module/mod.h).   
+You can find the list of supported sources in `<module/mod.h>`.   
 
 ### Source Priorities
 
