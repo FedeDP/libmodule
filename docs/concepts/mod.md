@@ -30,10 +30,10 @@ First of all, module lifecycle is automatically managed by libmodule; moreover, 
 module registration/deregistration is completely automated and transparent to developer.  
 This means that when using it, you will only have to declare a source file as a module and define needed functions.  
 
-First function to be called is `m_pre_start()`; it is called right after libmodule gets linked.  
+First function to be called is `m_on_boot()`; it is called right after libmodule gets linked.  
 This function is useful to set a custom memhook for libmodule, through `m_set_memhook()` API.  
 
-> **_EASY API_**: each module's `m_mod_pre_start()` function is called. At this stage, no module is registered yet.  
+> **_EASY API_**: each module's `m_mod_on_boot()` function is called. At this stage, no module is registered yet.  
 
 Finally, libmodule will register every module.  
 Once a module is registered, it will be initially set to `M_MOD_IDLE` state. Idle means that the module is not started yet, thus it cannot receive any event.  
