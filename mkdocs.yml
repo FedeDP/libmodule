@@ -30,8 +30,6 @@ markdown_extensions:
     - toc:
         permalink: "#"
     - def_list
-    - pymdownx.tasklist:
-        custom_checkbox: true
 
 plugins:
     - search
