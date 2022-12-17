@@ -26,7 +26,7 @@ typedef struct {
 typedef void (*m_log_cb)(const m_mod_t *ref, const char *fmt, va_list args);
 
 /* Returns default ctx if registered */
-m_ctx_t *m_ctx_default(void);
+m_ctx_t *m_ctx_ref(const char *ctx_name);
 
 /* Context interface functions */
 int m_ctx_register(const char *ctx_name, OUT m_ctx_t **c, m_ctx_flags flags, const void *userdata);

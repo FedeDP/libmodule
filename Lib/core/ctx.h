@@ -6,7 +6,6 @@
 #include "globals.h"
 
 #define M_CTX_DEFAULT_EVENTS    64
-#define M_CTX_DEFAULT           "libmodule"
 
 #define M_CTX_ASSERT(c) \
     M_PARAM_ASSERT(c); \

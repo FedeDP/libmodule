@@ -35,7 +35,7 @@ one can then perform multiple read operations on the generated directory tree:
 * `open` and then `poll` module files to get notified whenever a message is received by the module
 * Read (`cat`) module files to get a nice overview of the module state (same as `m_mod_dump`)
 * Perform a couple of read IOCTLs on a module:
-* * `M_MOD_FS_STATE` to get a module state (same as `m_mod_state`)
+* * `M_MOD_FS_STATE` to get a module state
 * * `M_MOD_FS_STATS` to get module stats
 
 The FS feature is specially useful to debug issues with module,  

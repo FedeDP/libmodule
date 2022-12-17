@@ -2,7 +2,6 @@
 
 #include <module/mod_easy.h>
 #include <module/mem/mem.h>
-#include <module/ctx.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>

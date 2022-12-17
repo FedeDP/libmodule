@@ -1,4 +1,4 @@
-#include <module/ctx.h>
+#include <module/mod_easy.h>
 #include <poll.h>
 #include <unistd.h>
 
@@ -16,7 +16,11 @@ void m_on_boot(void) {
 int main(int argc, char *argv[]) {
     int ret = 0;
     
-    m_ctx_t *c = m_ctx_default();
+    m_ctx_t *c = m_ctx_ref(M_CTX_DEFAULT);
+    if (!c) {
+        fprintf(stderr, "No ctx found.\n");
+        return -1;
+    }
     
     /* Initial dispatch */
     if (m_ctx_dispatch(c) != 0) {
@@ -51,5 +55,6 @@ int main(int argc, char *argv[]) {
     }
     close(fd);
     m_ctx_deregister(&c);
+    m_mem_unrefp((void **)&c);
     return 0;
 }

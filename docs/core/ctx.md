@@ -3,7 +3,7 @@
 Ctx API denotes libmodule interface functions to manage contexts.  
 It can be found under `<module/ctx.h>`.  
 
-> **All the ctx API expects a non-NULL ctx handler**, except for `m_ctx_default`, `m_ctx_register` and `m_ctx_deregister` functions.  
+> **All the ctx API expects a non-NULL ctx handler**, except for `m_ctx_register` function.  
 
 ## Types
 
@@ -37,14 +37,6 @@ typedef void (*m_log_cb)(const m_mod_t *ref, const char *fmt, va_list args);
 ## Functions
 
 ```C
-m_ctx_t *m_ctx_default(void);
-```
-> Fetch the default ctx.  
-> A default ctx is implicitly created the first time `m_mod_register` is called with a NULL ctx handler.  
-> Mostly useful when dealing with the mod easy API.  
-> **Returns:** default created ctx handler.
-
-```C
 int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
 ```
 > Register a new ctx.  
@@ -62,6 +54,17 @@ int m_ctx_deregister(m_ctx_t **c);
 > * `c`: ctx handler storage, reset to NULL after the call
 
 ```C
+m_ctx_t *m_ctx_ref(const char *ctx_name);
+```
+> Get a reference on a ctx, if existent.  
+> NOTE: this API increments number of reference on ctx object;  
+> remember to `m_mem_unref` the reference when you do not need it anymore.  
+> **Params:**
+> * `ctx_name`: context name
+>
+> **Returns:** a ctx handler or NULL.
+
+```C
 int m_ctx_set_logger(m_ctx_t *c, m_log_cb logger);
 ```
 > Set a logger callback; otherwise, a default one is used.  
@@ -73,10 +76,10 @@ int m_ctx_set_logger(m_ctx_t *c, m_log_cb logger);
 int m_ctx_loop(m_ctx_t *c);
 ```
 > Loop a ctx in a blocking manner, until `m_ctx_quit` is called by any module.  
-> NOTE: stopping a ctx is a blocking action:
-> all present events will be flushed to their modules,
-> and, in case any `M_SRC_TYPE_TASK` src is enabled,
-> it will join its thread.
+> NOTE: stopping a ctx is a blocking action:  
+> all present events will be flushed to their modules,  
+> and, in case any `M_SRC_TYPE_TASK` src is enabled,  
+> its thread will be joined for a clean exit.  
 > **Params:**
 > * `c`: ctx handler
 >
@@ -85,7 +88,7 @@ int m_ctx_loop(m_ctx_t *c);
 ```C
 int m_ctx_quit(m_ctx_t *c, uint8_t quit_code);
 ```
-> Quit a ctx loop.  
+> Quit a ctx loop, returning given exit code.  
 > **Params:**
 > * `c`: ctx handler
 > * `quit_code`: quit value

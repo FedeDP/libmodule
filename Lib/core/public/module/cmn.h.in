@@ -19,7 +19,7 @@
  * ctors order:
  * 0) global m_pre_start(), useful to set your own memhook if desired
  * 1) internal libmodule_init()
- * 2) each m_mod_pre_start() (only mod_easy API)
+ * 2) each m_mod_on_boot() (only mod_easy API)
  * 3) each m_mod_ctor() (only mod_easy API)
  *
  * dtors order:

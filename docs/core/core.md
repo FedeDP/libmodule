@@ -20,9 +20,9 @@ Libmodule makes heavy usage of gcc `__attribute__((constructor))` (and destructo
 The order is the following:
 
 **Ctors**
-* `m_pre_start()`
+* `m_on_boot()`
 * internal `libmodule_init()`
-* each `m_mod_pre_start()` (only mod_easy API)
+* each `m_mod_on_boot()` (only mod_easy API)
 * each `m_mod_ctor()` (only mod_easy API)
 
 **Dtors**

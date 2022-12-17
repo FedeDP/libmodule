@@ -432,15 +432,7 @@ _public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, con
     M_PARAM_ASSERT(str_not_empty(name));
     /* Mandatory callback if hook is passed */
     M_PARAM_ASSERT(!hook || hook->on_evt);
-    
-    /* NULL ctx means using default ctx */
-    if (!c) {
-        c = default_ctx;
-        if (!c) {
-            ctx_new(M_CTX_DEFAULT, &c, 0, NULL);
-        }
-    }
-    M_ALLOC_ASSERT(c);
+    M_PARAM_ASSERT(c);
     
     if (c->finalized) {
         return -EPERM;

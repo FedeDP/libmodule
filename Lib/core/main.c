@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include "globals.h"
+#include <module/mod_easy.h>
 
 /***********************************************************
  * Code related to main library ctor/dtor + main() symbol. *
@@ -28,16 +29,17 @@ _public_ _weak_ void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
  *
  * All it does is looping on default ctx.
  */
-
 _public_ _weak_ int main(int argc, char *argv[]) {
-    if (!default_ctx) {
+    m_ctx_t *c = m_ctx_ref(M_CTX_DEFAULT);
+    if (!c) {
         M_ERR("No context available.\n");
         return EXIT_FAILURE;
     }
-    m_ctx_pre_loop(default_ctx, argc, argv);
-    const int ret = m_ctx_loop(default_ctx);
-    m_ctx_post_loop(default_ctx, argc, argv);
-    m_ctx_deregister(&default_ctx); // default_ctx may be NULL here, if eg: all modules where deregistered. We don't care
+    m_ctx_pre_loop(c, argc, argv);
+    const int ret = m_ctx_loop(c);
+    m_ctx_post_loop(c, argc, argv);
+    m_ctx_deregister(&c); // default_ctx may be NULL here, if eg: all modules where deregistered. We don't care
+    m_mem_unrefp((void **)&c);
     return ret;
 }
 
@@ -62,7 +64,7 @@ _public_ int m_set_memhook(  void *(*_malloc)(size_t),
                     void *(*_calloc)(size_t, size_t),
                     void (*_free)(void *)) {
     /*
-     * Check that we are called from within m_pre_start,
+     * Check that we are called from within m_on_boot,
      * when library is not yet initialized
      */
     M_RET_ASSERT(!ctx, -EPERM);

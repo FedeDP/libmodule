@@ -18,8 +18,6 @@ static int recv_events(m_ctx_t *c, int timeout);
 static int m_ctx_loop_events(m_ctx_t *c, int max_events);
 static int ctx_destroy_mods(void *data, const char *key, void *value);
 
-m_ctx_t *default_ctx = NULL;
-
 static void ctx_dtor(void *data) {
     m_ctx_t *context = (m_ctx_t *)data;
     M_DEBUG("Ctx '%s' dtor.\n", context->name);
@@ -352,11 +350,6 @@ int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *us
     } else {
         new_ctx->name = ctx_name;
     }
-    
-    if (!strcmp(ctx_name, M_CTX_DEFAULT)) {
-        /* Store default ctx, used by ctx API with NULL param */
-        default_ctx = new_ctx;
-    }
 
     
     *c = new_ctx;
@@ -384,13 +377,15 @@ void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ..
 
 /** Public API **/
 
-_public_ m_ctx_t *m_ctx_default(void) {
-    return default_ctx;
+_public_ m_ctx_t *m_ctx_ref(const char *ctx_name) {
+    pthread_mutex_lock(&mx);
+    m_ctx_t *c = m_map_get(ctx, ctx_name);
+    pthread_mutex_unlock(&mx);
+    return m_mem_ref(c);
 }
 
 _public_ int m_ctx_register(const char *ctx_name, OUT m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
     M_PARAM_ASSERT(str_not_empty(ctx_name));
-    M_LOG_ASSERT(strcmp(ctx_name, M_CTX_DEFAULT) != 0, "Reserved ctx name.", -EINVAL);
     M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(!*c);
 
@@ -405,7 +400,6 @@ _public_ int m_ctx_deregister(OUT m_ctx_t **c) {
 
     int ret = 0;
     m_ctx_t *context = *c;
-    const bool is_default_ctx = context == default_ctx;
 
     /* Keep memory alive */
     M_MEM_LOCK(context, {
@@ -417,9 +411,6 @@ _public_ int m_ctx_deregister(OUT m_ctx_t **c) {
             context->state = M_CTX_ZOMBIE;
             m_iterate(context->modules, ctx_destroy_mods, NULL);
             *c = NULL;
-            if (is_default_ctx) {
-                default_ctx = NULL;
-            }
         }
     });
     return ret;

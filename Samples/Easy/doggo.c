@@ -10,7 +10,6 @@ M_MOD("Doggo");
 
 static void m_mod_on_boot(void) {
     printf("Press 'c' to start playing with your own doggo...\n");
-    m_set_memhook(malloc, calloc, free);
 }
 
 static bool m_mod_on_start(m_mod_t *mod) {
