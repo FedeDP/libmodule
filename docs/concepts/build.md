@@ -5,7 +5,7 @@ Libmodule supports multiple OSes:
 * freebsd
 * osx
 
-Non-portable code is [compile-time-plugins](Lib/core/poll/) based.  
+Non-portable code is compile-time-plugins based.  
 On linux, libmodule's internal loop will use `epoll`, while on BSD and MacOS it will use `kqueue`.  
 
 on linux, one can also enforce the usage of [`libkqueue`](https://github.com/mheily/libkqueue), a drop-in userspace replacement for kqueue;  
