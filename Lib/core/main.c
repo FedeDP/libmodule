@@ -7,8 +7,8 @@
  * Code related to main library ctor/dtor + main() symbol. *
  ***********************************************************/
 
-m_map_t *ctx = NULL;
-pthread_mutex_t mx = PTHREAD_MUTEX_INITIALIZER;
+m_map_t *ctxs_map = NULL;
+pthread_mutex_t ctxs_mx = PTHREAD_MUTEX_INITIALIZER;
 
 _public_ _m_ctor0_ _weak_ void m_on_boot(void) {
     M_DEBUG("Booting libmodule.\n");
@@ -45,15 +45,15 @@ _public_ _weak_ int main(int argc, char *argv[]) {
 
 static _m_ctor1_ void libmodule_init(void) {
     M_INFO("Initializing libmodule %d.%d.%d.\n", LIBMODULE_VERSION_MAJ, LIBMODULE_VERSION_MIN, LIBMODULE_VERSION_PAT);
-    ctx = m_map_new(0, mem_dtor);
-    assert(ctx != NULL);
-    pthread_mutex_init(&mx, NULL);
+    ctxs_map = m_map_new(0, mem_dtor);
+    assert(ctxs_map != NULL);
+    pthread_mutex_init(&ctxs_mx, NULL);
 }
 
 static _m_dtor0_ void libmodule_deinit(void) {
     M_INFO("Destroying libmodule.\n");
-    m_map_free(&ctx);
-    pthread_mutex_destroy(&mx);
+    m_map_free(&ctxs_map);
+    pthread_mutex_destroy(&ctxs_mx);
 }
 
 void mem_dtor(void *src) {
@@ -67,7 +67,7 @@ _public_ int m_set_memhook(  void *(*_malloc)(size_t),
      * Check that we are called from within m_on_boot,
      * when library is not yet initialized
      */
-    M_RET_ASSERT(!ctx, -EPERM);
+    M_RET_ASSERT(!ctxs_map, -EPERM);
     
     M_PARAM_ASSERT(_malloc);
     M_PARAM_ASSERT(_calloc);

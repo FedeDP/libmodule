@@ -13,6 +13,10 @@
 #define LIBMODULE_VERSION_MIN @PROJECT_VERSION_MINOR@
 #define LIBMODULE_VERSION_PAT @PROJECT_VERSION_PATCH@
 
+/*
+ * Function parameters that actually are
+ * output values, are marked by this macro.
+ */
 #define OUT
 
 /*

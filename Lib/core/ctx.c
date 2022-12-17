@@ -8,6 +8,10 @@
  * Code related to contexts handling. *
  **************************************/
 
+/* Defined in main.c */
+extern m_map_t *ctxs_map;
+extern pthread_mutex_t ctxs_mx;          // Used to access/modify global ctx map
+
 static void ctx_dtor(void *data);
 static void default_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static int loop_start(m_ctx_t *c, int max_events);
@@ -331,9 +335,9 @@ int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *us
         goto err;
     }
     
-    pthread_mutex_lock(&mx);
-    ret = m_map_put(ctx, ctx_name, new_ctx);
-    pthread_mutex_unlock(&mx);
+    pthread_mutex_lock(&ctxs_mx);
+    ret = m_map_put(ctxs_map, ctx_name, new_ctx);
+    pthread_mutex_unlock(&ctxs_mx);
     
     if (ret != 0) {
         goto err;
@@ -362,9 +366,9 @@ err:
 }
 
 m_ctx_t *check_ctx(const char *ctx_name) {
-    pthread_mutex_lock(&mx);
-    m_ctx_t *context = m_map_get(ctx, ctx_name);
-    pthread_mutex_unlock(&mx);
+    pthread_mutex_lock(&ctxs_mx);
+    m_ctx_t *context = m_map_get(ctxs_map, ctx_name);
+    pthread_mutex_unlock(&ctxs_mx);
     return context;
 }
 
@@ -378,9 +382,9 @@ void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ..
 /** Public API **/
 
 _public_ m_ctx_t *m_ctx_ref(const char *ctx_name) {
-    pthread_mutex_lock(&mx);
-    m_ctx_t *c = m_map_get(ctx, ctx_name);
-    pthread_mutex_unlock(&mx);
+    pthread_mutex_lock(&ctxs_mx);
+    m_ctx_t *c = m_map_get(ctxs_map, ctx_name);
+    pthread_mutex_unlock(&ctxs_mx);
     return m_mem_ref(c);
 }
 
@@ -403,9 +407,9 @@ _public_ int m_ctx_deregister(OUT m_ctx_t **c) {
 
     /* Keep memory alive */
     M_MEM_LOCK(context, {
-        pthread_mutex_lock(&mx);
-        ret = m_map_remove(ctx, context->name);
-        pthread_mutex_unlock(&mx);
+        pthread_mutex_lock(&ctxs_mx);
+        ret = m_map_remove(ctxs_map, context->name);
+        pthread_mutex_unlock(&ctxs_mx);
 
         if (ret == 0) {
             context->state = M_CTX_ZOMBIE;
