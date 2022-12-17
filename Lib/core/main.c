@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include "globals.h"
-#include <module/mod_easy.h>
+#include "public/module/mod_easy.h"
 
 /***********************************************************
  * Code related to main library ctor/dtor + main() symbol. *

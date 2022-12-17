@@ -6,6 +6,8 @@
 
 - [x] drop `m_ctx_default` api
 - [x] update doc
+- [ ] fix build in ci
+- [ ] move FS api under ctx, dropping the fake `fs` namespace?
 
 #### DOC
 

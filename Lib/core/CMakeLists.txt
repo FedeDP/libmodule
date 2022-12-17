@@ -71,7 +71,7 @@ set_target_properties(
     C_VISIBILITY_PRESET hidden
 )
 
-target_include_directories(${PROJECT_NAME}_core PRIVATE Lib/core/ Lib/core/public/ Lib/core/fs/ Lib/core/poll/ Lib/utils/ Lib/structs/ Lib/structs/public/ Lib/structs/public/module/ Lib/mem/ Lib/thpool/)
+target_include_directories(${PROJECT_NAME}_core PRIVATE Lib/core/ Lib/core/public/ Lib/core/fs/ Lib/core/poll/ Lib/utils/ Lib/structs/ Lib/structs/public/ Lib/mem/ Lib/mem/public/ Lib/thpool/)
 target_include_directories(${PROJECT_NAME}_core PUBLIC ${URING_INCLUDE_DIRS} ${KQUEUE_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}_core PUBLIC ${URING_LIBRARIES} ${KQUEUE_LIBRARIES} ${FUSE_LIBRARIES} ${PROJECT_NAME}_structs ${PROJECT_NAME}_thpool ${PROJECT_NAME}_mem dl)
 target_link_libraries(${PROJECT_NAME}_core PRIVATE ${PROJECT_NAME}_utils_internal)
