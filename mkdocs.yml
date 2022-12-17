@@ -29,7 +29,8 @@ theme: readthedocs
 markdown_extensions:
     - toc:
         permalink: "#"
-    - def_list
+    - sane_lists
+    - smarty
 
 plugins:
     - search
