@@ -32,6 +32,7 @@ int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
 ```
 By setting a context root path, a ctx will expose its structure as a fuse FS, where each module inside the context is a file.  
 one can then perform multiple read operations on the generated directory tree:  
+
 * `open` and then `poll` module files to get notified whenever a message is received by the module
 * Read (`cat`) module files to get a nice overview of the module state (same as `m_mod_dump`)
 * Perform a couple of read IOCTLs on a module:

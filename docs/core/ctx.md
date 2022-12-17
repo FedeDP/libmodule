@@ -42,6 +42,7 @@ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const v
 > Register a new ctx.  
 
 **Params:**  
+
 * `ctx_name`: name of the new ctx  
 * `c`: ctx handler storage  
 * `flags`: flags of the newly created ctx  
@@ -53,6 +54,7 @@ int m_ctx_deregister(m_ctx_t **c);
 > Deregister a ctx.  
 
 **Params:**  
+
 * `c`: ctx handler storage, reset to NULL after the call  
 
 ```C
@@ -63,6 +65,7 @@ m_ctx_t *m_ctx_ref(const char *ctx_name);
 > remember to `m_mem_unref` the reference when you do not need it anymore.  
 
 **Params:**  
+
  * `ctx_name`: context name  
 
 **Returns:** a ctx handler or NULL.
@@ -73,6 +76,7 @@ int m_ctx_set_logger(m_ctx_t *c, m_log_cb logger);
 > Set a logger callback; otherwise, a default one is used.  
 
 **Params:**  
+
 * `c`: ctx handler  
 * `logger`: new logger callback to be set  
 
@@ -86,6 +90,7 @@ int m_ctx_loop(m_ctx_t *c);
 > its thread will be joined for a clean exit.  
 
 **Params:**  
+
 * `c`: ctx handler  
 
 **Returns:** `m_ctx_quit` quit_code.  
@@ -96,6 +101,7 @@ int m_ctx_quit(m_ctx_t *c, uint8_t quit_code);
 > Quit a ctx loop, returning given exit code.  
 
 **Params:**  
+
 * `c`: ctx handler  
 * `quit_code`: quit value  
 
@@ -105,6 +111,7 @@ int m_ctx_fd(const m_ctx_t *c);
 > Retrieve ctx pollable file descriptor.  
 
 **Params:**  
+
 * `c`: ctx handler  
 
 **Returns:** ctx fd.
@@ -124,6 +131,7 @@ int m_ctx_dispatch(m_ctx_t *c);
 > it will join its thread.
 
 **Params:**  
+
 * `c`: ctx handler  
 
 **Returns:** first time it is called: errno-style negative error code.  
@@ -136,6 +144,7 @@ int m_ctx_dump(const m_ctx_t *c);
 > Dump a json of the current ctx state.  
 
 **Params:**  
+
 * `c`: ctx handler  
 
 ```C
@@ -144,6 +153,7 @@ int m_ctx_stats(const m_ctx_t *c, m_ctx_stats_t *stats);
 > Retrieve stats about current ctx state.  
 
 **Params:**  
+
 * `c`: ctx handler  
 
 ```C
@@ -152,6 +162,7 @@ const char *m_ctx_name(const m_ctx_t *c);
 > Retrieve ctx name.  
 
 **Params:**  
+
 * `c`: ctx handler  
 
 ```C
@@ -160,6 +171,7 @@ const void *m_ctx_userdata(const m_ctx_t *c);
 > Retrieve ctx userdata as set at registration time.  
 
 **Params:**  
+
 * `c`: ctx handler  
 
 ```C
@@ -168,6 +180,7 @@ ssize_t m_ctx_len(const m_ctx_t *c);
 > Retrieve number of registered modules.  
 
 **Params:**  
+
 * `c`: ctx handler  
 
 ```C
@@ -176,6 +189,7 @@ int m_ctx_finalize(m_ctx_t *c);
 > Set the context as finalized, denying any subsequent module registeration.  
 
 **Params:**  
+
 * `c`: ctx handler  
 
 When built with `WITH_FS` enabled, ctx API will expose 2 additional functions:  
@@ -186,6 +200,7 @@ const char *m_ctx_fs_get_root(const m_ctx_t *c);
 > Retrieve the context FS root.  
 
 **Params:**  
+
 * `c`: ctx handler  
 
 ```C
@@ -194,5 +209,6 @@ int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
 > Set the context FS root. Must be set before the ctx loop is started.
 
 **Params:**  
+
 * `c`: ctx handler  
 * `path`: FS root path  

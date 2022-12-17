@@ -19,13 +19,15 @@ For the sake of readiness, function params where an output value will be stored,
 Libmodule makes heavy usage of gcc `__attribute__((constructor))` (and destructor) to inizialize itself.  
 The order is the following:
 
-**Ctors**
+**Ctors**  
+
 * `m_on_boot()`
 * internal `libmodule_init()`
 * each `m_mod_on_boot()` (only mod_easy API)
 * each `m_mod_ctor()` (only mod_easy API)
 
-**Dtors**
+**Dtors**  
+
 * each `m_mod_dtor()` (only mod_easy API)
 * internal `libmodule_deinit()`
 
