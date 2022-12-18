@@ -2,8 +2,6 @@
 #include "fs.h"
 #include "evts.h"
 
-#define FUSE_USE_VERSION 35
-#include <fuse.h>
 #include <fuse_lowlevel.h>  // to get fuse fd to process events internally
 #include <sys/poll.h>       // poll operation support
 
