@@ -197,9 +197,20 @@ Only when built with `WITH_FS` enabled:
 ```C
 int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
 ```
-> Set the context FS root. Must be set before the ctx loop is started.
+> Set the context FS root. Must be set before the ctx loop is started.  
 
 **Params:**  
 
 * `c`: ctx handler  
 * `path`: FS root path  
+
+```C
+int m_ctx_fs_set_hook(m_ctx_t *c, const struct operations *ops);
+```
+> Set specified FUSE operations to context.  
+> NOTE: module files will always be created readonly.  
+
+**Params:**  
+
+* `c`: ctx handler  
+* `ops`: fuse operations  

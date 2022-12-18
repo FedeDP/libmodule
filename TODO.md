@@ -2,10 +2,14 @@
 
 ### TODO
 
+#### Generic
+
+- [x] fix memleak (Easy example 'c' + 's')
+
 #### Ctx
 
 - [x] move FS api under ctx, dropping the fake `fs` namespace?
-- [ ] Add m_ctx_fs_set_hook() api, to set fuse hook
+- [x] Add m_ctx_fs_set_hook() api, to set fuse hook
 
 #### DOC
 

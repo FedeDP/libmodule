@@ -25,11 +25,11 @@ static int ctx_destroy_mods(void *data, const char *key, void *value);
 static void ctx_dtor(void *data) {
     m_ctx_t *context = (m_ctx_t *)data;
     M_DEBUG("Ctx '%s' dtor.\n", context->name);
-    
+
     m_map_free(&context->modules);
     poll_destroy(&context->ppriv);
     memhook._free(context->ppriv.data);
-    memhook._free(context->fs_root);
+    fs_destroy(context);
 
     if (context->flags & M_CTX_NAME_AUTOFREE) {
         memhook._free((void *)context->name);
@@ -51,8 +51,8 @@ static int loop_start(m_ctx_t *c, int max_events) {
     c->ppriv.max_events = max_events;
     int ret = poll_init(&c->ppriv);
     if (ret == 0) {
-        /* Initialize fuse fs if requested */
-        int fs_ret = fs_init(c);
+        /* Start fuse fs if requested */
+        int fs_ret = fs_start(c);
         if (fs_ret != 0) {
             M_WARN("Failed to initialize fuse fs: %s\n", strerror(-fs_ret));
         }
@@ -80,8 +80,8 @@ static uint8_t loop_stop(m_ctx_t *c) {
     /* Flush pubsub msg to avoid memleaks */
     m_iterate(c->modules, flush_pubsub_msgs, NULL);
     
-    /* Destroy FS */
-    fs_end(c);
+    /* Stop FS */
+    fs_stop(c);
 
     poll_clear(&c->ppriv);
 
@@ -328,38 +328,43 @@ int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *us
     m_ctx_t *new_ctx = m_mem_new(sizeof(m_ctx_t), ctx_dtor);
     M_ALLOC_ASSERT(new_ctx);
 
-    int ret = poll_create(&new_ctx->ppriv);
-    if (ret != 0) {
-        goto err;
-    }
-    
-    pthread_mutex_lock(&ctxs_mx);
-    ret = m_map_put(ctxs_map, ctx_name, new_ctx);
-    pthread_mutex_unlock(&ctxs_mx);
-    
-    if (ret != 0) {
-        goto err;
-    }
-    
-    new_ctx->flags = flags;
-    new_ctx->userdata = userdata;
-    new_ctx->logger = default_logger;
-    new_ctx->modules = m_map_new(0, mem_dtor);
-        
-    if (new_ctx->flags & M_CTX_NAME_DUP) {
-        new_ctx->flags |= M_CTX_NAME_AUTOFREE;
-        new_ctx->name = mem_strdup(ctx_name);
-    } else {
-        new_ctx->name = ctx_name;
-    }
+    int ret;
+    do {
+        ret = poll_create(&new_ctx->ppriv);
+        if (ret != 0) {
+            break;
+        }
 
+        new_ctx->flags = flags;
+        new_ctx->userdata = userdata;
+        new_ctx->logger = default_logger;
+        new_ctx->modules = m_map_new(0, mem_dtor);
+        if (!new_ctx->modules) {
+            break;
+        }
+
+        if (new_ctx->flags & M_CTX_NAME_DUP) {
+            new_ctx->flags |= M_CTX_NAME_AUTOFREE;
+            new_ctx->name = mem_strdup(ctx_name);
+        } else {
+            new_ctx->name = ctx_name;
+        }
+        ret = fs_create(new_ctx);
+        if (ret != 0) {
+            break;
+        }
+
+        pthread_mutex_lock(&ctxs_mx);
+        ret = m_map_put(ctxs_map, ctx_name, new_ctx);
+        pthread_mutex_unlock(&ctxs_mx);
+    } while (false);
     
-    *c = new_ctx;
-    return 0;
-    
-err:
-    *c = NULL;
-    m_mem_unref(new_ctx);
+    if (ret == 0) {
+        *c = new_ctx;
+    } else {
+        *c = NULL;
+        m_mem_unref(new_ctx);
+    }
     return ret;
 }
 
@@ -467,7 +472,6 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
     ctx_logger(c, NULL, "\t\"Flags\": \"%#x\",\n", c->flags);
     ctx_logger(c, NULL, "\t\"UP\": \"%p\",\n", c->userdata);
-    ctx_logger(c, NULL, "\t\"Fs_root\": \"%s\",\n", str_not_empty(c->fs_root) ? c->fs_root : "N/A");
     ctx_logger(c, NULL, "\t\"State\": {\n");
     ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
     ctx_logger(c, NULL, "\t\t\"Looping\": %d\n", c->state == M_CTX_LOOPING);

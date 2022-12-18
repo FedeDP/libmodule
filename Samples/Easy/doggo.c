@@ -31,7 +31,9 @@ static bool m_mod_on_eval(m_mod_t *mod) {
 }
 
 static void m_mod_on_stop(m_mod_t *mod) {
-    
+    if (plugin) {
+        m_mem_unrefp((void **)&plugin);
+    }
 }
 
 static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
@@ -58,7 +60,10 @@ static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
                     m_mod_log(mod, "ZzzZzz...\n");
                     m_mod_src_register(mod, M_PS_MOD_STARTED, 0, NULL);
 
-                    /* Test runtime module loading; loaded module won't have direct access to CTX */
+                    /* 
+                     * Test runtime module loading; loaded module won't have direct access to CTX.
+                     * We own a ref on it! 
+                     */
                     m_mod_register("./libtestmod.so", m_mod_ctx(mod), &plugin, NULL, M_MOD_DENY_CTX, NULL);
                 } else if (!strcmp((char *)msg->ps_evt->data, "ByeBye")) {
                     m_mod_log(mod, "Sob...\n");

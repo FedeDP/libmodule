@@ -47,7 +47,6 @@ struct _ctx {
     m_map_t *modules;                       // Context's modules
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     CONST m_ctx_flags flags;                // Context's flags
-    char *fs_root;                          // Context's fuse FS root. Null if unsupported
     void *fs;                               // FS context handler. Null if unsupported
     ctx_stats_t stats;                      // Context' stats
     m_thpool_t  *thpool;                    // thpool for M_SRC_TYPE_TASK srcs; lazily created
