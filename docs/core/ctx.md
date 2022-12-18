@@ -205,7 +205,7 @@ int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
 * `path`: FS root path. NULL to disable FUSE fs.  
 
 ```C
-int m_ctx_fs_set_hook(m_ctx_t *c, const struct operations *ops);
+int m_ctx_fs_set_ops(m_ctx_t *c, const struct fuse_operations *ops);
 ```
 > Set specified FUSE operations to context. Must be set before the ctx loop is started.  
 > NOTE: module files will always be created readonly.  
