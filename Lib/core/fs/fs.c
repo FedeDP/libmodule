@@ -1,7 +1,6 @@
 #include "poll.h"
 #include "fs.h"
 #include "evts.h"
-#include "public/module/fs.h"
 
 #define FUSE_USE_VERSION 35
 #include <fuse.h>

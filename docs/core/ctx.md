@@ -192,16 +192,7 @@ int m_ctx_finalize(m_ctx_t *c);
 
 * `c`: ctx handler  
 
-When built with `WITH_FS` enabled, ctx API will expose 2 additional functions:  
-
-```C
-const char *m_ctx_fs_get_root(const m_ctx_t *c);
-```
-> Retrieve the context FS root.  
-
-**Params:**  
-
-* `c`: ctx handler  
+Only when built with `WITH_FS` enabled:  
 
 ```C
 int m_ctx_fs_set_root(m_ctx_t *c, const char *path);

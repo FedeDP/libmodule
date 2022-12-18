@@ -16,6 +16,7 @@ if (WITH_FS)
     find_package(PkgConfig)
     pkg_check_modules(FUSE REQUIRED fuse3)
     set(SOURCES ${SOURCES} Lib/core/fs/fs.c)
+    set(M_CTX_HAS_FS 1)
 else()
     set(SOURCES ${SOURCES} Lib/core/fs/fs_noop.c)
 endif()
@@ -55,9 +56,7 @@ endif()
 
 # Configure headers
 configure_file(Lib/core/public/module/cmn.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/cmn.h @ONLY)
-if(WITH_FS)
-    configure_file(Lib/core/public/module/fs.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/fs.h @ONLY)
-endif()
+configure_file(Lib/core/public/module/ctx.h.in ${PROJECT_SOURCE_DIR}/Lib/core/public/module/ctx.h @ONLY)
 
 file(GLOB PUBLIC_H Lib/core/public/module/*.h)
 

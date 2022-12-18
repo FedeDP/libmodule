@@ -25,12 +25,11 @@ It offers 2 functions that can be implemented by caller:
 
 ## FS
 
-When built with `WITH_FS` enabled, ctx API will expose 2 additional functions:  
+When built with `WITH_FS` enabled, ctx API will expose an additional function:  
 ```C
-const char *m_ctx_fs_get_root(const m_ctx_t *c);
 int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
 ```
-By setting a context root path, a ctx will expose its structure as a fuse FS, where each module inside the context is a file.  
+By setting a context root path, a ctx will expose its structure as a fuse FS, where each module inside the context is a read-only file.  
 one can then perform multiple read operations on the generated directory tree:  
 
 * `open` and then `poll` module files to get notified whenever a message is received by the module

@@ -12,6 +12,12 @@ static void m_mod_on_boot(void) {
     printf("Press 'c' to start playing with your own doggo...\n");
 }
 
+#ifdef M_CTX_HAS_FS
+void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
+    m_ctx_fs_set_root(c, "./EasyCtx");
+}
+#endif
+
 static bool m_mod_on_start(m_mod_t *mod) {
     /* Doggo should subscribe to "leaving" topic, as regex */
     m_mod_src_register(mod, "leav[i+]ng", 0, NULL);
