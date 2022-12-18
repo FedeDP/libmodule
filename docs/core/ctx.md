@@ -192,7 +192,7 @@ int m_ctx_finalize(m_ctx_t *c);
 
 * `c`: ctx handler  
 
-Only when built with `WITH_FS` enabled:  
+### Only when built with `WITH_FS` build option
 
 ```C
 int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
@@ -202,15 +202,15 @@ int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
 **Params:**  
 
 * `c`: ctx handler  
-* `path`: FS root path  
+* `path`: FS root path. NULL to disable FUSE fs.  
 
 ```C
 int m_ctx_fs_set_hook(m_ctx_t *c, const struct operations *ops);
 ```
-> Set specified FUSE operations to context.  
+> Set specified FUSE operations to context. Must be set before the ctx loop is started.  
 > NOTE: module files will always be created readonly.  
 
 **Params:**  
 
 * `c`: ctx handler  
-* `ops`: fuse operations  
+* `ops`: fuse operations. NULL to reset default ops.  
