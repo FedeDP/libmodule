@@ -4,7 +4,7 @@
 
 #### Ctx
 
-- [ ] move FS api under ctx, dropping the fake `fs` namespace?
+- [x] move FS api under ctx, dropping the fake `fs` namespace?
 - [ ] Add m_ctx_fs_set_hook() api, to set fuse hook
 
 #### DOC
