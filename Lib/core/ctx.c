@@ -52,11 +52,9 @@ static int loop_start(m_ctx_t *c, int max_events) {
     int ret = poll_init(&c->ppriv);
     if (ret == 0) {
         /* Initialize fuse fs if requested */
-        if (str_not_empty(c->fs_root)) {
-            int fs_ret = fs_init(c);
-            if (fs_ret != 0) {
-                M_WARN("Failed to initialize fuse fs: %s\n", strerror(-fs_ret));
-            }
+        int fs_ret = fs_init(c);
+        if (fs_ret != 0) {
+            M_WARN("Failed to initialize fuse fs: %s\n", strerror(-fs_ret));
         }
 
         fetch_ms(&c->stats.looping_start_time, NULL);
