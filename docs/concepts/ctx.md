@@ -25,9 +25,10 @@ It offers 2 functions that can be implemented by caller:
 
 ## FS
 
-When built with `WITH_FS` enabled, ctx API will expose an additional function:  
+When built with `WITH_FS` enabled, ctx API will expose 2 additional functions:  
 ```C
 int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
+int m_ctx_fs_set_hook(m_ctx_t *c, const struct operations *ops);
 ```
 By setting a context root path, a ctx will expose its structure as a fuse FS, where each module inside the context is a read-only file.  
 one can then perform multiple read operations on the generated directory tree:  

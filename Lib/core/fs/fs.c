@@ -14,6 +14,8 @@
 
 /* Context fs priv data */
 typedef struct {
+    char *root;
+    struct fuse_operations ops;
     struct fuse *handler;
     struct fuse_buf buf;
     struct fuse_args args;
@@ -303,30 +305,36 @@ static ev_src_t *process_fs(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt
 
 /** Private API **/
 
-int fs_init(m_ctx_t *c) {
-    if (!str_not_empty(c->fs_root)) {
+int fs_create(m_ctx_t *c) {
+    c->fs = memhook._calloc(1, sizeof(fs_ctx_t));
+    M_ALLOC_ASSERT(c->fs);
+    FS_PRIV();
+
+    memcpy(&f->ops, &operations, sizeof(f->ops));
+    return 0;
+}
+
+int fs_start(m_ctx_t *c) {
+    FS_PRIV();
+    
+    if (!str_not_empty(f->root)) {
         return 0;
     }
     
-    int ret = mkdir(c->fs_root, 0777);
+    int ret = mkdir(f->root, 0777);
     if (ret != 0) {
         return -errno;
     }
 
-    c->fs = memhook._calloc(1, sizeof(fs_ctx_t));
-    M_ALLOC_ASSERT(c->fs);
-
-    FS_PRIV();
-
     /* Mandatory fuse arg: app name */
     fuse_opt_add_arg(&f->args, "libmodule");
 
-    f->handler = fuse_new(&f->args, &operations, sizeof(operations), c);
+    f->handler = fuse_new(&f->args, &f->ops, sizeof(f->ops), c);
     M_ALLOC_ASSERT(f->handler);
 
     f->start = time(NULL);
 
-    ret = fuse_mount(f->handler, c->fs_root);
+    ret = fuse_mount(f->handler, f->root);
     if (ret == 0) {
         f->src = memhook._calloc(1, sizeof(ev_src_t));
         M_ALLOC_ASSERT(f->src);
@@ -371,8 +379,12 @@ int fs_ctx_stopped(m_mod_t *mod) {
     return 0;
 }
 
-int fs_end(m_ctx_t *c) {
+int fs_stop(m_ctx_t *c) {
     FS_PRIV();
+    
+    if (!str_not_empty(f->root)) {
+        return 0;
+    }
     
     /* Deregister fuse fd */
     poll_set_new_evt(&c->ppriv, f->src, RM);
@@ -389,9 +401,16 @@ int fs_end(m_ctx_t *c) {
     fuse_opt_free_args(&f->args);
 
     /* Delete folder */
-    rmdir(c->fs_root);
-    
-    memhook._free(c->fs);
+    rmdir(f->root);
+
+    return 0;
+}
+
+int fs_destroy(m_ctx_t *c) {
+    FS_PRIV();
+
+    memhook._free(f->root);
+    memhook._free(f);
     c->fs = NULL;
     return 0;
 }
@@ -402,10 +421,23 @@ _public_ int m_ctx_fs_set_root(m_ctx_t *c, const char *path) {
     M_CTX_ASSERT(c);
     M_RET_ASSERT(c->state == M_CTX_IDLE, -EPERM);
     M_PARAM_ASSERT(str_not_empty(path));
+    FS_PRIV();
 
-    if (c->fs_root) {
-        memhook._free(c->fs_root);
+    memhook._free(f->root);
+    f->root = mem_strdup(path);
+    return 0;
+}
+
+_public_ int m_ctx_fs_set_ops(m_ctx_t *c, const struct fuse_operations *ops) {
+    M_CTX_ASSERT(c);
+    M_RET_ASSERT(c->state == M_CTX_IDLE, -EPERM);
+    M_PARAM_ASSERT(ops);
+    FS_PRIV();
+    
+    if (ops != NULL) {
+        memcpy(&f->ops, ops, sizeof(f->ops));
+    } else {
+        memcpy(&f->ops, &operations, sizeof(f->ops));
     }
-    c->fs_root = mem_strdup(path);
     return 0;
 }
