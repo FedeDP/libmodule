@@ -47,10 +47,7 @@ static int fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                       off_t offset, struct fuse_file_info *fi,
                       enum fuse_readdir_flags flags);
 
-static int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
-static int fs_unlink(const char *path);
-static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi);
-static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi);
+static int fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);;
 static int fs_poll(const char *path, struct fuse_file_info *fi,
                    struct fuse_pollhandle *ph, unsigned *reventsp);
 static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
@@ -67,9 +64,6 @@ static const struct fuse_operations operations = {
     .release    = fs_release,
     .readdir    = fs_readdir,
     .read       = fs_read,
-    .unlink     = fs_unlink,
-    .create     = fs_create,
-    .utimens    = fs_utimens,
     .poll       = fs_poll,
     .ioctl      = fs_ioctl
 };
@@ -207,18 +201,6 @@ static int fs_read(const char *path, char *buf, size_t size, off_t offset, struc
     return cl->write_len;
 }
 
-static int fs_unlink(const char *path) {
-    return -EPERM;
-}
-
-static int fs_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi) {
-    return 0;
-}
-
-static int fs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    return -EPERM;
-}
-
 static int fs_poll(const char *path, struct fuse_file_info *fi,
                      struct fuse_pollhandle *ph, unsigned *reventsp) {
     FS_CLIENT();
@@ -323,6 +305,10 @@ static ev_src_t *process_fs(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt
 /** Private API **/
 
 int fs_init(m_ctx_t *c) {
+    if (!str_not_empty(c->fs_root)) {
+        return 0;
+    }
+    
     int ret = mkdir(c->fs_root, 0777);
     if (ret != 0) {
         return -errno;
@@ -404,7 +390,7 @@ int fs_end(m_ctx_t *c) {
     fuse_opt_free_args(&f->args);
 
     /* Delete folder */
-    remove(c->fs_root);
+    rmdir(c->fs_root);
     
     memhook._free(c->fs);
     c->fs = NULL;
@@ -412,13 +398,6 @@ int fs_end(m_ctx_t *c) {
 }
 
 /** Public API **/
-
-_public_ const char *m_ctx_fs_get_root(const m_ctx_t *c) {
-    M_RET_ASSERT(c, NULL);
-    M_RET_ASSERT(c->state != M_CTX_ZOMBIE, NULL);
-
-    return c->fs_root;
-}
 
 _public_ int m_ctx_fs_set_root(m_ctx_t *c, const char *path) {
     M_CTX_ASSERT(c);

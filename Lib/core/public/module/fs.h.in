@@ -10,5 +10,4 @@ enum {
     M_MOD_FS_STATS               = _IOR(LIBMODULE_MAGIC, 1, m_mod_stats_t),
 };
 
-const char *m_ctx_fs_get_root(const m_ctx_t *c);
 int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
