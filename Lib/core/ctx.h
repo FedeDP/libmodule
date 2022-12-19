@@ -30,6 +30,11 @@ typedef enum {
     M_CTX_ZOMBIE,
 } m_ctx_states;
 
+typedef struct {
+    m_src_tmr_t tmr;
+    ev_src_t *src;
+} ctx_tick_t;
+
 /* Struct that holds data for context */
 /*
  * MEM-REFS for ctx:
@@ -50,6 +55,7 @@ struct _ctx {
     void *fs;                               // FS context handler. Null if unsupported
     ctx_stats_t stats;                      // Context' stats
     m_thpool_t  *thpool;                    // thpool for M_SRC_TYPE_TASK srcs; lazily created
+    ctx_tick_t tick;                        // Tick for ctx sending a M_PS_CTX_TICK message
     CONST const void *userdata;             // Context's user defined data
 };
 

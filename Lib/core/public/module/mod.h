@@ -41,6 +41,7 @@ typedef enum {
 /* PubSub system topics. Subscribe to any of these to receive system messages. */
 #define M_PS_CTX_STARTED    "LIBMODULE_CTX_STARTED"
 #define M_PS_CTX_STOPPED    "LIBMODULE_CTX_STOPPED"
+#define M_PS_CTX_TICK       "LIBMODULE_CTX_TICK"
 #define M_PS_MOD_STARTED    "LIBMODULE_MOD_STARTED"
 #define M_PS_MOD_STOPPED    "LIBMODULE_MOD_STOPPED"
 

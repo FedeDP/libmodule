@@ -54,6 +54,18 @@ const char *src_names[] = {
 };
 _Static_assert(sizeof(src_names) / sizeof(*src_names) == M_SRC_TYPE_END, "Undefined source name.");
 
+static process_cb src_procs_map[] = {
+    process_ps,      // M_SRC_TYPE_PS we use internal pipe fd used for pubsub as module PS source
+    process_fd,      // M_SRC_TYPE_FD
+    process_tmr,     // M_SRC_TYPE_TMR
+    process_sgn,     // M_SRC_TYPE_SGN
+    process_path,    // M_SRC_TYPE_PATH
+    process_pid,     // M_SRC_TYPE_PID
+    process_task,    // M_SRC_TYPE_TASK
+    process_thresh,  // M_SRC_TYPE_THRESH
+};
+_Static_assert(sizeof(src_procs_map) / sizeof(*src_procs_map) == M_SRC_TYPE_END, "Undefined source processor function.");
+
 static void src_priv_dtor(void *data) {
     ev_src_t *t = (ev_src_t *)data;
 
@@ -238,19 +250,22 @@ int init_src(m_mod_t *mod, m_src_types t) {
     return 0;
 }
 
-int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
-                         m_src_flags flags, const void *userptr) {
-    M_MOD_ASSERT(mod);
-    M_MOD_CONSUME_TOKEN(mod);
-    M_SRC_ASSERT_PRIO_FLAGS();
+ev_src_t *create_src(m_mod_t *mod, m_src_types type, process_cb proc,
+                     const void *src_data, m_src_flags flags, const void *userptr) {
     ev_src_t *src = m_mem_new(sizeof(ev_src_t), src_priv_dtor);
-    M_ALLOC_ASSERT(src);
-
+    if (!src) {
+        return NULL;
+    }
+    
+    M_ASSERT(proc);
+    M_ASSERT(type < M_SRC_TYPE_END);
+    
     src->flags = flags;
     src->userptr = userptr;
     src->type = type;
     src->mod = mod;
-
+    src->process = proc;
+    
     /*
      * Same storage is used for all linux's internal fds, eg: for timerfd, signalfd...
      * as fd_src_t is always first struct field on linux.
@@ -258,69 +273,76 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
     src->fd_src.fd = -1;
 
     switch (type) {
-        case M_SRC_TYPE_PS: // M_SRC_TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
-        case M_SRC_TYPE_FD: {
-            fd_src_t *fd_src = &src->fd_src;
-            int fd = *((int *)src_data);
-            if (flags & M_SRC_DUP) {
-                fd_src->fd = dup(fd);
-                src->flags |= M_SRC_FD_AUTOCLOSE;
-            } else {
-                fd_src->fd = fd;
-            }
-            if (type == M_SRC_TYPE_FD) {
-                src->process = process_fd;
-            } else {
-                src->process = process_ps;
-            }
-            break;
+    case M_SRC_TYPE_PS: // M_SRC_TYPE_PS is used for pubsub_fd[0] in init_pubsub_fd()
+    case M_SRC_TYPE_FD: {
+        fd_src_t *fd_src = &src->fd_src;
+        int fd = *((int *)src_data);
+        if (flags & M_SRC_DUP) {
+            fd_src->fd = dup(fd);
+            src->flags |= M_SRC_FD_AUTOCLOSE;
+        } else {
+            fd_src->fd = fd;
         }
-        case M_SRC_TYPE_TMR: {
-            tmr_src_t *tm_src = &src->tmr_src;
-            memcpy(&tm_src->its, src_data, sizeof(m_src_tmr_t));
-            src->process = process_tmr;
-            break;
+        
+        // enforce HIGH priority for fds
+        if (type == M_SRC_TYPE_FD) {
+            src->flags |= M_SRC_PRIO_HIGH;
         }
-        case M_SRC_TYPE_SGN: {
-            sgn_src_t *sgn_src = &src->sgn_src;
-            memcpy(&sgn_src->sgs, src_data, sizeof(m_src_sgn_t));
-            src->process = process_sgn;
-            break;
-        }
-        case M_SRC_TYPE_PATH: {
-            path_src_t *pt_src = &src->path_src;
-            memcpy(&pt_src->pt, src_data, sizeof(m_src_path_t));
-            if (flags & M_SRC_DUP) {
-                pt_src->pt.path = mem_strdup(pt_src->pt.path);
-            }
-            src->process = process_path;
-            break;
-        }
-        case M_SRC_TYPE_PID: {
-            pid_src_t *pid_src = &src->pid_src;
-            memcpy(&pid_src->pid, src_data, sizeof(m_src_pid_t));
-            src->process = process_pid;
-            break;
-        }
-        case M_SRC_TYPE_TASK: {
-            task_src_t *task_src = &src->task_src;
-            memcpy(&task_src->tid, src_data, sizeof(m_src_task_t));
-            src->process = process_task;
-            break;
-        }
-        case M_SRC_TYPE_THRESH: {
-            thresh_src_t *thresh_src = &src->thresh_src;
-            memcpy(&thresh_src->thr, src_data, sizeof(m_src_thresh_t));
-            src->process = process_thresh;
-            break;
-        }
-        default:
-            M_ASSERT(type < M_SRC_TYPE_END);
-            M_WARN("Wrong src type: %d\n", type);
-            m_mem_unref(src);
-            return -EINVAL;
+        break;
     }
-    M_ASSERT(src->process);
+    case M_SRC_TYPE_TMR: {
+        tmr_src_t *tm_src = &src->tmr_src;
+        memcpy(&tm_src->its, src_data, sizeof(m_src_tmr_t));
+        break;
+    }
+    case M_SRC_TYPE_SGN: {
+        sgn_src_t *sgn_src = &src->sgn_src;
+        memcpy(&sgn_src->sgs, src_data, sizeof(m_src_sgn_t));
+        break;
+    }
+    case M_SRC_TYPE_PATH: {
+        path_src_t *pt_src = &src->path_src;
+        memcpy(&pt_src->pt, src_data, sizeof(m_src_path_t));
+        if (flags & M_SRC_DUP) {
+            pt_src->pt.path = mem_strdup(pt_src->pt.path);
+        }
+        break;
+    }
+    case M_SRC_TYPE_PID: {
+        pid_src_t *pid_src = &src->pid_src;
+        memcpy(&pid_src->pid, src_data, sizeof(m_src_pid_t));
+        break;
+    }
+    case M_SRC_TYPE_TASK: {
+        task_src_t *task_src = &src->task_src;
+        memcpy(&task_src->tid, src_data, sizeof(m_src_task_t));
+        break;
+    }
+    case M_SRC_TYPE_THRESH: {
+        thresh_src_t *thresh_src = &src->thresh_src;
+        memcpy(&thresh_src->thr, src_data, sizeof(m_src_thresh_t));
+        break;
+    }
+    default:
+        M_WARN("Wrong src type: %d\n", type);
+        m_mem_unrefp((void **)&src);
+        break;
+    }
+    return src;
+}
+
+int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
+                         m_src_flags flags, const void *userptr) {
+    M_MOD_ASSERT(mod);
+    M_MOD_CONSUME_TOKEN(mod);
+    M_SRC_ASSERT_PRIO_FLAGS();
+    
+    M_ASSERT(type < M_SRC_TYPE_END);
+    
+    ev_src_t *src = create_src(mod, type, src_procs_map[type], src_data, flags, userptr);
+    if (!src) {
+        return -EINVAL;
+    }
     int ret = m_bst_insert(mod->srcs[type], src);
     if (ret == 0) {
         /* If a src is registered at runtime, start receiving its events */
@@ -359,11 +381,11 @@ int start_task(m_ctx_t *c, ev_src_t *src) {
 _public_ int m_mod_src_register_fd(m_mod_t *mod, int fd, m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(fd >= 0);
     
-    // Only M_SRC_PRIO_HIGH is available for fd sources
+    // Only M_SRC_PRIO_HIGH is available for fd sources. Later enforced by create_src().
     const m_src_flags prio_flags = flags & M_SRC_PRIO_MASK;
     M_PARAM_ASSERT(prio_flags == 0 || prio_flags == M_SRC_PRIO_HIGH);
 
-    return register_src(mod, M_SRC_TYPE_FD, &fd, flags | M_SRC_PRIO_HIGH, userptr);
+    return register_src(mod, M_SRC_TYPE_FD, &fd, flags, userptr);
 }
 
 _public_ int m_mod_src_deregister_fd(m_mod_t *mod, int fd) {

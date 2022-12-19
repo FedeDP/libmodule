@@ -56,6 +56,8 @@ static int fs_ioctl(const char *path, unsigned int cmd, void *arg,
 static void client_dtor(void *data);
 static void fs_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static void fs_wakeup_clients(fs_priv_t *fp, bool leaving);
+static int fs_process(m_ctx_t *c);
+static ev_src_t *process_fs(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
 
 static const struct fuse_operations operations = {
     .getattr    = fs_getattr,
@@ -334,14 +336,9 @@ int fs_start(m_ctx_t *c) {
 
     ret = fuse_mount(f->handler, f->root);
     if (ret == 0) {
-        f->src = memhook._calloc(1, sizeof(ev_src_t));
-        M_ALLOC_ASSERT(f->src);
-
+        int fuse_fd = fuse_session_fd(fuse_get_session(f->handler));
         /* Actually register fuse fd in poll plugin */
-        f->src->type = M_SRC_TYPE_FD;
-        f->src->flags = M_SRC_INTERNAL;
-        f->src->fd_src.fd = fuse_session_fd(fuse_get_session(f->handler));
-        f->src->process = process_fs;
+        f->src = create_src(NULL, M_SRC_TYPE_FD, process_fs, &fuse_fd, M_SRC_INTERNAL, NULL);
         ret = poll_set_new_evt(&c->ppriv, f->src, ADD);
     }
     return ret;
@@ -384,17 +381,21 @@ int fs_stop(m_ctx_t *c) {
         return 0;
     }
     
-    /* Deregister fuse fd */
-    poll_set_new_evt(&c->ppriv, f->src, RM);
-    memhook._free(f->src);
+    /* Deregister fuse fd and cleanup src */
+    if (f->src) {
+        poll_set_new_evt(&c->ppriv, f->src, RM);
+        m_mem_unref(f->src);
+    }
 
     /* Free fuse recv buf */
     memhook._free(f->buf.mem);
     
     /* Destroy fuse handler */
-    fuse_unmount(f->handler);
-    fuse_destroy(f->handler);
-    
+    if (f->handler) {
+        fuse_unmount(f->handler);
+        fuse_destroy(f->handler);
+    }
+
     /* Free fuse args */
     fuse_opt_free_args(&f->args);
 
