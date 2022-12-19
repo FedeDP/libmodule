@@ -192,6 +192,16 @@ int m_ctx_finalize(m_ctx_t *c);
 
 * `c`: ctx handler  
 
+```C
+int m_ctx_set_tick(m_ctx_t *c, uint64_t ns);
+```
+> Set a context tick. You can subscribe modules to `M_PS_CTX_TICK` system topic to receive tick events.
+
+**Params:**  
+
+* `c`: ctx handler  
+* `ns`: nanoseconds for the tick  
+
 ### Only when built with `WITH_FS` build option
 
 ```C

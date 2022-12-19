@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <signal.h>
 #include <time.h>
+#include <errno.h>
 
 #ifdef __linux__
     #include <sys/inotify.h>
@@ -19,6 +20,7 @@ static m_mod_t *doggo;
 M_MOD("Pippo");
 
 static int myData = 5;
+static int tick_ctr = 0;
 
 static void m_mod_on_evt_ready(m_mod_t *mod, const m_queue_t *const evts);
 
@@ -38,6 +40,10 @@ static bool m_mod_on_start(m_mod_t *mod) {
     
     /* Get Doggo module reference */
     doggo = m_mod_ref(mod, "Doggo");
+    
+     // let context tick every 5s and subscribe to it
+    m_ctx_set_tick(m_mod_ctx(mod), (uint64_t)5 * 1000 * 1000 * 1000);
+    m_mod_src_register(mod, M_PS_CTX_TICK, 0, NULL);
     return true;
 }
 
@@ -148,6 +154,12 @@ static void m_mod_on_evt_ready(m_mod_t *mod, const m_queue_t *const evts) {
                         m_mod_log(mod, "Unrecognized command. Beep. Please enter a new one... Totally not a bot.\n");
                     }
                     break;
+            }
+        } else if (msg->ps_evt->topic && strcmp(msg->ps_evt->topic, M_PS_CTX_TICK) == 0) {
+            m_mod_log(mod, "Received ctx tick.\n");
+            if (++tick_ctr == 5) {
+                m_mod_log(mod, "Stop playing and get back to do stuff!\n");
+                m_ctx_quit(m_mod_ctx(mod), -EPIPE);
             }
         }
     });

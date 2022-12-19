@@ -73,6 +73,8 @@ typedef struct {
     const char *topic;
 } ps_src_t;
 
+typedef struct _ev_src *(*process_cb)(struct _ev_src *this, m_ctx_t *c, int idx, evt_priv_t *evt);
+
 /* Struct that holds generic "event source" data */
 typedef struct _ev_src {
     union {
@@ -90,7 +92,7 @@ typedef struct _ev_src {
     void *ev;                               // poll plugin defined data structure
     m_mod_t *mod;                           // ptr needed to map an event source to a module in poll_plugin
     const void *userptr;
-    struct _ev_src *(*process)(struct _ev_src *this, m_ctx_t *c, int idx, evt_priv_t *evt); // Processors can update the src, that's why they return an ev_src_t (PS only)
+    process_cb process; // Processors can update the src, that's why they return an ev_src_t (PS only)
 } ev_src_t;
 
 /* Struct that holds pubsub messaging, private */
@@ -102,6 +104,8 @@ typedef struct {
 
 extern const char *src_names[];
 int init_src(m_mod_t *mod, m_src_types t);
+ev_src_t *create_src(m_mod_t *mod, m_src_types type, process_cb proc,
+                     const void *src_data, m_src_flags flags, const void *userptr);
 int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
                  m_src_flags flags, const void *userptr);
 int deregister_src(m_mod_t *mod, m_src_types type, void *src_data);
