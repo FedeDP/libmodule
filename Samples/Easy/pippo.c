@@ -41,7 +41,7 @@ static bool m_mod_on_start(m_mod_t *mod) {
     /* Get Doggo module reference */
     doggo = m_mod_ref(mod, "Doggo");
     
-     // let context tick every 5s and subscribe to it
+    // let context tick every 5s and subscribe to it
     m_ctx_set_tick(m_mod_ctx(mod), (uint64_t)5 * 1000 * 1000 * 1000);
     m_mod_src_register(mod, M_PS_CTX_TICK, 0, NULL);
     return true;

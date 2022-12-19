@@ -483,6 +483,7 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
     ctx_logger(c, NULL, "\t\"Flags\": \"%#x\",\n", c->flags);
     ctx_logger(c, NULL, "\t\"UP\": \"%p\",\n", c->userdata);
+    ctx_logger(c, NULL, "\t\"Tick\": \"%" PRIu64 ",\n", c->tick.tmr.ns);
     ctx_logger(c, NULL, "\t\"State\": {\n");
     ctx_logger(c, NULL, "\t\t\"Quit\": %d,\n", c->quit);
     ctx_logger(c, NULL, "\t\t\"Looping\": %d\n", c->state == M_CTX_LOOPING);
@@ -561,7 +562,7 @@ _public_ int m_ctx_finalize(m_ctx_t *c) {
 
 _public_ int m_ctx_set_tick(m_ctx_t *c, uint64_t ns) {
     M_CTX_ASSERT(c);
-    
+
     if (c->tick.src) {
         poll_set_new_evt(&c->ppriv, c->tick.src, RM);
         m_mem_unrefp((void **)&c->tick.src);
