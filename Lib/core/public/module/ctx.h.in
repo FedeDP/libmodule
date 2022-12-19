@@ -50,6 +50,8 @@ ssize_t m_ctx_len(const m_ctx_t *c);
 
 int m_ctx_finalize(m_ctx_t *c);
 
+int m_ctx_set_tick(m_ctx_t *c, uint64_t ns);
+
 /* FuseFS api */
 @M_CTX_HAS_FS@
 

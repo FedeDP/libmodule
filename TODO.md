@@ -2,6 +2,10 @@
 
 ### TODO
 
+#### Ctx
+
+- [ ] Only attach ctx internal srcs when ctx starts looping, and detach them when ctx stop looping, just like we do for modules
+
 #### DOC
 
 - [x] Fully rewrite documentation per-namespace

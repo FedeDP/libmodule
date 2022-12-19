@@ -352,6 +352,7 @@ int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
 
             /* For type task: create task thread */
             if (ret == 0 && src->type == M_SRC_TYPE_TASK) {
+                // TODO: move to m_mod_src_register_task somehow
                 ret = start_task(c, src);
             }
         }
