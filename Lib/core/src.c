@@ -316,11 +316,13 @@ ev_src_t *create_src(m_mod_t *mod, m_src_types type, process_cb proc,
     case M_SRC_TYPE_TASK: {
         task_src_t *task_src = &src->task_src;
         memcpy(&task_src->tid, src_data, sizeof(m_src_task_t));
+        src->flags |= M_SRC_ONESHOT;  // force ONESHOT flag
         break;
     }
     case M_SRC_TYPE_THRESH: {
         thresh_src_t *thresh_src = &src->thresh_src;
         memcpy(&thresh_src->thr, src_data, sizeof(m_src_thresh_t));
+        src->flags |= M_SRC_ONESHOT;  // force ONESHOT flag
         break;
     }
     default:
@@ -449,7 +451,7 @@ _public_ int m_mod_src_deregister_pid(m_mod_t *mod, const m_src_pid_t *pid) {
 _public_ int m_mod_src_register_task(m_mod_t *mod, const m_src_task_t *tid, m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(tid && tid->fn);
 
-    return register_src(mod, M_SRC_TYPE_TASK, tid, flags | M_SRC_ONESHOT, userptr); // force ONESHOT flag
+    return register_src(mod, M_SRC_TYPE_TASK, tid, flags, userptr);
 }
 
 _public_ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid) {
@@ -462,7 +464,7 @@ _public_ int m_mod_src_deregister_task(m_mod_t *mod, const m_src_task_t *tid) {
 _public_ int m_mod_src_register_thresh(m_mod_t *mod, const m_src_thresh_t *thr, m_src_flags flags, const void *userptr) {
     M_PARAM_ASSERT(thr && (thr->activity_freq > 0 || thr->inactive_ms > 0));
 
-    return register_src(mod, M_SRC_TYPE_THRESH, thr, flags | M_SRC_ONESHOT, userptr); // force ONESHOT flag
+    return register_src(mod, M_SRC_TYPE_THRESH, thr, flags, userptr);
 }
 
 _public_ int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr) {
