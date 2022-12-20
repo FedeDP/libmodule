@@ -68,7 +68,7 @@ static int init_pubsub_fd(m_mod_t *mod) {
     if (_pipe(mod) == 0) {
         fd_src_t fd_src = {0};
         fd_src.fd = mod->pubsub_fd[0];
-        if (register_src(mod, M_SRC_TYPE_PS, &fd_src, M_SRC_FD_AUTOCLOSE | M_SRC_PRIO_HIGH, NULL) == 0) {
+        if (register_mod_src(mod, M_SRC_TYPE_PS, &fd_src, M_SRC_FD_AUTOCLOSE | M_SRC_PRIO_HIGH, NULL) == 0) {
             return 0;
         }
         close(mod->pubsub_fd[0]);

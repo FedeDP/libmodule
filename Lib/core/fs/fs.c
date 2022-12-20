@@ -338,8 +338,7 @@ int fs_start(m_ctx_t *c) {
     if (ret == 0) {
         int fuse_fd = fuse_session_fd(fuse_get_session(f->handler));
         /* Actually register fuse fd in poll plugin */
-        f->src = create_src(NULL, M_SRC_TYPE_FD, process_fs, &fuse_fd, M_SRC_INTERNAL, NULL);
-        ret = poll_set_new_evt(&c->ppriv, f->src, ADD);
+        f->src = register_ctx_src(c, M_SRC_TYPE_FD, process_fs, &fuse_fd);
     }
     return ret;
 }
@@ -382,10 +381,7 @@ int fs_stop(m_ctx_t *c) {
     }
     
     /* Deregister fuse fd and cleanup src */
-    if (f->src) {
-        poll_set_new_evt(&c->ppriv, f->src, RM);
-        m_mem_unref(f->src);
-    }
+    deregister_ctx_src(c, &f->src);
 
     /* Free fuse recv buf */
     memhook._free(f->buf.mem);

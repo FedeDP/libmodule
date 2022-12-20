@@ -27,10 +27,7 @@ static void ctx_dtor(void *data) {
     m_ctx_t *context = (m_ctx_t *)data;
     M_DEBUG("Ctx '%s' dtor.\n", context->name);
 
-    if (context->tick.src) {
-        poll_set_new_evt(&context->ppriv, context->tick.src, RM);
-        m_mem_unrefp((void **)&context->tick.src);
-    }
+    deregister_ctx_src(context, &context->tick.src);
     m_map_free(&context->modules);
     poll_destroy(&context->ppriv);
     memhook._free(context->ppriv.data);
@@ -72,6 +69,11 @@ static int loop_start(m_ctx_t *c, int max_events) {
 
         /* Publish loop started system message */
         tell_system_pubsub_msg(NULL, c, NULL, M_PS_CTX_STARTED);
+        
+        /* Start the tick source right now! */
+        if (c->tick.src) {
+            poll_set_new_evt(&c->ppriv, c->tick.src, ADD);
+        }
     }
     return ret;
 }
@@ -88,6 +90,11 @@ static uint8_t loop_stop(m_ctx_t *c) {
     /* Stop FS */
     fs_stop(c);
 
+    /* Stop the tick source right now! */
+    if (c->tick.src) {
+        poll_set_new_evt(&c->ppriv, c->tick.src, RM);
+    }
+    
     poll_clear(&c->ppriv);
 
     /* Destroy thpool eventually waiting on currently running tasks */
@@ -563,16 +570,11 @@ _public_ int m_ctx_finalize(m_ctx_t *c) {
 _public_ int m_ctx_set_tick(m_ctx_t *c, uint64_t ns) {
     M_CTX_ASSERT(c);
 
-    if (c->tick.src) {
-        poll_set_new_evt(&c->ppriv, c->tick.src, RM);
-        m_mem_unrefp((void **)&c->tick.src);
-    }
-
+    deregister_ctx_src(c, &c->tick.src);
     if (ns != 0) {
         c->tick.tmr.clock_id = CLOCK_MONOTONIC;
         c->tick.tmr.ns = ns;
-        c->tick.src = create_src(NULL, M_SRC_TYPE_TMR, process_tick, &c->tick, M_SRC_INTERNAL, NULL);
-        return poll_set_new_evt(&c->ppriv, c->tick.src, ADD);
+        c->tick.src = register_ctx_src(c, M_SRC_TYPE_TMR, process_tick, &c->tick);
     }
     return 0;
 }
