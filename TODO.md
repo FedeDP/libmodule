@@ -4,7 +4,17 @@
 
 #### Ctx
 
-- [ ] Only attach ctx internal srcs when ctx starts looping, and detach them when ctx stop looping, just like we do for modules
+- [x] Only attach ctx internal srcs when ctx starts looping, and detach them when ctx stops looping, just like we do for modules
+- [ ] add back multictx mod easy support (M_MOD_CTX macro + main that loops on any registered ctx)?
+
+- [ ] store ctxs in thread local storage (pthread_setspecific API)? https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_key_create.html `__find_thread_by_id` and loop over /proc/self/task? -> https://stackoverflow.com/questions/3707358/get-all-the-thread-id-created-with-pthread-created-within-an-process
+- [ ] we could then drop: (since every context is thread specific data)
+- - [ ] global ctx map and mutex
+- - [ ] m_mod_ctx() api
+- - [ ] m_ctx_ref() api
+- - [ ] m_mod_t->ctx field
+- [ ] and just add an m_ctx() API that returns ctx associated with current thread
+- [ ] Downside: how could we guarantee that 2 ctx with same name do not exist? We cannot; is this a limitation, actually?
 
 #### DOC
 

@@ -104,9 +104,9 @@ typedef struct {
 
 extern const char *src_names[];
 int init_src(m_mod_t *mod, m_src_types t);
-ev_src_t *create_src(m_mod_t *mod, m_src_types type, process_cb proc,
-                     const void *src_data, m_src_flags flags, const void *userptr);
-int register_src(m_mod_t *mod, m_src_types type, const void *src_data,
+int register_mod_src(m_mod_t *mod, m_src_types type, const void *src_data,
                  m_src_flags flags, const void *userptr);
-int deregister_src(m_mod_t *mod, m_src_types type, void *src_data);
+int deregister_mod_src(m_mod_t *mod, m_src_types type, void *src_data);
+ev_src_t *register_ctx_src(m_ctx_t *c, m_src_types type, process_cb proc, const void *src_data);
+int deregister_ctx_src(m_ctx_t *c, ev_src_t **src);
 int start_task(m_ctx_t *c, ev_src_t *src);
