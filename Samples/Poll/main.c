@@ -16,7 +16,7 @@ void m_on_boot(void) {
 int main(int argc, char *argv[]) {
     int ret = 0;
     
-    m_ctx_t *c = m_ctx_ref(M_CTX_DEFAULT);
+    m_ctx_t *c = m_ctx_ref();
     if (!c) {
         fprintf(stderr, "No ctx found.\n");
         return -1;

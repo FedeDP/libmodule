@@ -14,7 +14,7 @@
     static void m_mod_on_stop(m_mod_t *mod); \
     static m_ctx_t *_m_ctx; \
     static void _m_ctor3_ m_m_ctor(void) { \
-        _m_ctx = m_ctx_ref(M_CTX_DEFAULT); \
+        _m_ctx = m_ctx_ref(); \
         if (!_m_ctx) { \
             m_ctx_register(M_CTX_DEFAULT, &_m_ctx, 0, NULL); \
         } \

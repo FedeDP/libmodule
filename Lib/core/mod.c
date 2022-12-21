@@ -81,7 +81,7 @@ static int init_pubsub_fd(m_mod_t *mod) {
 
 static int manage_srcs(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
     int ret = 0;
-    
+
     for (int i = 0; i < M_SRC_TYPE_END; i++) {
         m_itr_foreach(mod->srcs[i], {
             ev_src_t *t = m_itr_get(m_itr);
@@ -95,7 +95,7 @@ static int manage_srcs(m_mod_t *mod, m_ctx_t *c, int flag, bool stop) {
                 ret = m_itr_rm(m_itr);
             } else {
                 ret = poll_set_new_evt(&c->ppriv, t, flag);
-                
+
                 /* For type task: create task thread now */
                 if (ret == 0 && t->type == M_SRC_TYPE_TASK && flag == ADD) {
                     ret = start_task(c, t);
