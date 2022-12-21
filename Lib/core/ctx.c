@@ -8,10 +8,10 @@
  * Code related to contexts handling. *
  **************************************/
 
-/* Defined in main.c */
-extern m_map_t *ctxs_map;
-extern pthread_mutex_t ctxs_mx;          // Used to access/modify global ctx map
+static pthread_key_t key;
+static pthread_once_t key_once = PTHREAD_ONCE_INIT;
 
+static void make_key(void);
 static void ctx_dtor(void *data);
 static void default_logger(const m_mod_t *mod, const char *fmt, va_list args);
 static int loop_start(m_ctx_t *c, int max_events);
@@ -22,6 +22,11 @@ static int recv_events(m_ctx_t *c, int timeout);
 static int m_ctx_loop_events(m_ctx_t *c, int max_events);
 static int ctx_destroy_mods(void *data, const char *key, void *value);
 static ev_src_t *process_tick(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
+static int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
+
+static void make_key(void) {
+    pthread_key_create(&key, NULL);
+}
 
 static void ctx_dtor(void *data) {
     m_ctx_t *context = (m_ctx_t *)data;
@@ -338,9 +343,7 @@ static ev_src_t *process_tick(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *e
     return this;
 }
 
-/** Private API **/
-
-int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
+static int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
     M_DEBUG("Creating context '%s'.\n", ctx_name);
     
     m_ctx_t *new_ctx = m_mem_new(sizeof(m_ctx_t), ctx_dtor);
@@ -372,9 +375,7 @@ int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *us
             break;
         }
 
-        pthread_mutex_lock(&ctxs_mx);
-        ret = m_map_put(ctxs_map, ctx_name, new_ctx);
-        pthread_mutex_unlock(&ctxs_mx);
+        ret = pthread_setspecific(key, new_ctx);
     } while (false);
     
     if (ret == 0) {
@@ -386,12 +387,7 @@ int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *us
     return ret;
 }
 
-m_ctx_t *check_ctx(const char *ctx_name) {
-    pthread_mutex_lock(&ctxs_mx);
-    m_ctx_t *context = m_map_get(ctxs_map, ctx_name);
-    pthread_mutex_unlock(&ctxs_mx);
-    return context;
-}
+/** Private API **/
 
 void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...) {
     va_list args;
@@ -402,10 +398,8 @@ void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ..
 
 /** Public API **/
 
-_public_ m_ctx_t *m_ctx_ref(const char *ctx_name) {
-    pthread_mutex_lock(&ctxs_mx);
-    m_ctx_t *c = m_map_get(ctxs_map, ctx_name);
-    pthread_mutex_unlock(&ctxs_mx);
+_public_ m_ctx_t *m_ctx_ref(void) {
+    m_ctx_t *c = pthread_getspecific(key);
     return m_mem_ref(c);
 }
 
@@ -413,8 +407,9 @@ _public_ int m_ctx_register(const char *ctx_name, OUT m_ctx_t **c, m_ctx_flags f
     M_PARAM_ASSERT(str_not_empty(ctx_name));
     M_PARAM_ASSERT(c);
     M_PARAM_ASSERT(!*c);
-
-    if (check_ctx(ctx_name)) {
+    
+    pthread_once(&key_once, make_key);
+    if (pthread_getspecific(key)) {
         return -EEXIST;
     }
     return ctx_new(ctx_name, c, flags, userdata);
@@ -423,21 +418,16 @@ _public_ int m_ctx_register(const char *ctx_name, OUT m_ctx_t **c, m_ctx_flags f
 _public_ int m_ctx_deregister(OUT m_ctx_t **c) {
     M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);
 
-    int ret = 0;
+    int ret;
     m_ctx_t *context = *c;
 
-    /* Keep memory alive */
-    M_MEM_LOCK(context, {
-        pthread_mutex_lock(&ctxs_mx);
-        ret = m_map_remove(ctxs_map, context->name);
-        pthread_mutex_unlock(&ctxs_mx);
-
-        if (ret == 0) {
-            context->state = M_CTX_ZOMBIE;
-            m_iterate(context->modules, ctx_destroy_mods, NULL);
-            *c = NULL;
-        }
-    });
+    ret = pthread_setspecific(key, NULL);
+    if (ret == 0) {
+        context->state = M_CTX_ZOMBIE;
+        m_iterate(context->modules, ctx_destroy_mods, NULL);
+        *c = NULL;
+    }
+    m_mem_unref(context);
     return ret;
 }
 

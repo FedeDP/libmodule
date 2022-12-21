@@ -4,22 +4,22 @@
 
 #### Ctx
 
-- [x] Only attach ctx internal srcs when ctx starts looping, and detach them when ctx stops looping, just like we do for modules
-- [ ] add back multictx mod easy support (M_MOD_CTX macro + main that loops on any registered ctx)?
-
-- [ ] store ctxs in thread local storage (pthread_setspecific API)? https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_key_create.html `__find_thread_by_id` and loop over /proc/self/task? -> https://stackoverflow.com/questions/3707358/get-all-the-thread-id-created-with-pthread-created-within-an-process
+- [x] store ctxs in thread local storage (pthread_setspecific API)? https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_key_create.html `__find_thread_by_id` and loop over /proc/self/task? -> https://stackoverflow.com/questions/3707358/get-all-the-thread-id-created-with-pthread-created-within-an-process
 - [ ] we could then drop: (since every context is thread specific data)
-- - [ ] global ctx map and mutex
-- - [ ] m_mod_ctx() api
-- - [ ] m_ctx_ref() api
-- - [ ] m_mod_t->ctx field
+- - [x] global ctx map and mutex
+- - [ ] m_mod_ctx() api -> NOPE this checks if current mod has perm to get ctx. Drop mod PERM management? (fiven m_ctx_ref API it is a noop btw)
+- - [ ] m_ctx_ref() api -> but if there is this API, is the whole PERM_CTX on mod useful?
+- - [ ] m_mod_t->ctx field -> if we drop PERM management, we can drop this, and this would help us enforce that module API is called by same thread that registered a context
+- - [ ] drop m_ctx_t param from funtion calls
+- - [ ] drop libmodule_init() and deinit() constructors
+- - [ ] Specify that m_set_memhook should be called before allocating any libmodule related resource (ie: m_on_boot() for mod_easy, or before allocating first ctx, when manually)
 - [ ] and just add an m_ctx() API that returns ctx associated with current thread
 - [ ] Downside: how could we guarantee that 2 ctx with same name do not exist? We cannot; is this a limitation, actually?
 
 #### DOC
 
 - [x] Fully rewrite documentation per-namespace
-- [ ] Document that m_{mod,ctx}_deregister() should not be called inside user hook { on_start(), on_stop(), on_eval() } functions; m_mod_deregister() can be used from on_evt() though.  (IS THIS WHOLE SENTENCE TRUE?)
+- [ ] Document that m_{mod,ctx}_deregister() should not be called inside user hook { on_start(), on_stop(), on_eval() } functions; m_mod_deregister() can be used from on_evt() though.  (IS THIS WHOLE SENTENCE TRUE?) (ctx: `M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);`)
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
 

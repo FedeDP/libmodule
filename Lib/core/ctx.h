@@ -59,6 +59,4 @@ struct _ctx {
     CONST const void *userdata;             // Context's user defined data
 };
 
-int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
-m_ctx_t *check_ctx(const char *ctx_name);
 void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);
