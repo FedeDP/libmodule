@@ -40,14 +40,6 @@ _public_ _weak_ int main(int argc, char *argv[]) {
     return ret;
 }
 
-static _m_ctor1_ void libmodule_init(void) {
-    M_INFO("Initializing libmodule %d.%d.%d.\n", LIBMODULE_VERSION_MAJ, LIBMODULE_VERSION_MIN, LIBMODULE_VERSION_PAT);
-}
-
-static _m_dtor0_ void libmodule_deinit(void) {
-    M_INFO("Destroying libmodule.\n");
-}
-
 void mem_dtor(void *src) {
     m_mem_unref(src);
 }

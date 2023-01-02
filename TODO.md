@@ -12,7 +12,8 @@
 - - [ ] m_mod_ref() api should become m_mod_lookup() and let users manage its lifecyle (ie: m_mem_ref it if needed)
 - - [ ] m_mod_t->ctx field -> this would help us enforce that module API is called by same thread that registered a context
 - - [ ] drop m_ctx_t param from funtion calls
-- - [ ] drop libmodule_init() and deinit() constructors
+- - [x] drop libmodule_init() and deinit() constructors
+- - [x] move ctor defines into mod_easy.h
 - - [ ] Specify that m_set_memhook should be called before allocating any libmodule related resource (ie: m_on_boot() for mod_easy, or before allocating first ctx, when manually)
 - [x] and just add an m_ctx() API that returns ctx associated with current thread
 - [x] store in ctx a `void **curr_mod` that points to the module whose callback is currently being processed, if any, or NULL; when NULL; we are outside a module callback, therefore we can return it; else, we must guarantee that module has permissions to access its ctx
