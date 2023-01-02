@@ -50,7 +50,7 @@ static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
             int *data = (int *)msg->userdata;
             if (*data == 5) {
                 m_mod_log(mod, "Timed out.\n");
-                m_ctx_quit(m_mod_ctx(mod), 0);
+                m_ctx_quit(m_ctx(), 0);
                 m_mod_log(mod,"Final data val: %d\n", thData);
             } else {
                 (*data)++;

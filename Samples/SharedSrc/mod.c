@@ -61,7 +61,7 @@ static void A_recv(m_mod_t *mod, const m_queue_t *const evts) {
                 case 'q':
                     m_mod_log(mod, "I have to go now!\n");
                     m_mod_ps_publish(mod, "leaving", (unsigned char *)"ByeBye", 0);
-                    m_ctx_quit(m_mod_ctx(mod), 0);
+                    m_ctx_quit(m_ctx(), 0);
                     break;
                 default:
                     /* Avoid newline */
@@ -106,7 +106,7 @@ static void A_recv_ready(m_mod_t *mod, const m_queue_t *const evts) {
                 case 'q':
                     m_mod_log(mod, "I have to go now!\n");
                     m_mod_ps_publish(mod, "leaving", (unsigned char *)"ByeBye", 0);
-                    m_ctx_quit(m_mod_ctx(mod), 0);
+                    m_ctx_quit(m_ctx(), 0);
                     break;
                 default:
                     /* Avoid newline */

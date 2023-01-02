@@ -205,9 +205,6 @@ int m_mod_register(const char *name, m_ctx_t *c, OUT m_mod_t **mod_ref, const m_
                    m_mod_flags flags, const void *userdata);
 int m_mod_deregister(OUT m_mod_t **mod);
 
-/* Retrieve module context */
-m_ctx_t *m_mod_ctx(const m_mod_t *mod);
-
 /* Retrieve module name */
 const char *m_mod_name(const m_mod_t *mod);
 

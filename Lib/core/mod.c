@@ -635,14 +635,6 @@ _public_ int m_mod_stats(const m_mod_t *mod, m_mod_stats_t *stats) {
     return 0;
 }
 
-_public_ m_ctx_t *m_mod_ctx(const m_mod_t *mod) {
-    M_RET_ASSERT(mod, NULL);
-    M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), NULL);
-    M_RET_ASSERT(!(mod->flags & M_MOD_DENY_CTX), NULL);
-
-    return mod->ctx;
-}
-
 /** Module state setters **/
 
 #define M_MOD_BOUND(fn) \

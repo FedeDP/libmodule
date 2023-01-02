@@ -7,6 +7,13 @@
 
 #define M_CTX_DEFAULT_EVENTS    64
 
+// #define M_CTX() m_ctx_t *c = m_ctx();
+// 
+// #define M_CTX_ASSERT(c) \
+// M_CTX(); \
+// M_RET_ASSERT(c, -EPIPE); \
+// M_RET_ASSERT(c->state != M_CTX_ZOMBIE, -EACCES)
+
 #define M_CTX_ASSERT(c) \
     M_PARAM_ASSERT(c); \
     M_RET_ASSERT(c->state != M_CTX_ZOMBIE, -EACCES)
