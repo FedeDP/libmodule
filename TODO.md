@@ -7,7 +7,7 @@
 - [x] store ctxs in thread local storage (pthread_setspecific API)? https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_key_create.html `__find_thread_by_id` and loop over /proc/self/task? -> https://stackoverflow.com/questions/3707358/get-all-the-thread-id-created-with-pthread-created-within-an-process
 - [ ] we could then drop: (since every context is thread specific data)
 - - [x] global ctx map and mutex
-- - [ ] m_mod_ctx() api
+- - [x] m_mod_ctx() api
 - - [x] m_ctx_ref() api
 - - [x] m_mod_ref() api should become m_mod_lookup() and let users manage its lifecyle (ie: m_mem_ref it if needed)
 - - [ ] m_mod_t->ctx field -> this would help us enforce that module API is called by same thread that registered a context

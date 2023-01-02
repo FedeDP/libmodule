@@ -14,8 +14,8 @@
  * dtors order:
  * 0) each m_mod_dtor() (only mod_easy API)
  */
-#define _m_ctor0_         __attribute__((constructor (113)))
-#define _m_ctor1_         __attribute__((constructor (114)))
+#define _m_ctor0_         __attribute__((constructor (111)))
+#define _m_ctor1_         __attribute__((constructor (112)))
 #define _m_dtor0_         __attribute__((destructor (111)))
 
 /* Simple macro to automatically manage module lifecycle and callbacks */

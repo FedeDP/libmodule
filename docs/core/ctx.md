@@ -58,7 +58,7 @@ int m_ctx_deregister(m_ctx_t **c);
 * `c`: ctx handler storage, reset to NULL after the call  
 
 ```C
-m_ctx_t *m_ctx(const char *ctx_name);
+m_ctx_t *m_ctx(void);
 ```
 > Retrieves ctx associated with current thread, if existent.  
 > NOTE: this API **does not** increment number of references on ctx object;  

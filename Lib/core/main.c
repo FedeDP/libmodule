@@ -32,7 +32,6 @@ _public_ _weak_ int main(int argc, char *argv[]) {
     const int ret = m_ctx_loop(c);
     m_ctx_post_loop(c, argc, argv);
     m_ctx_deregister(&c); // default_ctx may be NULL here, if eg: all modules where deregistered. We don't care
-    m_mem_unrefp((void **)&c);
     return ret;
 }
 

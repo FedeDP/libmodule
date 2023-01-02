@@ -13,7 +13,7 @@ static void logger(const m_mod_t *self, const char *fmt, va_list args) {
     const char *context = NULL;
     if (self) {
         name = m_mod_name(self);
-        context = m_ctx_name(m_mod_ctx(self));
+        context = m_ctx_name(m_ctx());
     }
     printf("%s@%s:\t* ", name ? name : "null", context ? context : "null");
     vprintf(fmt, args);
