@@ -230,7 +230,7 @@ int m_mod_stats(const m_mod_t *mod, OUT m_mod_stats_t *stats);
 
 const void *m_mod_userdata(const m_mod_t *mod);
 
-m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name);
+m_mod_t *m_mod_lookup(const m_mod_t *mod, const char *name);
 
 int m_mod_become(m_mod_t *mod, m_evt_cb new_on_evt);
 int m_mod_unbecome(m_mod_t *mod);

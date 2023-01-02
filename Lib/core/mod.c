@@ -696,3 +696,11 @@ _public_ int m_mod_bind(m_mod_t *mod, m_mod_t *ref) {
     
     return m_list_insert(ref->bound_mods, m_mem_ref(mod));
 }
+
+_public_ m_mod_t *m_mod_lookup(const m_mod_t *mod, const char *name) {
+    M_RET_ASSERT(mod, NULL);
+    M_RET_ASSERT(name, NULL);
+    M_MOD_CTX(mod);
+    
+    return m_map_get(c->modules, name);
+}

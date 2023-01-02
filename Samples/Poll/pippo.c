@@ -22,7 +22,7 @@ static bool m_mod_on_start(m_mod_t *mod) {
     m_mod_src_register(mod, STDIN_FILENO, 0, NULL);
     
     /* Get Doggo reference */
-    doggo = m_mod_ref(mod, "Doggo");
+    doggo = m_mod_lookup(mod, "Doggo");
     return true;
 }
 
@@ -31,7 +31,7 @@ static bool m_mod_on_eval(m_mod_t *mod) {
 }
 
 static void m_mod_on_stop(m_mod_t *mod) {
-    m_mem_unrefp((void **)&doggo);
+
 }
 
 static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {

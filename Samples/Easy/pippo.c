@@ -39,7 +39,7 @@ static bool m_mod_on_start(m_mod_t *mod) {
 #endif
     
     /* Get Doggo module reference */
-    doggo = m_mod_ref(mod, "Doggo");
+    doggo = m_mod_lookup(mod, "Doggo");
     
     // let context tick every 5s and subscribe to it
     m_ctx_set_tick(m_mod_ctx(mod), (uint64_t)5 * 1000 * 1000 * 1000);
@@ -52,7 +52,7 @@ static bool m_mod_on_eval(m_mod_t *mod) {
 }
 
 static void m_mod_on_stop(m_mod_t *mod) {
-    m_mem_unrefp((void **)&doggo);
+
 }
 
 static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {

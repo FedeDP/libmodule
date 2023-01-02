@@ -9,7 +9,7 @@
 - - [x] global ctx map and mutex
 - - [ ] m_mod_ctx() api
 - - [x] m_ctx_ref() api
-- - [ ] m_mod_ref() api should become m_mod_lookup() and let users manage its lifecyle (ie: m_mem_ref it if needed)
+- - [x] m_mod_ref() api should become m_mod_lookup() and let users manage its lifecyle (ie: m_mem_ref it if needed)
 - - [ ] m_mod_t->ctx field -> this would help us enforce that module API is called by same thread that registered a context
 - - [ ] drop m_ctx_t param from funtion calls
 - - [x] drop libmodule_init() and deinit() constructors
