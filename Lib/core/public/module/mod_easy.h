@@ -10,13 +10,9 @@
  * ctors order:
  * 0) each m_mod_on_boot() (only mod_easy API)
  * 1) each m_mod_ctor() (only mod_easy API)
- *
- * dtors order:
- * 0) each m_mod_dtor() (only mod_easy API)
  */
 #define _m_ctor0_         __attribute__((constructor (111)))
 #define _m_ctor1_         __attribute__((constructor (112)))
-#define _m_dtor0_         __attribute__((destructor (111)))
 
 /* Simple macro to automatically manage module lifecycle and callbacks */
 #define M_MOD(name) \
@@ -32,8 +28,5 @@
         } \
         m_mod_hook_t hook = { m_mod_on_start, m_mod_on_eval, m_mod_on_evt, m_mod_on_stop }; \
         m_mod_register(name, _m_ctx, NULL , &hook, M_MOD_PERSIST, NULL); \
-    } \
-    static void _m_dtor0_ m_mod_dtor(void) { \
-        m_mem_unrefp((void **)&_m_ctx); \
     } \
     static void _m_ctor0_ m_mod_on_boot(void)
