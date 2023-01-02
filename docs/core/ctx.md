@@ -52,6 +52,10 @@ int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const v
 int m_ctx_deregister(m_ctx_t **c);
 ```
 > Deregister a ctx.  
+> NOTE: this API cannot be called if the ctx is still looping.  
+> Make sure to `m_ctx_quit` the loop before deregistering a context.  
+> NOTE: unless a ctx is registered with `M_CTX_PERSIST` flag, it will get  
+> automatically destroyed when there are no more modules registered in it.  
 
 **Params:**  
 
