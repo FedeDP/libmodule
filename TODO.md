@@ -14,9 +14,10 @@
 - - [ ] drop m_ctx_t param from funtion calls
 - - [x] drop libmodule_init() and deinit() constructors
 - - [x] move ctor defines into mod_easy.h
-- - [ ] Specify that m_set_memhook should be called before allocating any libmodule related resource (ie: m_on_boot() for mod_easy, or before allocating first ctx, when manually)
+- - [x] drop m_on_boot(); specify that mod_easy API force-uses malloc,calloc and free by default.
+- - [x] Specify that m_set_memhook should be called before allocating any libmodule related resource
 - [x] and just add an m_ctx() API that returns ctx associated with current thread
-- [x] store in ctx a `void **curr_mod` that points to the module whose callback is currently being processed, if any, or NULL; when NULL; we are outside a module callback, therefore we can return it; else, we must guarantee that module has permissions to access its ctx
+- [x] store in ctx a `curr_mod` that points to the module whose callback is currently being processed, if any, or NULL; when NULL; we are outside a module callback, therefore we can return it; else, we must guarantee that module has permissions to access its ctx
 - [ ] Downside: how could we guarantee that 2 ctx with same name do not exist? We cannot; is this a limitation, actually?
 
 #### DOC
