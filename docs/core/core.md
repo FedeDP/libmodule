@@ -14,23 +14,6 @@ For the sake of readiness, function params where an output value will be stored,
 
 > **All the libmodule core API returns an errno-style negative error code, where left unspecified.**
 
-## Constructors
-
-Libmodule makes heavy usage of gcc `__attribute__((constructor))` (and destructor) to inizialize itself.  
-The order is the following:
-
-**Ctors**  
-
-* `m_on_boot()`
-* internal `libmodule_init()`
-* each `m_mod_on_boot()` (only mod_easy API)
-* each `m_mod_ctor()` (only mod_easy API)
-
-**Dtors**  
-
-* each `m_mod_dtor()` (only mod_easy API)
-* internal `libmodule_deinit()`
-
 ## Memory
 
 ### Ref counted

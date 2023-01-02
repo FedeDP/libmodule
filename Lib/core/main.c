@@ -7,10 +7,6 @@
  * Code related to main library ctor/dtor + main() symbol. *
  ***********************************************************/
 
-_public_ _m_ctor0_ _weak_ void m_on_boot(void) {
-    M_DEBUG("Booting libmodule.\n");
-}
-
 _public_ _weak_ void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
     M_DEBUG("Pre-looping libmodule easy API.\n");
 }

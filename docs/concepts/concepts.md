@@ -44,10 +44,9 @@ Ctor order is specified in each namespace doc.
 ### Memhook
 
 Moreover, libmodule allows users to override default memhook used, by calling `m_set_memhook()`.  
-This function must be called from `m_on_boot()` function, because it has to be called before any internal ctor is run, ie: before any allocation takes place.  
+This function must be called before any libmodule's allocation takes place, ie: before calling the first `m_ctx_register`.  
 A memhook is just a wrapper around 3 main memory related functions:  
 
 * `malloc`  
 * `calloc`  
 * `free`  
-
