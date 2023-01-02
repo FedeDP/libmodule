@@ -132,6 +132,7 @@ static int optional_hook(m_mod_t *mod, enum mod_hook req_hook) {
     int ret;
 
     M_MEM_LOCK(mod, {
+        mod->ctx->curr_mod = mod;
         switch (req_hook) {
         case MOD_START:
             if (mod->hook.on_start) {
@@ -151,7 +152,8 @@ static int optional_hook(m_mod_t *mod, enum mod_hook req_hook) {
         default:
             break;
         }
-        
+        mod->ctx->curr_mod = NULL;
+
         ret = bool_ret ? 0 : -1;
         if (m_mod_is(mod, M_MOD_ZOMBIE)) {
             // m_mod_deregister was called

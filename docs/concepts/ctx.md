@@ -1,7 +1,8 @@
 # Context
 
 A context can be seen as a collector for modules. You can loop on events from each context, and each context behaves independently from others.  
-This can be particularly useful when dealing with 2+ threads; ideally, each thread has its own module's context and thus its own events to be polled.  
+It is stored as a [thread specific object](https://linux.die.net/man/3/pthread_setspecific), created through `m_ctx_register` and deleted through `m_ctx_deregister`.  
+This can be particularly useful when dealing with 2+ threads; each thread has its own module's context and thus its own events to be polled.  
 Modules can only see and reach (through PubSub messaging) other modules from same context.  
 
 ## Loop

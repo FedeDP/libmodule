@@ -198,23 +198,28 @@ void call_pubsub_cb(m_mod_t *mod, m_queue_t *evts) {
         goto end;
     }
     
-    /* If module is using some different receive function, honor it. */
-    m_evt_cb cb = m_stack_peek(mod->recvs);
-    if (!cb) {
-        /* Fallback to module default receive */
-        cb = mod->hook.on_evt;
-    }
-    
-    /* Notify underlying fuse fs */
-    fs_notify(mod, evts);
-    
-    /* Finally call user callback */
-    cb(mod, evts);
-    
-    mod->stats.recv_msgs += m_queue_len(evts);
-    
-    fetch_ms(&mod->stats.last_seen, NULL);
-    
+    M_MEM_LOCK(mod, {
+        mod->ctx->curr_mod = mod;
+        
+        /* If module is using some different receive function, honor it. */
+        m_evt_cb cb = m_stack_peek(mod->recvs);
+        if (!cb) {
+            /* Fallback to module default receive */
+            cb = mod->hook.on_evt;
+        }
+        
+        /* Notify underlying fuse fs */
+        fs_notify(mod, evts);
+        
+        /* Finally call user callback */
+        cb(mod, evts);
+        
+        mod->stats.recv_msgs += m_queue_len(evts);
+        
+        fetch_ms(&mod->stats.last_seen, NULL);
+        
+        mod->ctx->curr_mod = NULL;
+    });
 end:
     /* Destroy events */
     m_queue_free(&evts);

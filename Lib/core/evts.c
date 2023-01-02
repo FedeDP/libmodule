@@ -85,7 +85,7 @@ _public_ ssize_t m_mod_unstash(m_mod_t *mod, size_t len) {
         }
         m_evt_t *evt = m_itr_get(m_itr);
         /*
-         * Here evt has 1 ref; run_pubsub_cb() would drop it
+         * Here evt has 1 ref; call_pubsub_cb() would drop it
          * thus invalidating ptr.
          * But m_itr_rm() still needs ptrs!
          * Keep evts alive.

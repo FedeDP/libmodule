@@ -7,19 +7,21 @@
 - [x] store ctxs in thread local storage (pthread_setspecific API)? https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_key_create.html `__find_thread_by_id` and loop over /proc/self/task? -> https://stackoverflow.com/questions/3707358/get-all-the-thread-id-created-with-pthread-created-within-an-process
 - [ ] we could then drop: (since every context is thread specific data)
 - - [x] global ctx map and mutex
-- - [ ] m_mod_ctx() api -> NOPE this checks if current mod has perm to get ctx. Drop mod PERM management? (fiven m_ctx_ref API it is a noop btw)
-- - [ ] m_ctx_ref() api -> but if there is this API, is the whole PERM_CTX on mod useful?
-- - [ ] m_mod_t->ctx field -> if we drop PERM management, we can drop this, and this would help us enforce that module API is called by same thread that registered a context
+- - [ ] m_mod_ctx() api
+- - [x] m_ctx_ref() api
+- - [ ] m_mod_ref() api should become m_mod_lookup() and let users manage its lifecyle (ie: m_mem_ref it if needed)
+- - [ ] m_mod_t->ctx field -> this would help us enforce that module API is called by same thread that registered a context
 - - [ ] drop m_ctx_t param from funtion calls
 - - [ ] drop libmodule_init() and deinit() constructors
 - - [ ] Specify that m_set_memhook should be called before allocating any libmodule related resource (ie: m_on_boot() for mod_easy, or before allocating first ctx, when manually)
-- [ ] and just add an m_ctx() API that returns ctx associated with current thread
+- [x] and just add an m_ctx() API that returns ctx associated with current thread
+- [x] store in ctx a `void **curr_mod` that points to the module whose callback is currently being processed, if any, or NULL; when NULL; we are outside a module callback, therefore we can return it; else, we must guarantee that module has permissions to access its ctx
 - [ ] Downside: how could we guarantee that 2 ctx with same name do not exist? We cannot; is this a limitation, actually?
 
 #### DOC
 
 - [x] Fully rewrite documentation per-namespace
-- [ ] Document that m_{mod,ctx}_deregister() should not be called inside user hook { on_start(), on_stop(), on_eval() } functions; m_mod_deregister() can be used from on_evt() though.  (IS THIS WHOLE SENTENCE TRUE?) (ctx: `M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);`)
+- [ ] Document that m_ctx_deregister() cannot be called on a looping context (`M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);`)
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
 
