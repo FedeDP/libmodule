@@ -399,7 +399,7 @@ void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ..
 
 _public_ m_ctx_t *m_ctx(void) {
     m_ctx_t *c = pthread_getspecific(key);
-    if (c->curr_mod) {
+    if (c && c->curr_mod) {
         M_RET_ASSERT(!(c->curr_mod->flags & M_MOD_DENY_CTX), NULL);
     }
     return c;
