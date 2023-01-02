@@ -50,6 +50,7 @@ struct _ctx {
     bool finalized;                         // Whether the context is finalized, ie: no more modules can be registered
     m_log_cb logger;                        // Context's log callback
     m_map_t *modules;                       // Context's modules
+    m_mod_t *curr_mod;                      // Current module's being processed. NULL when we are outside of any module.
     poll_priv_t ppriv;                      // Priv data for poll_plugin implementation
     CONST m_ctx_flags flags;                // Context's flags
     void *fs;                               // FS context handler. Null if unsupported

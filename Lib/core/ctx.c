@@ -243,7 +243,7 @@ static int recv_events(m_ctx_t *c, int timeout) {
              * a m_mod_deregister() call by user callback
              * invalidates our pointer.
              */
-            m_mod_t *mod = m_mem_ref(p->mod);
+            m_mod_t *mod = p->mod;
             evt_priv_t *evt = new_evt(p);
             m_evt_t *msg = NULL;
             if (evt) {
@@ -293,7 +293,6 @@ static int recv_events(m_ctx_t *c, int timeout) {
                  */
                 m_mem_unref(evt);
             }
-            m_mem_unref(mod);
         } else {
             /* Forward error to below handling code */
             err = EAGAIN;
@@ -398,9 +397,12 @@ void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ..
 
 /** Public API **/
 
-_public_ m_ctx_t *m_ctx_ref(void) {
+_public_ m_ctx_t *m_ctx(void) {
     m_ctx_t *c = pthread_getspecific(key);
-    return m_mem_ref(c);
+    if (c->curr_mod) {
+        M_RET_ASSERT(!(c->curr_mod->flags & M_MOD_DENY_CTX), NULL);
+    }
+    return c;
 }
 
 _public_ int m_ctx_register(const char *ctx_name, OUT m_ctx_t **c, m_ctx_flags flags, const void *userdata) {

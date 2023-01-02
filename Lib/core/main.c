@@ -27,7 +27,7 @@ _public_ _weak_ void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
  * All it does is looping on default ctx.
  */
 _public_ _weak_ int main(int argc, char *argv[]) {
-    m_ctx_t *c = m_ctx_ref();
+    m_ctx_t *c = m_ctx();
     if (!c) {
         M_ERR("No context available.\n");
         return EXIT_FAILURE;
