@@ -26,16 +26,6 @@ evt_priv_t *new_evt(ev_src_t *src) {
 
 /** Public API **/
 
-/* Must be unref through m_mem_unref() */
-_public_ m_mod_t *m_mod_ref(const m_mod_t *mod, const char *name) {
-    M_RET_ASSERT(mod, NULL);
-    M_RET_ASSERT(name, NULL);
-    M_MOD_CTX(mod);
-
-    m_mod_t *m = m_map_get(c->modules, name);
-    return m_mem_ref(m);
-}
-
 _public_ int m_mod_become(m_mod_t *mod, m_evt_cb new_on_evt) {
     M_PARAM_ASSERT(new_on_evt);
     M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);

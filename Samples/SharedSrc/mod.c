@@ -28,7 +28,7 @@ void create_modules(m_ctx_t *c) {
 }
 
 static bool A_init(m_mod_t *mod) {
-    refB = m_mod_ref(mod, "Doggo");
+    refB = m_mod_lookup(mod, "Doggo");
     m_mod_src_register(mod, STDIN_FILENO, 0, NULL);
     return true;
 }
@@ -40,7 +40,7 @@ static bool B_init(m_mod_t *mod) {
 }
 
 static void A_dtor(m_mod_t *mod) {
-    m_mem_unref(refB);
+
 }
 
 /*

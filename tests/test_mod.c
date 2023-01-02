@@ -329,21 +329,21 @@ void test_mod_subscribe(void **state) {
 void test_mod_ref_NULL_name(void **state) {
     (void) state; /* unused */
     
-    testRef = m_mod_ref(test_mod, NULL);
+    testRef = m_mod_lookup(test_mod, NULL);
     assert_null(testRef);
 }
 
 void test_mod_ref_unexhistent_name(void **state) {
     (void) state; /* unused */
     
-    testRef = m_mod_ref(test_mod, "testName2");
+    testRef = m_mod_lookup(test_mod, "testName2");
     assert_null(testRef);
 }
 
 void test_mod_ref(void **state) {
     (void) state; /* unused */
     
-    testRef = m_mod_ref(test_mod, "testName");
+    testRef = m_mod_lookup(test_mod, "testName");
     assert_non_null(testRef);
 }
 
@@ -357,6 +357,7 @@ void test_mod_unref_NULL_ref(void **state) {
 void test_mod_unref(void **state) {
     (void) state; /* unused */
     
+    testRef = m_mem_ref(testRef);
     testRef = m_mem_unref(testRef);
     assert_null(testRef);
 }
