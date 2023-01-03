@@ -55,7 +55,7 @@ static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
         case M_SRC_TYPE_PS:
             if (strcmp((char *)msg->ps_evt->data, "ByeBye") == 0) {
                 m_mod_log("Bye\n"):
-                m_ctx_quit(m_mod_ctx(mod), 0);
+                m_ctx_quit(0);
             }
             break;
         }
