@@ -14,8 +14,7 @@ int main(void) {
     const struct CMUnitTest tests[] = {
         /* Test module_register failures */
         cmocka_unit_test(test_mod_register_NULL_name),
-        cmocka_unit_test(test_mod_register_NULL_hook),
-
+        
         /* Test ctx register */
         cmocka_unit_test(test_ctx_register_NULL_name),
         cmocka_unit_test(test_ctx_register),

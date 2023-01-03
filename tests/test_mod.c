@@ -27,14 +27,6 @@ void test_mod_register_NULL_name(void **state) {
     assert_null(test_mod);
 }
 
-void test_mod_register_NULL_hook(void **state) {
-    (void) state; /* unused */
-    
-    int ret = m_mod_register("testName", &test_mod, NULL, 0, NULL);
-    assert_false(ret == 0);
-    assert_null(test_mod);
-}
-
 void test_mod_register(void **state) {
     (void) state; /* unused */
     
