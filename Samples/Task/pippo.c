@@ -12,12 +12,12 @@ static int tmrData;
 static int inc(void *udata);
 
 /* Hook on m_ctx_pre_loop() weak symbol */
-void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
+void m_ctx_pre_loop(int argc, char *argv[]) {
     printf("Task example starting.\n");
 }
 
 /* Hook on m_ctx_post_loop() weak symbol */
-void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
+void m_ctx_post_loop(int argc, char *argv[]) {
     printf("Task example ended.\n");
 }
 
@@ -50,7 +50,7 @@ static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
             int *data = (int *)msg->userdata;
             if (*data == 5) {
                 m_mod_log(mod, "Timed out.\n");
-                m_ctx_quit(m_ctx(), 0);
+                m_ctx_quit(0);
                 m_mod_log(mod,"Final data val: %d\n", thData);
             } else {
                 (*data)++;

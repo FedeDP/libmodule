@@ -128,7 +128,6 @@ int main(void) {
         cmocka_unit_test(test_mod_false_init),
 
         /* Test ctx deregister */
-        cmocka_unit_test(test_ctx_deregister_NULL_name),
         cmocka_unit_test(test_ctx_deregister),
         
         /* Test modules_ API: it should fail now */

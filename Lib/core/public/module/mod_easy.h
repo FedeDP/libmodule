@@ -20,13 +20,9 @@
     static bool m_mod_on_eval(m_mod_t *mod); \
     static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts); \
     static void m_mod_on_stop(m_mod_t *mod); \
-    static m_ctx_t *_m_ctx; \
     static void _m_ctor1_ m_m_ctor(void) { \
-        _m_ctx = m_ctx(); \
-        if (!_m_ctx) { \
-            m_ctx_register(M_CTX_DEFAULT, &_m_ctx, 0, NULL); \
-        } \
+        m_ctx_register(M_CTX_DEFAULT, 0, NULL); \
         m_mod_hook_t hook = { m_mod_on_start, m_mod_on_eval, m_mod_on_evt, m_mod_on_stop }; \
-        m_mod_register(name, _m_ctx, NULL , &hook, M_MOD_PERSIST, NULL); \
+        m_mod_register(name, NULL , &hook, M_MOD_PERSIST, NULL); \
     } \
     static void _m_ctor0_ m_mod_on_boot(void)

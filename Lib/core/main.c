@@ -7,11 +7,11 @@
  * Code related to main library ctor/dtor + main() symbol. *
  ***********************************************************/
 
-_public_ _weak_ void m_ctx_pre_loop(m_ctx_t *c, int argc, char *argv[]) {
+_public_ _weak_ void m_ctx_pre_loop(int argc, char *argv[]) {
     M_DEBUG("Pre-looping libmodule easy API.\n");
 }
 
-_public_ _weak_ void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
+_public_ _weak_ void m_ctx_post_loop(int argc, char *argv[]) {
     M_DEBUG("Post-looping libmodule easy API.\n");
 }
 
@@ -23,15 +23,10 @@ _public_ _weak_ void m_ctx_post_loop(m_ctx_t *c, int argc, char *argv[]) {
  * All it does is looping on default ctx.
  */
 _public_ _weak_ int main(int argc, char *argv[]) {
-    m_ctx_t *c = m_ctx();
-    if (!c) {
-        M_ERR("No context available.\n");
-        return EXIT_FAILURE;
-    }
-    m_ctx_pre_loop(c, argc, argv);
-    const int ret = m_ctx_loop(c);
-    m_ctx_post_loop(c, argc, argv);
-    m_ctx_deregister(&c); // default_ctx may be NULL here, if eg: all modules where deregistered. We don't care
+    m_ctx_pre_loop(argc, argv);
+    const int ret = m_ctx_loop();
+    m_ctx_post_loop(argc, argv);
+    m_ctx_deregister(); // default_ctx may be NULL here, if eg: all modules where deregistered. We don't care
     return ret;
 }
 

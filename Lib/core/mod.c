@@ -328,7 +328,7 @@ int mod_deregister(m_mod_t **mod, bool from_user) {
              * it has no more modules in it and is not a persistent ctx
              */
             if (c->state == M_CTX_IDLE && m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
-                ret = m_ctx_deregister(&c);
+                ret = m_ctx_deregister();
             }
         }
     });
@@ -429,12 +429,12 @@ void mod_dump(const m_mod_t *mod, bool log_mod, const char *indent) {
 
 /** Public API **/
 
-_public_ int m_mod_register(const char *name, m_ctx_t *c, m_mod_t **mod_ref, const m_mod_hook_t *hook,
+_public_ int m_mod_register(const char *name, m_mod_t **mod_ref, const m_mod_hook_t *hook,
                             m_mod_flags flags, const void *userdata) {
     M_PARAM_ASSERT(str_not_empty(name));
     /* Mandatory callback if hook is passed */
     M_PARAM_ASSERT(!hook || hook->on_evt);
-    M_PARAM_ASSERT(c);
+    M_CTX_ASSERT();
     
     if (c->finalized) {
         return -EPERM;

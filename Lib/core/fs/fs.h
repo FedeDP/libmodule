@@ -1,7 +1,7 @@
 #pragma once
 
 #include "public/module/mod.h"
-#include "public/module/ctx.h"
+#include "ctx.h"
 
 int fs_create(m_ctx_t *c);
 int fs_start(m_ctx_t *c);

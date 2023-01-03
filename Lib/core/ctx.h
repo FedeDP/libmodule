@@ -4,19 +4,15 @@
 #include "public/module/structs/map.h"
 #include "public/module/thpool/thpool.h"
 #include "globals.h"
+#include "src.h"
 
 #define M_CTX_DEFAULT_EVENTS    64
 
-// #define M_CTX() m_ctx_t *c = m_ctx();
-// 
-// #define M_CTX_ASSERT(c) \
-// M_CTX(); \
-// M_RET_ASSERT(c, -EPIPE); \
-// M_RET_ASSERT(c->state != M_CTX_ZOMBIE, -EACCES)
+#define M_CTX() m_ctx_t *c = m_ctx();
 
-#define M_CTX_ASSERT(c) \
-    M_PARAM_ASSERT(c); \
-    M_RET_ASSERT(c->state != M_CTX_ZOMBIE, -EACCES)
+#define M_CTX_ASSERT() \
+    M_CTX(); \
+    M_RET_ASSERT(c, -EPIPE)
 
 typedef struct {
     void *data;                             // Context's poll priv data (depends upon poll_plugin)
@@ -34,7 +30,6 @@ typedef struct {
 typedef enum {
     M_CTX_IDLE,
     M_CTX_LOOPING,
-    M_CTX_ZOMBIE,
 } m_ctx_states;
 
 typedef struct {
@@ -67,4 +62,5 @@ struct _ctx {
     CONST const void *userdata;             // Context's user defined data
 };
 
+m_ctx_t *m_ctx(void);
 void ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...);

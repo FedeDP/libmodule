@@ -22,7 +22,7 @@ static int recv_events(m_ctx_t *c, int timeout);
 static int m_ctx_loop_events(m_ctx_t *c, int max_events);
 static int ctx_destroy_mods(void *data, const char *key, void *value);
 static ev_src_t *process_tick(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt);
-static int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
+static int ctx_new(const char *ctx_name, m_ctx_flags flags, const void *userdata);
 
 static void make_key(void) {
     pthread_key_create(&key, NULL);
@@ -119,7 +119,7 @@ static uint8_t loop_stop(m_ctx_t *c) {
      * Gracefully deregister it now.
      */
     if (m_map_len(c->modules) == 0 && !(c->flags & M_CTX_PERSIST)) {
-        m_ctx_deregister(&c);
+        m_ctx_deregister();
     }
     return ret;
 }
@@ -317,7 +317,6 @@ static int recv_events(m_ctx_t *c, int timeout) {
 }
 
 static int m_ctx_loop_events(m_ctx_t *c, int max_events) {
-    M_CTX_ASSERT(c);
     M_PARAM_ASSERT(max_events > 0);
     M_LOG_ASSERT(c->state == M_CTX_IDLE, "Context already looping.", -EINVAL);
 
@@ -342,7 +341,7 @@ static ev_src_t *process_tick(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *e
     return this;
 }
 
-static int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
+static int ctx_new(const char *ctx_name, m_ctx_flags flags, const void *userdata) {
     M_DEBUG("Creating context '%s'.\n", ctx_name);
     
     m_ctx_t *new_ctx = m_mem_new(sizeof(m_ctx_t), ctx_dtor);
@@ -377,16 +376,21 @@ static int ctx_new(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const v
         ret = pthread_setspecific(key, new_ctx);
     } while (false);
     
-    if (ret == 0) {
-        *c = new_ctx;
-    } else {
-        *c = NULL;
+    if (ret != 0) {
         m_mem_unref(new_ctx);
     }
     return ret;
 }
 
 /** Private API **/
+
+m_ctx_t *m_ctx(void) {
+    m_ctx_t *c = pthread_getspecific(key);
+    if (c && c->curr_mod) {
+        M_RET_ASSERT(!(c->curr_mod->flags & M_MOD_DENY_CTX), NULL);
+    }
+    return c;
+}
 
 void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ...) {
     va_list args;
@@ -397,69 +401,56 @@ void inline ctx_logger(const m_ctx_t *c, const m_mod_t *mod, const char *fmt, ..
 
 /** Public API **/
 
-_public_ m_ctx_t *m_ctx(void) {
-    m_ctx_t *c = pthread_getspecific(key);
-    if (c && c->curr_mod) {
-        M_RET_ASSERT(!(c->curr_mod->flags & M_MOD_DENY_CTX), NULL);
-    }
-    return c;
-}
-
-_public_ int m_ctx_register(const char *ctx_name, OUT m_ctx_t **c, m_ctx_flags flags, const void *userdata) {
+_public_ int m_ctx_register(const char *ctx_name, m_ctx_flags flags, const void *userdata) {
     M_PARAM_ASSERT(str_not_empty(ctx_name));
-    M_PARAM_ASSERT(c);
-    M_PARAM_ASSERT(!*c);
     
     pthread_once(&key_once, make_key);
     if (pthread_getspecific(key)) {
         return -EEXIST;
     }
-    return ctx_new(ctx_name, c, flags, userdata);
+    return ctx_new(ctx_name, flags, userdata);
 }
 
-_public_ int m_ctx_deregister(OUT m_ctx_t **c) {
-    M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);
+_public_ int m_ctx_deregister(void) {
+    M_CTX_ASSERT();
+    M_PARAM_ASSERT(c->state == M_CTX_IDLE);
 
-    int ret;
-    m_ctx_t *context = *c;
-
-    ret = pthread_setspecific(key, NULL);
+    int ret = pthread_setspecific(key, NULL);
     if (ret == 0) {
-        context->state = M_CTX_ZOMBIE;
-        m_iterate(context->modules, ctx_destroy_mods, NULL);
-        *c = NULL;
+        m_iterate(c->modules, ctx_destroy_mods, NULL);
+        m_mem_unref(c);
     }
-    m_mem_unref(context);
     return ret;
 }
 
-_public_ int m_ctx_set_logger(m_ctx_t *c, m_log_cb logger) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_set_logger(m_log_cb logger) {
+    M_CTX_ASSERT();
     M_PARAM_ASSERT(logger);
     
     c->logger = logger;
     return 0;
 }
 
-_public_ int m_ctx_loop(m_ctx_t *c) {
+_public_ int m_ctx_loop(void) {
+    M_CTX_ASSERT();
     return m_ctx_loop_events(c, M_CTX_DEFAULT_EVENTS);
 }
 
-_public_ int m_ctx_quit(m_ctx_t *c, uint8_t quit_code) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_quit(uint8_t quit_code) {
+    M_CTX_ASSERT();
     M_LOG_ASSERT(c->state == M_CTX_LOOPING, "Context not looping.", -EINVAL);
        
     return loop_quit(c, quit_code);
 }
 
-_public_ int m_ctx_fd(const m_ctx_t *c) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_fd(void) {
+    M_CTX_ASSERT();
 
     return dup(poll_get_fd(&c->ppriv));
 }
 
-_public_ int m_ctx_dispatch(m_ctx_t *c) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_dispatch(void) {
+    M_CTX_ASSERT();
 
     if (c->state == M_CTX_IDLE) {
         /* Ok, start now */
@@ -475,8 +466,8 @@ _public_ int m_ctx_dispatch(m_ctx_t *c) {
     return recv_events(c, 0);
 }
 
-_public_ int m_ctx_dump(const m_ctx_t *c) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_dump(void) {
+    M_CTX_ASSERT();
 
     ctx_logger(c, NULL, "{\n");
     ctx_logger(c, NULL, "\t\"Name\": \"%s\",\n", c->name);
@@ -499,7 +490,7 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     ctx_logger(c, NULL, "\t\t\"Busy_time\": %" PRIu64 ",\n", total_busy_time);
     ctx_logger(c, NULL, "\t\t\"Recv_events\": %" PRIu64 ",\n", c->stats.recv_msgs);
     ctx_logger(c, NULL, "\t\t\"Action_freq\": %lf,\n", (double)c->stats.recv_msgs / total_looping_time);
-    ctx_logger(c, NULL, "\t\t\"Modules\": %lu,\n", m_ctx_len(c));
+    ctx_logger(c, NULL, "\t\t\"Modules\": %lu,\n", m_ctx_len());
     ctx_logger(c, NULL, "\t\t\"Running_modules\": %lu\n", c->stats.running_modules);
     ctx_logger(c, NULL, "\t},\n");
 
@@ -513,8 +504,8 @@ _public_ int m_ctx_dump(const m_ctx_t *c) {
     return 0;
 }
 
-_public_ int m_ctx_stats(const m_ctx_t *c, OUT m_ctx_stats_t *stats) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_stats(OUT m_ctx_stats_t *stats) {
+    M_CTX_ASSERT();
     M_PARAM_ASSERT(c->state == M_CTX_LOOPING);
     M_PARAM_ASSERT(stats);
 
@@ -522,7 +513,7 @@ _public_ int m_ctx_stats(const m_ctx_t *c, OUT m_ctx_stats_t *stats) {
     fetch_ms(&now, NULL);
 
     stats->recv_msgs = c->stats.recv_msgs;
-    stats->num_modules = m_ctx_len(c);
+    stats->num_modules = m_ctx_len();
     stats->running_modules = c->stats.running_modules;
     stats->total_idle_time = c->stats.idle_time;
     stats->total_looping_time = now - c->stats.looping_start_time;
@@ -532,35 +523,35 @@ _public_ int m_ctx_stats(const m_ctx_t *c, OUT m_ctx_stats_t *stats) {
     return 0;
 }
 
-_public_ const char *m_ctx_name(const m_ctx_t *c) {
+_public_ const char *m_ctx_name(void) {
+    M_CTX();
     M_RET_ASSERT(c, NULL);
-    M_RET_ASSERT(c->state != M_CTX_ZOMBIE, NULL);
 
     return c->name;
 }
 
-_public_ const void *m_ctx_userdata(const m_ctx_t *c) {
+_public_ const void *m_ctx_userdata(void) {
+    M_CTX();
     M_RET_ASSERT(c, NULL);
-    M_RET_ASSERT(c->state != M_CTX_ZOMBIE, NULL);
 
     return c->userdata;
 }
 
-_public_ ssize_t m_ctx_len(const m_ctx_t *c) {
-    M_CTX_ASSERT(c);
+_public_ ssize_t m_ctx_len(void) {
+    M_CTX_ASSERT();
     
     return m_map_len(c->modules);
 }
 
-_public_ int m_ctx_finalize(m_ctx_t *c) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_finalize(void) {
+    M_CTX_ASSERT();
     
     c->finalized = true;
     return 0;
 }
 
-_public_ int m_ctx_set_tick(m_ctx_t *c, uint64_t ns) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_set_tick(uint64_t ns) {
+    M_CTX_ASSERT();
 
     deregister_ctx_src(c, &c->tick.src);
     if (ns != 0) {
