@@ -13,7 +13,7 @@
 - - [x] drop m_ctx_t param from ctx.h API
 - - [x] drop m_ctx_t forward declaration as it is now invisible to user
 - - [x] drop M_CTX_ZOMBIE
-- - [ ] properly enforce that a module API cannot be called when m_ctx() != mod->ctx (ie: if you pass a module around between threads/contexts)
+- - [x] properly enforce that a module API cannot be called when m_ctx() != mod->ctx (ie: if you pass a module around between threads/contexts)
 - - [x] drop libmodule_init() and deinit() constructors
 - - [x] move ctor defines into mod_easy.h
 - - [x] drop m_on_boot(); specify that mod_easy API force-uses malloc,calloc and free by default.

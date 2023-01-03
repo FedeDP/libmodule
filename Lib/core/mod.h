@@ -3,11 +3,13 @@
 #include "public/module/mod.h"
 #include "globals.h"
 
-#define M_MOD_CTX(mod)    m_ctx_t *c = mod->ctx;
+#define M_MOD_CTX(mod) \
+    m_ctx_t *c = mod->ctx;
 
 #define M_MOD_ASSERT(mod) \
     M_PARAM_ASSERT(mod); \
-    M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), -EACCES)
+    M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), -EACCES); \
+    M_RET_ASSERT(mod->ctx == m_ctx(), -EPERM)
 
 #define M_MOD_ASSERT_PERM(mod, perm) \
     M_MOD_ASSERT(mod); \

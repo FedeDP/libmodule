@@ -45,7 +45,7 @@ _public_ int m_mod_unbecome(m_mod_t *mod) {
 }
 
 _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
-    M_MOD_ASSERT(mod);
+    M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
     M_PARAM_ASSERT(evt);
     M_MOD_CONSUME_TOKEN(mod);
     
@@ -61,7 +61,7 @@ _public_ int m_mod_stash(m_mod_t *mod, const m_evt_t *evt) {
 }
 
 _public_ ssize_t m_mod_unstash(m_mod_t *mod, size_t len) {
-    M_MOD_ASSERT(mod);
+    M_MOD_ASSERT_STATE(mod, M_MOD_RUNNING);
     M_PARAM_ASSERT(len > 0);
     M_MOD_CONSUME_TOKEN(mod);
 
