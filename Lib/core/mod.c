@@ -589,15 +589,14 @@ _public_ __attribute__((format (printf, 2, 3))) int m_mod_log(const m_mod_t *mod
 
 _public_ const void *m_mod_userdata(const m_mod_t *mod) {
     M_RET_ASSERT(mod, NULL);
-    M_RET_ASSERT(!m_mod_is(mod, M_MOD_ZOMBIE), NULL);
-    
+
     return mod->userdata;
 }
 
-_public_ const char *m_mod_name(const m_mod_t *mod_self) {
-    M_RET_ASSERT(mod_self, NULL);
+_public_ const char *m_mod_name(const m_mod_t *mod) {
+    M_RET_ASSERT(mod, NULL);
 
-    return mod_self->name;
+    return mod->name;
 }
 
 /** Module state getters **/
@@ -616,7 +615,7 @@ _public_ m_mod_states m_mod_state(const m_mod_t *mod) {
 
 _public_ int m_mod_dump(const m_mod_t *mod) {
     M_MOD_ASSERT(mod);
-    
+
     mod_dump(mod, true, "");
     return 0;
 }
@@ -693,6 +692,7 @@ _public_ m_mod_t *m_mod_lookup(const m_mod_t *mod, const char *name) {
     M_RET_ASSERT(mod, NULL);
     M_RET_ASSERT(name, NULL);
     M_MOD_CTX(mod);
-    
+    M_RET_ASSERT(c == m_ctx(), NULL);
+
     return m_map_get(c->modules, name);
 }
