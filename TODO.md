@@ -2,26 +2,6 @@
 
 ### TODO
 
-#### Ctx
-
-- [x] store ctxs in thread local storage (pthread_setspecific API)? https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_key_create.html `__find_thread_by_id` and loop over /proc/self/task? -> https://stackoverflow.com/questions/3707358/get-all-the-thread-id-created-with-pthread-created-within-an-process
-- [ ] we could then drop: (since every context is thread specific data)
-- - [x] global ctx map and mutex
-- - [x] m_mod_ctx() api
-- - [x] m_ctx_ref() api
-- - [x] m_mod_ref() api should become m_mod_lookup() and let users manage its lifecyle (ie: m_mem_ref it if needed)
-- - [x] drop m_ctx_t param from ctx.h API
-- - [x] drop m_ctx_t forward declaration as it is now invisible to user
-- - [x] drop M_CTX_ZOMBIE
-- - [x] properly enforce that a module API cannot be called when m_ctx() != mod->ctx (ie: if you pass a module around between threads/contexts)
-- - [x] drop libmodule_init() and deinit() constructors
-- - [x] move ctor defines into mod_easy.h
-- - [x] drop m_on_boot(); specify that mod_easy API force-uses malloc,calloc and free by default.
-- - [x] Specify that m_set_memhook should be called before allocating any libmodule related resource
-- [x] and just add an m_ctx() API that returns ctx associated with current thread
-- [x] store in ctx a `curr_mod` that points to the module whose callback is currently being processed, if any, or NULL; when NULL; we are outside a module callback, therefore we can return it; else, we must guarantee that module has permissions to access its ctx
-- [ ] Downside: how could we guarantee that 2 ctx with same name do not exist? We cannot; is this a limitation, actually?
-
 #### DOC
 
 - [x] Fully rewrite documentation per-namespace

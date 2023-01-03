@@ -4,6 +4,10 @@ A context can be seen as a collector for modules. You can loop on events from ea
 It is stored as a [thread specific object](https://linux.die.net/man/3/pthread_setspecific), created through `m_ctx_register` and deleted through `m_ctx_deregister`.  
 This can be particularly useful when dealing with 2+ threads; each thread has its own module's context and thus its own events to be polled.  
 Modules can only see and reach (through PubSub messaging) other modules from same context.  
+A context is given a name at registration time. This is only useful for logging purposes.  
+
+> NOTE: having multiple contexts with same name is allowed; given that each context is thread-specific, there will be no clash.  
+> Of course, it's better to set different names.  
 
 ## Loop
 
