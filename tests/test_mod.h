@@ -1,7 +1,6 @@
 #include "test_commons.h"
 
 void test_mod_register_NULL_name(void **state);
-void test_mod_register_NULL_hook(void **state);
 void test_mod_register(void **state);
 void test_mod_register_already_registered(void **state);
 void test_mod_register_same_name(void **state);
