@@ -412,8 +412,8 @@ int fs_destroy(m_ctx_t *c) {
 
 /** Public API **/
 
-_public_ int m_ctx_fs_set_root(m_ctx_t *c, const char *path) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_fs_set_root(const char *path) {
+    M_CTX_ASSERT();
     M_RET_ASSERT(c->state == M_CTX_IDLE, -EPERM);
     M_PARAM_ASSERT(str_not_empty(path));
     FS_PRIV();
@@ -423,8 +423,8 @@ _public_ int m_ctx_fs_set_root(m_ctx_t *c, const char *path) {
     return 0;
 }
 
-_public_ int m_ctx_fs_set_ops(m_ctx_t *c, const struct fuse_operations *ops) {
-    M_CTX_ASSERT(c);
+_public_ int m_ctx_fs_set_ops(const struct fuse_operations *ops) {
+    M_CTX_ASSERT();
     M_RET_ASSERT(c->state == M_CTX_IDLE, -EPERM);
     M_PARAM_ASSERT(ops);
     FS_PRIV();

@@ -201,7 +201,7 @@ typedef struct {
 /* Module interface functions */
 
 /* Module registration */
-int m_mod_register(const char *name, m_ctx_t *c, OUT m_mod_t **mod_ref, const m_mod_hook_t *hook,
+int m_mod_register(const char *name, OUT m_mod_t **mod_ref, const m_mod_hook_t *hook,
                    m_mod_flags flags, const void *userdata);
 int m_mod_deregister(OUT m_mod_t **mod);
 

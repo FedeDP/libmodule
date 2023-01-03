@@ -3,7 +3,8 @@
 Ctx API denotes libmodule interface functions to manage contexts.  
 It can be found under `<module/ctx.h>`.  
 
-> **All the ctx API expects a non-NULL ctx handler**, except for `m_ctx_register` function.  
+> NOTE: there is no context handler visible to user, because the handler is basically the thread itself.
+> Trying to use the context API on a thread that has no context associated, will promptly return -EPIPE errno code.
 
 ## Types
 
@@ -37,56 +38,38 @@ typedef void (*m_log_cb)(const m_mod_t *ref, const char *fmt, va_list args);
 ## Functions
 
 ```C
-int m_ctx_register(const char *ctx_name, m_ctx_t **c, m_ctx_flags flags, const void *userdata);
+int m_ctx_register(const char *ctx_name, m_ctx_flags flags, const void *userdata);
 ```
-> Register a new ctx.  
+> Register a new ctx and associates it to current thread.  
 
 **Params:**  
 
 * `ctx_name`: name of the new ctx  
-* `c`: ctx handler storage  
 * `flags`: flags of the newly created ctx  
 * `userdata`: user pointer stored in the ctx  
 
 ```C
-int m_ctx_deregister(m_ctx_t **c);
+int m_ctx_deregister();
 ```
-> Deregister a ctx.  
+> Deregister the ctx associated with the current thread.  
 > NOTE: this API cannot be called if the ctx is still looping.  
 > Make sure to `m_ctx_quit` the loop before deregistering a context.  
 > NOTE: unless a ctx is registered with `M_CTX_PERSIST` flag, it will get  
 > automatically destroyed when there are no more modules registered in it.  
-
-**Params:**  
-
-* `c`: ctx handler storage, reset to NULL after the call  
+> NOTE: all of the modules in the context will be deregistered  
+> when their context gets deregistered.  
 
 ```C
-m_ctx_t *m_ctx(void);
-```
-> Retrieves ctx associated with current thread, if existent.  
-> NOTE: this API **does not** increment number of references on ctx object;  
-> remember to `m_mem_ref` the returned pointer if you want to store it,  
-> and then `m_mem_unref` it, when you do not need it anymore.  
-
-**Params:**  
-
- * `ctx_name`: context name  
-
-**Returns:** a ctx handler or NULL.
-
-```C
-int m_ctx_set_logger(m_ctx_t *c, m_log_cb logger);
+int m_ctx_set_logger(m_log_cb logger);
 ```
 > Set a logger callback; otherwise, a default one is used.  
 
 **Params:**  
 
-* `c`: ctx handler  
 * `logger`: new logger callback to be set  
 
 ```C
-int m_ctx_loop(m_ctx_t *c);
+int m_ctx_loop(void);
 ```
 > Loop a ctx in a blocking manner, until `m_ctx_quit` is called by any module.  
 > NOTE: stopping a ctx is a blocking action:  
@@ -94,35 +77,26 @@ int m_ctx_loop(m_ctx_t *c);
 > and, in case any `M_SRC_TYPE_TASK` src is enabled,  
 > its thread will be joined for a clean exit.  
 
-**Params:**  
-
-* `c`: ctx handler  
-
 **Returns:** `m_ctx_quit` quit_code.  
 
 ```C
-int m_ctx_quit(m_ctx_t *c, uint8_t quit_code);
+int m_ctx_quit(uint8_t quit_code);
 ```
 > Quit a ctx loop, returning given exit code.  
 
 **Params:**  
 
-* `c`: ctx handler  
 * `quit_code`: quit value  
 
 ```C
-int m_ctx_fd(const m_ctx_t *c);
+int m_ctx_fd(void);
 ```
 > Retrieve ctx pollable file descriptor.  
-
-**Params:**  
-
-* `c`: ctx handler  
 
 **Returns:** ctx fd.
 
 ```C
-int m_ctx_dispatch(m_ctx_t *c);
+int m_ctx_dispatch(void);
 ```
 > Dispatch events from the context.  
 > Useful when ctx fd is embedded in another loop.  
@@ -135,97 +109,66 @@ int m_ctx_dispatch(m_ctx_t *c);
 > and, in case any `M_SRC_TYPE_TASK` src is enabled,
 > it will join its thread.
 
-**Params:**  
-
-* `c`: ctx handler  
-
 **Returns:** first time it is called: errno-style negative error code.  
 Subsequent calls: number of messages dispatched.  
 Last time (after a `m_ctx_quit` call): errno-style negative error code.  
 
 ```C
-int m_ctx_dump(const m_ctx_t *c);
+int m_ctx_dump(void);
 ```
 > Dump a json of the current ctx state.  
 
-**Params:**  
-
-* `c`: ctx handler  
-
 ```C
-int m_ctx_stats(const m_ctx_t *c, m_ctx_stats_t *stats);
+int m_ctx_stats(m_ctx_stats_t *stats);
 ```
 > Retrieve stats about current ctx state.  
 
-**Params:**  
-
-* `c`: ctx handler  
-
 ```C
-const char *m_ctx_name(const m_ctx_t *c);
+const char *m_ctx_name(void);
 ```
 > Retrieve ctx name.  
 
-**Params:**  
-
-* `c`: ctx handler  
-
 ```C
-const void *m_ctx_userdata(const m_ctx_t *c);
+const void *m_ctx_userdata(void);
 ```
 > Retrieve ctx userdata as set at registration time.  
 
-**Params:**  
-
-* `c`: ctx handler  
-
 ```C
-ssize_t m_ctx_len(const m_ctx_t *c);
+ssize_t m_ctx_len(void);
 ```
 > Retrieve number of registered modules.  
 
-**Params:**  
-
-* `c`: ctx handler  
-
 ```C
-int m_ctx_finalize(m_ctx_t *c);
+int m_ctx_finalize(void);
 ```
 > Set the context as finalized, denying any subsequent module registeration.  
 
-**Params:**  
-
-* `c`: ctx handler  
-
 ```C
-int m_ctx_set_tick(m_ctx_t *c, uint64_t ns);
+int m_ctx_set_tick(uint64_t ns);
 ```
 > Set a context tick. You can subscribe modules to `M_PS_CTX_TICK` system topic to receive tick events.
 
 **Params:**  
 
-* `c`: ctx handler  
 * `ns`: nanoseconds for the tick  
 
 ### Only when built with `WITH_FS` build option
 
 ```C
-int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
+int m_ctx_fs_set_root(const char *path);
 ```
 > Set the context FS root. Must be set before the ctx loop is started.  
 
 **Params:**  
 
-* `c`: ctx handler  
 * `path`: FS root path. NULL to disable FUSE fs.  
 
 ```C
-int m_ctx_fs_set_ops(m_ctx_t *c, const struct fuse_operations *ops);
+int m_ctx_fs_set_ops(const struct fuse_operations *ops);
 ```
 > Set specified FUSE operations to context. Must be set before the ctx loop is started.  
 > NOTE: module files will always be created readonly.  
 
 **Params:**  
 
-* `c`: ctx handler  
 * `ops`: fuse operations. NULL to reset default ops.  

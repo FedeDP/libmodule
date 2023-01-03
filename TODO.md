@@ -10,8 +10,10 @@
 - - [x] m_mod_ctx() api
 - - [x] m_ctx_ref() api
 - - [x] m_mod_ref() api should become m_mod_lookup() and let users manage its lifecyle (ie: m_mem_ref it if needed)
-- - [ ] m_mod_t->ctx field -> this would help us enforce that module API is called by same thread that registered a context
-- - [ ] drop m_ctx_t param from funtion calls
+- - [x] drop m_ctx_t param from ctx.h API
+- - [x] drop m_ctx_t forward declaration as it is now invisible to user
+- - [x] drop M_CTX_ZOMBIE
+- - [ ] properly enforce that a module API cannot be called when m_ctx() != mod->ctx (ie: if you pass a module around between threads/contexts)
 - - [x] drop libmodule_init() and deinit() constructors
 - - [x] move ctor defines into mod_easy.h
 - - [x] drop m_on_boot(); specify that mod_easy API force-uses malloc,calloc and free by default.

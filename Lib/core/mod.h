@@ -43,6 +43,9 @@ typedef struct {
     m_src_tmr_t timer;
 } mod_tb_t;
 
+/* Forward declare ctx handler */
+typedef struct _ctx m_ctx_t;
+
 /* Struct that holds data for each module */
 /*
  * MEM-REFS for mod:
@@ -70,7 +73,7 @@ struct _mod {
     m_map_t *subscriptions;                 // module's subscriptions (map of ev_src_t*)
     m_queue_t *stashed;                     // module's stashed messages
     m_list_t *bound_mods;                   // modules that are bound to this module's state
-    CONST m_ctx_t *ctx;                     // Module's ctx
+    CONST m_ctx_t *ctx;                     // Module's ctx -> even if ctx is threadspecific data, we need to know the context a module was registered into, to avoid user passing modules around to another thread/context
 };
 
 int evaluate_module(void *data, const char *key, void *value);

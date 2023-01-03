@@ -59,7 +59,7 @@ static void m_mod_on_evt(m_mod_t *mod, const m_queue_t *const evts) {
                 case 'q':
                     m_mod_log(mod,"I have to go now!\n");
                     m_mod_ps_publish(mod, "leaving", "ByeBye", 0);
-                    m_ctx_quit(m_ctx(), 0);
+                    m_ctx_quit(0);
                     break;
                 default:
                     /* Avoid newline */
@@ -99,7 +99,7 @@ static void m_mod_on_evt_ready(m_mod_t *mod, const m_queue_t *const evts) {
                 case 'p':
                     m_mod_log(mod,"Doggo, let's play a bit!\n");
                     m_mod_ps_tell(mod, doggo, "LetsPlay", 0);
-                    m_ctx_dump(m_ctx());
+                    m_ctx_dump();
                     break;
                 case 's':
                     m_mod_log(mod,"Doggo, you should sleep a bit!\n");
@@ -116,7 +116,7 @@ static void m_mod_on_evt_ready(m_mod_t *mod, const m_queue_t *const evts) {
                 case 'q':
                     m_mod_log(mod, "I have to go now!\n");
                     m_mod_ps_publish(mod, "leaving", "ByeBye", 0);
-                    m_ctx_quit(m_ctx(), 0);
+                    m_ctx_quit(0);
                     break;
                 default:
                     /* Avoid newline */

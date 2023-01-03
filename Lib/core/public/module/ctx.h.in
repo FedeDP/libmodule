@@ -25,32 +25,29 @@ typedef struct {
 /* Logger callback */
 typedef void (*m_log_cb)(const m_mod_t *ref, const char *fmt, va_list args);
 
-/* Returns ctx associated with current thread, if any. */
-m_ctx_t *m_ctx(void);
-
 /* Context interface functions */
-int m_ctx_register(const char *ctx_name, OUT m_ctx_t **c, m_ctx_flags flags, const void *userdata);
-int m_ctx_deregister(OUT m_ctx_t **c);
+int m_ctx_register(const char *ctx_name, m_ctx_flags flags, const void *userdata);
+int m_ctx_deregister(void);
 
-int m_ctx_set_logger(m_ctx_t *c, m_log_cb logger);
-int m_ctx_loop(m_ctx_t *c);
-int m_ctx_quit(m_ctx_t *c, uint8_t quit_code);
+int m_ctx_set_logger( m_log_cb logger);
+int m_ctx_loop(void);
+int m_ctx_quit(uint8_t quit_code);
 
-int m_ctx_fd(const m_ctx_t *c);
+int m_ctx_fd(void);
 
-int m_ctx_dispatch(m_ctx_t *c);
+int m_ctx_dispatch(void);
 
-int m_ctx_dump(const m_ctx_t *c);
-int m_ctx_stats(const m_ctx_t *c, OUT m_ctx_stats_t *stats);
+int m_ctx_dump(void);
+int m_ctx_stats(OUT m_ctx_stats_t *stats);
 
-const char *m_ctx_name(const m_ctx_t *c);
-const void *m_ctx_userdata(const m_ctx_t *c);
+const char *m_ctx_name(void);
+const void *m_ctx_userdata(void);
 
-ssize_t m_ctx_len(const m_ctx_t *c);
+ssize_t m_ctx_len(void);
 
-int m_ctx_finalize(m_ctx_t *c);
+int m_ctx_finalize(void);
 
-int m_ctx_set_tick(m_ctx_t *c, uint64_t ns);
+int m_ctx_set_tick(uint64_t ns);
 
 /* FuseFS api */
 @M_CTX_HAS_FS@
@@ -69,7 +66,7 @@ enum {
     M_MOD_FS_STATS               = _IOR(LIBMODULE_MAGIC, 1, m_mod_stats_t),
 };
 
-int m_ctx_fs_set_root(m_ctx_t *c, const char *path);
-int m_ctx_fs_set_ops(m_ctx_t *c, const struct fuse_operations *ops);
+int m_ctx_fs_set_root(const char *path);
+int m_ctx_fs_set_ops(const struct fuse_operations *ops);
 
 #endif

@@ -8,4 +8,3 @@
 #include <string.h>
 
 extern m_mod_t *test_mod;
-extern m_ctx_t *test_ctx;
