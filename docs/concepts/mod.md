@@ -31,41 +31,53 @@ First of all, module lifecycle is automatically managed by libmodule; moreover, 
 module registration/deregistration is completely automated and transparent to developer.  
 This means that when using it, you will only have to declare a source file as a module and define needed functions.  
 
-First function to be called is `m_on_boot()`; it is called right after libmodule gets linked.  
-This function is useful to set a custom memhook for libmodule, through `m_set_memhook()` API.  
-
 > **_EASY API_**: each module's `m_mod_on_boot()` function is called. At this stage, no module is registered yet.  
 
-Finally, libmodule will register every module.  
+libmodule users will need to register a context on the currently running thread (`m_ctx_register` API).  
+Then, every module needs to be registered within the context (`m_mod_register` API).  
 Once a module is registered, it will be initially set to `M_MOD_IDLE` state. Idle means that the module is not started yet, thus it cannot receive any event.  
+
+> **_EASY API_**: context registration is implicit; every `M_MOD()` is then automatically registered.  
 
 As soon as its context starts looping, `m_mod_on_eval()` function will be called on every idle module, trying to start it right away.  
 That function will be called at each state machine change, for each idle module, until it returns true.  
 
+> **NOTE:** passing a NULL `m_mod_on_eval` callback is allowed, and just means to start the module at first evaluation.
+
 As soon as `m_mod_on_eval()` returns true, a module is started. It means its `m_mod_on_start()` function is finally called and its state is set to M_MOD_RUNNING.  
 When a module reaches RUNNING state, its context loop will finally receive events for its registered sources.  
+
+> **NOTE:** passing a NULL `m_mod_on_start` callback is allowed, and just means to skip the on start callback.
 
 Whenever an event triggers a module's wakeup, its `m_mod_on_evt()` callback can be called (depending on the event source priority) with a `m_queue_t<m_evt_t *>` argument.  
 
 Finally, when stopping a module, its `m_mod_on_stop()` function is called.  
 Note that a module is automatically stopped during the process of module's deregistration.  
 
-Thus, for Easy API, you should implement `m_mod_on_eval()` to return true when the module is ready to be started,  
-then eventually register event sources in `m_mod_on_start()`, and manage events in `m_mod_on_evt()`.  
-If you need to cleanup any data, manage it in `m_mod_on_stop()`.  
+> **NOTE:** passing a NULL `m_mod_on_stop` callback is allowed, and just means to skip the on stop callback.
+
+> **_EASY API_**: you should implement `m_mod_on_eval()` to return true when the module is ready to be started,  
+> then eventually register event sources in `m_mod_on_start()`, and manage events in `m_mod_on_evt()`.  
+> If you need to cleanup any data, manage it in `m_mod_on_stop()`.  
 
 ### States
 
 As previously mentioned, a registered module, before being started, is in` M_MOD_IDLE` state.  
 It means that it has never been started before; it won't receive any event thus its event callback will never be called.  
 When module is started, thus reaching `M_MOD_RUNNING` state, all its registered sources will finally start to receive events. Sources registered while in `M_MOD_RUNNING` state are automatically polled.  
-If a module is paused, reaching `M_MOD_PAUSED` state, it will stop polling on its event sources, but event sources will still be kept alive. Thus, as soon as module is resumed, all events received during paused state will trigger m_evt_cb.  
+If a module is paused, reaching `M_MOD_PAUSED` state, it will stop polling on its event sources, but event sources will still be kept alive. Thus, as soon as module is resumed, all events received during paused state will trigger its event callback.  
 If a module gets stopped, reaching `M_MOD_STOPPED` state, it will destroy any registered source and it will be resetted to its initial state.  
 If you instead wish to stop a module letting it manage any already-enqueued event, you need to send a _POISONPILL_ message to it, through `m_mod_poisonpill()` API.  
 The difference between `M_MOD_IDLE` and `M_MOD_STOPPED` states is that idle modules will be evaluated to be started during context loop, while stopped modules won't.  
 When a module is deregistered, it will reach a final `M_MOD_ZOMBIE` state. It means that the module is no more reachable neither usable, but it can still be referenced by any previously sent message (or any `m_mod_ref()`).  
-After all module's ref count drops to 0 (ie: all sent messages are received by respective recipients and there are no pending `m_mod_unref()`) module will finally get destroyed and its memory freed.  
-You can call only `m_mod_is()`, `m_mod_name()` and `m_mod_ctx()` on a zombie module.  
+In zombie state, most of the module API won't be available aside from some minor read-only functions:  
+
+* `m_mod_name`
+* `m_mod_userdata`
+* `m_mod_state`
+* `m_mod_is`
+
+After all module's ref count drops to 0 (ie: all sent messages are received by respective recipients and there are no pending `m_mod_unref()`), a module will finally get destroyed and its memory freed.  
 
 To summarize:  
 

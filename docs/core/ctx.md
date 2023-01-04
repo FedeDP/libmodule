@@ -3,8 +3,8 @@
 Ctx API denotes libmodule interface functions to manage contexts.  
 It can be found under `<module/ctx.h>`.  
 
-> NOTE: there is no context handler visible to user, because the handler is basically the thread itself.
-> Trying to use the context API on a thread that has no context associated, will promptly return -EPIPE errno code.
+> **NOTE:** there is no context handler visible to user, because the handler is basically the thread itself.  
+> Trying to use the context API on a thread that has no context associated, will promptly return -EPIPE errno code.  
 
 ## Types
 
@@ -52,11 +52,11 @@ int m_ctx_register(const char *ctx_name, m_ctx_flags flags, const void *userdata
 int m_ctx_deregister();
 ```
 > Deregister the ctx associated with the current thread.  
-> NOTE: this API cannot be called if the ctx is still looping.  
+> **NOTE:** this API cannot be called if the ctx is still looping.  
 > Make sure to `m_ctx_quit` the loop before deregistering a context.  
-> NOTE: unless a ctx is registered with `M_CTX_PERSIST` flag, it will get  
+> **NOTE:** unless a ctx is registered with `M_CTX_PERSIST` flag, it will get  
 > automatically destroyed when there are no more modules registered in it.  
-> NOTE: all of the modules in the context will be deregistered  
+> **NOTE:** all of the modules in the context will be deregistered  
 > when their context gets deregistered.  
 
 ```C
@@ -72,7 +72,7 @@ int m_ctx_set_logger(m_log_cb logger);
 int m_ctx_loop(void);
 ```
 > Loop a ctx in a blocking manner, until `m_ctx_quit` is called by any module.  
-> NOTE: stopping a ctx is a blocking action:  
+> **NOTE:** stopping a ctx is a blocking action:  
 > all present events will be flushed to their modules,  
 > and, in case any `M_SRC_TYPE_TASK` src is enabled,  
 > its thread will be joined for a clean exit.  
@@ -104,7 +104,7 @@ int m_ctx_dispatch(void);
 > then, consecutive calls will dispatch ctx events.  
 > Finally, after `m_ctx_quit` has been called,  
 > it will notify the ctx to stop.  
-> NOTE: stopping a ctx is a blocking action:
+> **NOTE:** stopping a ctx is a blocking action:
 > all present events will be flushed to their modules,
 > and, in case any `M_SRC_TYPE_TASK` src is enabled,
 > it will join its thread.
@@ -167,7 +167,7 @@ int m_ctx_fs_set_root(const char *path);
 int m_ctx_fs_set_ops(const struct fuse_operations *ops);
 ```
 > Set specified FUSE operations to context. Must be set before the ctx loop is started.  
-> NOTE: module files will always be created readonly.  
+> **NOTE:** module files will always be created readonly.  
 
 **Params:**  
 
