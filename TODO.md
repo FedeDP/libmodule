@@ -2,6 +2,11 @@
 
 ### TODO
 
+#### Mod 
+
+- [ ] Drop `system` field from m_evt_ps_t?
+- [ ] Double check `from_user` in `mod_deregister`
+
 #### DOC
 
 - [x] Fully rewrite documentation per-namespace

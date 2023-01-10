@@ -28,9 +28,9 @@ typedef enum {
  */
 #define M_SRC_SHIFT(type, val)   val << (8 * (type + 1))
 typedef enum {
-    M_SRC_PRIO_LOW        =       1 << 0, // PubSub subscription low priority
-    M_SRC_PRIO_NORM       =       1 << 1, // PubSub subscription mid priority (default)
-    M_SRC_PRIO_HIGH       =       1 << 2, // PubSub subscription high priority
+    M_SRC_PRIO_LOW        =       1 << 0, // Src low priority
+    M_SRC_PRIO_NORM       =       1 << 1, // Src mid priority (default)
+    M_SRC_PRIO_HIGH       =       1 << 2, // Src high priority
     M_SRC_AUTOFREE        =       1 << 3, // Automatically free userdata upon source deregistation.
     M_SRC_ONESHOT         =       1 << 4, // Run just once then automatically deregister source.
     M_SRC_DUP             =       1 << 5, // Duplicate PubSub topic, source fd or source path.
@@ -46,7 +46,7 @@ typedef enum {
 #define M_PS_MOD_STOPPED    "LIBMODULE_MOD_STOPPED"
 
 /*
- * Module's pubsub API flags (m_mod_tell(), m_mod_publish(), m_mod_broadcast())
+ * Module's pubsub API flags (m_mod_ps_tell(), m_mod_ps_publish(), m_mod_ps_broadcast())
  */
 typedef enum {
     M_PS_AUTOFREE   = 1 << 0,     // Autofree PubSub data after every recipient receives message (ie: when ps_evt ref counter goes to 0)
