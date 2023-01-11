@@ -6,11 +6,12 @@
 
 - [ ] Drop `system` field from m_evt_ps_t?
 - [ ] Double check `from_user` in `mod_deregister`
+- [ ] Rename `m_mod_set_batch_size` to `m_mod_batch_set_size`
+- [ ] Unify `m_mod_set_batch_size` and `m_mod_set_batch_timeout` under `m_mod_batch_set(size_t, uint64_t)`
+- [ ] Rename `m_mod_set_tokenbucket` to `m_mod_tb_set`?
 
 #### DOC
 
-- [x] Fully rewrite documentation per-namespace
-- [x] Document that m_ctx_deregister() cannot be called on a looping context (`M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);`)
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
 

@@ -92,7 +92,7 @@ typedef struct {
     uint64_t ts;                                    // Event timestamp
 } m_evt_t;
 ```
-> Event types received inside `m_mod_on_evt()` callback queue
+> Event type received inside `m_mod_on_evt()` callback queue
 
 ```C
 typedef struct {
@@ -210,6 +210,10 @@ int m_mod_register(const char *name, OUT m_mod_t **mod_ref, const m_mod_hook_t *
 int m_mod_deregister(OUT m_mod_t **mod);
 ```
 > Deregister a module from current thread context.  
+> **NOTE:** deregistering a ctx will internally deregister any source,  
+> so that you don't need to care.  
+> **NOTE:** a module registered with the M_MOD_PERSIST flag cannot be deregistered
+> while its context is still looping.
 
 **Params:**  
 
@@ -223,3 +227,148 @@ const char *m_mod_name(const m_mod_t *mod);
 **Params:**  
 
 * `mod`: module's handler  
+
+```C
+bool m_mod_is(const m_mod_t *mod, m_mod_states st);
+```
+> Check if module is in a given state
+
+**Params:**  
+
+* `mod`: module's handler  
+* `st`: bitmask of module states  
+
+**Returns:** true if module is in one of the requested state.  
+
+```C
+m_mod_states m_mod_state(const m_mod_t *mod);
+```
+> Retrieve module state
+
+**Params:**  
+
+* `mod`: module's handler.  
+
+**Returns:** module state
+
+```C
+int m_mod_start(m_mod_t *mod);
+```
+> Start a module
+
+**Params:**  
+
+* `mod`: module's handler.  
+
+```C
+int m_mod_stop(m_mod_t *mod);
+```
+> Stop a module
+
+**Params:**  
+
+* `mod`: module's handler.  
+
+```C
+int m_mod_resume(m_mod_t *mod);
+```
+> Resume a module, re-attaching all its sources
+
+**Params:**  
+
+* `mod`: module's handler.  
+
+```C
+int m_mod_pause(m_mod_t *mod);
+```
+> Pause a module, detaching all its sources
+
+**Params:**  
+
+* `mod`: module's handler.  
+
+```C
+int m_mod_bind(m_mod_t *mod, m_mod_t *ref);
+```
+> Bind a module'state to another one's
+> **NOTE:** this means that `mod` will follow `ref` state,
+> ie: it will be started when `ref` is started, 
+> stopped when it is stopped, and so on.
+
+**Params:**  
+
+* `mod`: module's handler.  
+* `ref`: other module's reference  
+
+```C
+int m_mod_log(const m_mod_t *mod, const char *fmt, ...);
+```
+> Log a formatted string from a module, using context logger
+
+**Params:**  
+
+* `mod`: module's handler.  
+* `fmt`: string printf-like formatted
+* `...`: variadic argument
+
+```C
+int m_mod_dump(const m_mod_t *mod);
+```
+> Dump a json of current module internal state
+
+**Params:**  
+
+* `mod`: module's handler.  
+
+```C
+int m_mod_stats(const m_mod_t *mod, OUT m_mod_stats_t *stats);
+```
+> Retrieve module stats
+
+**Params:**  
+
+* `mod`: module's handler.  
+* `stats`: storage for module stats
+
+```C
+const void *m_mod_userdata(const m_mod_t *mod);
+```
+> Retrieve module userdata
+
+**Params:**  
+
+* `mod`: module's handler.  
+
+```C
+m_mod_t *m_mod_lookup(const m_mod_t *mod, const char *name);
+```
+> Find a module named `name`
+> **NOTE:** the API does not take any reference on the other module.  
+> If you wish to store other module for future usage,  
+> make sure to `m_mem_ref` it; and them `m_mem_unref` it  
+> when it is not needed anymore.
+
+**Params:**  
+
+* `mod`: module's handler.  
+* `name`: name of the module to be found
+
+```C
+int m_mod_become(m_mod_t *mod, m_evt_cb new_on_evt);
+```
+> Push a new on_evt callback onto the callbacks stack
+
+**Params:**  
+
+* `mod`: module's handler.  
+* `new_on_evt`: new on_evt callback
+
+```C
+int m_mod_unbecome(m_mod_t *mod);
+```
+> Pop an on_evt callback from the callbacks stack
+
+**Params:**  
+
+* `mod`: module's handler.  
+

@@ -232,12 +232,10 @@ m_mod_t *m_mod_lookup(const m_mod_t *mod, const char *name);
 int m_mod_become(m_mod_t *mod, m_evt_cb new_on_evt);
 int m_mod_unbecome(m_mod_t *mod);
 
-/* Module PubSub interface */
+/* Module PubSub interface (Subscribe/unsubscribe API is below under the event sources management) */
 int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, m_ps_flags flags);
 int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, m_ps_flags flags);
 int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient);
-int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr);
-int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic);
 
 /* Events' stashing API */
 int m_mod_stash(m_mod_t *mod, const m_evt_t *evt);
@@ -245,6 +243,9 @@ ssize_t m_mod_unstash(m_mod_t *mod, size_t len);
 
 /* Event Sources management */
 ssize_t m_mod_src_len(const m_mod_t *mod, m_src_types type);
+
+int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr);
+int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic);
 
 int m_mod_src_register_fd(m_mod_t *mod, int fd, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_fd(m_mod_t *mod, int fd);
