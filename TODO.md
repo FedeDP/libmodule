@@ -12,6 +12,8 @@
 ### Src
 - [x] add an M_SRC_FORCE flag to register_mod_src to force register a src even if the same is already existing (deregistering the old one)?
 - [x] double check m_bst_insert/remove usage in src API + add unit tests!
+- [ ] Impl M_SRC_FORCE for topic too?
+- [ ] add a poll_refresh_src API that calls: epoll_ctl with EPOLL_CTL_MOD, or kqueue ADD to refresh an event trigger, instead of removing and adding back the event
 
 #### Ctx 
 - [ ] use pthread_setname_np() to store each context thread name (max 16chars len; drop ctx->name field) ?

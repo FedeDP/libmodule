@@ -266,7 +266,7 @@ void test_mod_srcs(void **state) {
     (void) state; /* unused */
     
     // 1000s just to test
-    const m_src_tmr_t my_tmr = {.ns = 1000000000000 };
+    const m_src_tmr_t my_tmr = {.ns = 5000 };
     
     int ret = m_mod_src_register_tmr(test_mod, &my_tmr, M_SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == 0);

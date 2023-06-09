@@ -21,7 +21,6 @@ int poll_create(poll_priv_t *priv) {
 }
 
 int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) {
-    static int timer_ids = 1;
     GET_PRIV_DATA();
     
     /* Eventually alloc kqueue data if needed */
@@ -53,7 +52,7 @@ int poll_set_new_evt(poll_priv_t *priv, ev_src_t *tmp, const enum op_type flag) 
 #else
         const int  flags = 0; // unsupported...
 #endif
-        EV_SET(_ev, timer_ids++, EVFILT_TIMER, f, flags | NOTE_NSECONDS, tmp->tmr_src.its.ns, tmp);
+        EV_SET(_ev, tmp->tmr_src.its.ns, EVFILT_TIMER, f, flags | NOTE_NSECONDS, tmp->tmr_src.its.ns, tmp);
         break;
     }
     case M_SRC_TYPE_SGN:
