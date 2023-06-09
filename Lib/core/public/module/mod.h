@@ -34,6 +34,7 @@ typedef enum {
     M_SRC_AUTOFREE        =       1 << 3, // Automatically free userdata upon source deregistation.
     M_SRC_ONESHOT         =       1 << 4, // Run just once then automatically deregister source.
     M_SRC_DUP             =       1 << 5, // Duplicate PubSub topic, source fd or source path.
+    M_SRC_FORCE           =       1 << 6, // Force the registration of a src, even if it is already existent (it deregisters previous src)
     M_SRC_FD_AUTOCLOSE    =       M_SRC_SHIFT(M_SRC_TYPE_FD, 1 << 0), // Automatically close fd upon deregistation.
     M_SRC_TMR_ABSOLUTE    =       M_SRC_SHIFT(M_SRC_TYPE_TMR, 1 << 0), // Absolute timer
 } m_src_flags;
@@ -87,7 +88,6 @@ typedef struct {
 
 /* PubSub messages */
 typedef struct {
-    bool system;            // Is this a system message?
     const m_mod_t *sender;
     const char *topic;
     const void *data;       // NULL for system messages
@@ -269,11 +269,10 @@ int m_mod_src_register_thresh(m_mod_t *mod, const m_src_thresh_t *thr, m_src_fla
 int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr);
 
 /* Event batch management */
-int m_mod_set_batch_size(m_mod_t *mod, size_t len);
-int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ns);
+int m_mod_batch_set(m_mod_t *mod, size_t len, uint64_t timeout_ns);
 
 /* Mod tokenbucket */
-int m_mod_set_tokenbucket(m_mod_t *mod, uint32_t rate, uint64_t burst);
+int m_mod_tb_set(m_mod_t *mod, uint32_t rate, uint64_t burst);
 
 /* Generic event source registering functions */
 #define m_mod_src_register(mod, X, flags, userptr) _Generic((X) + 0, \

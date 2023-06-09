@@ -261,6 +261,34 @@ void test_mod_add_fd(void **state) {
     assert_true(ret == -EEXIST);
 }
 
+
+void test_mod_srcs(void **state) {
+    (void) state; /* unused */
+    
+    // 1000s just to test
+    const m_src_tmr_t my_tmr = {.ns = 1000000000000 };
+    
+    int ret = m_mod_src_register_tmr(test_mod, &my_tmr, M_SRC_FD_AUTOCLOSE, NULL);
+    assert_true(ret == 0);
+    
+    /* Try to register again, expect -EEXIST error */
+    ret = m_mod_src_register_tmr(test_mod, &my_tmr, M_SRC_FD_AUTOCLOSE, NULL);
+    assert_true(ret == -EEXIST);
+    
+    /* Register again, forcing the registration. */
+    ret = m_mod_src_register_tmr(test_mod, &my_tmr, M_SRC_FD_AUTOCLOSE | M_SRC_FORCE, NULL);
+    assert_true(ret == 0);
+    
+    size_t len = m_mod_src_len(test_mod, M_SRC_TYPE_TMR);
+    assert_true(len == 1);
+    
+    ret = m_mod_src_deregister_tmr(test_mod, &my_tmr);
+    assert_true(ret == 0);
+    
+    len = m_mod_src_len(test_mod, M_SRC_TYPE_TMR);
+    assert_true(len == 0);
+}
+
 void test_mod_rm_wrong_fd(void **state) {
     (void) state; /* unused */
     

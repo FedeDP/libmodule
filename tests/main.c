@@ -79,6 +79,8 @@ int main(void) {
         cmocka_unit_test(test_mod_rm_fd_NULL_self),
         cmocka_unit_test(test_mod_rm_fd),
         
+        cmocka_unit_test(test_mod_srcs),
+        
         /* Test module subscribe */
         cmocka_unit_test(test_mod_subscribe_NULL_topic),
         cmocka_unit_test(test_mod_subscribe_NULL_self),

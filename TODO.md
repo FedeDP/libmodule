@@ -4,11 +4,21 @@
 
 #### Mod 
 
-- [ ] Drop `system` field from m_evt_ps_t?
-- [ ] Double check `from_user` in `mod_deregister`
-- [ ] Rename `m_mod_set_batch_size` to `m_mod_batch_set_size`
-- [ ] Unify `m_mod_set_batch_size` and `m_mod_set_batch_timeout` under `m_mod_batch_set(size_t, uint64_t)`
-- [ ] Rename `m_mod_set_tokenbucket` to `m_mod_tb_set`?
+- [x] Drop `system` field from m_evt_ps_t?
+- [x] Unify `m_mod_set_batch_size` and `m_mod_set_batch_timeout` under `m_mod_batch_set(size_t, uint64_t)`
+- [x] Rename `m_mod_set_tokenbucket` to `m_mod_tb_set`?
+- [ ] Properly fixup M_MOD_CONSUME_TOKEN() to only be called by external API (ie: user visible)
+
+### Src
+- [x] add an M_SRC_FORCE flag to register_mod_src to force register a src even if the same is already existing (deregistering the old one)?
+- [x] double check m_bst_insert/remove usage in src API + add unit tests!
+
+#### Ctx 
+- [ ] use pthread_setname_np() to store each context thread name (max 16chars len; drop ctx->name field) ?
+
+#### Generic
+
+- [ ] expose a `libmodule_set_loglevel` API?
 
 #### DOC
 

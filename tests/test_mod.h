@@ -27,6 +27,7 @@ void test_mod_unbecome(void **state);
 void test_mod_add_wrong_fd(void **state);
 void test_mod_add_fd_NULL_self(void **state);
 void test_mod_add_fd(void **state);
+void test_mod_srcs(void **state);
 void test_mod_rm_wrong_fd(void **state);
 void test_mod_rm_wrong_fd_2(void **state);
 void test_mod_rm_fd_NULL_self(void **state);

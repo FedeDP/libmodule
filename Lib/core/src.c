@@ -200,56 +200,56 @@ static ev_src_t *create_src(m_mod_t *mod, m_src_types type, process_cb proc,
 }
 
 static int fdcmp(void *my_data, void *node_data) {
-    ev_src_t *src = (ev_src_t *)node_data;
-    int fd = *((int *)my_data);
+    const ev_src_t *node = (const ev_src_t *)node_data;
+    const ev_src_t *other = (const ev_src_t *)my_data;
 
-    return fd - src->fd_src.fd;
+    return other->fd_src.fd - node->fd_src.fd;
 }
 
 static int tmrcmp(void *my_data, void *node_data) {
-    ev_src_t *src = (ev_src_t *)node_data;
-    const m_src_tmr_t *its = (const m_src_tmr_t *)my_data;
+    const ev_src_t *node = (const ev_src_t *)node_data;
+    const ev_src_t *other = (const ev_src_t *)my_data;
 
-    return its->ns - src->tmr_src.its.ns;
+    return other->tmr_src.its.ns - node->tmr_src.its.ns;
 }
 
 static int sgncmp(void *my_data, void *node_data) {
-    ev_src_t *src = (ev_src_t *)node_data;
-    const m_src_sgn_t *sgs = (const m_src_sgn_t *)my_data;
+    const ev_src_t *node = (const ev_src_t *)node_data;
+    const ev_src_t *other = (const ev_src_t *)my_data;
 
-    return sgs->signo - src->sgn_src.sgs.signo;
+    return other->sgn_src.sgs.signo - node->sgn_src.sgs.signo;
 }
 
 static int pathcmp(void *my_data, void *node_data) {
-    ev_src_t *src = (ev_src_t *)node_data;
-    const m_src_path_t *pt = (const m_src_path_t *)my_data;
+    const ev_src_t *node = (const ev_src_t *)node_data;
+    const ev_src_t *other = (const ev_src_t *)my_data;
 
-    return strcmp(pt->path, src->path_src.pt.path);
+    return strcmp(other->path_src.pt.path, node->path_src.pt.path);
 }
 
 static int pidcmp(void *my_data, void *node_data) {
-    ev_src_t *src = (ev_src_t *)node_data;
-    const m_src_pid_t *pid = (const m_src_pid_t *)my_data;
+    const ev_src_t *node = (const ev_src_t *)node_data;
+    const ev_src_t *other = (const ev_src_t *)my_data;
 
-    return pid->pid - src->pid_src.pid.pid;
+    return other->pid_src.pid.pid - node->pid_src.pid.pid;
 }
 
 static int taskcmp(void *my_data, void *node_data) {
-    ev_src_t *src = (ev_src_t *)node_data;
-    const m_src_task_t *tid = (const m_src_task_t *)my_data;
+    const ev_src_t *node = (const ev_src_t *)node_data;
+    const ev_src_t *other = (const ev_src_t *)my_data;
 
-    return tid->tid - src->task_src.tid.tid;
+    return other->task_src.tid.tid - node->task_src.tid.tid;
 }
 
 static int threshcmp(void *my_data, void *node_data) {
-    ev_src_t *src = (ev_src_t *)node_data;
-    const m_src_thresh_t *thr = (const m_src_thresh_t *)my_data;
+    const ev_src_t *node = (const ev_src_t *)node_data;
+    const ev_src_t *other = (const ev_src_t *)my_data;
 
-    long double my_val = (long double)thr->activity_freq
-                         + (long double)thr->inactive_ms;
-    long double their_val = (long double)src->thresh_src.thr.activity_freq
-                            + (long double)src->thresh_src.thr.inactive_ms;
-    return my_val - their_val;
+    long double other_val = (long double)other->thresh_src.thr.activity_freq
+                            + (long double)other->thresh_src.thr.inactive_ms;
+    long double node_val = (long double)node->thresh_src.thr.activity_freq
+                            + (long double)node->thresh_src.thr.inactive_ms;
+    return other_val - node_val;
 }
 
 static ev_src_t *process_ps(ev_src_t *this, m_ctx_t *c, int idx, evt_priv_t *evt) {
@@ -373,6 +373,10 @@ int register_mod_src(m_mod_t *mod, m_src_types type, const void *src_data,
         return -EINVAL;
     }
     int ret = m_bst_insert(mod->srcs[type], src);
+    if (ret == -EEXIST && flags & M_SRC_FORCE) {
+        m_bst_remove(mod->srcs[type], src);
+        ret = m_bst_insert(mod->srcs[type], src);
+    }
     if (ret == 0) {
         /* If a src is registered at runtime, start receiving its events immediately */
         if (m_mod_is(mod, M_MOD_RUNNING)) {
@@ -394,7 +398,14 @@ int deregister_mod_src(m_mod_t *mod, m_src_types type, void *src_data) {
     M_MOD_ASSERT(mod);
     M_MOD_CONSUME_TOKEN(mod);
 
-    return m_bst_remove(mod->srcs[type], src_data);
+    // Create onetime src to check the bst
+    ev_src_t *src = create_src(mod, type, src_procs_map[type], src_data, 0, NULL);
+    if (!src) {
+        return -EINVAL;
+    }
+    int ret = m_bst_remove(mod->srcs[type], src);
+    m_mem_unref(src);
+    return ret;
 }
 
 int start_task(m_ctx_t *c, ev_src_t *src) {
