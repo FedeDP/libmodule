@@ -34,7 +34,6 @@ typedef enum {
     M_SRC_AUTOFREE        =       1 << 3, // Automatically free userdata upon source deregistation.
     M_SRC_ONESHOT         =       1 << 4, // Run just once then automatically deregister source.
     M_SRC_DUP             =       1 << 5, // Duplicate PubSub topic, source fd or source path.
-    M_SRC_FORCE           =       1 << 6, // Force the registration of a src, even if it is already existent (it deregisters previous src)
     M_SRC_FD_AUTOCLOSE    =       M_SRC_SHIFT(M_SRC_TYPE_FD, 1 << 0), // Automatically close fd upon deregistation.
     M_SRC_TMR_ABSOLUTE    =       M_SRC_SHIFT(M_SRC_TYPE_TMR, 1 << 0), // Absolute timer
 } m_src_flags;

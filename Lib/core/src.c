@@ -373,10 +373,6 @@ int register_mod_src(m_mod_t *mod, m_src_types type, const void *src_data,
         return -EINVAL;
     }
     int ret = m_bst_insert(mod->srcs[type], src);
-    if (ret == -EEXIST && flags & M_SRC_FORCE) {
-        m_bst_remove(mod->srcs[type], src);
-        ret = m_bst_insert(mod->srcs[type], src);
-    }
     if (ret == 0) {
         /* If a src is registered at runtime, start receiving its events immediately */
         if (m_mod_is(mod, M_MOD_RUNNING)) {
