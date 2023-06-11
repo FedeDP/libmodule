@@ -89,19 +89,12 @@ _public_ ssize_t m_mod_unstash(m_mod_t *mod, size_t len) {
     return processed;
 }
 
-_public_ int m_mod_set_batch_size(m_mod_t *mod, size_t len) {
+_public_ int m_mod_batch_set(m_mod_t *mod, size_t len, uint64_t timeout_ns) {
     M_MOD_ASSERT(mod);
     M_MOD_CONSUME_TOKEN(mod);
     
     mod->batch.len = len;
-    return 0;
-}
-
-_public_ int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ns) {
-    M_MOD_ASSERT(mod);
-
-    // src_deregister and src_register already consume a token
-
+    
     /* If it was already set, remove old timer */
     if (mod->batch.timer.ns != 0) {
         m_mod_src_deregister_tmr(mod, &mod->batch.timer);

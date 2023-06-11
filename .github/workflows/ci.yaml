@@ -21,7 +21,7 @@ jobs:
           mkdir build && cd build
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           make package
-          ctest -V
+          ctest -VV --stop-on-failure
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
       - name: Build and test FS
@@ -29,7 +29,7 @@ jobs:
           mkdir build_fs && cd build_fs
           cmake -DBUILD_TESTS=On -DBUILD_SAMPLES=On -DWITH_FS=On ..
           make package
-          ctest -V
+          ctest -VV --stop-on-failure
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
       - name: Build and test libkqueue
@@ -37,7 +37,7 @@ jobs:
           mkdir build_kqueue && cd build_kqueue
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBKQUEUE=true -DWITH_VALGRIND=false ..
           make package
-          ctest -V
+          ctest -VV --stop-on-failure
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
       - name: Build and test liburing
@@ -45,7 +45,7 @@ jobs:
           mkdir build_uring && cd build_uring
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DWITH_LIBURING=true -DWITH_VALGRIND=false ..
           make package
-          ctest -V
+          ctest -VV --stop-on-failure
           cmake -DBUILD_OOT_TEST=On ..
           sudo make install
           
@@ -70,14 +70,14 @@ jobs:
           mkdir build && cd build
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=true ..
           make
-          ctest -V
+          ctest -VV --stop-on-failure
           make install
           cd ..
           mkdir build_fs && cd build_fs
           cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On -DBUILD_OOT_TEST=true -DWITH_FS=true ..
           make
           kldload fusefs
-          ctest -V
+          ctest -VV --stop-on-failure
           make install
           
   build-osx-amd64:
@@ -94,4 +94,4 @@ jobs:
           mkdir -p build
           cd build && cmake -DBUILD_SAMPLES=On -DBUILD_TESTS=On ..
           cmake --build .
-          ctest -V
+          ctest -VV --stop-on-failure

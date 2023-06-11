@@ -12,13 +12,14 @@ It is made of multiple headers:
 
 For the sake of readiness, function params where an output value will be stored, are marked with `OUT` (empty) macro.  
 
-> **All the libmodule core API returns an errno-style negative error code, where left unspecified.**
+> **NOTE:** all the libmodule core API returns an errno-style negative error code, where left unspecified.**
 
 ## Memory
 
 ### Ref counted
 
 Ideally, all of the exposed pointers have their lifetime reference based.  
-This means that you can call `m_mem_ref()` API to manage eg: `m_mod_t`, `m_ctx_t`, `m_evt_t` pointers, and so on.  
+This means that you can call `m_mem_ref()` API to manage eg: `m_mod_t`, `m_evt_t` pointers, and so on.  
 Normally, there is no such need because the library manages everything.  
-But if you called `m_mod_ref()`, then you own a reference on that module and it's up to you to free the reference by calling `m_mem_unref()` on it.  
+But if you called `m_mem_ref()` on an object, then you own a reference on it and it's up to you to free the reference by calling `m_mem_unref()` on it,  
+otherwise you would be causing leaks.  

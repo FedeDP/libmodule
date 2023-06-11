@@ -547,7 +547,7 @@ _public_ int m_mod_deregister(m_mod_t **mod) {
     return mod_deregister(mod, true);
 }
 
-_public_ int m_mod_set_tokenbucket(m_mod_t *mod, uint32_t rate, uint64_t burst) {
+_public_ int m_mod_tb_set(m_mod_t *mod, uint32_t rate, uint64_t burst) {
     M_MOD_ASSERT(mod);
     M_PARAM_ASSERT(rate <= BILLION);
 

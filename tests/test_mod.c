@@ -7,6 +7,12 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/socket.h>
+#ifdef __linux__
+#include <sys/inotify.h>
+#else
+#include <sys/event.h>
+#endif
+#include <unistd.h>
 
 static bool init_false(m_mod_t *mod);
 static void mod_recv(m_mod_t *mod, const m_queue_t *const evts);
@@ -259,6 +265,120 @@ void test_mod_add_fd(void **state) {
     /* Try to register again */
     ret = m_mod_src_register_fd(test_mod, fd, M_SRC_FD_AUTOCLOSE, NULL);
     assert_true(ret == -EEXIST);
+}
+
+void test_mod_src_tmr(void **state) {
+    (void) state; /* unused */
+    
+    const m_src_tmr_t my_tmr = {.ns = 5000 };
+    
+    int ret = m_mod_src_register_tmr(test_mod, &my_tmr, 0, NULL);
+    assert_true(ret == 0);
+    
+    /* Try to register again, expect -EEXIST error */
+    ret = m_mod_src_register_tmr(test_mod, &my_tmr, 0, NULL);
+    assert_true(ret == -EEXIST);
+    
+    size_t len = m_mod_src_len(test_mod, M_SRC_TYPE_TMR);
+    assert_true(len == 1);
+    
+    ret = m_mod_src_deregister_tmr(test_mod, &my_tmr);
+    assert_true(ret == 0);
+    
+    len = m_mod_src_len(test_mod, M_SRC_TYPE_TMR);
+    assert_true(len == 0);
+}
+
+void test_mod_src_sgn(void **state) {
+    (void) state; /* unused */
+    
+    const m_src_sgn_t my_sgn = {.signo = 10 };
+    
+    int ret = m_mod_src_register_sgn(test_mod, &my_sgn, 0, NULL);
+    assert_true(ret == 0);
+    
+    /* Try to register again, expect -EEXIST error */
+    ret = m_mod_src_register_sgn(test_mod, &my_sgn, 0, NULL);
+    assert_true(ret == -EEXIST);
+    
+    size_t len = m_mod_src_len(test_mod, M_SRC_TYPE_SGN);
+    assert_true(len == 1);
+    
+    ret = m_mod_src_deregister_sgn(test_mod, &my_sgn);
+    assert_true(ret == 0);
+    
+    len = m_mod_src_len(test_mod, M_SRC_TYPE_SGN);
+    assert_true(len == 0);
+}
+
+void test_mod_src_path(void **state) {
+    (void) state; /* unused */
+    
+    #ifdef __linux__
+    const m_src_path_t my_path = {.path = "/tmp", .events = IN_CREATE };
+    #else
+    const m_src_path_t my_path = {.path = "/tmp", .events = NOTE_WRITE };
+    #endif
+    
+    int ret = m_mod_src_register_path(test_mod, &my_path, 0, NULL);
+    assert_true(ret == 0);
+    
+    /* Try to register again, expect -EEXIST error */
+    ret = m_mod_src_register_path(test_mod, &my_path, 0, NULL);
+    assert_true(ret == -EEXIST);
+    
+    size_t len = m_mod_src_len(test_mod, M_SRC_TYPE_PATH);
+    assert_true(len == 1);
+    
+    ret = m_mod_src_deregister_path(test_mod, &my_path);
+    assert_true(ret == 0);
+    
+    len = m_mod_src_len(test_mod, M_SRC_TYPE_PATH);
+    assert_true(len == 0);
+}
+
+void test_mod_src_pid(void **state) {
+    (void) state; /* unused */
+    
+    const m_src_pid_t my_pid = {.pid = getpid(), .events = 0 };
+    
+    int ret = m_mod_src_register_pid(test_mod, &my_pid, 0, NULL);
+    assert_true(ret == 0);
+    
+    /* Try to register again, expect -EEXIST error */
+    ret = m_mod_src_register_pid(test_mod, &my_pid, 0, NULL);
+    assert_true(ret == -EEXIST);
+    
+    size_t len = m_mod_src_len(test_mod, M_SRC_TYPE_PID);
+    assert_true(len == 1);
+    
+    ret = m_mod_src_deregister_pid(test_mod, &my_pid);
+    assert_true(ret == 0);
+    
+    len = m_mod_src_len(test_mod, M_SRC_TYPE_PID);
+    assert_true(len == 0);
+}
+
+void test_mod_src_thresh(void **state) {
+    (void) state; /* unused */
+    
+    const m_src_thresh_t my_thresh = {.activity_freq = 10.0f };
+    
+    int ret = m_mod_src_register_thresh(test_mod, &my_thresh, 0, NULL);
+    assert_true(ret == 0);
+    
+    /* Try to register again, expect -EEXIST error */
+    ret = m_mod_src_register_thresh(test_mod, &my_thresh, 0, NULL);
+    assert_true(ret == -EEXIST);
+    
+    size_t len = m_mod_src_len(test_mod, M_SRC_TYPE_THRESH);
+    assert_true(len == 1);
+    
+    ret = m_mod_src_deregister_thresh(test_mod, &my_thresh);
+    assert_true(ret == 0);
+    
+    len = m_mod_src_len(test_mod, M_SRC_TYPE_THRESH);
+    assert_true(len == 0);
 }
 
 void test_mod_rm_wrong_fd(void **state) {

@@ -6,7 +6,7 @@ This can be particularly useful when dealing with 2+ threads; each thread has it
 Modules can only see and reach (through PubSub messaging) other modules from same context.  
 A context is given a name at registration time. This is only useful for logging purposes.  
 
-> NOTE: having multiple contexts with same name is allowed; given that each context is thread-specific, there will be no clash.  
+> **NOTE:** having multiple contexts with same name is allowed; given that each context is thread-specific, there will be no clash.  
 > Of course, it's better to set different names.  
 
 ## Loop

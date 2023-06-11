@@ -2,10 +2,25 @@
 
 ### TODO
 
+#### Mod 
+
+- [x] Drop `system` field from m_evt_ps_t?
+- [x] Unify `m_mod_set_batch_size` and `m_mod_set_batch_timeout` under `m_mod_batch_set(size_t, uint64_t)`
+- [x] Rename `m_mod_set_tokenbucket` to `m_mod_tb_set`?
+
+### Src
+- [x] double check m_bst_insert/remove usage in src API + add unit tests!
+
+#### Ctx 
+- [ ] use pthread_setname_np() to store each context thread name (max 16chars len; drop ctx->name field) ?
+
+#### Generic
+
+- [ ] expose a `libmodule_set_loglevel` API?
+- [ ] allow users to override default logging env variables prefix (ie: "LIBMODULE_")?
+
 #### DOC
 
-- [x] Fully rewrite documentation per-namespace
-- [x] Document that m_ctx_deregister() cannot be called on a looping context (`M_PARAM_ASSERT(c && *c && (*c)->state == M_CTX_IDLE);`)
 - [ ] document m_evt_t memref'd behaviour!!!
 - [ ] Document stats and thresh activity_freq (num_action_per_ms)
 

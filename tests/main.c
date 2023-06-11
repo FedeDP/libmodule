@@ -35,11 +35,18 @@ int main(void) {
          */
         cmocka_unit_test(test_mod_register_same_name),
         
-        /* Test modules_ API */
+        /* Test ctx API */
         cmocka_unit_test(test_ctx_set_logger_NULL_logger),
         cmocka_unit_test(test_ctx_set_logger),
         cmocka_unit_test(test_ctx_quit_no_loop),
         cmocka_unit_test(test_ctx_dump),
+        
+        /* Test module src api */
+        cmocka_unit_test(test_mod_src_tmr),
+        cmocka_unit_test(test_mod_src_sgn),
+        cmocka_unit_test(test_mod_src_path),
+        cmocka_unit_test(test_mod_src_pid),
+        cmocka_unit_test(test_mod_src_thresh),
         
         /* Test module state setters */
         cmocka_unit_test(test_mod_start_NULL_self),

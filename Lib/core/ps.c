@@ -135,7 +135,7 @@ static int send_msg(m_mod_t *mod, const m_mod_t *recipient, const char *topic,
     M_PARAM_ASSERT(message);
 
     mod->stats.sent_msgs++;
-    ps_priv_t m = { { false, mod, topic, message }, flags, NULL };
+    ps_priv_t m = { { mod, topic, message }, flags, NULL };
     return tell_pubsub_msg(&m, recipient, mod->ctx);
 }
 
@@ -146,7 +146,7 @@ int tell_system_pubsub_msg(const m_mod_t *recipient, m_ctx_t *c, m_mod_t *sender
         // A module sent a M_PS_MOD_POISONPILL message to another, or it was stopped
         sender->stats.sent_msgs++;
     }
-    ps_priv_t m = { { true, sender, topic, NULL }, 0, NULL };
+    ps_priv_t m = { { sender, topic, NULL }, 0, NULL };
     return tell_pubsub_msg(&m, recipient, c);
 }
 

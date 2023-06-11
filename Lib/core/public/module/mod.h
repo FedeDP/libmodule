@@ -28,9 +28,9 @@ typedef enum {
  */
 #define M_SRC_SHIFT(type, val)   val << (8 * (type + 1))
 typedef enum {
-    M_SRC_PRIO_LOW        =       1 << 0, // PubSub subscription low priority
-    M_SRC_PRIO_NORM       =       1 << 1, // PubSub subscription mid priority (default)
-    M_SRC_PRIO_HIGH       =       1 << 2, // PubSub subscription high priority
+    M_SRC_PRIO_LOW        =       1 << 0, // Src low priority
+    M_SRC_PRIO_NORM       =       1 << 1, // Src mid priority (default)
+    M_SRC_PRIO_HIGH       =       1 << 2, // Src high priority
     M_SRC_AUTOFREE        =       1 << 3, // Automatically free userdata upon source deregistation.
     M_SRC_ONESHOT         =       1 << 4, // Run just once then automatically deregister source.
     M_SRC_DUP             =       1 << 5, // Duplicate PubSub topic, source fd or source path.
@@ -46,7 +46,7 @@ typedef enum {
 #define M_PS_MOD_STOPPED    "LIBMODULE_MOD_STOPPED"
 
 /*
- * Module's pubsub API flags (m_mod_tell(), m_mod_publish(), m_mod_broadcast())
+ * Module's pubsub API flags (m_mod_ps_tell(), m_mod_ps_publish(), m_mod_ps_broadcast())
  */
 typedef enum {
     M_PS_AUTOFREE   = 1 << 0,     // Autofree PubSub data after every recipient receives message (ie: when ps_evt ref counter goes to 0)
@@ -87,7 +87,6 @@ typedef struct {
 
 /* PubSub messages */
 typedef struct {
-    bool system;            // Is this a system message?
     const m_mod_t *sender;
     const char *topic;
     const void *data;       // NULL for system messages
@@ -232,12 +231,10 @@ m_mod_t *m_mod_lookup(const m_mod_t *mod, const char *name);
 int m_mod_become(m_mod_t *mod, m_evt_cb new_on_evt);
 int m_mod_unbecome(m_mod_t *mod);
 
-/* Module PubSub interface */
+/* Module PubSub interface (Subscribe/unsubscribe API is below under the event sources management) */
 int m_mod_ps_tell(m_mod_t *mod, const m_mod_t *recipient, const void *message, m_ps_flags flags);
 int m_mod_ps_publish(m_mod_t *mod, const char *topic, const void *message, m_ps_flags flags);
 int m_mod_ps_poisonpill(m_mod_t *mod, const m_mod_t *recipient);
-int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr);
-int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic);
 
 /* Events' stashing API */
 int m_mod_stash(m_mod_t *mod, const m_evt_t *evt);
@@ -245,6 +242,9 @@ ssize_t m_mod_unstash(m_mod_t *mod, size_t len);
 
 /* Event Sources management */
 ssize_t m_mod_src_len(const m_mod_t *mod, m_src_types type);
+
+int m_mod_ps_subscribe(m_mod_t *mod, const char *topic, m_src_flags flags, const void *userptr);
+int m_mod_ps_unsubscribe(m_mod_t *mod, const char *topic);
 
 int m_mod_src_register_fd(m_mod_t *mod, int fd, m_src_flags flags, const void *userptr);
 int m_mod_src_deregister_fd(m_mod_t *mod, int fd);
@@ -268,11 +268,10 @@ int m_mod_src_register_thresh(m_mod_t *mod, const m_src_thresh_t *thr, m_src_fla
 int m_mod_src_deregister_thresh(m_mod_t *mod, const m_src_thresh_t *thr);
 
 /* Event batch management */
-int m_mod_set_batch_size(m_mod_t *mod, size_t len);
-int m_mod_set_batch_timeout(m_mod_t *mod, uint64_t timeout_ns);
+int m_mod_batch_set(m_mod_t *mod, size_t len, uint64_t timeout_ns);
 
 /* Mod tokenbucket */
-int m_mod_set_tokenbucket(m_mod_t *mod, uint32_t rate, uint64_t burst);
+int m_mod_tb_set(m_mod_t *mod, uint32_t rate, uint64_t burst);
 
 /* Generic event source registering functions */
 #define m_mod_src_register(mod, X, flags, userptr) _Generic((X) + 0, \
