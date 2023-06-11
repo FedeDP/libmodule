@@ -96,7 +96,6 @@ typedef struct {
 
 ```C
 typedef struct {
-    bool system;            // Is this a system message?
     const m_mod_t *sender;
     const char *topic;
     const void *data;       // NULL for system messages
@@ -189,6 +188,15 @@ typedef struct {
 } m_mod_stats_t;
 ```
 > Hold stats about a module
+
+```C
+#define M_PS_CTX_STARTED    "LIBMODULE_CTX_STARTED"
+#define M_PS_CTX_STOPPED    "LIBMODULE_CTX_STOPPED"
+#define M_PS_CTX_TICK       "LIBMODULE_CTX_TICK"
+#define M_PS_MOD_STARTED    "LIBMODULE_MOD_STARTED"
+#define M_PS_MOD_STOPPED    "LIBMODULE_MOD_STOPPED"
+```
+> Available system topics. Subscribe to any of them to receive messages produced by the internal system.  
 
 ## Functions
 

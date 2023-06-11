@@ -95,7 +95,6 @@ _public_ int m_mod_batch_set(m_mod_t *mod, size_t len, uint64_t timeout_ns) {
     
     mod->batch.len = len;
     
-    // TODO: src_deregister and src_register already consume a token
     /* If it was already set, remove old timer */
     if (mod->batch.timer.ns != 0) {
         m_mod_src_deregister_tmr(mod, &mod->batch.timer);

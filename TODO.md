@@ -7,7 +7,6 @@
 - [x] Drop `system` field from m_evt_ps_t?
 - [x] Unify `m_mod_set_batch_size` and `m_mod_set_batch_timeout` under `m_mod_batch_set(size_t, uint64_t)`
 - [x] Rename `m_mod_set_tokenbucket` to `m_mod_tb_set`?
-- [ ] Properly fixup M_MOD_CONSUME_TOKEN() to only be called by external API (ie: user visible)
 
 ### Src
 - [x] double check m_bst_insert/remove usage in src API + add unit tests!
@@ -18,6 +17,7 @@
 #### Generic
 
 - [ ] expose a `libmodule_set_loglevel` API?
+- [ ] allow users to override default logging env variables prefix (ie: "LIBMODULE_")?
 
 #### DOC
 
