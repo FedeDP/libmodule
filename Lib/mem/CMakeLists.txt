@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required (VERSION 3.5)
 
 file(GLOB PUBLIC_H_mem Lib/mem/public/module/mem/*.h)
 file(GLOB SRCS_mem Lib/mem/*.c)

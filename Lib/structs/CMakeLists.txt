@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required (VERSION 3.5)
 
 file(GLOB PUBLIC_H_structs Lib/structs/public/module/structs/*.h)
 file(GLOB SRCS_structs Lib/structs/*.c)
